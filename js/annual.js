@@ -351,7 +351,7 @@ function bindAnnualExport() {
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            // 添加游戏按钮点击
+            // =========优先处理添加游戏按钮点击，放到最前面，防止后面activePanel提前return干扰=========
             const clickAddBtn = e.target.closest(".annual-add-game-btn");
             if(clickAddBtn){
                 e.stopPropagation();
@@ -360,7 +360,6 @@ export function initAnnualModule(){
                 const searchInput = itemDom.querySelector(".annual-panel-search-input");
                 const listContainer = itemDom.querySelector(".annual-game-select-list");
                 const isOpen = panelDom.classList.contains("active");
-
                 if(isOpen){
                     panelDom.classList.remove("active");
                 }else{
@@ -370,14 +369,13 @@ export function initAnnualModule(){
                     });
                     panelDom.classList.add("active");
                     searchInput.focus();
-                    // 打开立刻渲染游戏列表，等待模板就绪
                     if(gameTemplateReady){
-                        renderGameList(listContainer, searchInput.value);
+                        renderGameList(listContainer, searchInput.value ?? "");
                     }else{
                         listContainer.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
                     }
                 }
-                return;
+                return; //处理完按钮直接return，不再往下执行关闭面板逻辑
             }
 
             const activePanel = document.querySelector(".annual-game-select-panel.active");
