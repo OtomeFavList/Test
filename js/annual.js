@@ -1,7 +1,9 @@
 /**
  * 年度报告模块 annual.js
- * 存储key: "annual‑report‑data"，与喜好表数据隔离
+ * 存储key: "annual-report-data"，与喜好表数据隔离
  */
+import { renderGameSelectItem, getWebImageUrl } from './main.js';
+
 const ANNUAL_STORE_KEY = "annual-report-data";
 
 const getDefaultAnnualData = () => ({
@@ -65,37 +67,41 @@ function bindTop3Items() {
         const dataIdx = rank - 1;
         const dataItem = annualData.topList[dataIdx];
 
-        const searchInput = item.querySelector(".annual-game-search");
-        const triggerBtn = item.querySelector(".annual-search-trigger-btn");
+        const addBtn = item.querySelector(".annual-add-game-btn");
         const panel = item.querySelector(".annual-game-select-panel");
         const panelInput = item.querySelector(".annual-panel-search-input");
         const listWrap = item.querySelector(".annual-game-select-list");
+
+        const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
 
-        searchInput.value = dataItem.gameName ?? "";
+        // DOM初始化回填已有数据
+        nameTextEl.textContent = dataItem.gameName ?? "";
         textarea.value = dataItem.text ?? "";
-        if(dataItem.coverSrc) coverImg.src = dataItem.coverSrc;
+        if(dataItem.coverSrc){
+            coverImg.src = getWebImageUrl(dataItem.coverSrc);
+        }
 
-        // 放大镜：打开关闭面板
-        triggerBtn.removeEventListener("click", triggerBtn._clickHandler);
-        triggerBtn._clickHandler = () => {
+        // 添加游戏按钮，打开关闭面板
+        addBtn.removeEventListener("click", addBtn._clickHandler);
+        addBtn._clickHandler = ()=>{
             panel.classList.toggle("active");
             if(panel.classList.contains("active")){
                 panelInput.focus();
                 renderGameList(listWrap, panelInput.value);
             }
         };
-        triggerBtn.addEventListener("click", triggerBtn._clickHandler);
+        addBtn.addEventListener("click", addBtn._clickHandler);
 
-        // 搜索输入过滤游戏
+        // 面板搜索过滤
         panelInput.removeEventListener("input", panelInput._inputHandler);
         panelInput._inputHandler = ()=>{
             renderGameList(listWrap, panelInput.value);
         };
         panelInput.addEventListener("input", panelInput._inputHandler);
 
-        // 感想文本框
+        // 感想文本框双向绑定保存
         textarea.removeEventListener("input", textarea._inputHandler);
         textarea._inputHandler = ()=>{
             annualData.topList[dataIdx].text = textarea.value;
@@ -103,7 +109,7 @@ function bindTop3Items() {
         };
         textarea.addEventListener("input", textarea._inputHandler);
 
-        // 渲染游戏候选列表
+        // 渲染候选游戏列表，完全复用主站FavList渲染逻辑renderGameSelectItem
         function renderGameList(wrap, keyword) {
             wrap.innerHTML = "";
             if(!window.gameTemplateList || !window.gameTemplateReady) return;
@@ -112,16 +118,13 @@ function bindTop3Items() {
                 if(!kw) return true;
                 return String(g.name).toLowerCase().includes(kw);
             });
-
-            filtered.forEach(game=>{
+            filtered.forEach((game, index)=>{
                 const div = document.createElement("div");
                 div.className = "game-option-item";
-                div.innerHTML = `
-                    <img src="${getWebImageUrl(game.cover||'')}" alt="${game.name}" loading="lazy">
-                    <div class="game-option-name">${game.name}</div>
-                `;
+                div.innerHTML = renderGameSelectItem(game, index);
                 div.addEventListener("click", ()=>{
-                    searchInput.value = game.name;
+                    // 选中游戏回填DOM+存储
+                    nameTextEl.textContent = game.name;
                     annualData.topList[dataIdx].gameId = game.id;
                     annualData.topList[dataIdx].gameName = game.name;
                     annualData.topList[dataIdx].coverSrc = getWebImageUrl(game.cover||"");
@@ -151,7 +154,7 @@ function bindAnnualExport() {
                 backgroundColor:"#fff7f9"
             });
             const link = document.createElement("a");
-            link.download = "Otome‑Annual‑Report.png";
+            link.download = "Otome-Annual-Report.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         } catch(err) {
@@ -174,5 +177,3 @@ export function initAnnualModule(){
     bindTop3Items();
     bindAnnualExport();
 }
-
-declare function getWebImageUrl(src:string):string;
