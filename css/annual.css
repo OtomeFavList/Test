@@ -54,7 +54,7 @@
     font-size: 16px;
     line-height: 2.2;
     text-align: center;
-    color: var(--export‑baseinfotext, #c98fac);
+    color: var(--export-baseinfotext, #c98fac);
 }
 .annual-input {
     width: 80px;
@@ -71,7 +71,7 @@
 .annual-top-label {
     font-size: 22px;
     font-weight: bold;
-    color: var(--export‑baseinfotext, #c98fac);
+    color: var(--export-baseinfotext, #c98fac);
     margin-bottom: 10px;
 }
 
@@ -164,6 +164,22 @@
     width:100%;
     border-radius:8px;
     border:1px solid #eee;
+}
+
+/* ========== 文本域样式（补全缺失） ========== */
+.annual-textarea-wrap {
+    width: 100%;
+}
+.annual-top-textarea {
+    width: 100%;
+    min-height: 120px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fcfcfc;
+    font-size: 15px;
+    resize: vertical;
 }
 
 /* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
