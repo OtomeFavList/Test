@@ -7,7 +7,7 @@ import { renderGameSelectItem, getWebImageUrl, gameTemplateList, gameTemplateRea
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
-// 年度报告导出配置（内存，不持久化localStorage；页面刷新恢复默认）
+// ============【修复1：配色持久化，对齐script.js，不再单纯内存变量】============
 const annualExportDefault = {
     bg: "#fff7f9",
     title: "#b33a3a",
@@ -16,7 +16,24 @@ const annualExportDefault = {
     border: "#f6a5b8",
     customTextFontSize: 16
 };
-let annualExportConfig = {...annualExportDefault};
+
+function loadAnnualExportConfig() {
+    const raw = localStorage.getItem("annual-export-config");
+    if(raw) {
+        try {
+            return Object.assign({}, annualExportDefault, JSON.parse(raw));
+        } catch(e) {
+            return {...annualExportDefault};
+        }
+    }
+    return {...annualExportDefault};
+}
+
+function saveAnnualExportConfig() {
+    localStorage.setItem("annual-export-config", JSON.stringify(annualExportConfig));
+}
+
+let annualExportConfig = loadAnnualExportConfig();
 
 const getDefaultAnnualData = () => ({
     reportYear: "",
@@ -35,6 +52,7 @@ const getDefaultAnnualData = () => ({
         { gameId: "", gameName: "", coverSrc: "", text: "" }
     ]
 });
+
 let annualData = getDefaultAnnualData();
 
 let btnAnnualExport;
@@ -175,7 +193,7 @@ function bindTop3Items() {
 }
 
 /**
- * 更新滑块进度百分比（完全对齐script.js实现）
+ * 更新滑块进度百分比【修复2：提升到模块顶层，全局作用域，和script.js行为对齐】
  * @param {HTMLInputElement} sliderEl
  */
 function updateSliderProgress(sliderEl) {
@@ -219,7 +237,7 @@ function bindAnnualExportPanel() {
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
 
-    // 初始化页面全局CSS变量【修复：常态页面实时渲染颜色】
+    // 初始化页面全局CSS变量
     document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
     document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
     document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
@@ -230,6 +248,7 @@ function bindAnnualExportPanel() {
     btnResetColor.removeEventListener("click", btnResetColor._handler);
     btnResetColor._handler = () => {
         annualExportConfig = {...annualExportDefault};
+        saveAnnualExportConfig(); //【修复：重置也要持久化】
         colorBg.value = annualExportConfig.bg;
         colorTitle.value = annualExportConfig.title;
         colorGamename.value = annualExportConfig.gamename;
@@ -238,37 +257,40 @@ function bindAnnualExportPanel() {
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
 
-        // 【修复：重置同步更新页面CSS变量，页面立刻刷新配色】
         document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
         document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
         document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
-
         updateSliderProgress(sliderFont);
     };
     btnResetColor.addEventListener("click", btnResetColor._handler);
 
-    // 颜色输入双向绑定【修复：修改颜色立刻更新body CSS变量，页面实时变色】
+    // 颜色输入双向绑定【修复：修改颜色立刻更新body CSS变量，页面实时变色，并持久化】
     colorBg.oninput = () => {
         annualExportConfig.bg = colorBg.value;
         document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
+        saveAnnualExportConfig();
     };
     colorTitle.oninput = () => {
         annualExportConfig.title = colorTitle.value;
         document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
+        saveAnnualExportConfig();
     };
     colorGamename.oninput = () => {
         annualExportConfig.gamename = colorGamename.value;
         document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+        saveAnnualExportConfig();
     };
     colorCustomtext.oninput = () => {
         annualExportConfig.customtext = colorCustomtext.value;
         document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+        saveAnnualExportConfig();
     };
     colorBorder.oninput = () => {
         annualExportConfig.border = colorBorder.value;
         document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
+        saveAnnualExportConfig();
     };
 
     // 字号滑块
@@ -277,6 +299,7 @@ function bindAnnualExportPanel() {
         annualExportConfig.customTextFontSize = val;
         fontValueDisplay.textContent = `${val}px`;
         updateSliderProgress(sliderFont);
+        saveAnnualExportConfig(); //字号变更同样持久化
     };
 
     // 导出图片按钮
@@ -288,6 +311,7 @@ function bindAnnualExportPanel() {
         snapshotBox.innerHTML = annualWrap.innerHTML;
         snapshotBox.classList.add("export-snapshot", "annual-mode");
 
+        //【修复4：快照强制读取当前内存配置，防止快照读取CSS缓存旧值】
         snapshotBox.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         snapshotBox.style.setProperty("--annual-export-title", annualExportConfig.title);
         snapshotBox.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
@@ -329,7 +353,7 @@ function bindAnnualExport() {
             const canvas = await html2canvas(snapshotBox, {
                 useCORS:true,
                 scale:2,
-                backgroundColor:"#fff7f9"
+                backgroundColor: annualExportConfig.bg
             });
             const link = document.createElement("a");
             link.download = "Otome-Annual-Report.png";
@@ -351,7 +375,7 @@ function bindAnnualExport() {
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            // =========优先处理添加游戏按钮点击，放到最前面，防止后面activePanel提前return干扰=========
+            // 添加游戏按钮点击
             const clickAddBtn = e.target.closest(".annual-add-game-btn");
             if(clickAddBtn){
                 e.stopPropagation();
@@ -360,6 +384,7 @@ export function initAnnualModule(){
                 const searchInput = itemDom.querySelector(".annual-panel-search-input");
                 const listContainer = itemDom.querySelector(".annual-game-select-list");
                 const isOpen = panelDom.classList.contains("active");
+
                 if(isOpen){
                     panelDom.classList.remove("active");
                 }else{
@@ -369,13 +394,14 @@ export function initAnnualModule(){
                     });
                     panelDom.classList.add("active");
                     searchInput.focus();
+                    // 打开立刻渲染游戏列表，等待模板就绪
                     if(gameTemplateReady){
-                        renderGameList(listContainer, searchInput.value ?? "");
+                        renderGameList(listContainer, searchInput.value);
                     }else{
                         listContainer.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
                     }
                 }
-                return; //处理完按钮直接return，不再往下执行关闭面板逻辑
+                return;
             }
 
             const activePanel = document.querySelector(".annual-game-select-panel.active");
