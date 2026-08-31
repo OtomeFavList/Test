@@ -379,11 +379,48 @@
         </div>
     </div>
 
-    <!-- 导出按钮 -->
-    <div class="center-btn-block export-btn-wrap" style="margin-top:24px;">
-        <button id="btn-annual-export">生成并导出图片</button>
+<!-- ========== 年度报告：九、导出【新增】 ========== -->
+<div class="big-card" id="annual‑card‑export">
+    <h2>九、导出</h2>
+    <!-- 恢复默认设置按钮 -->
+    <div class="center-btn-block left-align-btn">
+        <button id="annual‑btn‑reset‑color">恢复默认设置</button>
     </div>
+    <!-- 颜色选择区域 -->
+    <div class="color-set-row">
+        <div class="color-item">
+            <label class="text-light-pink">导出背景色</label>
+            <input type="color" id="annual‑color‑bg" value="#fff7f9">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">标题文字色</label>
+            <input type="color" id="annual‑color‑title" value="#b33a3a">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">游戏名文字色</label>
+            <input type="color" id="annual‑color‑gamename" value="#000000">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">自定义文本色</label>
+            <input type="color" id="annual‑color‑customtext" value="#c98fac">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">卡片边框色</label>
+            <input type="color" id="annual‑color‑border" value="#f6a5b8">
+        </div>
+    </div>
+    <div class="font-size-set-row">
+        <label for="annual‑slider‑custom‑text‑font">调节自定义文本字号</label>
+        <div id="annual‑custom‑text‑font‑value" class="font-size-value-display">16px</div>
+        <input id="annual‑slider‑custom‑text‑font" type="range" min="14" max="42" step="1" value="16">
+    </div>
+    <div class="center-btn-block export-btn-wrap">
+        <button id="annual‑btn‑export‑image">生成并导出图片</button>
+        <p class="switch-desc">图片源文件存储于海外节点，使用可显著提高生成效率</p>
+    </div>
+    <canvas id="annual‑export‑canvas" style="display:none;"></canvas>
 </div>
+    
 <!-- ========== 年度报告模式 wrap 结束 ========== -->
 
 </div> <!-- .wrap 结束 -->
