@@ -1,4 +1,4 @@
-/* ========== 模式切换按钮组（顶部，site‑title下方） ========== */
+/* ========== 模式切换按钮组（顶部，site-title下方） ========== */
 .mode-switch-wrap {
     display: flex;
     justify-content: center;
@@ -209,7 +209,7 @@
 .hidden-when-empty {
     display: none !important;
 }
-/* 快照导出模式：不要被 hidden‑when‑empty 拦截，由JS判断是否存在游戏数据再控制 */
+/* 快照导出模式：不要被 hidden-when-empty 拦截，由JS判断是否存在游戏数据再控制 */
 .snapshot-container.export-snapshot .hidden-when-empty.render-visible {
     display: flex !important;
 }
@@ -218,9 +218,9 @@
 }
 /* ========== 年度报告快照配色变量 ========== */
 .snapshot-container.export-snapshot.annual-mode {
-    --annual‑export‑bg: #fff7f9;
-    --annual‑export‑title: #b33a3a;
-    --annual‑export‑gamename: #000000;
-    --annual‑export‑customtext: #c98fac;
-    --annual‑export‑border: #f6a5b8;
+    --annual-export-bg: #fff7f9;
+    --annual-export-title: #b33a3a;
+    --annual-export-gamename: #000000;
+    --annual-export-customtext: #c98fac;
+    --annual-export-border: #f6a5b8;
 }
