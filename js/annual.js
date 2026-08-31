@@ -92,7 +92,6 @@ function bindTop3Items() {
         const panel = item.querySelector(".annual-game-select-panel");
         const panelInput = item.querySelector(".annual-panel-search-input");
         const listWrap = item.querySelector(".annual-game-select-list");
-
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
@@ -138,12 +137,18 @@ function bindTop3Items() {
         // 渲染候选游戏列表，复用main.js renderGameSelectItem
         function renderGameList(wrap, keyword) {
             wrap.innerHTML = "";
-            if(!window.gameTemplateList || !window.gameTemplateReady) return;
+            // =========【修复】模板未就绪时输出提示文本，不再直接return，方便排查问题 =========
+            if(!window.gameTemplateList || !window.gameTemplateReady) {
+                wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
+                return;
+            }
+
             const kw = (keyword ?? "").toLowerCase().trim();
             const filtered = window.gameTemplateList.filter(g=>{
                 if(!kw) return true;
                 return String(g.name).toLowerCase().includes(kw);
             });
+
             filtered.forEach((game, index)=>{
                 const div = document.createElement("div");
                 div.className = "game-option-item";
@@ -155,7 +160,6 @@ function bindTop3Items() {
                     annualData.topList[dataIdx].gameName = game.name;
                     annualData.topList[dataIdx].coverSrc = game.cover ?? "";
                     coverImg.src = getWebImageUrl(annualData.topList[dataIdx].coverSrc);
-
                     refreshTopItemUi(item, annualData.topList[dataIdx]);
                     panel.classList.remove("active");
                     saveAnnualData();
