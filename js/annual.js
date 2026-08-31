@@ -95,6 +95,46 @@ function bindStatInputs() {
     });
 }
 
+/**
+ * 渲染年度报告游戏候选列表（顶层函数）
+ * @param {HTMLElement} wrap
+ * @param {string} keyword
+ */
+function renderGameList(wrap, keyword) {
+    wrap.innerHTML = "";
+    if(!gameTemplateList || !gameTemplateReady) {
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
+        return;
+    }
+    const kw = (keyword ?? "").toLowerCase().trim();
+    const filtered = gameTemplateList.filter(g=>{
+        if(!kw) return true;
+        return String(g.name).toLowerCase().includes(kw);
+    });
+    filtered.forEach((game, listIndex)=>{
+        const div = document.createElement("div");
+        div.className = "game-option-item";
+        div.innerHTML = renderGameSelectItem(game, listIndex);
+        div.addEventListener("click", ()=>{
+            const topItemDom = div.closest(".annual-top-item");
+            const dataIdx = Number(topItemDom.dataset.rank) - 1;
+            const nameTextEl = topItemDom.querySelector(".annual-game-name-text");
+            const coverImg = topItemDom.querySelector(".annual-top-cover");
+            const panelDom = topItemDom.querySelector(".annual-game-select-panel");
+
+            nameTextEl.textContent = game.name;
+            annualData.topList[dataIdx].gameId = game.id;
+            annualData.topList[dataIdx].gameName = game.name;
+            annualData.topList[dataIdx].coverSrc = game.cover ?? "";
+            coverImg.src = getWebImageUrl(annualData.topList[dataIdx].coverSrc);
+            refreshTopItemUi(topItemDom, annualData.topList[dataIdx]);
+            panelDom.classList.remove("active");
+            saveAnnualData();
+        });
+        wrap.appendChild(div);
+    });
+}
+
 function bindTop3Items() {
     const topItems = document.querySelectorAll(".annual-top-item");
     topItems.forEach((item, idx)=>{
@@ -118,22 +158,7 @@ function bindTop3Items() {
         }
         refreshTopItemUi(item, dataItem);
 
-        // 添加游戏按钮：打开/关闭候选面板
-        addBtn.removeEventListener("click", addBtn._clickHandler);
-        addBtn._clickHandler = ()=>{
-            console.log("【年度报告】点击添加游戏按钮");
-            const isOpen = panel.classList.contains("active");
-            if(isOpen){
-                panel.classList.remove("active");
-                console.log("关闭面板");
-            }else{
-                panel.classList.add("active");
-                panelInput.focus();
-                console.log("打开面板，gameTemplateReady：", gameTemplateReady, "列表长度：", gameTemplateList?.length);
-                renderGameList(listWrap, panelInput.value);
-            }
-        };
-        addBtn.addEventListener("click", addBtn._clickHandler);
+        // 【移除按钮绑定，改由document委托处理】
 
         // 搜索框输入过滤
         panelInput.removeEventListener("input", panelInput._inputHandler);
@@ -149,36 +174,6 @@ function bindTop3Items() {
             saveAnnualData();
         };
         textarea.addEventListener("input", textarea._inputHandler);
-
-        // 渲染候选游戏列表，复用main.js renderGameSelectItem
-        function renderGameList(wrap, keyword) {
-            wrap.innerHTML = "";
-            if(!gameTemplateList || !gameTemplateReady) {
-                wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
-                return;
-            }
-            const kw = (keyword ?? "").toLowerCase().trim();
-            const filtered = gameTemplateList.filter(g=>{
-                if(!kw) return true;
-                return String(g.name).toLowerCase().includes(kw);
-            });
-            filtered.forEach((game, index)=>{
-                const div = document.createElement("div");
-                div.className = "game-option-item";
-                div.innerHTML = renderGameSelectItem(game, index);
-                div.addEventListener("click", ()=>{
-                    nameTextEl.textContent = game.name;
-                    annualData.topList[dataIdx].gameId = game.id;
-                    annualData.topList[dataIdx].gameName = game.name;
-                    annualData.topList[dataIdx].coverSrc = game.cover ?? "";
-                    coverImg.src = getWebImageUrl(annualData.topList[dataIdx].coverSrc);
-                    refreshTopItemUi(item, annualData.topList[dataIdx]);
-                    panel.classList.remove("active");
-                    saveAnnualData();
-                });
-                wrap.appendChild(div);
-            });
-        }
     });
 }
 
@@ -312,14 +307,37 @@ function bindAnnualExport() {
  * 由index.html 在游戏模板全部就绪之后手动调用
  */
 export function initAnnualModule(){
-    // 只绑定一次：点击页面空白关闭annual游戏面板
+    // 只绑定一次：点击页面空白关闭annual游戏面板，同时处理添加游戏按钮点击
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
+            // ==========【修复】委托统一处理：点击添加游戏按钮 ==========
+            const clickAddBtn = e.target.closest(".annual-add-game-btn");
+            if(clickAddBtn){
+                e.stopPropagation();
+                const itemDom = clickAddBtn.closest(".annual-top-item");
+                const panelDom = itemDom.querySelector(".annual-game-select-panel");
+                const searchInput = itemDom.querySelector(".annual-panel-search-input");
+                const listContainer = itemDom.querySelector(".annual-game-select-list");
+
+                const isOpen = panelDom.classList.contains("active");
+                if(isOpen){
+                    panelDom.classList.remove("active");
+                }else{
+                    // 关闭其他所有面板
+                    document.querySelectorAll(".annual-game-select-panel.active").forEach(p=>{
+                        if(p!==panelDom) p.classList.remove("active");
+                    });
+                    panelDom.classList.add("active");
+                    searchInput.focus();
+                    renderGameList(listContainer, searchInput.value);
+                }
+                return;
+            }
+
             const activePanel = document.querySelector(".annual-game-select-panel.active");
             if(!activePanel) return;
-            const clickAddBtn = e.target.closest(".annual-add-game-btn");
             const clickPanelInner = e.target.closest(".annual-game-select-panel");
-            if(clickAddBtn || clickPanelInner) return;
+            if(clickPanelInner) return;
             activePanel.classList.remove("active");
         });
         window._annualPanelClickBound = true;
