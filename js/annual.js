@@ -3,6 +3,7 @@
  * 存储key: "annual‑report‑data"，与喜好表数据隔离
  */
 const ANNUAL_STORE_KEY = "annual-report-data";
+
 const getDefaultAnnualData = () => ({
     reportYear: "",
     playCount: "",
@@ -20,9 +21,9 @@ const getDefaultAnnualData = () => ({
         { gameId: "", gameName: "", coverSrc: "", text: "" }
     ]
 });
+
 let annualData = getDefaultAnnualData();
-let modeBtns;
-let modeWraps;
+
 let btnAnnualExport;
 
 function loadAnnualData() {
@@ -36,43 +37,14 @@ function loadAnnualData() {
         }
     }
 }
+
 function saveAnnualData() {
     localStorage.setItem(ANNUAL_STORE_KEY, JSON.stringify(annualData));
 }
 
-function bindModeSwitch() {
-    modeBtns = document.querySelectorAll(".mode-btn");
-    modeWraps = document.querySelectorAll(".mode-wrap");
-    const hash = window.location.hash.replace("#","");
-    let targetMode = "favlist";
-    if(hash.startsWith("mode=")) {
-        targetMode = hash.split("=")[1];
-    }
-    function switchMode(modeName) {
-        modeBtns.forEach(btn=>{
-            const m = btn.dataset.mode;
-            if(m === modeName) btn.classList.add("active");
-            else btn.classList.remove("active");
-        });
-        modeWraps.forEach(wrap=>{
-            const m = wrap.dataset.mode;
-            if(m === modeName) {
-                wrap.classList.remove("mode-hidden");
-            } else {
-                wrap.classList.add("mode-hidden");
-            }
-        });
-        history.replaceState(null, "", `#mode=${modeName}`);
-        window.scrollTo({top:0, behavior:"smooth"});
-    }
-    modeBtns.forEach(btn=>{
-        btn.addEventListener("click", ()=>{
-            const m = btn.dataset.mode;
-            switchMode(m);
-        });
-    });
-    switchMode(targetMode);
-}
+/**
+ * 移除annual.js内部的bindModeSwitch！模式切换交给index.html脚本，不再两套逻辑打架
+ */
 
 function bindStatInputs() {
     const statInputs = document.querySelectorAll(".annual-input");
@@ -92,6 +64,7 @@ function bindTop3Items() {
         const rank = Number(item.dataset.rank);
         const dataIdx = rank - 1;
         const dataItem = annualData.topList[dataIdx];
+
         const searchInput = item.querySelector(".annual-game-search");
         const triggerBtn = item.querySelector(".annual-search-trigger-btn");
         const panel = item.querySelector(".annual-game-select-panel");
@@ -104,35 +77,42 @@ function bindTop3Items() {
         textarea.value = dataItem.text ?? "";
         if(dataItem.coverSrc) coverImg.src = dataItem.coverSrc;
 
-        // 放大镜开关面板（修复点击无响应）
-        triggerBtn.onclick = null;
-        triggerBtn.addEventListener("click", ()=>{
+        // 放大镜：打开关闭面板
+        triggerBtn.removeEventListener("click", triggerBtn._clickHandler);
+        triggerBtn._clickHandler = () => {
             panel.classList.toggle("active");
-            if(panel.classList.contains("active")) {
+            if(panel.classList.contains("active")){
                 panelInput.focus();
                 renderGameList(listWrap, panelInput.value);
             }
-        });
+        };
+        triggerBtn.addEventListener("click", triggerBtn._clickHandler);
 
-        panelInput.oninput = null;
-        panelInput.addEventListener("input", ()=>{
+        // 搜索输入过滤游戏
+        panelInput.removeEventListener("input", panelInput._inputHandler);
+        panelInput._inputHandler = ()=>{
             renderGameList(listWrap, panelInput.value);
-        });
+        };
+        panelInput.addEventListener("input", panelInput._inputHandler);
 
-        textarea.oninput = null;
-        textarea.addEventListener("input", ()=>{
+        // 感想文本框
+        textarea.removeEventListener("input", textarea._inputHandler);
+        textarea._inputHandler = ()=>{
             annualData.topList[dataIdx].text = textarea.value;
             saveAnnualData();
-        });
+        };
+        textarea.addEventListener("input", textarea._inputHandler);
 
+        // 渲染游戏候选列表
         function renderGameList(wrap, keyword) {
             wrap.innerHTML = "";
-            if(!window.gameTemplateList) return;
-            const kw = keyword.toLowerCase().trim();
+            if(!window.gameTemplateList || !window.gameTemplateReady) return;
+            const kw = (keyword ?? "").toLowerCase().trim();
             const filtered = window.gameTemplateList.filter(g=>{
                 if(!kw) return true;
-                return g.name.toLowerCase().includes(kw);
+                return String(g.name).toLowerCase().includes(kw);
             });
+
             filtered.forEach(game=>{
                 const div = document.createElement("div");
                 div.className = "game-option-item";
@@ -158,8 +138,8 @@ function bindTop3Items() {
 function bindAnnualExport() {
     btnAnnualExport = document.getElementById("btn-annual-export");
     if(!btnAnnualExport) return;
-    btnAnnualExport.onclick = null;
-    btnAnnualExport.addEventListener("click", async ()=>{
+    btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
+    btnAnnualExport._clickHandler = async ()=>{
         const snapshotBox = document.getElementById("snapshot-container");
         const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
         snapshotBox.innerHTML = annualWrap.innerHTML;
@@ -180,15 +160,19 @@ function bindAnnualExport() {
             snapshotBox.innerHTML = "";
             snapshotBox.classList.remove("export-snapshot");
         }
-    });
+    };
+    btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
 
-window.addEventListener("DOMContentLoaded", ()=>{
+/**
+ * 对外暴露初始化函数，**不自己监听DOMContentLoaded**
+ * 由index.html 在游戏模板全部就绪之后手动调用
+ */
+export function initAnnualModule(){
     loadAnnualData();
-    bindModeSwitch();
     bindStatInputs();
     bindTop3Items();
     bindAnnualExport();
-});
+}
 
 declare function getWebImageUrl(src:string):string;
