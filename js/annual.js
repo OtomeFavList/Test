@@ -4,7 +4,7 @@
  */
 
 // ✅修复：导入模板列表与就绪标记，不再读取window上的变量
-import { renderGameSelectItem, getWebImageUrl, gameTemplateList, gameTemplateReady } from './main.js';
+import { renderGameSelectItem, getWebImageUrl, gameTemplateList, gameTemplateReady } from '/main.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
