@@ -295,7 +295,7 @@ function bindAnnualExport() {
             link.href = canvas.toDataURL("image/png");
             link.click();
         } catch(err) {
-            console.error("年度报告旧导出失败", err);
+            console.error("Annual Report导出失败", err);
         } finally {
             snapshotBox.innerHTML = "";
             snapshotBox.classList.remove("export‑snapshot");
