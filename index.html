@@ -309,9 +309,9 @@
             </div>
             <div class="annual-top-content-row">
                 <div class="annual-top-text-wrap">
-                    <div class="game-custom-text-wrap annual‑textarea‑wrap">
+                    <div class="game-custom-text-wrap annual-textarea-wrap">
                         <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
-                        <div class="resize‑handle"></div>
+                        <div class="resize-handle"></div>
                     </div>
                 </div>
                 <div class="annual-top-cover-wrap">
@@ -337,9 +337,9 @@
             </div>
             <div class="annual-top-content-row">
                 <div class="annual-top-text-wrap">
-                    <div class="game-custom-text-wrap annual‑textarea‑wrap">
+                    <div class="game-custom-text-wrap annual-textarea-wrap">
                         <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
-                        <div class="resize‑handle"></div>
+                        <div class="resize-handle"></div>
                     </div>
                 </div>
                 <div class="annual-top-cover-wrap">
@@ -365,9 +365,9 @@
             </div>
             <div class="annual-top-content-row">
                 <div class="annual-top-text-wrap">
-                    <div class="game-custom-text-wrap annual‑textarea‑wrap">
+                    <div class="game-custom-text-wrap annual-textarea-wrap">
                         <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
-                        <div class="resize‑handle"></div>
+                        <div class="resize-handle"></div>
                     </div>
                 </div>
                 <div class="annual-top-cover-wrap">
@@ -669,6 +669,10 @@ z-index: -999;
             if (typeof window.uiBootstrap === "function") {
                 await window.uiBootstrap();
             }
+            // 4. 初始化年度报告模块（如果存在）
+            if (typeof window.initAnnualModule === "function") {
+                window.initAnnualModule();
+            }
             // 清理进度回调，防止内存残留
             window.onGameLoadProgress = null;
         };
@@ -744,31 +748,6 @@ z-index: -999;
 </script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b88bc20591cc4e0b8702b7339c4d0e6d"}'></script><!-- End Cloudflare Web Analytics -->
-
-<!-- ===== 模式切换JS（视图切换，不含年度报告业务逻辑） ===== -->
-<script>
-// 模式切换：FavList / 年度报告
-(function(){
-    const btns = document.querySelectorAll('.mode-switch-wrap .mode-btn');
-    const wraps = document.querySelectorAll('.mode-wrap');
-    btns.forEach(btn=>{
-        btn.addEventListener('click',()=>{
-            const targetMode = btn.dataset.mode;
-            // 更新按钮active
-            btns.forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');
-            // 切换容器显示隐藏
-            wraps.forEach(w=>{
-                if(w.dataset.mode === targetMode){
-                    w.classList.remove('mode-hidden');
-                }else{
-                    w.classList.add('mode-hidden');
-                }
-            })
-        })
-    })
-})();
-</script>
 
 <!-- ===== 新增年度报告脚本 ===== -->
 <script type="module" src="./js/annual.js"></script>
