@@ -224,3 +224,70 @@
     --annual-export-customtext: #c98fac;
     --annual-export-border: #f6a5b8;
 }
+/* ==========年度报告字号滑块轨道【修复滑块百分比轨道不变化】========== */
+.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
+    background:transparent;
+    -webkit-appearance:none;
+    appearance:none;
+    z-index:2;
+    position:relative;
+}
+
+.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::-webkit-slider-runnable-track {
+    height:6px;
+    border-radius:999px;
+    background-color: #fff7f9;
+    background-image: linear-gradient(to right, #e895a8 0%, #e895a8 100%);
+    background-repeat: no-repeat;
+    background-size: var(--annual-slider-progress,0%) 100%;
+}
+
+.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#e895a8;
+    border:none;
+    cursor:pointer;
+    margin-top:-5px;
+}
+
+@-moz-document url-prefix() {
+    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
+        position: relative;
+    }
+    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::before {
+        content:"";
+        position:absolute;
+        left:0;
+        right:0;
+        top:50%;
+        transform: translateY(-50%);
+        height:6px;
+        border-radius:999px;
+        background:#fff7f9;
+        z-index:-1;
+    }
+    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::after {
+        content:"";
+        position:absolute;
+        left:0;
+        top:50%;
+        transform: translateY(-50%);
+        height:6px;
+        border-radius:999px;
+        background:#e895a8;
+        width:var(--annual-slider-progress,0%);
+        z-index:-1;
+    }
+}
+
+/* ==========年度报告页面常态配色变量绑定 ========== */
+.mode-wrap[data-mode="annual"] {
+    --annual-export-bg:#fff7f9;
+    --annual-export-title:#b33a3a;
+    --annual-export-gamename:#000000;
+    --annual-export-customtext:#c98fac;
+    --annual-export-border:#f6a5b8;
+}
