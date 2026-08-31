@@ -221,3 +221,11 @@
 .snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text {
     display: block !important;
 }
+/* ========== 年度报告快照配色变量 ========== */
+.snapshot-container.export-snapshot.annual-mode {
+    --annual‑export‑bg: #fff7f9;
+    --annual‑export‑title: #b33a3a;
+    --annual‑export‑gamename: #000000;
+    --annual‑export‑customtext: #c98fac;
+    --annual‑export‑border: #f6a5b8;
+}
