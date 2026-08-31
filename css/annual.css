@@ -23,7 +23,6 @@
     background: #f6a5b8;
     color: #ffffff;
 }
-
 /* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
 .mode-wrap {
     width: 100%;
@@ -38,15 +37,19 @@
     pointer-events: none;
 }
 
-/* ========== 年度报告页面大标题（卡片外部） ========== */
-.annual-page-title {
-    text-align: center;
+/* ========== site-title 年度报告覆盖样式 ========== */
+.site-title.annual-active h1 {
+    font-size: 42px;
+    color: #b33a3a;
 }
-.annual-page-title h1 {
-    margin:0;
-    font-size:26px;
-    font-weight:bold;
-    color: var(--export-subtitle, #b85878);
+.site-title.annual-active .title-sub-cn,
+.site-title.annual-active .sub-desc {
+    display: none !important;
+}
+
+/* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
+.annual-page-title {
+    display: none;
 }
 
 /* ========== 统计行：整段居中、字号16px，颜色变量控制（需求⑤） ========== */
@@ -66,20 +69,17 @@
     margin: 0 4px;
     color:#000000; /*输入框文字默认黑色，可后续扩展变量 */
 }
-
-/* ========== TOP3 NO.1 NO.2 NO.3 标签（需求⑥：22px，颜色变量） ========== */
+/* ========== TOP3 NO.1 NO.2 NO.3 标签（修改颜色 #b85878） ========== */
 .annual-top-label {
     font-size: 22px;
     font-weight: bold;
-    color: var(--export-baseinfotext, #c98fac);
+    color: #b85878;
     margin-bottom: 10px;
 }
-
 /* ========== TOP3游戏条目 ========== */
 .annual-top-item {
     margin-bottom: 24px;
 }
-
 /* 搜索行：输入框 + 放大镜按钮 */
 .annual-search-row {
     display: flex;
@@ -116,7 +116,6 @@
     width:18px;
     height:18px;
 }
-
 /* ========== 游戏选择弹窗面板 ========== */
 .annual-game-select-panel {
     display: none;
@@ -144,7 +143,6 @@
     grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
     gap:10px;
 }
-
 /* ========== TOP3内容行：左侧文本域，右侧封面（需求⑦封面在右侧，布局保留） ========== */
 .annual-top-content-row {
     display:flex;
@@ -165,7 +163,6 @@
     border-radius:8px;
     border:1px solid #eee;
 }
-
 /* ========== 文本域样式（补全缺失） ========== */
 .annual-textarea-wrap {
     width: 100%;
@@ -181,7 +178,6 @@
     font-size: 15px;
     resize: vertical;
 }
-
 /* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
 .snapshot-container.export-snapshot .annual-search-trigger-btn,
 .snapshot-container.export-snapshot .annual-game-select-panel,
@@ -189,7 +185,6 @@
 .snapshot-container.export-snapshot .resize-handle {
     display:none !important;
 }
-
 /* ========== 移动端适配 ========== */
 @media (max-width:768px) {
     .annual-top-content-row {
@@ -203,5 +198,8 @@
     }
     .mode-switch-wrap {
         flex-wrap:wrap;
+    }
+    .site-title.annual-active h1 {
+        font-size:30px;
     }
 }
