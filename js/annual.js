@@ -25,8 +25,33 @@ const getDefaultAnnualData = () => ({
 });
 
 let annualData = getDefaultAnnualData();
-
 let btnAnnualExport;
+
+/**
+ * 更新单个TOP条目UI显隐状态
+ * @param {HTMLElement} itemDom annual-top-item
+ * @param {Object} dataItem topList单条数据
+ */
+function refreshTopItemUi(itemDom, dataItem) {
+    const nameEl = itemDom.querySelector(".annual-game-name-text");
+    const contentRow = itemDom.querySelector(".annual-top-content-row");
+    const addBtn = itemDom.querySelector(".annual-add-game-btn");
+    const hasGame = !!dataItem.gameId;
+
+    if (hasGame) {
+        nameEl.classList.remove("hidden-when-empty");
+        contentRow.classList.remove("hidden-when-empty");
+        nameEl.classList.add("render-visible");
+        contentRow.classList.add("render-visible");
+        addBtn.classList.add("hidden-when-empty");
+    } else {
+        nameEl.classList.add("hidden-when-empty");
+        contentRow.classList.add("hidden-when-empty");
+        nameEl.classList.remove("render-visible");
+        contentRow.classList.remove("render-visible");
+        addBtn.classList.remove("hidden-when-empty");
+    }
+}
 
 function loadAnnualData() {
     const raw = localStorage.getItem(ANNUAL_STORE_KEY);
@@ -43,10 +68,6 @@ function loadAnnualData() {
 function saveAnnualData() {
     localStorage.setItem(ANNUAL_STORE_KEY, JSON.stringify(annualData));
 }
-
-/**
- * 移除annual.js内部的bindModeSwitch！模式切换交给index.html脚本，不再两套逻辑打架
- */
 
 function bindStatInputs() {
     const statInputs = document.querySelectorAll(".annual-input");
@@ -76,14 +97,15 @@ function bindTop3Items() {
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
 
-        // DOM初始化回填已有数据
+        // 回填数据
         nameTextEl.textContent = dataItem.gameName ?? "";
         textarea.value = dataItem.text ?? "";
         if(dataItem.coverSrc){
             coverImg.src = getWebImageUrl(dataItem.coverSrc);
         }
+        refreshTopItemUi(item, dataItem);
 
-        // 添加游戏按钮，打开关闭面板
+        // 添加游戏按钮：打开/关闭候选面板
         addBtn.removeEventListener("click", addBtn._clickHandler);
         addBtn._clickHandler = ()=>{
             panel.classList.toggle("active");
@@ -94,14 +116,14 @@ function bindTop3Items() {
         };
         addBtn.addEventListener("click", addBtn._clickHandler);
 
-        // 面板搜索过滤
+        // 搜索框输入过滤
         panelInput.removeEventListener("input", panelInput._inputHandler);
         panelInput._inputHandler = ()=>{
             renderGameList(listWrap, panelInput.value);
         };
         panelInput.addEventListener("input", panelInput._inputHandler);
 
-        // 感想文本框双向绑定保存
+        // 自定义文本框双向绑定
         textarea.removeEventListener("input", textarea._inputHandler);
         textarea._inputHandler = ()=>{
             annualData.topList[dataIdx].text = textarea.value;
@@ -109,7 +131,7 @@ function bindTop3Items() {
         };
         textarea.addEventListener("input", textarea._inputHandler);
 
-        // 渲染候选游戏列表，完全复用主站FavList渲染逻辑renderGameSelectItem
+        // 渲染候选游戏列表，复用main.js renderGameSelectItem
         function renderGameList(wrap, keyword) {
             wrap.innerHTML = "";
             if(!window.gameTemplateList || !window.gameTemplateReady) return;
@@ -123,12 +145,14 @@ function bindTop3Items() {
                 div.className = "game-option-item";
                 div.innerHTML = renderGameSelectItem(game, index);
                 div.addEventListener("click", ()=>{
-                    // 选中游戏回填DOM+存储
+                    // 赋值数据
                     nameTextEl.textContent = game.name;
                     annualData.topList[dataIdx].gameId = game.id;
                     annualData.topList[dataIdx].gameName = game.name;
-                    annualData.topList[dataIdx].coverSrc = getWebImageUrl(game.cover||"");
-                    coverImg.src = annualData.topList[dataIdx].coverSrc;
+                    annualData.topList[dataIdx].coverSrc = game.cover ?? "";
+                    coverImg.src = getWebImageUrl(annualData.topList[dataIdx].coverSrc);
+
+                    refreshTopItemUi(item, annualData.topList[dataIdx]);
                     panel.classList.remove("active");
                     saveAnnualData();
                 });
