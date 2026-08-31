@@ -107,33 +107,48 @@
 .annual-add-game-btn:hover {
     background-color: #992e2e;
 }
-/* ========== 游戏选择弹窗面板（复用FavList交互面板样式） ========== */
+/* ========== 游戏选择弹窗面板（复刻FavList交互面板样式） ========== */
+.annual-top-item {
+    margin-bottom: 24px;
+    position: relative; /* 给子面板absolute做定位锚点，必加 */
+}
+
 .annual-game-select-panel {
-    display: none;
-    margin: 8px 0 14px;
-    padding:12px;
-    border:1px solid #f6a5b8;
-    border-radius:10px;
+    position: absolute;
+    z-index: 100;
+    top: 100%;
+    left: 0;
+    margin-top: 6px;
+    padding:16px;
+    border-radius:12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     background:#ffffff;
+    border: none;
+    max-height: 420px;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
 }
 .annual-game-select-panel.active {
-    display:block;
+    display: flex;
 }
+
 .annual-panel-search-input {
     width:100%;
-    padding:8px 10px;
-    border:1px solid #eee;
+    padding:10px 12px;
+    border:1px solid #ddd;
     border-radius: 8px;
     background:#fcfcfc;
-    margin-bottom:10px;
     box-sizing: border-box;
 }
 .annual-game-select-list {
-    max-height:260px;
+    flex: 1;
     overflow-y:auto;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-    gap:10px;
+    display: flex;
+    flex-direction: column;
+    gap:8px;
 }
 /* ========== TOP3内容行：左侧封面，右侧文本域 ========== */
 .annual-top-content-row {
