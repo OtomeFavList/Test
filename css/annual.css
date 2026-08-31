@@ -28,7 +28,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 30px; /* ✅需求①板块之间30px间隔 */
+    gap: 30px;
 }
 .mode-wrap.mode-hidden {
     visibility: hidden;
@@ -36,7 +36,6 @@
     overflow: hidden;
     pointer-events: none;
 }
-
 /* ========== site-title 年度报告覆盖样式 ========== */
 .site-title.annual-active h1 {
     font-size: 42px;
@@ -46,13 +45,11 @@
 .site-title.annual-active .sub-desc {
     display: none !important;
 }
-
 /* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
 .annual-page-title {
     display: none;
 }
-
-/* ========== 统计行：整段居中、字号16px，颜色变量控制（需求⑤） ========== */
+/* ========== 统计行：整段居中、字号16px，颜色变量控制 ========== */
 .annual-stat-line {
     font-size: 16px;
     line-height: 2.2;
@@ -67,56 +64,48 @@
     font-size: 16px;
     background: #fcfcfc;
     margin: 0 4px;
-    color:#000000; /*输入框文字默认黑色，可后续扩展变量 */
+    color:#000000;
 }
-/* ========== TOP3 NO.1 NO.2 NO.3 标签（修改颜色 #b85878） ========== */
+/* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
 .annual-top-label {
     font-size: 22px;
     font-weight: bold;
     color: #b85878;
     margin-bottom: 10px;
 }
+/* 游戏名称显示：黑色22px，自动换行 */
+.annual-game-name-text {
+    font-size: 22px;
+    color: #000000;
+    word-break: break-all;
+    margin: 8px 0 12px;
+}
 /* ========== TOP3游戏条目 ========== */
 .annual-top-item {
     margin-bottom: 24px;
 }
-/* 搜索行：输入框 + 放大镜按钮 */
+/* 【注释原有放大镜搜索行，不再渲染】 */
 .annual-search-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 12px;
+    display: none !important;
 }
-.annual-game-search {
-    flex: 1;
-    padding: 8px 10px;
-    border:1px solid #eee;
-    border-radius: 8px;
-    background:#fcfcfc;
-    font-size:16px;
+/* +添加游戏按钮，居中 */
+.annual-add-game-btn-wrap {
+    text-align: center;
+    margin: 8px 0 14px;
 }
-.annual-search-trigger-btn {
-    width: 32px;
-    height: 32px;
-    border:1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    color:#b33a3a;
-    padding:0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition:0.2s;
+.annual-add-game-btn {
+    padding:8px 18px;
+    border:2px solid #f6a5b8;
+    border-radius:8px;
+    background:#fff7f9;
+    color:#b85878;
+    cursor:pointer;
+    font-size:15px;
 }
-.annual-search-trigger-btn:hover {
-    background:#992e2e !important;
-    color:#b33a3a !important;
+.annual-add-game-btn:hover {
+    background:#fce8ed;
 }
-.annual-search-trigger-btn svg {
-    width:18px;
-    height:18px;
-}
-/* ========== 游戏选择弹窗面板 ========== */
+/* ========== 游戏选择弹窗面板（复用FavList交互面板样式） ========== */
 .annual-game-select-panel {
     display: none;
     margin: 8px 0 14px;
@@ -135,6 +124,7 @@
     border-radius: 8px;
     background:#fcfcfc;
     margin-bottom:10px;
+    box-sizing: border-box;
 }
 .annual-game-select-list {
     max-height:260px;
@@ -143,16 +133,12 @@
     grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
     gap:10px;
 }
-/* ========== TOP3内容行：左侧文本域，右侧封面（需求⑦封面在右侧，布局保留） ========== */
+/* ========== TOP3内容行：左侧封面，右侧文本域 ========== */
 .annual-top-content-row {
     display:flex;
     gap:16px;
     align-items:flex-start;
     flex-wrap:wrap;
-}
-.annual-top-text-wrap {
-    flex:1;
-    min-width:260px;
 }
 .annual-top-cover-wrap {
     flex-shrink:0;
@@ -160,12 +146,13 @@
 }
 .annual-top-cover {
     width:100%;
+    height:auto;
     border-radius:8px;
     border:1px solid #eee;
 }
-/* ========== 文本域样式（补全缺失） ========== */
-.annual-textarea-wrap {
-    width: 100%;
+.annual-top-text-wrap {
+    flex:1;
+    min-width:260px;
 }
 .annual-top-textarea {
     width: 100%;
@@ -179,10 +166,9 @@
     resize: vertical;
 }
 /* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
-.snapshot-container.export-snapshot .annual-search-trigger-btn,
+.snapshot-container.export-snapshot .annual-add-game-btn,
 .snapshot-container.export-snapshot .annual-game-select-panel,
-.snapshot-container.export-snapshot #btn-annual-export,
-.snapshot-container.export-snapshot .resize-handle {
+.snapshot-container.export-snapshot #btn-annual-export {
     display:none !important;
 }
 /* ========== 移动端适配 ========== */
@@ -201,5 +187,8 @@
     }
     .site-title.annual-active h1 {
         font-size:30px;
+    }
+    .annual-game-name-text {
+        font-size:18px;
     }
 }
