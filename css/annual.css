@@ -54,7 +54,7 @@
     font-size: 16px;
     line-height: 2.2;
     text-align: center;
-    color: var(--export-baseinfotext, #c98fac);
+    color: var(--annual-export-customtext, #c98fac);
 }
 .annual-input {
     width: 80px;
@@ -66,14 +66,14 @@
     margin: 0 4px;
     color:#000000;
 }
-/* ========== TOP3 NO.1 NO.2 NO.3 标签【修复：使用CSS变量，不再硬编码颜色】 ========== */
+/* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
 .annual-top-label {
     font-size: 22px;
     font-weight: bold;
-    color: var(--annual-export-title, #b33a3a);
+    color: var(--annual-export-subtitle, #b85878);
     margin-bottom: 10px;
 }
-/* 游戏名称显示【修复：绑定gamename变量】 */
+/* 游戏名称显示：黑色22px，自动换行 */
 .annual-game-name-text {
     font-size: 22px;
     color: var(--annual-export-gamename, #000000);
@@ -171,7 +171,7 @@
     min-height: 120px;
     box-sizing: border-box;
     padding: 8px 10px;
-    border: 1px solid #eee;
+    border: 1px solid var(--annual-export-border, #f6a5b8);
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 15px;
