@@ -47,10 +47,10 @@
     </div>
 </div>
 
-<!-- ========== 模式切换按钮组 FavList / 年度报告 ========== -->
+<!-- ========== 模式切换按钮组 FavList / Annual Report ========== -->
 <div class="mode-switch-wrap">
     <button class="mode-btn active" data-mode="favlist">FavList</button>
-    <button class="mode-btn" data-mode="annual">年度报告</button>
+    <button class="mode-btn" data-mode="annual">Annual Report</button>
 </div>
 
 <!-- ========== FavList 模式 wrap ========== -->
@@ -748,6 +748,31 @@ z-index: -999;
 </script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b88bc20591cc4e0b8702b7339c4d0e6d"}'></script><!-- End Cloudflare Web Analytics -->
+
+<!-- ===== 模式切换逻辑（FavList / Annual Report） ===== -->
+<script>
+// 模式切换：FavList / Annual Report
+(function(){
+    const btns = document.querySelectorAll('.mode-switch-wrap .mode-btn');
+    const wraps = document.querySelectorAll('.mode-wrap');
+    btns.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            const targetMode = btn.dataset.mode;
+            // 更新按钮active
+            btns.forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            // 切换容器显示隐藏
+            wraps.forEach(w=>{
+                if(w.dataset.mode === targetMode){
+                    w.classList.remove('mode-hidden');
+                }else{
+                    w.classList.add('mode-hidden');
+                }
+            })
+        })
+    })
+})();
+</script>
 
 <!-- ===== 新增年度报告脚本 ===== -->
 <script type="module" src="./js/annual.js"></script>
