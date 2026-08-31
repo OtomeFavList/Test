@@ -1,178 +1,191 @@
-/**
- * 年度报告模块 annual.js
- * 存储key: "annual‑report‑data"，与喜好表数据隔离
- */
-const ANNUAL_STORE_KEY = "annual-report-data";
+/* ========== 模式切换按钮组（顶部，site‑title下方） ========== */
+.mode-switch-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0 24px;
+}
+.mode-switch-wrap .mode-btn {
+    padding: 10px 22px;
+    border: 2px solid #f6a5b8;
+    border-radius: 8px;
+    background: #fff7f9;
+    color: #b85878;
+    font-size: 16px;
+    font-weight: normal;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.mode-switch-wrap .mode-btn:hover {
+    background: #fce8ed;
+}
+.mode-switch-wrap .mode-btn.active {
+    background: #f6a5b8;
+    color: #ffffff;
+}
 
-const getDefaultAnnualData = () => ({
-    reportYear: "",
-    playCount: "",
-    totalHours: "",
-    likeCharCount: "",
-    cpCount: "",
-    buyCount: "",
-    costMoney: "",
-    finished: "",
-    ongoing: "",
-    notStart: "",
-    topList: [
-        { gameId: "", gameName: "", coverSrc: "", text: "" },
-        { gameId: "", gameName: "", coverSrc: "", text: "" },
-        { gameId: "", gameName: "", coverSrc: "", text: "" }
-    ]
-});
+/* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
+.mode-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* ✅需求①板块之间30px间隔 */
+}
+.mode-wrap.mode-hidden {
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
 
-let annualData = getDefaultAnnualData();
+/* ========== 年度报告页面大标题（卡片外部） ========== */
+.annual-page-title {
+    text-align: center;
+}
+.annual-page-title h1 {
+    margin:0;
+    font-size:26px;
+    font-weight:bold;
+    color: var(--export-subtitle, #b85878);
+}
 
-let btnAnnualExport;
+/* ========== 统计行：整段居中、字号16px，颜色变量控制（需求⑤） ========== */
+.annual-stat-line {
+    font-size: 16px;
+    line-height: 2.2;
+    text-align: center;
+    color: var(--export‑baseinfotext, #c98fac);
+}
+.annual-input {
+    width: 80px;
+    padding: 4px 6px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fcfcfc;
+    margin: 0 4px;
+    color:#000000; /*输入框文字默认黑色，可后续扩展变量 */
+}
 
-function loadAnnualData() {
-    const raw = localStorage.getItem(ANNUAL_STORE_KEY);
-    if(raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            annualData = Object.assign(getDefaultAnnualData(), parsed);
-        } catch(e) {
-            annualData = getDefaultAnnualData();
-        }
+/* ========== TOP3 NO.1 NO.2 NO.3 标签（需求⑥：22px，颜色变量） ========== */
+.annual-top-label {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--export‑baseinfotext, #c98fac);
+    margin-bottom: 10px;
+}
+
+/* ========== TOP3游戏条目 ========== */
+.annual-top-item {
+    margin-bottom: 24px;
+}
+
+/* 搜索行：输入框 + 放大镜按钮 */
+.annual-search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.annual-game-search {
+    flex: 1;
+    padding: 8px 10px;
+    border:1px solid #eee;
+    border-radius: 8px;
+    background:#fcfcfc;
+    font-size:16px;
+}
+.annual-search-trigger-btn {
+    width: 32px;
+    height: 32px;
+    border:1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    color:#b33a3a;
+    padding:0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:0.2s;
+}
+.annual-search-trigger-btn:hover {
+    background:#992e2e !important;
+    color:#b33a3a !important;
+}
+.annual-search-trigger-btn svg {
+    width:18px;
+    height:18px;
+}
+
+/* ========== 游戏选择弹窗面板 ========== */
+.annual-game-select-panel {
+    display: none;
+    margin: 8px 0 14px;
+    padding:12px;
+    border:1px solid #f6a5b8;
+    border-radius:10px;
+    background:#ffffff;
+}
+.annual-game-select-panel.active {
+    display:block;
+}
+.annual-panel-search-input {
+    width:100%;
+    padding:8px 10px;
+    border:1px solid #eee;
+    border-radius: 8px;
+    background:#fcfcfc;
+    margin-bottom:10px;
+}
+.annual-game-select-list {
+    max-height:260px;
+    overflow-y:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:10px;
+}
+
+/* ========== TOP3内容行：左侧文本域，右侧封面（需求⑦封面在右侧，布局保留） ========== */
+.annual-top-content-row {
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+}
+.annual-top-text-wrap {
+    flex:1;
+    min-width:260px;
+}
+.annual-top-cover-wrap {
+    flex-shrink:0;
+    width:140px;
+}
+.annual-top-cover {
+    width:100%;
+    border-radius:8px;
+    border:1px solid #eee;
+}
+
+/* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
+.snapshot-container.export-snapshot .annual-search-trigger-btn,
+.snapshot-container.export-snapshot .annual-game-select-panel,
+.snapshot-container.export-snapshot #btn-annual-export,
+.snapshot-container.export-snapshot .resize-handle {
+    display:none !important;
+}
+
+/* ========== 移动端适配 ========== */
+@media (max-width:768px) {
+    .annual-top-content-row {
+        flex-direction:column;
+    }
+    .annual-top-cover-wrap {
+        width:120px;
+    }
+    .annual-game-select-list {
+        grid-template-columns:1fr;
+    }
+    .mode-switch-wrap {
+        flex-wrap:wrap;
     }
 }
-
-function saveAnnualData() {
-    localStorage.setItem(ANNUAL_STORE_KEY, JSON.stringify(annualData));
-}
-
-/**
- * 移除annual.js内部的bindModeSwitch！模式切换交给index.html脚本，不再两套逻辑打架
- */
-
-function bindStatInputs() {
-    const statInputs = document.querySelectorAll(".annual-input");
-    statInputs.forEach(input=>{
-        const key = input.dataset.key;
-        input.value = annualData[key] ?? "";
-        input.addEventListener("input", ()=>{
-            annualData[key] = input.value;
-            saveAnnualData();
-        });
-    });
-}
-
-function bindTop3Items() {
-    const topItems = document.querySelectorAll(".annual-top-item");
-    topItems.forEach((item, idx)=>{
-        const rank = Number(item.dataset.rank);
-        const dataIdx = rank - 1;
-        const dataItem = annualData.topList[dataIdx];
-
-        const searchInput = item.querySelector(".annual-game-search");
-        const triggerBtn = item.querySelector(".annual-search-trigger-btn");
-        const panel = item.querySelector(".annual-game-select-panel");
-        const panelInput = item.querySelector(".annual-panel-search-input");
-        const listWrap = item.querySelector(".annual-game-select-list");
-        const textarea = item.querySelector(".annual-top-textarea");
-        const coverImg = item.querySelector(".annual-top-cover");
-
-        searchInput.value = dataItem.gameName ?? "";
-        textarea.value = dataItem.text ?? "";
-        if(dataItem.coverSrc) coverImg.src = dataItem.coverSrc;
-
-        // 放大镜：打开关闭面板
-        triggerBtn.removeEventListener("click", triggerBtn._clickHandler);
-        triggerBtn._clickHandler = () => {
-            panel.classList.toggle("active");
-            if(panel.classList.contains("active")){
-                panelInput.focus();
-                renderGameList(listWrap, panelInput.value);
-            }
-        };
-        triggerBtn.addEventListener("click", triggerBtn._clickHandler);
-
-        // 搜索输入过滤游戏
-        panelInput.removeEventListener("input", panelInput._inputHandler);
-        panelInput._inputHandler = ()=>{
-            renderGameList(listWrap, panelInput.value);
-        };
-        panelInput.addEventListener("input", panelInput._inputHandler);
-
-        // 感想文本框
-        textarea.removeEventListener("input", textarea._inputHandler);
-        textarea._inputHandler = ()=>{
-            annualData.topList[dataIdx].text = textarea.value;
-            saveAnnualData();
-        };
-        textarea.addEventListener("input", textarea._inputHandler);
-
-        // 渲染游戏候选列表
-        function renderGameList(wrap, keyword) {
-            wrap.innerHTML = "";
-            if(!window.gameTemplateList || !window.gameTemplateReady) return;
-            const kw = (keyword ?? "").toLowerCase().trim();
-            const filtered = window.gameTemplateList.filter(g=>{
-                if(!kw) return true;
-                return String(g.name).toLowerCase().includes(kw);
-            });
-
-            filtered.forEach(game=>{
-                const div = document.createElement("div");
-                div.className = "game-option-item";
-                div.innerHTML = `
-                    <img src="${getWebImageUrl(game.cover||'')}" alt="${game.name}" loading="lazy">
-                    <div class="game-option-name">${game.name}</div>
-                `;
-                div.addEventListener("click", ()=>{
-                    searchInput.value = game.name;
-                    annualData.topList[dataIdx].gameId = game.id;
-                    annualData.topList[dataIdx].gameName = game.name;
-                    annualData.topList[dataIdx].coverSrc = getWebImageUrl(game.cover||"");
-                    coverImg.src = annualData.topList[dataIdx].coverSrc;
-                    panel.classList.remove("active");
-                    saveAnnualData();
-                });
-                wrap.appendChild(div);
-            });
-        }
-    });
-}
-
-function bindAnnualExport() {
-    btnAnnualExport = document.getElementById("btn-annual-export");
-    if(!btnAnnualExport) return;
-    btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
-    btnAnnualExport._clickHandler = async ()=>{
-        const snapshotBox = document.getElementById("snapshot-container");
-        const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
-        snapshotBox.innerHTML = annualWrap.innerHTML;
-        snapshotBox.classList.add("export-snapshot");
-        try {
-            const canvas = await html2canvas(snapshotBox, {
-                useCORS:true,
-                scale:2,
-                backgroundColor:"#fff7f9"
-            });
-            const link = document.createElement("a");
-            link.download = "Otome‑Annual‑Report.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        } catch(err) {
-            console.error("年度报告导出失败", err);
-        } finally {
-            snapshotBox.innerHTML = "";
-            snapshotBox.classList.remove("export-snapshot");
-        }
-    };
-    btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
-}
-
-/**
- * 对外暴露初始化函数，**不自己监听DOMContentLoaded**
- * 由index.html 在游戏模板全部就绪之后手动调用
- */
-export function initAnnualModule(){
-    loadAnnualData();
-    bindStatInputs();
-    bindTop3Items();
-    bindAnnualExport();
-}
-
-declare function getWebImageUrl(src:string):string;
