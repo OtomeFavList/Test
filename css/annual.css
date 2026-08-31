@@ -10,9 +10,9 @@
     border: 2px solid #f6a5b8;
     border-radius: 8px;
     background: #fff7f9;
-    color: #b33a3a;
+    color: #b85878;  /* 统一文字 #b85878 */
     font-size: 16px;
-    font-weight: 600;
+    font-weight: normal; /* FavList、年度报告取消加粗 */
     cursor: pointer;
     transition: 0.2s;
 }
@@ -21,228 +21,18 @@
 }
 .mode-switch-wrap .mode-btn.active {
     background: #f6a5b8;
-    color: #ffffff;
+    color: #ffffff; /* 选中后文字白色 */
 }
-
 /* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
 .mode-wrap {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* ✅修复：mode-wrap内部卡片恢复30px间距，还原旧版模块空隙 */
 }
 .mode-wrap.mode-hidden {
     visibility: hidden;
     height: 0;
     overflow: hidden;
     pointer-events: none;
-}
-
-/* ========== 年度报告容器，继承big‑card全部样式 ========== */
-.annual-container.big-card {
-    padding: 24px;
-}
-.annual-main-title {
-    margin-bottom: 24px;
-    font-size: 26px;
-    text-align: center;
-    color: var(--export-subtitle, #b85878);
-    font-weight: bold;
-}
-
-/* ========== 可折叠板块 block‑expand‑wrap ========== */
-.annual-block {
-    margin-bottom: 20px;
-    border: 1px solid #f6a5b8;
-    border-radius: 12px;
-    overflow: hidden;
-}
-.annual-block-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 18px;
-    background: #fff7f9;
-    cursor: pointer;
-}
-.annual-block-head h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #b33a3a;
-    font-weight: bold;
-}
-/* 折叠切换按钮，复用项目悬浮三角按钮样式 */
-.annual-toggle-btn {
-    width: 28px;
-    height: 28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    color: #b33a3a;
-    font-size: 18px;
-    padding: 0;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
-}
-.annual-toggle-btn:hover {
-    background: #992e2e !important;
-    color: #b33a3a !important;
-}
-.annual-toggle-btn::after {
-    content: "▲";
-}
-.annual-block.collapsed .annual-toggle-btn::after {
-    content: "▼";
-}
-.annual-block-body {
-    padding: 18px;
-}
-.annual-block.collapsed .annual-block-body {
-    display: none;
-}
-
-/* ========== 统计行：文本中间穿插输入框 ========== */
-.annual-stat-line {
-    font-size: 17px;
-    line-height: 2.2;
-    color: #333;
-}
-.annual-input {
-    width: 80px;
-    padding: 4px 6px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    font-size: 16px;
-    background: #fcfcfc;
-    margin: 0 4px;
-}
-
-/* ========== TOP3游戏条目 ========== */
-.annual-top-item {
-    margin-bottom: 24px;
-}
-.annual-top-label {
-    font-size: 20px;
-    font-weight: bold;
-    color: #b33a3a;
-    margin-bottom: 10px;
-}
-/* 搜索行：输入框 + 放大镜按钮 */
-.annual-search-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 12px;
-}
-.annual-game-search {
-    flex: 1;
-    padding: 8px 10px;
-    border:1px solid #eee;
-    border-radius: 8px;
-    background:#fcfcfc;
-    font-size:16px;
-}
-/* 放大镜按钮：复用三角按钮的框样式，不用emoji */
-.annual-search-trigger-btn {
-    width: 32px;
-    height: 32px;
-    border:1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    color:#b33a3a;
-    padding:0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition:0.2s;
-}
-.annual-search-trigger-btn:hover {
-    background:#992e2e !important;
-    color:#b33a3a !important;
-}
-.annual-search-trigger-btn svg {
-    width:18px;
-    height:18px;
-}
-
-/* ========== 游戏选择弹窗面板 ========== */
-.annual-game-select-panel {
-    display: none;
-    margin: 8px 0 14px;
-    padding:12px;
-    border:1px solid #f6a5b8;
-    border-radius:10px;
-    background:#ffffff;
-}
-.annual-game-select-panel.active {
-    display:block;
-}
-.annual-panel-search-input {
-    width:100%;
-    padding:8px 10px;
-    border:1px solid #eee;
-    border-radius: 8px;
-    background:#fcfcfc;
-    margin-bottom:10px;
-}
-.annual-game-select-list {
-    max-height:260px;
-    overflow-y:auto;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-    gap:10px;
-}
-
-/* ========== TOP3内容行：左侧文本域，右侧封面 ========== */
-.annual-top-content-row {
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-}
-.annual-top-text-wrap {
-    flex:1;
-    min-width:260px;
-}
-.annual-top-textarea {
-    width:100%;
-    min-height:140px;
-    padding:10px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    font-size:15px;
-    resize:vertical;
-}
-.annual-top-cover-wrap {
-    flex-shrink:0;
-    width:140px;
-}
-.annual-top-cover {
-    width:100%;
-    border-radius:8px;
-    border:1px solid #eee;
-}
-
-/* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
-.snapshot-container.export-snapshot .annual-toggle-btn,
-.snapshot-container.export-snapshot .annual-search-trigger-btn,
-.snapshot-container.export-snapshot .annual-game-select-panel,
-.snapshot-container.export-snapshot #btn-annual-export {
-    display:none !important;
-}
-
-/* ========== 移动端适配 ========== */
-@media (max-width:768px) {
-    .annual-top-content-row {
-        flex-direction:column;
-    }
-    .annual-top-cover-wrap {
-        width:120px;
-    }
-    .annual-game-select-list {
-        grid-template-columns:1fr;
-    }
-    .mode-switch-wrap {
-        flex-wrap:wrap;
-    }
 }
