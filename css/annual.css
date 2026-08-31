@@ -94,16 +94,18 @@
     margin: 8px 0 14px;
 }
 .annual-add-game-btn {
-    padding:8px 18px;
-    border:2px solid #f6a5b8;
-    border-radius:8px;
-    background:#fff7f9;
-    color:#b85878;
-    cursor:pointer;
+    padding:10px 18px;
+    min-height:42px;
     font-size:15px;
+    border: none;
+    border-radius:8px;
+    background:#b33a3a;
+    color:#fff;
+    cursor:pointer;
+    transition:0.2s;
 }
 .annual-add-game-btn:hover {
-    background:#fce8ed;
+    background-color: #992e2e;
 }
 /* ========== 游戏选择弹窗面板（复用FavList交互面板样式） ========== */
 .annual-game-select-panel {
