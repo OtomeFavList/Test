@@ -192,3 +192,15 @@
         font-size:18px;
     }
 }
+
+/* annual.css新增 */
+.hidden-when-empty {
+    display: none !important;
+}
+/* 快照导出模式：不要被 hidden‑when‑empty 拦截，由JS判断是否存在游戏数据再控制 */
+.snapshot-container.export-snapshot .hidden-when-empty.render-visible {
+    display: flex !important;
+}
+.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text {
+    display: block !important;
+}
