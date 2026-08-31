@@ -121,12 +121,15 @@ function bindTop3Items() {
         // 添加游戏按钮：打开/关闭候选面板
         addBtn.removeEventListener("click", addBtn._clickHandler);
         addBtn._clickHandler = ()=>{
+            console.log("【年度报告】点击添加游戏按钮");
             const isOpen = panel.classList.contains("active");
             if(isOpen){
                 panel.classList.remove("active");
+                console.log("关闭面板");
             }else{
                 panel.classList.add("active");
                 panelInput.focus();
+                console.log("打开面板，gameTemplateReady：", gameTemplateReady, "列表长度：", gameTemplateList?.length);
                 renderGameList(listWrap, panelInput.value);
             }
         };
@@ -183,16 +186,16 @@ function bindTop3Items() {
  * 【新增】年度报告导出模块绑定（九、导出）
  */
 function bindAnnualExportPanel() {
-    const btnResetColor = document.getElementById("annual‑btn‑reset‑color");
-    const colorBg = document.getElementById("annual‑color‑bg");
-    const colorTitle = document.getElementById("annual‑color‑title");
-    const colorGamename = document.getElementById("annual‑color‑gamename");
-    const colorCustomtext = document.getElementById("annual‑color‑customtext");
-    const colorBorder = document.getElementById("annual‑color‑border");
-    const sliderFont = document.getElementById("annual‑slider‑custom‑text‑font");
-    const fontValueDisplay = document.getElementById("annual‑custom‑text‑font‑value");
-    const btnExportImage = document.getElementById("annual‑btn‑export‑image");
-    const canvasEl = document.getElementById("annual‑export‑canvas");
+    const btnResetColor = document.getElementById("annual-btn-reset-color");
+    const colorBg = document.getElementById("annual-color-bg");
+    const colorTitle = document.getElementById("annual-color-title");
+    const colorGamename = document.getElementById("annual-color-gamename");
+    const colorCustomtext = document.getElementById("annual-color-customtext");
+    const colorBorder = document.getElementById("annual-color-border");
+    const sliderFont = document.getElementById("annual-slider-custom-text-font");
+    const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
+    const btnExportImage = document.getElementById("annual-btn-export-image");
+    const canvasEl = document.getElementById("annual-export-canvas");
     const snapshotBox = document.getElementById("snapshot-container");
 
     if (!btnResetColor || !colorBg || !colorTitle || !colorGamename || !colorCustomtext || !colorBorder || !sliderFont || !fontValueDisplay || !btnExportImage || !canvasEl || !snapshotBox) {
@@ -242,16 +245,16 @@ function bindAnnualExportPanel() {
         const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
         if (!annualWrap || !snapshotBox) return;
 
-        // 复制年度报告DOM到快照容器，追加 annual‑mode class，隔离FavList变量
+        // 复制年度报告DOM到快照容器，追加 annual-mode class，隔离FavList变量
         snapshotBox.innerHTML = annualWrap.innerHTML;
-        snapshotBox.classList.add("export-snapshot", "annual‑mode");
+        snapshotBox.classList.add("export-snapshot", "annual-mode");
 
         // 将当前面板的配色写入快照容器CSS变量
-        snapshotBox.style.setProperty("--annual‑export‑bg", annualExportConfig.bg);
-        snapshotBox.style.setProperty("--annual‑export‑title", annualExportConfig.title);
-        snapshotBox.style.setProperty("--annual‑export‑gamename", annualExportConfig.gamename);
-        snapshotBox.style.setProperty("--annual‑export‑customtext", annualExportConfig.customtext);
-        snapshotBox.style.setProperty("--annual‑export‑border", annualExportConfig.border);
+        snapshotBox.style.setProperty("--annual-export-bg", annualExportConfig.bg);
+        snapshotBox.style.setProperty("--annual-export-title", annualExportConfig.title);
+        snapshotBox.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+        snapshotBox.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+        snapshotBox.style.setProperty("--annual-export-border", annualExportConfig.border);
         snapshotBox.dataset.annualFontSize = String(annualExportConfig.customTextFontSize);
 
         try {
@@ -261,14 +264,14 @@ function bindAnnualExportPanel() {
                 backgroundColor: annualExportConfig.bg
             });
             const link = document.createElement("a");
-            link.download = "Otome‑Annual‑Report.png";
+            link.download = "Otome-Annual-Report.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         } catch(err) {
             console.error("年度报告【九、导出】导出失败", err);
         } finally {
             snapshotBox.innerHTML = "";
-            snapshotBox.classList.remove("export‑snapshot", "annual‑mode");
+            snapshotBox.classList.remove("export-snapshot", "annual-mode");
         }
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
@@ -276,14 +279,14 @@ function bindAnnualExportPanel() {
 
 // 原有旧导出（过渡保留）
 function bindAnnualExport() {
-    btnAnnualExport = document.getElementById("btn‑annual‑export");
+    btnAnnualExport = document.getElementById("btn-annual-export");
     if(!btnAnnualExport) return;
     btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
     btnAnnualExport._clickHandler = async ()=>{
         const snapshotBox = document.getElementById("snapshot-container");
         const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
         snapshotBox.innerHTML = annualWrap.innerHTML;
-        snapshotBox.classList.add("export‑snapshot");
+        snapshotBox.classList.add("export-snapshot");
         try {
             const canvas = await html2canvas(snapshotBox, {
                 useCORS:true,
@@ -291,14 +294,14 @@ function bindAnnualExport() {
                 backgroundColor:"#fff7f9"
             });
             const link = document.createElement("a");
-            link.download = "Otome‑Annual‑Report.png";
+            link.download = "Otome-Annual-Report.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
         } catch(err) {
             console.error("Annual Report导出失败", err);
         } finally {
             snapshotBox.innerHTML = "";
-            snapshotBox.classList.remove("export‑snapshot");
+            snapshotBox.classList.remove("export-snapshot");
         }
     };
     btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
@@ -312,10 +315,10 @@ export function initAnnualModule(){
     // 只绑定一次：点击页面空白关闭annual游戏面板
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            const activePanel = document.querySelector(".annual‑game‑select‑panel.active");
+            const activePanel = document.querySelector(".annual-game-select-panel.active");
             if(!activePanel) return;
-            const clickAddBtn = e.target.closest(".annual‑add‑game‑btn");
-            const clickPanelInner = e.target.closest(".annual‑game‑select‑panel");
+            const clickAddBtn = e.target.closest(".annual-add-game-btn");
+            const clickPanelInner = e.target.closest(".annual-game-select-panel");
             if(clickAddBtn || clickPanelInner) return;
             activePanel.classList.remove("active");
         });
