@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Otome FavList</title>
     <link rel="stylesheet" href="./css/main.css">
-    <!-- ✅新增年度报告样式 -->
+    <!-- 新增年度报告样式 -->
     <link rel="stylesheet" href="./css/annual.css">
     <!-- html2canvas CDN（第三方库，保留全局引入） -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
     </script>
-    <!-- ✅必须 type="module"，games.js内部使用动态import，不能去掉module属性 -->
+    <!-- 必须 type="module"，games.js内部使用动态import，不能去掉module属性 -->
     <!-- 使用绝对路径 /data/games.js 确保从网站根目录加载 -->
     <script type="module" src="/data/games.js">
     </script>
@@ -38,7 +38,7 @@
                 background: #fff7f9;
                 color: #b85878;
                 font-size: 16px;
-                font-weight: normal;
+                font-weight: bold;
                 cursor: pointer;
                 transition: 0.2s;
             " onmouseover="this.style.background='#fce8ed'" onmouseout="this.style.background='#fff7f9'">
@@ -255,133 +255,131 @@
 
 <!-- ========== 年度报告模式 wrap，默认mode-hidden占位隐藏，不用display:none ========== -->
 <div class="mode-wrap mode-hidden" data-mode="annual">
-    <div class="big-card annual-container">
-        <h1 class="annual-main-title">Otome Annual Report</h1>
+    <!-- 年度报告页面主标题（不在卡片内，和FavList的site‑title同一层级） -->
+    <div class="annual-page-title">
+        <h1>Otome Annual Report</h1>
+    </div>
 
-        <!-- 板块1：统计填写板块 -->
-        <div class="annual-block block-expand-wrap" data-block-id="stats">
-            <div class="annual-block-head">
-                <h3>年度统计信息</h3>
-                <button class="annual-toggle-btn"></button>
+    <!-- 独立卡片1：一、信息统计 -->
+    <div class="big-card annual-card-stats">
+        <h2>一、信息统计</h2>
+        <div class="annual-stat-line">
+            <span></span>
+            <input class="annual-input" data-key="reportYear" type="text">
+            <span>年游玩了</span>
+            <input class="annual-input" data-key="playCount" type="text">
+            <span>部日乙<br>总时数</span>
+            <input class="annual-input" data-key="totalHours" type="text">
+            <span>小时<br>喜欢</span>
+            <input class="annual-input" data-key="likeCharCount" type="text">
+            <span>个人<br>嗑</span>
+            <input class="annual-input" data-key="cpCount" type="text">
+            <span>对CP<br>一共买了</span>
+            <input class="annual-input" data-key="buyCount" type="text">
+            <span>部游戏<br>花费 </span>
+            <input class="annual-input" data-key="costMoney" type="text">
+            <span>元<br>其中，</span>
+            <input class="annual-input" data-key="finished" type="text">
+            <span>部已封盘<br></span>
+            <input class="annual-input" data-key="ongoing" type="text">
+            <span>部正在进行<br></span>
+            <input class="annual-input" data-key="notStart" type="text">
+            <span>部还未开始</span>
+        </div>
+    </div>
+
+    <!-- 独立卡片2：二、ゲームTOP3 -->
+    <div class="big-card annual-card-top3">
+        <h2>二、ゲームTOP3</h2>
+        <!-- NO.1 -->
+        <div class="annual-top-item" data-rank="1">
+            <div class="annual-top-label">NO.1</div>
+            <div class="annual-search-row">
+                <input class="annual-game-search" readonly placeholder="选择游戏">
+                <button class="annual-search-trigger-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
             </div>
-            <div class="annual-block-body">
-                <div class="annual-stat-line">
-                    <span>(</span>
-                    <input class="annual-input" data-key="reportYear" type="text">
-                    <span>)年游玩了</span>
-                    <input class="annual-input" data-key="playCount" type="text">
-                    <span>部日乙<br>总时数</span>
-                    <input class="annual-input" data-key="totalHours" type="text">
-                    <span>小时<br>喜欢</span>
-                    <input class="annual-input" data-key="likeCharCount" type="text">
-                    <span>个人<br>嗑</span>
-                    <input class="annual-input" data-key="cpCount" type="text">
-                    <span>对CP<br>一共买了</span>
-                    <input class="annual-input" data-key="buyCount" type="text">
-                    <span>部游戏<br>花费 </span>
-                    <input class="annual-input" data-key="costMoney" type="text">
-                    <span>元<br>其中，</span>
-                    <input class="annual-input" data-key="finished" type="text">
-                    <span>部已封盘<br></span>
-                    <input class="annual-input" data-key="ongoing" type="text">
-                    <span>部正在进行<br></span>
-                    <input class="annual-input" data-key="notStart" type="text">
-                    <span>部还未开始</span>
+            <div class="annual-game-select-panel">
+                <input class="annual-panel-search-input" placeholder="搜索游戏名称">
+                <div class="annual-game-select-list"></div>
+            </div>
+            <div class="annual-top-content-row">
+                <div class="annual-top-text-wrap">
+                    <div class="game-custom-text-wrap annual‑textarea‑wrap">
+                        <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
+                        <div class="resize‑handle"></div>
+                    </div>
+                </div>
+                <div class="annual-top-cover-wrap">
+                    <img class="annual-top-cover" alt="cover" src="">
                 </div>
             </div>
         </div>
-
-        <!-- 板块2：TOP3游戏，NO.1 NO.2 NO.3 -->
-        <div class="annual-block block-expand-wrap" data-block-id="top3">
-            <div class="annual-block-head">
-                <h3>年度TOP3游戏</h3>
-                <button class="annual-toggle-btn"></button>
+        <!-- NO.2 -->
+        <div class="annual-top-item" data-rank="2">
+            <div class="annual-top-label">NO.2</div>
+            <div class="annual-search-row">
+                <input class="annual-game-search" readonly placeholder="选择游戏">
+                <button class="annual-search-trigger-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
             </div>
-            <div class="annual-block-body">
-                <!-- NO.1 -->
-                <div class="annual-top-item" data-rank="1">
-                    <div class="annual-top-label">NO.1</div>
-                    <div class="annual-search-row">
-                        <input class="annual-game-search" readonly placeholder="选择游戏">
-                        <button class="annual-search-trigger-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="annual-game-select-panel">
-                        <input class="annual-panel-search-input" placeholder="搜索游戏名称">
-                        <div class="annual-game-select-list"></div>
-                    </div>
-                    <div class="annual-top-content-row">
-                        <div class="annual-top-text-wrap">
-                            <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
-                        </div>
-                        <div class="annual-top-cover-wrap">
-                            <img class="annual-top-cover" alt="cover" src="">
-                        </div>
+            <div class="annual-game-select-panel">
+                <input class="annual-panel-search-input" placeholder="搜索游戏名称">
+                <div class="annual-game-select-list"></div>
+            </div>
+            <div class="annual-top-content-row">
+                <div class="annual-top-text-wrap">
+                    <div class="game-custom-text-wrap annual‑textarea‑wrap">
+                        <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
+                        <div class="resize‑handle"></div>
                     </div>
                 </div>
-
-                <!-- NO.2 -->
-                <div class="annual-top-item" data-rank="2">
-                    <div class="annual-top-label">NO.2</div>
-                    <div class="annual-search-row">
-                        <input class="annual-game-search" readonly placeholder="选择游戏">
-                        <button class="annual-search-trigger-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="annual-game-select-panel">
-                        <input class="annual-panel-search-input" placeholder="搜索游戏名称">
-                        <div class="annual-game-select-list"></div>
-                    </div>
-                    <div class="annual-top-content-row">
-                        <div class="annual-top-text-wrap">
-                            <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
-                        </div>
-                        <div class="annual-top-cover-wrap">
-                            <img class="annual-top-cover" alt="cover" src="">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NO.3 -->
-                <div class="annual-top-item" data-rank="3">
-                    <div class="annual-top-label">NO.3</div>
-                    <div class="annual-search-row">
-                        <input class="annual-game-search" readonly placeholder="选择游戏">
-                        <button class="annual-search-trigger-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="annual-game-select-panel">
-                        <input class="annual-panel-search-input" placeholder="搜索游戏名称">
-                        <div class="annual-game-select-list"></div>
-                    </div>
-                    <div class="annual-top-content-row">
-                        <div class="annual-top-text-wrap">
-                            <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
-                        </div>
-                        <div class="annual-top-cover-wrap">
-                            <img class="annual-top-cover" alt="cover" src="">
-                        </div>
-                    </div>
+                <div class="annual-top-cover-wrap">
+                    <img class="annual-top-cover" alt="cover" src="">
                 </div>
             </div>
         </div>
-
-        <!-- 导出按钮，后续可以继续复制annual‑block增加第4‑8个板块 -->
-        <div class="center-btn-block export-btn-wrap" style="margin-top:24px;">
-            <button id="btn-annual-export">生成并导出年度报告图片</button>
+        <!-- NO.3 -->
+        <div class="annual-top-item" data-rank="3">
+            <div class="annual-top-label">NO.3</div>
+            <div class="annual-search-row">
+                <input class="annual-game-search" readonly placeholder="选择游戏">
+                <button class="annual-search-trigger-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="annual-game-select-panel">
+                <input class="annual-panel-search-input" placeholder="搜索游戏名称">
+                <div class="annual-game-select-list"></div>
+            </div>
+            <div class="annual-top-content-row">
+                <div class="annual-top-text-wrap">
+                    <div class="game-custom-text-wrap annual‑textarea‑wrap">
+                        <textarea class="annual-top-textarea" placeholder="填写你的感想"></textarea>
+                        <div class="resize‑handle"></div>
+                    </div>
+                </div>
+                <div class="annual-top-cover-wrap">
+                    <img class="annual-top-cover" alt="cover" src="">
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- 导出按钮 -->
+    <div class="center-btn-block export-btn-wrap" style="margin-top:24px;">
+        <button id="btn-annual-export">生成并导出年度报告图片</button>
     </div>
 </div>
 <!-- ========== 年度报告模式 wrap 结束 ========== -->
