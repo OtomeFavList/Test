@@ -81,9 +81,6 @@
     margin: 8px 0 12px;
 }
 /* ========== TOP3游戏条目 ========== */
-.annual-top-item {
-    margin-bottom: 24px;
-}
 /* 【注释原有放大镜搜索行，不再渲染】 */
 .annual-search-row {
     display: none !important;
