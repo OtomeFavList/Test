@@ -14,10 +14,25 @@
     <!-- 使用绝对路径 /data/games.js 确保从网站根目录加载 -->
     <script type="module" src="/data/games.js">
     </script>
-    <!-- ==========【新增样式】弹窗打开锁定页面滚动 ========== -->
+    <!-- ==========【新增样式】弹窗锁定 + 年度报告标题切换 ========== -->
     <style>
         body.modal-lock {
             overflow: hidden;
+        }
+        /* 年度报告模式下隐藏副标题 */
+        .site-title.annual-active .title-sub-cn,
+        .site-title.annual-active .sub-desc {
+            display: none;
+        }
+        /* NO.1/NO.2/NO.3 固定颜色 #b85878 */
+        .annual-top-label {
+            color: #b85878 !important;
+        }
+        /* 移动端标题字号调整（保留原样） */
+        @media (max-width: 768px) {
+            .site-title h1 {
+                font-size: 30px;
+            }
         }
     </style>
 </head>
@@ -255,10 +270,7 @@
 
 <!-- ========== 年度报告模式 wrap，默认mode-hidden占位隐藏，不用display:none ========== -->
 <div class="mode-wrap mode-hidden" data-mode="annual">
-    <!-- 年度报告页面主标题（不在卡片内，和FavList的site‑title同一层级） -->
-    <div class="annual-page-title">
-        <h1>Otome Annual Report</h1>
-    </div>
+    <!-- 年度报告页面主标题已移除，改为动态替换 .site-title h1 -->
 
     <!-- 独立卡片1：一、数据统计 -->
     <div class="big-card annual-card-stats">
@@ -755,6 +767,12 @@ z-index: -999;
 (function(){
     const btns = document.querySelectorAll('.mode-switch-wrap .mode-btn');
     const wraps = document.querySelectorAll('.mode-wrap');
+    const siteTitleDom = document.querySelector('.site-title h1');
+    const siteTitleWrap = document.querySelector('.site-title');
+    // 保存原始标题
+    const originalTitleText = siteTitleDom.innerText;
+    const annualTitleText = "Otome Annual Report";
+
     btns.forEach(btn=>{
         btn.addEventListener('click',()=>{
             const targetMode = btn.dataset.mode;
@@ -769,6 +787,15 @@ z-index: -999;
                     w.classList.add('mode-hidden');
                 }
             })
+
+            // -------- 标题切换逻辑 --------
+            if(targetMode === "annual"){
+                siteTitleDom.innerText = annualTitleText;
+                siteTitleWrap.classList.add("annual-active");
+            }else{
+                siteTitleDom.innerText = originalTitleText;
+                siteTitleWrap.classList.remove("annual-active");
+            }
         })
     })
 })();
