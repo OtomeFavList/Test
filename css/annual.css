@@ -1,223 +1,224 @@
-/* ========== 模式切换按钮组（顶部，site‑title下方） ========== */
-.mode-switch-wrap {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin: 16px 0 24px;
-}
-.mode-switch-wrap .mode-btn {
-    padding: 10px 22px;
-    border: 2px solid #f6a5b8;
-    border-radius: 8px;
-    background: #fff7f9;
-    color: #b85878;
-    font-size: 16px;
-    font-weight: normal;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.mode-switch-wrap .mode-btn:hover {
-    background: #fce8ed;
-}
-.mode-switch-wrap .mode-btn.active {
-    background: #f6a5b8;
-    color: #ffffff;
-}
-/* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
-.mode-wrap {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-}
-.mode-wrap.mode-hidden {
-    visibility: hidden;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-/* ========== site-title 年度报告覆盖样式 ========== */
-.site-title.annual-active h1 {
-    font-size: 42px;
-    color: #b33a3a;
-}
-.site-title.annual-active .title-sub-cn,
-.site-title.annual-active .sub-desc {
-    display: none !important;
-}
-/* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
-.annual-page-title {
-    display: none;
-}
-/* ========== 统计行：整段居中、字号16px，颜色变量控制 ========== */
-.annual-stat-line {
-    font-size: 16px;
-    line-height: 2.2;
-    text-align: center;
-    color: var(--export-baseinfotext, #c98fac);
-}
-.annual-input {
-    width: 80px;
-    padding: 4px 6px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    font-size: 16px;
-    background: #fcfcfc;
-    margin: 0 4px;
-    color:#000000;
-}
-/* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
-.annual-top-label {
-    font-size: 22px;
-    font-weight: bold;
-    color: #b85878;
-    margin-bottom: 10px;
-}
-/* 游戏名称显示：黑色22px，自动换行 */
-.annual-game-name-text {
-    font-size: 22px;
-    color: #000000;
-    word-break: break-all;
-    margin: 8px 0 12px;
-}
-/* ========== TOP3游戏条目 ========== */
-.annual-top-item {
-    margin-bottom: 24px;
-}
-/* 【注释原有放大镜搜索行，不再渲染】 */
-.annual-search-row {
-    display: none !important;
-}
-/* +添加游戏按钮，居中 */
-.annual-add-game-btn-wrap {
-    text-align: center;
-    margin: 8px 0 14px;
-}
-.annual-add-game-btn {
-    padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
-    border-radius:8px;
-    background:#b33a3a;
-    color:#fff;
-    cursor:pointer;
-    transition:0.2s;
-}
-.annual-add-game-btn:hover {
-    background-color: #992e2e;
-}
-/* ========== 游戏选择弹窗面板（复刻FavList交互面板样式） ========== */
-.annual-top-item {
-    margin-bottom: 24px;
-    position: relative; /* 给子面板absolute做定位锚点，必加 */
-}
+/**
+ * 年度报告模块 annual.js
+ * 存储key: "annual-report-data"，与喜好表数据隔离
+ */
+import { renderGameSelectItem, getWebImageUrl } from './main.js';
 
-.annual-game-select-panel {
-    position: absolute;
-    z-index: 100;
-    top: 100%;
-    left: 0;
-    margin-top: 6px;
-    padding:16px;
-    border-radius:12px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    background:#ffffff;
-    border: none;
-    max-height: 420px;
-    overflow: hidden;
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-    box-sizing: border-box;
-}
-.annual-game-select-panel.active {
-    display: flex;
-}
+const ANNUAL_STORE_KEY = "annual-report-data";
 
-.annual-panel-search-input {
-    width:100%;
-    padding:10px 12px;
-    border:1px solid #ddd;
-    border-radius: 8px;
-    background:#fcfcfc;
-    box-sizing: border-box;
-}
-.annual-game-select-list {
-    flex: 1;
-    overflow-y:auto;
-    display: flex;
-    flex-direction: column;
-    gap:8px;
-}
-/* ========== TOP3内容行：左侧封面，右侧文本域 ========== */
-.annual-top-content-row {
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-}
-.annual-top-cover-wrap {
-    flex-shrink:0;
-    width:140px;
-}
-.annual-top-cover {
-    width:100%;
-    height:auto;
-    border-radius:8px;
-    border:1px solid #eee;
-}
-.annual-top-text-wrap {
-    flex:1;
-    min-width:260px;
-}
-.annual-top-textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    resize: vertical;
-}
-/* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
-.snapshot-container.export-snapshot .annual-add-game-btn,
-.snapshot-container.export-snapshot .annual-game-select-panel,
-.snapshot-container.export-snapshot #btn-annual-export {
-    display:none !important;
-}
-/* ========== 移动端适配 ========== */
-@media (max-width:768px) {
-    .annual-top-content-row {
-        flex-direction:column;
-    }
-    .annual-top-cover-wrap {
-        width:120px;
-    }
-    .annual-game-select-list {
-        grid-template-columns:1fr;
-    }
-    .mode-switch-wrap {
-        flex-wrap:wrap;
-    }
-    .site-title.annual-active h1 {
-        font-size:30px;
-    }
-    .annual-game-name-text {
-        font-size:18px;
+const getDefaultAnnualData = () => ({
+    reportYear: "",
+    playCount: "",
+    totalHours: "",
+    likeCharCount: "",
+    cpCount: "",
+    buyCount: "",
+    costMoney: "",
+    finished: "",
+    ongoing: "",
+    notStart: "",
+    topList: [
+        { gameId: "", gameName: "", coverSrc: "", text: "" },
+        { gameId: "", gameName: "", coverSrc: "", text: "" },
+        { gameId: "", gameName: "", coverSrc: "", text: "" }
+    ]
+});
+
+let annualData = getDefaultAnnualData();
+let btnAnnualExport;
+
+/**
+ * 更新单个TOP条目UI显隐状态
+ * @param {HTMLElement} itemDom annual-top-item
+ * @param {Object} dataItem topList单条数据
+ */
+function refreshTopItemUi(itemDom, dataItem) {
+    const nameEl = itemDom.querySelector(".annual-game-name-text");
+    const contentRow = itemDom.querySelector(".annual-top-content-row");
+    const addBtn = itemDom.querySelector(".annual-add-game-btn");
+    const hasGame = !!dataItem.gameId;
+
+    if (hasGame) {
+        nameEl.classList.remove("hidden-when-empty");
+        contentRow.classList.remove("hidden-when-empty");
+        nameEl.classList.add("render-visible");
+        contentRow.classList.add("render-visible");
+        addBtn.classList.add("hidden-when-empty");
+    } else {
+        nameEl.classList.add("hidden-when-empty");
+        contentRow.classList.add("hidden-when-empty");
+        nameEl.classList.remove("render-visible");
+        contentRow.classList.remove("render-visible");
+        addBtn.classList.remove("hidden-when-empty");
     }
 }
 
-/* annual.css新增 */
-.hidden-when-empty {
-    display: none !important;
+function loadAnnualData() {
+    const raw = localStorage.getItem(ANNUAL_STORE_KEY);
+    if(raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            annualData = Object.assign(getDefaultAnnualData(), parsed);
+        } catch(e) {
+            annualData = getDefaultAnnualData();
+        }
+    }
 }
-/* 快照导出模式：不要被 hidden‑when‑empty 拦截，由JS判断是否存在游戏数据再控制 */
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible {
-    display: flex !important;
+
+function saveAnnualData() {
+    localStorage.setItem(ANNUAL_STORE_KEY, JSON.stringify(annualData));
 }
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text {
-    display: block !important;
+
+function bindStatInputs() {
+    const statInputs = document.querySelectorAll(".annual-input");
+    statInputs.forEach(input=>{
+        const key = input.dataset.key;
+        input.value = annualData[key] ?? "";
+        input.addEventListener("input", ()=>{
+            annualData[key] = input.value;
+            saveAnnualData();
+        });
+    });
+}
+
+function bindTop3Items() {
+    const topItems = document.querySelectorAll(".annual-top-item");
+    topItems.forEach((item, idx)=>{
+        const rank = Number(item.dataset.rank);
+        const dataIdx = rank - 1;
+        const dataItem = annualData.topList[dataIdx];
+
+        const addBtn = item.querySelector(".annual-add-game-btn");
+        const panel = item.querySelector(".annual-game-select-panel");
+        const panelInput = item.querySelector(".annual-panel-search-input");
+        const listWrap = item.querySelector(".annual-game-select-list");
+        const nameTextEl = item.querySelector(".annual-game-name-text");
+        const textarea = item.querySelector(".annual-top-textarea");
+        const coverImg = item.querySelector(".annual-top-cover");
+
+        // 回填数据
+        nameTextEl.textContent = dataItem.gameName ?? "";
+        textarea.value = dataItem.text ?? "";
+        if(dataItem.coverSrc){
+            coverImg.src = getWebImageUrl(dataItem.coverSrc);
+        }
+        refreshTopItemUi(item, dataItem);
+
+        // 添加游戏按钮：打开/关闭候选面板
+        addBtn.removeEventListener("click", addBtn._clickHandler);
+        addBtn._clickHandler = ()=>{
+            const isOpen = panel.classList.contains("active");
+            if(isOpen){
+                // 再次点击按钮 → 关闭面板
+                panel.classList.remove("active");
+            }else{
+                panel.classList.add("active");
+                panelInput.focus();
+                renderGameList(listWrap, panelInput.value);
+            }
+        };
+        addBtn.addEventListener("click", addBtn._clickHandler);
+
+        // 搜索框输入过滤
+        panelInput.removeEventListener("input", panelInput._inputHandler);
+        panelInput._inputHandler = ()=>{
+            renderGameList(listWrap, panelInput.value);
+        };
+        panelInput.addEventListener("input", panelInput._inputHandler);
+
+        // 自定义文本框双向绑定
+        textarea.removeEventListener("input", textarea._inputHandler);
+        textarea._inputHandler = ()=>{
+            annualData.topList[dataIdx].text = textarea.value;
+            saveAnnualData();
+        };
+        textarea.addEventListener("input", textarea._inputHandler);
+
+        // 渲染候选游戏列表，复用main.js renderGameSelectItem
+        function renderGameList(wrap, keyword) {
+            wrap.innerHTML = "";
+            // =========【修复】模板未就绪时输出提示文本，不再直接return，方便排查问题 =========
+            if(!window.gameTemplateList || !window.gameTemplateReady) {
+                wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
+                return;
+            }
+
+            const kw = (keyword ?? "").toLowerCase().trim();
+            const filtered = window.gameTemplateList.filter(g=>{
+                if(!kw) return true;
+                return String(g.name).toLowerCase().includes(kw);
+            });
+
+            filtered.forEach((game, index)=>{
+                const div = document.createElement("div");
+                div.className = "game-option-item";
+                div.innerHTML = renderGameSelectItem(game, index);
+                div.addEventListener("click", ()=>{
+                    // 赋值数据
+                    nameTextEl.textContent = game.name;
+                    annualData.topList[dataIdx].gameId = game.id;
+                    annualData.topList[dataIdx].gameName = game.name;
+                    annualData.topList[dataIdx].coverSrc = game.cover ?? "";
+                    coverImg.src = getWebImageUrl(annualData.topList[dataIdx].coverSrc);
+                    refreshTopItemUi(item, annualData.topList[dataIdx]);
+                    panel.classList.remove("active");
+                    saveAnnualData();
+                });
+                wrap.appendChild(div);
+            });
+        }
+    });
+}
+
+function bindAnnualExport() {
+    btnAnnualExport = document.getElementById("btn-annual-export");
+    if(!btnAnnualExport) return;
+    btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
+    btnAnnualExport._clickHandler = async ()=>{
+        const snapshotBox = document.getElementById("snapshot-container");
+        const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
+        snapshotBox.innerHTML = annualWrap.innerHTML;
+        snapshotBox.classList.add("export-snapshot");
+        try {
+            const canvas = await html2canvas(snapshotBox, {
+                useCORS:true,
+                scale:2,
+                backgroundColor:"#fff7f9"
+            });
+            const link = document.createElement("a");
+            link.download = "Otome-Annual-Report.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        } catch(err) {
+            console.error("年度报告导出失败", err);
+        } finally {
+            snapshotBox.innerHTML = "";
+            snapshotBox.classList.remove("export-snapshot");
+        }
+    };
+    btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
+}
+
+/**
+ * 对外暴露初始化函数，**不自己监听DOMContentLoaded**
+ * 由index.html 在游戏模板全部就绪之后手动调用
+ */
+export function initAnnualModule(){
+    // 只绑定一次：点击页面空白关闭annual游戏面板
+    if(!window._annualPanelClickBound){
+        document.addEventListener("click",(e)=>{
+            const activePanel = document.querySelector(".annual-game-select-panel.active");
+            if(!activePanel) return;
+            const clickAddBtn = e.target.closest(".annual-add-game-btn");
+            const clickPanelInner = e.target.closest(".annual-game-select-panel");
+            if(clickAddBtn || clickPanelInner) return;
+            activePanel.classList.remove("active");
+        });
+        window._annualPanelClickBound = true;
+    }
+
+    loadAnnualData();
+    bindStatInputs();
+    bindTop3Items();
+    bindAnnualExport();
 }
