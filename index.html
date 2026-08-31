@@ -18,6 +18,8 @@
             overflow: hidden;
         }
     </style>
+    <!-- ========== 引入年度报告专属样式 ========== -->
+    <link rel="stylesheet" href="./css/annual.css">
 </head>
 <body>
 
@@ -45,186 +47,330 @@
     </div>
 </div>
 
-<div class="big-card" id="card-setting">
-    <h2>一、设置</h2>
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="global-sub-char">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">全局显示次要角色</span>
-            <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+<!-- ========== 模式切换按钮组 ========== -->
+<div class="mode-switch-wrap">
+    <button class="mode-btn active" data-mode="favlist">喜好表</button>
+    <button class="mode-btn" data-mode="annual">Otome Annual Report 年度报告</button>
+</div>
+
+<!-- ========== 模式容器：原有喜好表（A模式） ========== -->
+<div class="mode-wrap" data-mode="favlist">
+    <!-- 原有全部内容：从card-setting到about-block -->
+    <div class="big-card" id="card-setting">
+        <h2>一、设置</h2>
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-sub-char">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示次要角色</span>
+                <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+            </div>
+        </div>
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-hide-char">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示隐藏图片、角色</span>
+                <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+            </div>
+        </div>
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-fd-game">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示续作/FD图片、角色</span>
+                <p class="switch-desc">开启后显示所有游戏续作、FD专属图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+            </div>
         </div>
     </div>
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="global-hide-char">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">全局显示隐藏图片、角色</span>
-            <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+
+    <div class="big-card" id="card-base">
+        <h2>二、基础信息</h2>
+        <div class="form-row-double">
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">昵称</label>
+                <input type="text" id="input-nick" placeholder="填写你的昵称">
+            </div>
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">游玩总数</label>
+                <input type="number" id="input-count" placeholder="数字" min="0">
+            </div>
+        </div>
+        <div class="form-row-double">
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">入坑时间</label>
+                <input type="text" id="input-story" placeholder="例如：2020年">
+            </div>
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">入坑作品</label>
+                <input type="text" id="input-firstgame" placeholder="第一款日乙游戏">
+            </div>
         </div>
     </div>
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="global-fd-game">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">全局显示续作/FD图片、角色</span>
-            <p class="switch-desc">开启后显示所有游戏续作、FD专属图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+
+    <div class="big-card" id="card-game">
+        <h2>三、游戏列表</h2>
+        <div class="center-btn-block">
+            <button id="btn-add-game">+ 添加游戏</button>
         </div>
+        <!-- 搜索面板：默认隐藏，JS通过 .active 控制显示 -->
+        <div class="game-search-box" id="search-panel">
+            <input type="text" id="game-search-input" placeholder="搜索游戏名称">
+            <div class="filter-group">
+                <!-- 筛选顺序：编剧 → 画师 → 发售年份 → 开发厂商 → 汉化厂商 -->
+                <select id="filter-writer">
+                    <option value="">筛选编剧</option>
+                </select>
+                <select id="filter-art">
+                    <option value="">筛选画师</option>
+                </select>
+                <select id="filter-year">
+                    <option value="">筛选发售年份</option>
+                </select>
+                <select id="filter-publisher">
+                    <option value="">筛选开发厂商</option>
+                </select>
+                <select id="filter-cn">
+                    <option value="">筛选汉化厂商</option>
+                </select>
+            </div>
+            <div class="game-list-select" id="game-select-list"></div>
+        </div>
+
+        <div id="added-game-container"></div>
+    </div>
+
+    <div class="big-card" id="card-export">
+        <h2>四、导出</h2>
+        <!-- ==========【新增】导出折叠内容开关 ========== -->
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="export-fold-content">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">导出折叠内容</span>
+                <p class="switch-desc">开启后生成并导出的图片会包含折叠的游戏卡片，关闭则只生成并导出展开的游戏卡片。</p>
+            </div>
+        </div>
+        <!-- ==========【新增】导出隐藏/续作/FD角色名开关 ========== -->
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="export-show-hidden-fd-name">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">导出隐藏/续作/FD角色名</span>
+                <p class="switch-desc">开启后生成并导出的图片中会显示隐藏/续作/FD的角色名，关闭则只显示角色图片。适合搭配剪影图使用，形成剧透防护。</p>
+            </div>
+        </div>
+        <!-- 恢复默认设置按钮（导出折叠内容下方、导出背景色上方） -->
+        <div class="center-btn-block left-align-btn">
+            <button id="btn-reset-color">恢复默认设置</button>
+        </div>
+
+        <!-- 颜色选择区域 -->
+        <div class="color-set-row">
+            <div class="color-item">
+                <label class="text-light-pink">导出背景色</label>
+                <input type="color" id="color-bg" value="#fff7f9">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">标题文字色</label>
+                <input type="color" id="color-title" value="#b33a3a">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">小标题文字色</label>
+                <input type="color" id="color-subtitle" value="#b85878">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">基础信息色</label>
+                <input type="color" id="color-baseinfotext" value="#c98fac">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">游戏名文字色</label>
+                <input type="color" id="color-gamename" value="#000000">
+            </div>
+            <!-- 新增：自定义文本色 -->
+            <div class="color-item">
+                <label class="text-light-pink">自定义文本色</label>
+                <input type="color" id="color-customtext" value="#c98fac">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">卡片边框色</label>
+                <input type="color" id="color-border" value="#f6a5b8">
+            </div>
+        </div>
+
+        <div class="font-size-set-row">
+            <label for="slider-custom-text-font">调节自定义文本字号</label>
+            <div id="custom-text-font-value" class="font-size-value-display">16px</div>
+            <input id="slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
+        </div>
+        
+        <!-- 导出尺寸选项 -->
+        <div class="size-select">
+            <label class="text-light-pink">导出尺寸：</label>
+            <!-- 固定尺寸（启用分页） -->
+            <label><input type="radio" name="export-size" value="640,853">640×853</label>
+            <label><input type="radio" name="export-size" value="810,1080">810×1080</label>
+            <label><input type="radio" name="export-size" value="1080,1440">1080×1440</label>
+            <label><input type="radio" name="export-size" value="640,640">640×640</label>
+            <label><input type="radio" name="export-size" value="810,810">810×810</label>
+            <label><input type="radio" name="export-size" value="1080,1080">1080×1080</label>
+            <!-- 长图模式 -->
+            <label><input type="radio" name="export-size" value="long-640">640长图</label>
+            <label><input type="radio" name="export-size" value="long-810" checked>810长图</label>
+            <label><input type="radio" name="export-size" value="long-1080">1080长图</label>
+        </div>
+
+        <div class="center-btn-block export-btn-wrap">
+            <button id="btn-export">生成并导出图片</button>
+            <p class="switch-desc">图片源文件存储于海外节点，使用🔮可显著提高生成效率</p>
+        </div>
+
+        <canvas id="export-canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="about-block">
+        <h2>About</h2>
+        <p>由于开发者未接触所有游戏，部分游戏可能缺少隐藏角色。</p>
+        <p>如果发现角色遗漏（若涉及剧透烦请在邮件标题添加预警）、内容错误、功能异常，<br>
+            或有希望新增的作品，欢迎通过邮箱联系。</p>
+        <p class="email-text">Email：<a href="mailto:otomefavlist@163.com">otomefavlist@163.com</a></p>
     </div>
 </div>
 
-<div class="big-card" id="card-base">
-    <h2>二、基础信息</h2>
-    <div class="form-row-double">
-        <div class="form-row">
-            <label class="text-light-pink base-info-item">昵称</label>
-            <input type="text" id="input-nick" placeholder="填写你的昵称">
-        </div>
-        <div class="form-row">
-            <label class="text-light-pink base-info-item">游玩总数</label>
-            <input type="number" id="input-count" placeholder="数字" min="0">
-        </div>
-    </div>
-    <div class="form-row-double">
-        <div class="form-row">
-            <label class="text-light-pink base-info-item">入坑时间</label>
-            <input type="text" id="input-story" placeholder="例如：2020年">
-        </div>
-        <div class="form-row">
-            <label class="text-light-pink base-info-item">入坑作品</label>
-            <input type="text" id="input-firstgame" placeholder="第一款日乙游戏">
-        </div>
-    </div>
-</div>
+<!-- ========== B模式：年度报告【默认占位隐藏，不display:none】 ========== -->
+<div class="mode-wrap mode-hidden" data-mode="annual">
+    <div class="annual-container big-card">
+        <h2 class="annual-main-title">Otome Annual Report</h2>
 
-<div class="big-card" id="card-game">
-    <h2>三、游戏列表</h2>
-    <div class="center-btn-block">
-        <button id="btn-add-game">+ 添加游戏</button>
-    </div>
-    <!-- 搜索面板：默认隐藏，JS通过 .active 控制显示 -->
-    <div class="game-search-box" id="search-panel">
-        <input type="text" id="game-search-input" placeholder="搜索游戏名称">
-        <div class="filter-group">
-            <!-- 筛选顺序：编剧 → 画师 → 发售年份 → 开发厂商 → 汉化厂商 -->
-            <select id="filter-writer">
-                <option value="">筛选编剧</option>
-            </select>
-            <select id="filter-art">
-                <option value="">筛选画师</option>
-            </select>
-            <select id="filter-year">
-                <option value="">筛选发售年份</option>
-            </select>
-            <select id="filter-publisher">
-                <option value="">筛选开发厂商</option>
-            </select>
-            <select id="filter-cn">
-                <option value="">筛选汉化厂商</option>
-            </select>
+        <!-- 板块1：填写统计内容 -->
+        <div class="annual-block block-expand-wrap" data-block-id="stats">
+            <div class="annual-block-head">
+                <h3>年度统计</h3>
+                <button class="annual-toggle-btn"></button>
+            </div>
+            <div class="annual-block-body">
+                <div class="annual-stat-line">
+                    <span>(</span>
+                    <input class="annual-input" type="text" data-key="reportYear" placeholder="年份">
+                    <span>)年游玩了</span>
+                    <input class="annual-input" type="number" data-key="playCount" placeholder="数字">
+                    <span>部日乙，总时数</span>
+                    <input class="annual-input" type="number" data-key="totalHours" placeholder="小时">
+                    <span>小时，喜欢</span>
+                    <input class="annual-input" type="number" data-key="likeCharCount" placeholder="人数">
+                    <span>人，嗑</span>
+                    <input class="annual-input" type="number" data-key="cpCount" placeholder="CP对数">
+                    <span>对CP。</span>
+                </div>
+                <div class="annual-stat-line">
+                    <span>一共买了</span>
+                    <input class="annual-input" type="number" data-key="buyCount" placeholder="部数">
+                    <span>部游戏，花费</span>
+                    <input class="annual-input" type="number" data-key="costMoney" placeholder="元">
+                    <span>元。</span>
+                </div>
+                <div class="annual-stat-line">
+                    <span>其中，</span>
+                    <input class="annual-input" type="number" data-key="finished" placeholder="部数">
+                    <span>部已封盘，</span>
+                    <input class="annual-input" type="number" data-key="ongoing" placeholder="部数">
+                    <span>部正在进行，</span>
+                    <input class="annual-input" type="number" data-key="notStart" placeholder="部数">
+                    <span>部还未开始。</span>
+                </div>
+            </div>
         </div>
-        <div class="game-list-select" id="game-select-list"></div>
-    </div>
 
-    <div id="added-game-container"></div>
-</div>
+        <!-- 板块2 NO.1 NO.2 NO.3 年度游戏榜单 -->
+        <div class="annual-block block-expand-wrap" data-block-id="top3">
+            <div class="annual-block-head">
+                <h3>年度TOP3游戏</h3>
+                <button class="annual-toggle-btn"></button>
+            </div>
+            <div class="annual-block-body">
+                <!-- NO.1 -->
+                <div class="annual-top-item">
+                    <div class="annual-top-label">NO.1</div>
+                    <div class="annual-search-row">
+                        <input class="annual-game-search" type="text" readonly placeholder="点击放大镜选择游戏" data-rank="1">
+                        <button class="annual-search-trigger-btn"></button>
+                    </div>
+                    <!-- 游戏选择弹窗面板，默认隐藏 -->
+                    <div class="annual-game-select-panel" data-rank="1">
+                        <input class="annual-panel-search-input" placeholder="搜索游戏名称">
+                        <div class="annual-game-select-list"></div>
+                    </div>
+                    <div class="annual-top-content-row">
+                        <div class="annual-top-text-wrap">
+                            <textarea class="annual-top-textarea" data-rank="1" placeholder="填写个人感想"></textarea>
+                        </div>
+                        <div class="annual-top-cover-wrap">
+                            <img class="annual-top-cover" data-rank="1" src="" alt="">
+                        </div>
+                    </div>
+                </div>
 
-<div class="big-card" id="card-export">
-    <h2>四、导出</h2>
-    <!-- ==========【新增】导出折叠内容开关 ========== -->
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="export-fold-content">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">导出折叠内容</span>
-            <p class="switch-desc">开启后生成并导出的图片会包含折叠的游戏卡片，关闭则只生成并导出展开的游戏卡片。</p>
-        </div>
-    </div>
-    <!-- ==========【新增】导出隐藏/续作/FD角色名开关 ========== -->
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="export-show-hidden-fd-name">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">导出隐藏/续作/FD角色名</span>
-            <p class="switch-desc">开启后生成并导出的图片中会显示隐藏/续作/FD的角色名，关闭则只显示角色图片。适合搭配剪影图使用，形成剧透防护。</p>
-        </div>
-    </div>
-    <!-- 恢复默认设置按钮（导出折叠内容下方、导出背景色上方） -->
-    <div class="center-btn-block left-align-btn">
-        <button id="btn-reset-color">恢复默认设置</button>
-    </div>
+                <!-- NO.2 -->
+                <div class="annual-top-item">
+                    <div class="annual-top-label">NO.2</div>
+                    <div class="annual-search-row">
+                        <input class="annual-game-search" type="text" readonly placeholder="点击放大镜选择游戏" data-rank="2">
+                        <button class="annual-search-trigger-btn"></button>
+                    </div>
+                    <div class="annual-game-select-panel" data-rank="2">
+                        <input class="annual-panel-search-input" placeholder="搜索游戏名称">
+                        <div class="annual-game-select-list"></div>
+                    </div>
+                    <div class="annual-top-content-row">
+                        <div class="annual-top-text-wrap">
+                            <textarea class="annual-top-textarea" data-rank="2" placeholder="填写个人感想"></textarea>
+                        </div>
+                        <div class="annual-top-cover-wrap">
+                            <img class="annual-top-cover" data-rank="2" src="" alt="">
+                        </div>
+                    </div>
+                </div>
 
-    <!-- 颜色选择区域 -->
-            <div class="color-set-row">
-        <div class="color-item">
-            <label class="text-light-pink">导出背景色</label>
-            <input type="color" id="color-bg" value="#fff7f9">
+                <!-- NO.3 -->
+                <div class="annual-top-item">
+                    <div class="annual-top-label">NO.3</div>
+                    <div class="annual-search-row">
+                        <input class="annual-game-search" type="text" readonly placeholder="点击放大镜选择游戏" data-rank="3">
+                        <button class="annual-search-trigger-btn"></button>
+                    </div>
+                    <div class="annual-game-select-panel" data-rank="3">
+                        <input class="annual-panel-search-input" placeholder="搜索游戏名称">
+                        <div class="annual-game-select-list"></div>
+                    </div>
+                    <div class="annual-top-content-row">
+                        <div class="annual-top-text-wrap">
+                            <textarea class="annual-top-textarea" data-rank="3" placeholder="填写个人感想"></textarea>
+                        </div>
+                        <div class="annual-top-cover-wrap">
+                            <img class="annual-top-cover" data-rank="3" src="" alt="">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="color-item">
-            <label class="text-light-pink">标题文字色</label>
-            <input type="color" id="color-title" value="#b33a3a">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">小标题文字色</label>
-            <input type="color" id="color-subtitle" value="#b85878">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">基础信息色</label>
-            <input type="color" id="color-baseinfotext" value="#c98fac">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">游戏名文字色</label>
-            <input type="color" id="color-gamename" value="#000000">
-        </div>
-        <!-- 新增：自定义文本色 -->
-        <div class="color-item">
-            <label class="text-light-pink">自定义文本色</label>
-            <input type="color" id="color-customtext" value="#c98fac">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">卡片边框色</label>
-            <input type="color" id="color-border" value="#f6a5b8">
-        </div>
-    </div>
 
-    <div class="font-size-set-row">
-        <label for="slider-custom-text-font">调节自定义文本字号</label>
-        <div id="custom-text-font-value" class="font-size-value-display">16px</div>
-        <input id="slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
-    </div>
-    
-    <!-- 导出尺寸选项 -->
-    <div class="size-select">
-        <label class="text-light-pink">导出尺寸：</label>
-        <!-- 固定尺寸（启用分页） -->
-        <label><input type="radio" name="export-size" value="640,853">640×853</label>
-        <label><input type="radio" name="export-size" value="810,1080">810×1080</label>
-        <label><input type="radio" name="export-size" value="1080,1440">1080×1440</label>
-        <label><input type="radio" name="export-size" value="640,640">640×640</label>
-        <label><input type="radio" name="export-size" value="810,810">810×810</label>
-        <label><input type="radio" name="export-size" value="1080,1080">1080×1080</label>
-        <!-- 长图模式 -->
-        <label><input type="radio" name="export-size" value="long-640">640长图</label>
-        <label><input type="radio" name="export-size" value="long-810" checked>810长图</label>
-        <label><input type="radio" name="export-size" value="long-1080">1080长图</label>
-    </div>
+        <!-- 后续可以继续在这里追加第4~8个expand折叠板块 -->
 
-    <div class="center-btn-block export-btn-wrap">
-        <button id="btn-export">生成并导出图片</button>
-        <p class="switch-desc">图片源文件存储于海外节点，使用🔮可显著提高生成效率</p>
+        <!-- 年度报告导出区域，复用全局html2canvas，快照容器复用逻辑 -->
+        <div class="center-btn-block export-btn-wrap" style="margin-top:24px;">
+            <button id="btn-annual-export">生成年度报告图片</button>
+        </div>
     </div>
-
-    <canvas id="export-canvas" style="display:none;"></canvas>
 </div>
 
 <!-- 回到添加游戏、最后一张游戏卡片悬浮按钮 -->
@@ -598,6 +744,9 @@ z-index: -999;
 </script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b88bc20591cc4e0b8702b7339c4d0e6d"}'></script><!-- End Cloudflare Web Analytics -->
-    
+
+<!-- ========== 引入年度报告模块 ========== -->
+<script type="module" src="./js/annual.js"></script>
+
 </body>
 </html>
