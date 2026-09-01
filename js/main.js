@@ -880,12 +880,18 @@ export async function loadAllGameTemplates() {
         gameTemplateList = [];
         gameTemplateReady = false;
         console.warn("window.gameDataList不存在，游戏模板为空");
+        // 同步到window兜底变量
+        window.__gameTemplateList = gameTemplateList;
+        window.__gameTemplateReady = gameTemplateReady;
         return;
     }
     // 直接赋值，不再重复导入游戏脚本
     gameTemplateList = [...window.gameDataList];
     gameTemplateReady = true;
     console.log("✅main.js读取全局游戏模板，数量：", gameTemplateList.length);
+    // =========【新增】同步更新window的兜底变量，给annual.js使用 =========
+    window.__gameTemplateList = gameTemplateList;
+    window.__gameTemplateReady = gameTemplateReady;
 }
 
 /**
@@ -1341,6 +1347,10 @@ export function toggleCpItemSelect(gameItem, charId) {
 }
 
 // ===================== 页面启动入口模块 =====================
+// 【新增：给annual.js时序兜底，挂载原始游戏模板状态到window】
+window.__gameTemplateList = gameTemplateList;
+window.__gameTemplateReady = gameTemplateReady;
+
 /**
  * 组装Core上下文对象，统一供给UI层script.js
  * @returns {Object} Core对象，所有核心方法对外暴露
