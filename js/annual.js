@@ -56,6 +56,12 @@ const getDefaultAnnualData = () => ({
         { gameId: "", gameName: "", coverSrc: "", text: "" },
         { gameId: "", gameName: "", coverSrc: "", text: "" },
         { gameId: "", gameName: "", coverSrc: "", text: "" }
+    ],
+    // ========= 新增：キャラTOP3数据 =========
+    charTopList: [
+        { gameId: "", charId: "", charName: "", coverSrc: "", text: "" },
+        { gameId: "", charId: "", charName: "", coverSrc: "", text: "" },
+        { gameId: "", charId: "", charName: "", coverSrc: "", text: "" }
     ]
 });
 
@@ -65,6 +71,24 @@ let btnAnnualExport;
 
 // =========【新增】全局弹窗：记录当前操作的TOP条目下标 0/1/2；null=弹窗关闭
 let activeTopItemIndex = null;
+
+// ========= キャラTOP3弹窗状态 =========
+let activeCharTopItemIndex = null;
+// 弹窗内部视图状态：gameList / charList
+let charModalViewMode = "gameList";
+// 当前弹窗选中的游戏ID（进入角色列表时赋值）
+let charModalCurrentGameId = null;
+// 弹窗内开关临时状态（只作用弹窗内部，不污染全局appData）
+let charModalGlobal = {
+    subChar: false,
+    hideChar: false,
+    fdChar: false
+};
+let charModalLocal = {
+    subChar: false,
+    hideChar: false,
+    fdChar: false
+};
 
 // 模块内部状态标记
 let _annualRealInitialized = false;
@@ -96,7 +120,7 @@ function getGameTemplateState() {
 }
 
 /**
- * 更新单个TOP条目UI显隐状态
+ * 更新单个TOP条目UI显隐状态（游戏）
  * @param {HTMLElement} itemDom annual-top-item
  * @param {Object} dataItem topList单条数据
  */
@@ -117,6 +141,31 @@ function refreshTopItemUi(itemDom, dataItem) {
         nameEl.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
         addBtn.classList.remove("hidden-when-empty");
+    }
+}
+
+/**
+ * 更新キャラTOP3单条UI
+ * @param {HTMLElement} itemDom .annual‑char‑top‑item
+ * @param {Object} dataItem charTopList子项
+ */
+function refreshCharTopItemUi(itemDom, dataItem) {
+    const nameEl = itemDom.querySelector(".annual-char-name-text");
+    const contentRow = itemDom.querySelector(".annual-char-top-content-row");
+    const addBtnWrap = itemDom.querySelector(".annual-add-char-btn-wrap");
+    const hasChar = !!dataItem.charId;
+    if (hasChar) {
+        nameEl.classList.remove("hidden-when-empty");
+        contentRow.classList.remove("hidden-when-empty");
+        nameEl.classList.add("render-visible");
+        contentRow.classList.add("render-visible");
+        addBtnWrap.classList.add("hidden-when-empty");
+    } else {
+        nameEl.classList.add("hidden-when-empty");
+        contentRow.classList.add("hidden-when-empty");
+        nameEl.classList.remove("render-visible");
+        contentRow.classList.remove("render-visible");
+        addBtnWrap.classList.remove("hidden-when-empty");
     }
 }
 
@@ -154,7 +203,7 @@ function isGameTemplateReady() {
 }
 
 /**
- * 渲染【全局模态弹窗】游戏候选列表
+ * 渲染【全局模态弹窗】游戏候选列表（游戏TOP3）
  * @param {HTMLElement} wrap 弹窗内列表容器
  * @param {string} keyword
  */
@@ -210,7 +259,206 @@ function renderGameList(wrap, keyword) {
 }
 
 /**
- * 打开年度全局游戏选择弹窗
+ * 角色弹窗：渲染游戏列表（キャラTOP3）
+ * @param {HTMLElement} wrap
+ * @param {string} keyword
+ */
+function renderCharModalGameList(wrap, keyword) {
+    wrap.innerHTML = "";
+    const state = getGameTemplateState();
+    const gameTemplateList = state.list;
+    if (!gameTemplateList || !isGameTemplateReady()) {
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
+        return;
+    }
+    const kw = (keyword ?? "").toLowerCase().trim();
+    const filtered = gameTemplateList.filter(g => {
+        if (!kw) return true;
+        return String(g.name).toLowerCase().includes(kw);
+    });
+    // ✅完全复用FavList中英日排序
+    const { sortFilterOptionList } = window.Core || {};
+    let sorted = filtered;
+    if (typeof sortFilterOptionList === 'function') {
+        const sortedNames = sortFilterOptionList(filtered.map(g=>g.name));
+        sorted = sortedNames.map(name=>filtered.find(g=>g.name===name)).filter(Boolean);
+    } else {
+        sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    sorted.forEach((game) => {
+        if (!game) return;
+        const div = document.createElement("div");
+        div.className = "game-option-item";
+        div.innerHTML = renderGameSelectItem(game);
+        div.addEventListener("click", () => {
+            // 点击游戏卡片 → 切换到角色列表视图，记录gameId
+            charModalCurrentGameId = game.id;
+            // 重置本游戏局部开关为false
+            charModalLocal = { subChar:false, hideChar:false, fdChar:false };
+            switchCharModalView("charList");
+            renderCharModalCharList();
+        });
+        wrap.appendChild(div);
+    });
+}
+
+/**
+ * 角色弹窗：渲染当前游戏待选角色列表
+ */
+function renderCharModalCharList() {
+    const modal = document.getElementById("annual-global-char-modal");
+    const charWrap = modal.querySelector(".annual-global-char-char-list");
+    charWrap.innerHTML = "";
+    const state = getGameTemplateState();
+    const gameInfo = state.list.find(g=>g.id === charModalCurrentGameId);
+    if(!gameInfo){
+        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
+        return;
+    }
+    // 复制一套getAllGameChar过滤逻辑，使用弹窗本地开关，不碰appData
+    let chars = [...(gameInfo.charList || [])];
+    chars = chars.filter(c=>{
+        const isSub = c.isSub ?? false;
+        const isHidden = !!c.isHidden;
+        const isFD = !!c.isFD;
+        const showHide = charModalGlobal.hideChar || charModalLocal.hideChar;
+        const showFD = charModalGlobal.fdChar || charModalLocal.fdChar;
+        const showSub = charModalGlobal.subChar || charModalLocal.subChar;
+
+        if(isSub){
+            if(isHidden && isFD) return showSub && showHide && showFD;
+            if(isHidden && !isFD) return showSub && showHide;
+            if(!isHidden && isFD) return showSub && showFD;
+            return showSub;
+        }
+        if(!isHidden && !isFD) return true;
+        if(isHidden && !isFD) return showHide;
+        if(!isHidden && isFD) return showFD;
+        if(isHidden && isFD) return showHide || showFD;
+        return true;
+    });
+    // ✅角色名排序复用sortFilterOptionList
+    const { sortFilterOptionList } = window.Core || {};
+    let sortedChars = chars;
+    if (typeof sortFilterOptionList === 'function') {
+        const sortedNames = sortFilterOptionList(chars.map(c=>c.name));
+        sortedChars = sortedNames.map(name=>chars.find(c=>c.name===name)).filter(Boolean);
+    } else {
+        sortedChars = [...chars].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    sortedChars.forEach(char=>{
+        if(!char) return;
+        const div = document.createElement("div");
+        div.className = "char-item";
+        const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
+        div.innerHTML = `
+            <div class="char-card-img-box">
+                <img src="${imgSrc}" alt="${char.name}" decoding="async">
+            </div>
+            <div class="char-card-name">${char.name}</div>
+        `;
+        div.addEventListener("click",()=>{
+            if(activeCharTopItemIndex === null) return;
+            // 回填数据到charTopList
+            const targetItem = annualData.charTopList[activeCharTopItemIndex];
+            targetItem.gameId = charModalCurrentGameId;
+            targetItem.charId = char.id;
+            targetItem.charName = char.name;
+            targetItem.coverSrc = imgSrc;
+            // 更新DOM
+            const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
+            const targetDom = charItemDoms[activeCharTopItemIndex];
+            if(targetDom){
+                const nameEl = targetDom.querySelector(".annual-char-name-text");
+                const imgEl = targetDom.querySelector(".annual-char-cover");
+                nameEl.textContent = char.name;
+                imgEl.src = imgSrc;
+                refreshCharTopItemUi(targetDom, targetItem);
+            }
+            saveAnnualData();
+            closeAnnualGlobalCharModal();
+        });
+        charWrap.appendChild(div);
+    });
+}
+
+/**
+ * 角色弹窗视图切换 gameList / charList
+ * @param {string} mode
+ */
+function switchCharModalView(mode){
+    charModalViewMode = mode;
+    const modal = document.getElementById("annual-global-char-modal");
+    const gameWrap = modal.querySelector(".annual-global-char-game-list");
+    const charWrap = modal.querySelector(".annual-global-char-char-list");
+    const backBtn = modal.querySelector(".annual-modal-back-btn");
+    const globalSwitchWrap = modal.querySelector(".annual-modal-global-switch-group");
+    const localSwitchWrap = modal.querySelector(".annual-modal-game-switch-group");
+
+    if(mode === "gameList"){
+        gameWrap.classList.remove("hidden-view");
+        charWrap.classList.remove("active");
+        backBtn.style.display = "none";
+        globalSwitchWrap.style.display = "block";
+        localSwitchWrap.classList.remove("active");
+    }else if(mode === "charList"){
+        gameWrap.classList.add("hidden-view");
+        charWrap.classList.add("active");
+        backBtn.style.display = "flex";
+        globalSwitchWrap.style.display = "block";
+        localSwitchWrap.classList.add("active");
+    }
+}
+
+/**
+ * 打开角色选择弹窗
+ * @param {number} targetIndex charTopList下标 0/1/2
+ */
+function openAnnualGlobalCharModal(targetIndex){
+    if(!_annualRealInitialized && isGameTemplateReady()){
+        realInitAnnualModule();
+    }
+    activeCharTopItemIndex = targetIndex;
+    const modal = document.getElementById("annual-global-char-modal");
+    if(!modal) return;
+    modal.classList.add("active");
+    // 初始化弹窗状态
+    charModalViewMode = "gameList";
+    charModalCurrentGameId = null;
+    charModalGlobal = { subChar:false, hideChar:false, fdChar:false };
+    charModalLocal = { subChar:false, hideChar:false, fdChar:false };
+    switchCharModalView("gameList");
+
+    const searchInput = modal.querySelector(".annual-global-char-search-input");
+    searchInput.value = "";
+    searchInput.focus();
+    // 重置开关DOM勾选
+    modal.querySelector(".annual-modal-global-sub-char").checked = false;
+    modal.querySelector(".annual-modal-global-hide-char").checked = false;
+    modal.querySelector(".annual-modal-global-fd-char").checked = false;
+    modal.querySelector(".annual-modal-local-sub-char").checked = false;
+    modal.querySelector(".annual-modal-local-hide-char").checked = false;
+    modal.querySelector(".annual-modal-local-fd-char").checked = false;
+
+    renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), "");
+}
+
+/**
+ * 关闭角色弹窗
+ */
+function closeAnnualGlobalCharModal(){
+    activeCharTopItemIndex = null;
+    charModalViewMode = "gameList";
+    charModalCurrentGameId = null;
+    const modal = document.getElementById("annual-global-char-modal");
+    if(!modal) return;
+    modal.classList.remove("active");
+}
+
+/**
+ * 打开年度全局游戏选择弹窗（游戏TOP3）
  */
 function openAnnualGlobalGameModal(targetIndex){
     // 【修复】打开弹窗的时候再次尝试执行业务初始化，如果之前超时还没初始化完成
@@ -262,6 +510,33 @@ function bindTop3Items() {
             saveAnnualData();
         };
         textarea.addEventListener("input", textarea._inputHandler);
+    });
+}
+
+function bindCharTop3Items() {
+    const charItems = document.querySelectorAll(".annual-char-top-item");
+    charItems.forEach((item, idx)=>{
+        const rank = Number(item.dataset.rank);
+        const dataIdx = rank - 1;
+        const dataItem = annualData.charTopList[dataIdx];
+        const nameTextEl = item.querySelector(".annual-char-name-text");
+        const textarea = item.querySelector(".annual-char-textarea");
+        const coverImg = item.querySelector(".annual-char-cover");
+
+        nameTextEl.textContent = dataItem.charName ?? "";
+        textarea.value = dataItem.text ?? "";
+        if(dataItem.coverSrc){
+            coverImg.src = getWebImageUrl(dataItem.coverSrc);
+        }
+        refreshCharTopItemUi(item, dataItem);
+
+        // textarea双向绑定
+        textarea.removeEventListener("input", textarea._charInputHandler);
+        textarea._charInputHandler = ()=>{
+            annualData.charTopList[dataIdx].text = textarea.value;
+            saveAnnualData();
+        };
+        textarea.addEventListener("input", textarea._charInputHandler);
     });
 }
 
@@ -439,21 +714,29 @@ function realInitAnnualModule(){
     loadAnnualData();
     bindStatInputs();
     bindTop3Items();
+    bindCharTop3Items(); // 新增
     bindAnnualExport();
     bindAnnualExportPanel();
-    // 如果弹窗已经打开，立刻刷新游戏列表
-    const modal = document.getElementById("annual-global-game-modal");
-    if(modal && modal.classList.contains("active")){
-        const listWrap = modal.querySelector(".annual-global-game-list");
-        const searchInput = modal.querySelector(".annual-global-search-input");
+    // 如果游戏弹窗打开刷新列表
+    const modalGame = document.getElementById("annual-global-game-modal");
+    if(modalGame && modalGame.classList.contains("active")){
+        const listWrap = modalGame.querySelector(".annual-global-game-list");
+        const searchInput = modalGame.querySelector(".annual-global-search-input");
         renderGameList(listWrap, searchInput?.value ?? "");
+    }
+    // 如果角色弹窗打开刷新
+    const modalChar = document.getElementById("annual-global-char-modal");
+    if(modalChar && modalChar.classList.contains("active")){
+        const gameWrap = modalChar.querySelector(".annual-global-char-game-list");
+        const searchInput = modalChar.querySelector(".annual-global-char-search-input");
+        renderCharModalGameList(gameWrap, searchInput?.value ?? "");
     }
 }
 
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            // 点击添加游戏按钮：打开全局弹窗，记录下标
+            // ========== 游戏TOP3：添加游戏按钮 ==========
             const clickAddBtn = e.target.closest(".annual-add-game-btn");
             if(clickAddBtn){
                 const itemDom = clickAddBtn.closest(".annual-top-item");
@@ -463,28 +746,117 @@ export function initAnnualModule(){
                 openAnnualGlobalGameModal(idx);
                 return;
             }
-            // 【新增】弹窗右上角×关闭按钮
-            const clickCloseBtn = e.target.closest(".annual-modal-close-btn");
+
+            // ========== キャラTOP3：添加角色按钮 ==========
+            const clickAddCharBtn = e.target.closest(".annual-add-char-btn");
+            if(clickAddCharBtn){
+                const itemDom = clickAddCharBtn.closest(".annual-char-top-item");
+                if(!itemDom) return;
+                const rank = Number(itemDom.dataset.rank);
+                const idx = rank - 1;
+                openAnnualGlobalCharModal(idx);
+                return;
+            }
+
+            // ========== 游戏弹窗关闭按钮 ==========
+            const clickCloseBtn = e.target.closest("#annual-global-game-modal .annual-modal-close-btn");
             if(clickCloseBtn){
                 closeAnnualGlobalGameModal();
                 return;
             }
-            const modalEl = document.getElementById("annual-global-game-modal");
-            if(!modalEl || !modalEl.classList.contains("active")) return;
-            // 点击弹窗内部，不关闭
-            const insideModal = e.target.closest(".annual-global-modal-inner");
-            if(insideModal) return;
-            // 点击遮罩，关闭弹窗
-            closeAnnualGlobalGameModal();
+
+            // ========== 角色弹窗关闭按钮 ==========
+            const charModalCloseBtn = e.target.closest("#annual-global-char-modal .annual-modal-close-btn");
+            if(charModalCloseBtn){
+                closeAnnualGlobalCharModal();
+                return;
+            }
+
+            // ========== 角色弹窗返回按钮 ==========
+            const charModalBackBtn = e.target.closest(".annual-modal-back-btn");
+            if(charModalBackBtn){
+                charModalCurrentGameId = null;
+                switchCharModalView("gameList");
+                const modal = document.getElementById("annual-global-char-modal");
+                const searchInput = modal.querySelector(".annual-global-char-search-input");
+                renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), searchInput.value);
+                return;
+            }
+
+            // ========== 游戏弹窗遮罩点击关闭 ==========
+            const modalGameEl = document.getElementById("annual-global-game-modal");
+            if(modalGameEl && modalGameEl.classList.contains("active")){
+                const insideModal = e.target.closest(".annual-global-modal-inner");
+                if(!insideModal){
+                    closeAnnualGlobalGameModal();
+                    return;
+                }
+            }
+
+            // ========== 角色弹窗遮罩点击关闭 ==========
+            const modalCharEl = document.getElementById("annual-global-char-modal");
+            if(modalCharEl && modalCharEl.classList.contains("active")){
+                const insideCharModal = e.target.closest(".annual-global-modal-inner");
+                if(!insideCharModal){
+                    closeAnnualGlobalCharModal();
+                    return;
+                }
+            }
+
+            // -------- 弹窗开关点击事件委托（角色弹窗） --------
+            // 全局开关
+            if(e.target.closest(".annual-modal-global-sub-char")){
+                charModalGlobal.subChar = !charModalGlobal.subChar;
+                if(charModalViewMode === "charList") renderCharModalCharList();
+                return;
+            }
+            if(e.target.closest(".annual-modal-global-hide-char")){
+                charModalGlobal.hideChar = !charModalGlobal.hideChar;
+                if(charModalViewMode === "charList") renderCharModalCharList();
+                return;
+            }
+            if(e.target.closest(".annual-modal-global-fd-char")){
+                charModalGlobal.fdChar = !charModalGlobal.fdChar;
+                if(charModalViewMode === "charList") renderCharModalCharList();
+                return;
+            }
+            // 本游戏局部开关
+            if(e.target.closest(".annual-modal-local-sub-char")){
+                charModalLocal.subChar = !charModalLocal.subChar;
+                renderCharModalCharList();
+                return;
+            }
+            if(e.target.closest(".annual-modal-local-hide-char")){
+                charModalLocal.hideChar = !charModalLocal.hideChar;
+                renderCharModalCharList();
+                return;
+            }
+            if(e.target.closest(".annual-modal-local-fd-char")){
+                charModalLocal.fdChar = !charModalLocal.fdChar;
+                renderCharModalCharList();
+                return;
+            }
         });
 
-        // 全局弹窗搜索input事件委托
+        // ========== 全局弹窗搜索input事件委托 ==========
         document.addEventListener("input", (e)=>{
+            // 游戏TOP3搜索
             const input = e.target.closest(".annual-global-search-input");
-            if(!input) return;
-            const listWrap = document.querySelector(".annual-global-game-list");
-            if(listWrap){
-                renderGameList(listWrap, input.value);
+            if(input){
+                const listWrap = document.querySelector(".annual-global-game-list");
+                if(listWrap){
+                    renderGameList(listWrap, input.value);
+                }
+                return;
+            }
+            // 角色弹窗搜索（游戏列表视图）
+            const charSearchInput = e.target.closest(".annual-global-char-search-input");
+            if(charSearchInput){
+                const wrap = document.querySelector(".annual-global-char-game-list");
+                if(wrap && charModalViewMode === "gameList"){
+                    renderCharModalGameList(wrap, charSearchInput.value);
+                }
+                return;
             }
         });
 
