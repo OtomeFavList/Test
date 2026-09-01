@@ -2,7 +2,7 @@
 .mode-switch-wrap {
     display: flex;
     justify-content: center;
-    gap: 2px;
+    gap: 6px;
     margin: 16px 0 24px;
 }
 .mode-switch-wrap .mode-btn {
