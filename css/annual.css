@@ -434,3 +434,22 @@
         width:80px;
     }
 }
+@media (max-width:768px) {
+    .annual-modal-header {
+        padding:14px 16px;
+    }
+    .annual-modal-close-btn {
+        right:16px;
+        width:26px;
+        height:26px;
+        font-size:18px;
+    }
+    .annual-global-search-input {
+        width:calc(100% - 32px);
+        margin:0 16px;
+    }
+    .annual-global-game-list{
+        padding:10px 16px 16px 16px;
+        margin:0 16px 16px 16px;
+    }
+}
