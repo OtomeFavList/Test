@@ -193,8 +193,10 @@
 }
 /* ✅游戏列表容器 - 完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
 .annual-global-game-list {
-    /* 删除 flex:1; 删除 overflow-y:auto; 滚动交给外层 scroll-wrap */
+    /* 恢复滚动，复刻FavList搜索行为 */
     min-height:260px;
+    max-height: 42vh;  /* 新增：最大高度，超出就滚动 */
+    overflow-y: auto;   /* 新增：恢复纵向滚动条 */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -399,6 +401,8 @@
         padding: 10px 16px 16px 16px;
         margin: 0 16px 16px 16px;
         min-height:260px;
+        max-height:38vh !important;
+        overflow-y:auto !important;
     }
     .annual-global-game-list .game-option-item img {
         width: 80px !important;
@@ -447,6 +451,8 @@
         padding: 10px 16px 16px 16px !important;
         margin: 0 16px 16px 16px !important;
         min-height:260px;
+        max-height:38vh !important;
+        overflow-y:auto !important;
     }
     .annual-global-char-game-list .game-option-item img {
         width: 80px !important;
@@ -729,6 +735,8 @@
 /* ========== ✅角色弹窗游戏列表：1:1复刻 annual‑global‑game-list，滚动交给外层 char‑list‑inner‑scroll‑wrap，列表自身不做overflow-y ========== */
 .annual-global-char-game-list {
     min-height:260px;
+    max-height: 42vh;  /* 新增：最大高度，超出就滚动 */
+    overflow-y: auto;   /* 新增：恢复纵向滚动条 */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
