@@ -34,21 +34,6 @@
                 font-size: 30px;
             }
         }
-        /* ========== 新增：角色弹窗视图切换控制包裹容器 ========== */
-        .char-modal-gamelist-view .game-list-wrap { display:block; }
-        .char-modal-gamelist-view .char-list-wrap { display:none; }
-        .char-modal-charlist-view .game-list-wrap { display:none; }
-        .char-modal-charlist-view .char-list-wrap { display:block; }
-        /* 游戏列表包裹容器内部列表样式继承 */
-        .game-list-wrap .annual-global-char-game-list,
-        .char-list-wrap .annual-global-char-char-list {
-            height: 100%;
-        }
-        /* 开关组内 filter-group 包裹 switch-row 时，让每个开关行作为 flex 子项 */
-        .filter-group .switch-row {
-            flex: 0 0 auto;
-            min-width: 200px; /* 保证每个开关足够宽 */
-        }
     </style>
 </head>
 <body>
@@ -909,7 +894,6 @@ z-index: -999;
         <div class="annual-global-game-list"></div>
     </div>
 </div>
-
 <!-- ========== 年度报告全局角色选择弹窗【修改后】 ========== -->
 <div id="annual-global-char-modal">
     <div class="annual-global-modal-inner">
@@ -923,36 +907,34 @@ z-index: -999;
         <div class="annual-modal-scroll-wrap">
             <!-- 全局开关组（仅gameList视图可见） -->
             <div class="annual-modal-global-switch-group">
-                <div class="filter-group">
-                    <div class="switch-row">
-                        <label class="switch">
-                            <input type="checkbox" id="annual-modal-global-sub-char">
-                            <span class="slider"></span>
-                        </label>
-                        <div>
-                            <span class="text-light-pink">全局显示次要角色</span>
-                            <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。<br>注意，若次要角色同时也是隐藏角色或续作角色，则需同时开启相关开关才会显示图片、角色。</p>
-                        </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-sub-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。<br>注意，若次要角色同时也是隐藏角色或续作角色，则需同时开启相关开关才会显示图片、角色。</p>
                     </div>
-                    <div class="switch-row">
-                        <label class="switch">
-                            <input type="checkbox" id="annual-modal-global-hide-char">
-                            <span class="slider"></span>
-                        </label>
-                        <div>
-                            <span class="text-light-pink">全局显示隐藏图片、角色</span>
-                            <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
-                        </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-hide-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示隐藏图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
                     </div>
-                    <div class="switch-row">
-                        <label class="switch">
-                            <input type="checkbox" id="annual-modal-global-fd-game">
-                            <span class="slider"></span>
-                        </label>
-                        <div>
-                            <span class="text-light-pink">全局显示续作/FD图片、角色</span>
-                            <p class="switch-desc">开启后显示所有游戏续作、FD新增图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
-                        </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-fd-game">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
                     </div>
                 </div>
             </div>
@@ -962,47 +944,41 @@ z-index: -999;
 
             <!-- 单游戏角色页专属开关组（仅charList视图可见） -->
             <div class="annual-modal-game-switch-group">
-                <div class="filter-group">
-                    <div class="switch-row">
-                        <label class="switch">
-                            <input type="checkbox" id="annual-modal-game-sub-char">
-                            <span class="slider"></span>
-                        </label>
-                        <div>
-                            <span class="text-light-pink">单独显示本游戏次要角色</span>
-                        </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-game-sub-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">单独显示本游戏次要角色</span>
                     </div>
-                    <div class="switch-row">
-                        <label class="switch">
-                            <input type="checkbox" id="annual-modal-game-hide-char">
-                            <span class="slider"></span>
-                        </label>
-                        <div>
-                            <span class="text-light-pink">单独显示本游戏隐藏角色</span>
-                        </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-game-hide-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">单独显示本游戏隐藏角色</span>
                     </div>
-                    <div class="switch-row">
-                        <label class="switch">
-                            <input type="checkbox" id="annual-modal-game-fd-game">
-                            <span class="slider"></span>
-                        </label>
-                        <div>
-                            <span class="text-light-pink">单独显示本游戏续作/FD角色</span>
-                        </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-game-fd-game">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">单独显示本游戏续作/FD角色</span>
                     </div>
                 </div>
             </div>
 
             <!-- 视图容器 -->
             <div class="annual-modal-view-container">
-                <!-- 游戏列表包裹容器（带独立滚动） -->
-                <div class="game-list-wrap char-list-inner-scroll-wrap">
-                    <div class="annual-global-char-game-list"></div>
-                </div>
-                <!-- 角色列表包裹容器（带独立滚动） -->
-                <div class="char-list-wrap char-list-inner-scroll-wrap">
-                    <div class="annual-global-char-char-list"></div>
-                </div>
+                <!-- 视图A：游戏列表 -->
+                <div class="annual-global-char-game-list"></div>
+                <!-- 视图B：当前游戏待选角色列表 -->
+                <div class="annual-global-char-char-list"></div>
             </div>
         </div>
     </div>
