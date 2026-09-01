@@ -371,12 +371,6 @@
     --annual-export-subtitle:#b85878;
     background-color: var(--annual-export-bg, #fff7f9);
 }
-/* ========== 移动端适配 - 分界1：平板横向 ========== */
-@media (max-width: 1024px) {
-    .annual-global-modal-inner {
-        width: min(95vw, 1000px);
-    }
-}
 /* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
 /* ① 普通手机（≤ 768px）：强制单列 */
 @media (max-width: 768px) {
@@ -512,9 +506,28 @@
     .char-list-inner-scroll-wrap {
         max-height: 55vh;  /* 38vh →55vh，滚动区域拉长，不会只剩小圆球 */
     }
+
+    /* ========== 原480px断点迁移至此 ========== */
+    .annual-modal-header {
+        padding: 12px 14px;
+    }
+    .annual-modal-close-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 16px;
+    }
+    .annual-global-search-input {
+        padding: 11px 12px;
+        font-size: 14px;
+    }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
+    /* 从原1024断点迁移 */
+    .annual-global-modal-inner {
+        width: min(95vw, 1000px);
+    }
+
     .annual-global-game-list {
         display: grid !important;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
@@ -581,21 +594,7 @@
     }
 }
 /* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
-/* ========== 手机纵向480px微调（只调控件尺寸，不改动布局网格） ========== */
-@media (max-width: 480px) {
-    .annual-modal-header {
-        padding: 12px 14px;
-    }
-    .annual-modal-close-btn {
-        width: 24px;
-        height: 24px;
-        font-size: 16px;
-    }
-    .annual-global-search-input {
-        padding: 11px 12px;   /* 10px →11px，与角色弹窗input padding上下一致 */
-        font-size: 14px;
-    }
-}
+
 /* ========== 三、キャラTOP3 【新增模块样式】 ========== */
 .annual-char-top-item {
     margin-bottom: 24px;
@@ -869,6 +868,7 @@
     }
 }
 @media (min-width:769px) and (max-width:1200px) {
+    /* 空块保留，样式已在上方统一处理 */
 }
 /* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
 #annual-global-char-modal .annual-global-modal-inner {
