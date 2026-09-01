@@ -147,22 +147,77 @@
     background:#ffffff;
     border-radius:14px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.18);
-    padding:20px;
+    /* 修改：取消整体padding，改为内部header、内容区分配内边距 */
+    padding:0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap:14px;
     overflow: hidden;
 }
 
+/* ==========弹窗头部【新增】========== */
+.annual-modal-header {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    padding:16px 20px;
+}
+
+.annual-modal-header-title {
+    font-size:20px;
+    font-weight:bold;
+    color:#b85878;
+}
+
+/* 关闭按钮：1:1复刻 .game‑fold‑icon‑expand 样式 */
+.annual-modal-close-btn {
+    position:absolute;
+    right:20px;
+    top:50%;
+    transform: translateY(-50%);
+    width:28px;
+    height:28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.annual-modal-close-btn:hover{
+    background: #992e2e !important;
+    color: #b33a3a !important;
+}
+
+/* input与列表容器，补回原来的padding */
 .annual-global-search-input {
-    width:100%;
+    width:calc(100% - 40px);
+    margin:0 20px;
     padding:11px 14px;
     border:1px solid #ddd;
     border-radius: 10px;
     background:#fcfcfc;
     font-size:15px;
     box-sizing: border-box;
+}
+
+.annual-global-game-list {
+    flex:1;
+    overflow-y:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:14px;
+    padding:10px 20px 20px 20px;
+    border:1px solid #eee;
+    border-radius:10px;
+    margin:0 20px 20px 20px;
 }
 
 .annual-global-game-list {
