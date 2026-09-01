@@ -220,6 +220,7 @@
 }
 .annual-global-game-list .game-option-info{
     flex:1;
+    min-width: 0; /* 新增，防止长文本挤压 */
 }
 .annual-global-game-list .game-option-name{
     font-weight:bold;
@@ -729,6 +730,7 @@
 }
 .annual-global-char-game-list .game-option-info{
     flex:1;
+    min-width: 0; /* 新增，防止长文本挤压 */
 }
 .annual-global-char-game-list .game-option-name{
     font-weight:bold;
