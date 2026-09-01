@@ -843,7 +843,8 @@ export function initAnnualModule(){
             // 游戏TOP3搜索
             const input = e.target.closest(".annual-global-search-input");
             if(input){
-                const listWrap = document.querySelector(".annual-global-game-list");
+                const modal = document.getElementById("annual-global-game-modal");
+                const listWrap = modal?.querySelector(".annual-global-game-list");
                 if(listWrap){
                     renderGameList(listWrap, input.value);
                 }
@@ -852,8 +853,9 @@ export function initAnnualModule(){
             // 角色弹窗搜索（游戏列表视图）
             const charSearchInput = e.target.closest(".annual-global-char-search-input");
             if(charSearchInput){
-                const wrap = document.querySelector(".annual-global-char-game-list");
-                if(wrap && charModalViewMode === "gameList"){
+                const modal = document.getElementById("annual-global-char-modal");
+                const wrap = modal?.querySelector(".annual-global-char-game-list");
+                if(wrap){
                     renderCharModalGameList(wrap, charSearchInput.value);
                 }
                 return;
