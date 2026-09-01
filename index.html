@@ -310,11 +310,7 @@
             <div class="annual-add-game-btn-wrap">
                 <button class="annual-add-game-btn">+ 添加游戏</button>
             </div>
-            <!-- 游戏选择弹窗面板 -->
-            <div class="annual-game-select-panel">
-                <input class="annual-panel-search-input" placeholder="搜索游戏">
-                <div class="annual-game-select-list"></div>
-            </div>
+            <!-- 游戏选择弹窗面板已移除，改用全局弹窗 -->
             <!-- 游戏名称文本（黑色22px，自动换行）增加隐藏类 -->
             <div class="annual-game-name-text hidden-when-empty"></div>
             <!-- 封面 + 文本框行 增加隐藏类 -->
@@ -335,14 +331,8 @@
             <div class="annual-add-game-btn-wrap">
                 <button class="annual-add-game-btn">+ 添加游戏</button>
             </div>
-            <!-- 游戏选择弹窗面板 -->
-            <div class="annual-game-select-panel">
-                <input class="annual-panel-search-input" placeholder="搜索游戏">
-                <div class="annual-game-select-list"></div>
-            </div>
-            <!-- 游戏名称文本（黑色22px，自动换行）增加隐藏类 -->
+            <!-- 游戏选择弹窗面板已移除，改用全局弹窗 -->
             <div class="annual-game-name-text hidden-when-empty"></div>
-            <!-- 封面 + 文本框行 增加隐藏类 -->
             <div class="annual-top-content-row hidden-when-empty">
                 <div class="annual-top-cover-wrap">
                     <img class="annual-top-cover" alt="">
@@ -360,14 +350,8 @@
             <div class="annual-add-game-btn-wrap">
                 <button class="annual-add-game-btn">+ 添加游戏</button>
             </div>
-            <!-- 游戏选择弹窗面板 -->
-            <div class="annual-game-select-panel">
-                <input class="annual-panel-search-input" placeholder="搜索游戏">
-                <div class="annual-game-select-list"></div>
-            </div>
-            <!-- 游戏名称文本（黑色22px，自动换行）增加隐藏类 -->
+            <!-- 游戏选择弹窗面板已移除，改用全局弹窗 -->
             <div class="annual-game-name-text hidden-when-empty"></div>
-            <!-- 封面 + 文本框行 增加隐藏类 -->
             <div class="annual-top-content-row hidden-when-empty">
                 <div class="annual-top-cover-wrap">
                     <img class="annual-top-cover" alt="">
@@ -843,6 +827,14 @@ z-index: -999;
 
 <!-- ===== 新增年度报告脚本 ===== -->
 <script type="module" src="./js/annual.js"></script>
+
+<!-- ===== 年度报告全局游戏选择弹窗（body直接子节点） ===== -->
+<div id="annual-global-game-modal">
+    <div class="annual-global-modal-inner">
+        <input class="annual-global-search-input" placeholder="搜索游戏">
+        <div class="annual-global-game-list"></div>
+    </div>
+</div>
 
 </body>
 </html>
