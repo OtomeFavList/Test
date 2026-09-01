@@ -694,3 +694,31 @@
         grid-template-columns:repeat(auto-fill,minmax(280px,1fr)) !important;
     }
 }
+
+/* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
+#annual-global-char-modal .annual-global-modal-inner {
+    display: flex;
+    flex-direction: column;
+    height: 85vh;
+}
+#annual-global-char-modal .annual-modal-header {
+    flex-shrink: 0;
+}
+#annual-global-char-modal .annual-modal-scroll-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 12px 12px;
+}
+
+/* 视图模式 class 控制 */
+.char-modal-gamelist-view .annual-modal-global-switch-group { display:block; }
+.char-modal-gamelist-view .annual-global-char-search-input { display:block; }
+.char-modal-gamelist-view .annual-modal-game-switch-group { display:none; }
+.char-modal-gamelist-view .annual-global-char-game-list { display:block; }
+.char-modal-gamelist-view .annual-global-char-char-list { display:none; }
+
+.char-modal-charlist-view .annual-modal-global-switch-group { display:none; }
+.char-modal-charlist-view .annual-global-char-search-input { display:none; }
+.char-modal-charlist-view .annual-modal-game-switch-group { display:block; }
+.char-modal-charlist-view .annual-global-char-game-list { display:none; }
+.char-modal-charlist-view .annual-global-char-char-list { display:block; }
