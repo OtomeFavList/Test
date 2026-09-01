@@ -29,6 +29,9 @@ function loadAnnualExportConfig() {
 }
 
 function saveAnnualExportConfig() {
+    if(!annualExportConfig){
+        annualExportConfig = {...annualExportDefault};
+    }
     localStorage.setItem("annual-export-config", JSON.stringify(annualExportConfig));
 }
 
@@ -68,6 +71,7 @@ function refreshTopItemUi(itemDom, dataItem) {
     const contentRow = itemDom.querySelector(".annual-top-content-row");
     const addBtn = itemDom.querySelector(".annual-add-game-btn");
     const hasGame = !!dataItem.gameId;
+
     if (hasGame) {
         nameEl.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
@@ -131,6 +135,7 @@ function renderGameList(wrap, keyword) {
         if(!kw) return true;
         return String(g.name).toLowerCase().includes(kw);
     });
+
     filtered.forEach((game, listIndex)=>{
         const div = document.createElement("div");
         div.className = "game-option-item";
@@ -142,7 +147,6 @@ function renderGameList(wrap, keyword) {
             targetItem.gameId = game.id;
             targetItem.gameName = game.name;
             targetItem.coverSrc = game.cover ?? "";
-
             // 更新对应DOM条目UI
             const topItemDomList = Array.from(document.querySelectorAll(".annual-top-item"));
             const targetDom = topItemDomList[activeTopItemIndex];
@@ -166,11 +170,11 @@ function renderGameList(wrap, keyword) {
  */
 function openAnnualGlobalGameModal(targetIndex){
     activeTopItemIndex = targetIndex;
-    const modal = document.getElementById("annual‑global‑game‑modal");
+    const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
     modal.classList.add("active");
-    const searchInput = modal.querySelector(".annual‑global‑search‑input");
-    const listWrap = modal.querySelector(".annual‑global‑game‑list");
+    const searchInput = modal.querySelector(".annual-global-search-input");
+    const listWrap = modal.querySelector(".annual-global-game-list");
     searchInput.value = "";
     searchInput.focus();
     renderGameList(listWrap, "");
@@ -181,7 +185,7 @@ function openAnnualGlobalGameModal(targetIndex){
  */
 function closeAnnualGlobalGameModal(){
     activeTopItemIndex = null;
-    const modal = document.getElementById("annual‑global‑game‑modal");
+    const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
     modal.classList.remove("active");
 }
@@ -192,11 +196,9 @@ function bindTop3Items() {
         const rank = Number(item.dataset.rank);
         const dataIdx = rank - 1;
         const dataItem = annualData.topList[dataIdx];
-
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
-
         // 回填数据
         nameTextEl.textContent = dataItem.gameName ?? "";
         textarea.value = dataItem.text ?? "";
@@ -204,7 +206,6 @@ function bindTop3Items() {
             coverImg.src = getWebImageUrl(dataItem.coverSrc);
         }
         refreshTopItemUi(item, dataItem);
-
         // 自定义文本框双向绑定
         textarea.removeEventListener("input", textarea._inputHandler);
         textarea._inputHandler = ()=>{
@@ -310,7 +311,6 @@ function bindAnnualExportPanel() {
         document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
         saveAnnualExportConfig();
     };
-
     sliderFont.oninput = () => {
         const val = Number(sliderFont.value);
         annualExportConfig.customTextFontSize = val;
@@ -393,31 +393,25 @@ export function initAnnualModule(){
                 openAnnualGlobalGameModal(idx);
                 return;
             }
-
-            const modalEl = document.getElementById("annual‑global‑game‑modal");
+            const modalEl = document.getElementById("annual-global-game-modal");
             if(!modalEl || !modalEl.classList.contains("active")) return;
-
             // 点击弹窗内部，不关闭
-            const insideModal = e.target.closest(".annual‑global‑modal‑inner");
+            const insideModal = e.target.closest(".annual-global-modal-inner");
             if(insideModal) return;
-
             // 点击遮罩，关闭弹窗
             closeAnnualGlobalGameModal();
         });
-
         // 全局弹窗搜索input事件委托
         document.addEventListener("input", (e)=>{
-            const input = e.target.closest(".annual‑global‑search‑input");
+            const input = e.target.closest(".annual-global-search-input");
             if(!input) return;
-            const listWrap = document.querySelector(".annual‑global‑game‑list");
+            const listWrap = document.querySelector(".annual-global-game-list");
             if(listWrap){
                 renderGameList(listWrap, input.value);
             }
         });
-
         window._annualPanelClickBound = true;
     }
-
     loadAnnualData();
     bindStatInputs();
     bindTop3Items();
