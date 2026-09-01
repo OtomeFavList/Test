@@ -1464,11 +1464,26 @@ export async function renderExportCanvas(
       for (const cid of gameItem.selectChars) {
         const char = gameInfo.charList?.find(c => c.id === cid);
         if (!char) continue;
+        // ========== 修改：sub复合条件过滤（开始） ==========
         const isSub = char.isSub ?? false;
-        // ✅isSub=true 且开关全部关闭：直接跳过该角色，不进入导出
-        if(isSub && !showSub){
-          continue;
+        const isHidden = !!char.isHidden;
+        const isFD = !!char.isFD;
+        if(isSub){
+            let subPass = false;
+            if(isHidden && isFD){
+                subPass = showSub && globalHide && globalFD;
+            }else if(isHidden && !isFD){
+                subPass = showSub && globalHide;
+            }else if(!isHidden && isFD){
+                subPass = showSub && globalFD;
+            }else{
+                subPass = showSub;
+            }
+            if(!subPass){
+                continue;
+            }
         }
+        // ========== 修改结束 ==========
         const avail = getAvailableCharImages(char, globalHide, globalFD, localHide, localFD);
         let allSrc = [];
         avail.forEach(u => allSrc.push(...u.srcList));
@@ -1524,11 +1539,26 @@ export async function renderExportCanvas(
           for (const mi of cp.maleItems) {
             const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
             if (!mChar) continue;
+            // ========== 修改：sub复合条件过滤（开始） ==========
             const isSub = mChar.isSub ?? false;
-            // ✅ 次要角色过滤：isSub=true并且开关全部关闭，跳过该cp男性角色
-            if(isSub && !showSub){
-              continue;
+            const isHidden = !!mChar.isHidden;
+            const isFD = !!mChar.isFD;
+            if(isSub){
+                let subPass = false;
+                if(isHidden && isFD){
+                    subPass = showSub && globalHide && globalFD;
+                }else if(isHidden && !isFD){
+                    subPass = showSub && globalHide;
+                }else if(!isHidden && isFD){
+                    subPass = showSub && globalFD;
+                }else{
+                    subPass = showSub;
+                }
+                if(!subPass){
+                    continue;
+                }
             }
+            // ========== 修改结束 ==========
             const mAvail = getAvailableCharImages(mChar, globalHide, globalFD, localHide, localFD);
             let mAllSrc = [];
             mAvail.forEach(u => mAllSrc.push(...u.srcList));
