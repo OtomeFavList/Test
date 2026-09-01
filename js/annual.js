@@ -2,12 +2,9 @@
  * 年度报告模块 annual.js
  * 存储key: "annual-report-data"，与喜好表数据隔离
  */
-
-// =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态】===========
+// =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
 import { renderGameSelectItem, getWebImageUrl } from '/js/main.js';
-
 const ANNUAL_STORE_KEY = "annual-report-data";
-
 // ============【配色持久化，对齐script.js】============
 const annualExportDefault = {
     bg: "#fff7f9",
@@ -17,7 +14,6 @@ const annualExportDefault = {
     border: "#f6a5b8",
     customTextFontSize: 16
 };
-
 function loadAnnualExportConfig() {
     const raw = localStorage.getItem("annual-export-config");
     if(raw) {
@@ -29,16 +25,13 @@ function loadAnnualExportConfig() {
     }
     return {...annualExportDefault};
 }
-
 function saveAnnualExportConfig() {
     if(!annualExportConfig){
         annualExportConfig = {...annualExportDefault};
     }
     localStorage.setItem("annual-export-config", JSON.stringify(annualExportConfig));
 }
-
 let annualExportConfig = loadAnnualExportConfig();
-
 const getDefaultAnnualData = () => ({
     reportYear: "",
     playCount: "",
@@ -56,14 +49,38 @@ const getDefaultAnnualData = () => ({
         { gameId: "", gameName: "", coverSrc: "", text: "" }
     ]
 });
-
 let annualData = getDefaultAnnualData();
 let btnAnnualExport;
-
 // =========【新增】全局弹窗：记录当前操作的TOP条目下标 0/1/2；null=弹窗关闭
 let activeTopItemIndex = null;
 // 模块内部状态标记
 let _annualRealInitialized = false;
+
+/**
+ * 获取游戏模板状态，双重来源：优先window.Core，兜底window.__gameTemplateXXX（main.js挂载全局）
+ */
+function getGameTemplateState() {
+    const core = window.Core;
+    if(core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true){
+        return {
+            list: core.gameTemplateList,
+            ready: true
+        };
+    }
+    // 兜底读取main导出挂载window的全局变量
+    const winList = window.__gameTemplateList;
+    const winReady = window.__gameTemplateReady;
+    if(Array.isArray(winList) && winList.length>0 && winReady === true){
+        return {
+            list: winList,
+            ready: true
+        };
+    }
+    return {
+        list: null,
+        ready: false
+    };
+}
 
 /**
  * 更新单个TOP条目UI显隐状态
@@ -89,7 +106,6 @@ function refreshTopItemUi(itemDom, dataItem) {
         addBtn.classList.remove("hidden-when-empty");
     }
 }
-
 function loadAnnualData() {
     const raw = localStorage.getItem(ANNUAL_STORE_KEY);
     if(raw) {
@@ -101,11 +117,9 @@ function loadAnnualData() {
         }
     }
 }
-
 function saveAnnualData() {
     localStorage.setItem(ANNUAL_STORE_KEY, JSON.stringify(annualData));
 }
-
 function bindStatInputs() {
     const statInputs = document.querySelectorAll(".annual-input");
     statInputs.forEach(input=>{
@@ -118,11 +132,9 @@ function bindStatInputs() {
     });
 }
 
-// =========【修复：从 window.Core 实时读取最新状态，解决 ES Module 值拷贝问题】===========
 function isGameTemplateReady() {
-    const gameTemplateList = window.Core?.gameTemplateList;
-    const gameTemplateReady = window.Core?.gameTemplateReady;
-    return Array.isArray(gameTemplateList) && gameTemplateList.length > 0 && gameTemplateReady === true;
+    const state = getGameTemplateState();
+    return state.ready;
 }
 
 /**
@@ -132,11 +144,10 @@ function isGameTemplateReady() {
  */
 function renderGameList(wrap, keyword) {
     wrap.innerHTML = "";
-    // 从 window.Core 实时读取最新游戏模板数据
-    const gameTemplateList = window.Core?.gameTemplateList;
-    const gameTemplateReady = window.Core?.gameTemplateReady;
+    const state = getGameTemplateState();
+    const gameTemplateList = state.list;
+    const gameTemplateReady = state.ready;
     console.log("[annual.js renderGameList] gameTemplateReady=", gameTemplateReady, "listLength=", gameTemplateList?.length);
-
     if(!gameTemplateList || !isGameTemplateReady()) {
         wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
         return;
@@ -175,11 +186,15 @@ function renderGameList(wrap, keyword) {
         wrap.appendChild(div);
     });
 }
-
 /**
  * 打开年度全局游戏选择弹窗
  */
 function openAnnualGlobalGameModal(targetIndex){
+    // 【修复】打开弹窗的时候再次尝试执行业务初始化，如果之前超时还没初始化完成
+    if(!_annualRealInitialized && isGameTemplateReady()){
+        realInitAnnualModule();
+    }
+
     activeTopItemIndex = targetIndex;
     const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
@@ -191,7 +206,6 @@ function openAnnualGlobalGameModal(targetIndex){
     // 打开弹窗，再次校验模板状态
     renderGameList(listWrap, "");
 }
-
 /**
  * 关闭年度全局游戏选择弹窗
  */
@@ -201,7 +215,6 @@ function closeAnnualGlobalGameModal(){
     if(!modal) return;
     modal.classList.remove("active");
 }
-
 function bindTop3Items() {
     const topItems = document.querySelectorAll(".annual-top-item");
     topItems.forEach((item, idx)=>{
@@ -227,7 +240,6 @@ function bindTop3Items() {
         textarea.addEventListener("input", textarea._inputHandler);
     });
 }
-
 /**
  * 更新滑块进度百分比
  * @param {HTMLInputElement} sliderEl
@@ -242,7 +254,6 @@ function updateSliderProgress(sliderEl) {
         rowWrap.style.setProperty('--annual-slider-progress', `${percent}%`);
     }
 }
-
 /**
  * 年度报告导出面板绑定
  */
@@ -356,7 +367,6 @@ function bindAnnualExportPanel() {
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
 }
-
 function bindAnnualExport() {
     btnAnnualExport = document.getElementById("btn-annual-export");
     if(!btnAnnualExport) return;
@@ -385,7 +395,6 @@ function bindAnnualExport() {
     };
     btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
-
 /**
  * 真正执行年度模块业务初始化（必须等gameTemplateReady=true）
  */
@@ -398,7 +407,6 @@ function realInitAnnualModule(){
     bindTop3Items();
     bindAnnualExport();
     bindAnnualExportPanel();
-
     // 如果弹窗已经打开，立刻刷新游戏列表
     const modal = document.getElementById("annual-global-game-modal");
     if(modal && modal.classList.contains("active")){
@@ -407,7 +415,6 @@ function realInitAnnualModule(){
         renderGameList(listWrap, searchInput?.value ?? "");
     }
 }
-
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
@@ -446,7 +453,6 @@ export function initAnnualModule(){
         });
         window._annualPanelClickBound = true;
     }
-
     // 如果游戏模板已经就绪，直接执行真实初始化
     if(isGameTemplateReady()){
         realInitAnnualModule();
@@ -461,13 +467,14 @@ export function initAnnualModule(){
                 if(isGameTemplateReady()){
                     realInitAnnualModule();
                 }else{
-                    console.warn("[annual.js]等待游戏模板超时");
+                    console.warn("[annual.js]等待游戏模板超时，将在打开弹窗时再次尝试初始化");
+                    // 【修复】超时不锁死，打开弹窗时重新尝试
+                    _annualRealInitialized = false;
                 }
             }
         }, 50);
     }
 }
-
 if(typeof window !== "undefined"){
     window.initAnnualModule = initAnnualModule;
 }
