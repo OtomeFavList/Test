@@ -384,13 +384,14 @@ export function initAnnualModule(){
             // 添加游戏按钮点击
             const clickAddBtn = e.target.closest(".annual-add-game-btn");
             if(clickAddBtn){
-                e.stopPropagation();
                 const itemDom = clickAddBtn.closest(".annual-top-item");
+                if(!itemDom) return;
                 const panelDom = itemDom.querySelector(".annual-game-select-panel");
                 const searchInput = itemDom.querySelector(".annual-panel-search-input");
                 const listContainer = itemDom.querySelector(".annual-game-select-list");
-                const isOpen = panelDom.classList.contains("active");
+                if(!panelDom || !searchInput || !listContainer) return;
 
+                const isOpen = panelDom.classList.contains("active");
                 if(isOpen){
                     panelDom.classList.remove("active");
                 }else{
@@ -409,7 +410,6 @@ export function initAnnualModule(){
                 }
                 return;
             }
-
             const activePanel = document.querySelector(".annual-game-select-panel.active");
             if(!activePanel) return;
             const clickPanelInner = e.target.closest(".annual-game-select-panel");
@@ -418,10 +418,14 @@ export function initAnnualModule(){
         });
         window._annualPanelClickBound = true;
     }
-
     loadAnnualData();
     bindStatInputs();
     bindTop3Items();
     bindAnnualExport();
     bindAnnualExportPanel();
+}
+
+// ==========关键修复：ES Module导出函数挂载window全局，供index.html调用==========
+if(typeof window !== "undefined"){
+    window.initAnnualModule = initAnnualModule;
 }
