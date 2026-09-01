@@ -3,7 +3,8 @@
  * 存储key: "annual-report-data"，与喜好表数据隔离
  */
 
-import { renderGameSelectItem, getWebImageUrl, gameTemplateList, gameTemplateReady } from '/js/main.js';
+// =========【修复：不再导入基础类型布尔，规避ES Module值拷贝陷阱】===========
+import { renderGameSelectItem, getWebImageUrl, gameTemplateList } from '/js/main.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
@@ -111,6 +112,11 @@ function bindStatInputs() {
     });
 }
 
+// =========【新增：实时判断游戏模板是否就绪，基于数组长度，规避ES Module布尔拷贝陷阱】===========
+function isGameTemplateReady() {
+    return Array.isArray(gameTemplateList) && gameTemplateList.length > 0;
+}
+
 /**
  * 渲染年度报告游戏候选列表（顶层函数）
  * @param {HTMLElement} wrap
@@ -118,7 +124,7 @@ function bindStatInputs() {
  */
 function renderGameList(wrap, keyword) {
     wrap.innerHTML = "";
-    if(!gameTemplateList || !gameTemplateReady) {
+    if(!gameTemplateList || !isGameTemplateReady()) {
         wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
         return;
     }
@@ -395,7 +401,7 @@ export function initAnnualModule(){
                     panelDom.classList.add("active");
                     searchInput.focus();
                     // 打开立刻渲染游戏列表，等待模板就绪
-                    if(gameTemplateReady){
+                    if(isGameTemplateReady()){
                         renderGameList(listContainer, searchInput.value);
                     }else{
                         listContainer.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
