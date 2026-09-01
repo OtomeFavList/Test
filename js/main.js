@@ -1270,26 +1270,41 @@ export function getAllGameChar(gameInfo) {
     const gameItem = appData.gameList.find(g => g?.gameId === gameInfo.id);
     const showHide = appData.globalHideChar || gameItem?.localHideChar;
     const showFD = appData.globalFD || gameItem?.localFD;
-    const showSub = appData.globalSubChar || (gameItem?.localSubChar ?? false); // ✅新增次要角色判断
+    const showSub = appData.globalSubChar || (gameItem?.localSubChar ?? false);
 
     chars = chars.filter(c => {
         if (!c) return false;
-        const isSub = c.isSub ?? false; // ✅兼容不写isSub字段，默认false
+        const isSub = c.isSub ?? false;
+        const isHidden = !!c.isHidden;
+        const isFD = !!c.isFD;
 
-        // ---- 次要角色过滤：isSub=true时，必须showSub为true才放行 ----
+        // ========== 【新增业务：Sub角色复合属性强制全部开关开启】 ==========
         if (isSub) {
-            if (!showSub) return false;
+            // sub角色同时有隐藏+FD：sub、隐藏、FD三个开关全部打开才显示
+            if (isHidden && isFD) {
+                return showSub && showHide && showFD;
+            }
+            // sub角色仅隐藏属性：sub开关 + 隐藏开关同时打开
+            if (isHidden && !isFD) {
+                return showSub && showHide;
+            }
+            // sub角色仅FD属性：sub开关 + FD开关同时打开
+            if (!isHidden && isFD) {
+                return showSub && showFD;
+            }
+            // 普通sub角色，无隐藏、无FD：只要sub开关开启即可
+            return showSub;
         }
 
-        // ===== 原有 isHidden / isFD 逻辑保持完全不变 =====
-        if (!c.isHidden && !c.isFD) return true;
-        if (c.isHidden && !c.isFD) {
+        // ====== 非Sub角色，原有逻辑完全保留，不做任何改动 =====
+        if (!isHidden && !isFD) return true;
+        if (isHidden && !isFD) {
             return showHide;
         }
-        if (!c.isHidden && c.isFD) {
+        if (!isHidden && isFD) {
             return showFD;
         }
-        if (c.isHidden && c.isFD) {
+        if (isHidden && isFD) {
             return showHide || showFD;
         }
         return true;
