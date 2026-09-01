@@ -270,9 +270,14 @@ function renderCharModalGameList(wrap, keyword) {
         return;
     }
     const kw = (keyword ?? "").toLowerCase().trim();
+    // ===== 修改：同时匹配游戏名和角色名 =====
     const filtered = gameTemplateList.filter(g => {
         if (!kw) return true;
-        return String(g.name).toLowerCase().includes(kw);
+        // 匹配游戏名
+        const matchGameName = String(g.name).toLowerCase().includes(kw);
+        // 匹配任意角色名
+        const hasCharMatch = Array.isArray(g.charList) && g.charList.some(c => String(c.name).toLowerCase().includes(kw));
+        return matchGameName || hasCharMatch;
     });
     // ✅完全复用FavList中英日排序
     const { sortFilterOptionList } = window.Core || {};
@@ -389,24 +394,17 @@ function renderCharModalCharList() {
 function switchCharModalView(mode){
     charModalViewMode = mode;
     const modal = document.getElementById("annual-global-char-modal");
-    const gameWrap = modal.querySelector(".annual-global-char-game-list");
-    const charWrap = modal.querySelector(".annual-global-char-char-list");
+    const inner = modal.querySelector(".annual-global-modal-inner");
     const backBtn = modal.querySelector(".annual-modal-back-btn");
-    const globalSwitchWrap = modal.querySelector(".annual-modal-global-switch-group");
-    const localSwitchWrap = modal.querySelector(".annual-modal-game-switch-group");
+    // 清除旧视图class
+    inner.classList.remove("char-modal-gamelist-view", "char-modal-charlist-view");
 
     if(mode === "gameList"){
-        gameWrap.classList.remove("hidden-view");
-        charWrap.classList.remove("active");
+        inner.classList.add("char-modal-gamelist-view");
         backBtn.style.display = "none";
-        globalSwitchWrap.style.display = "block";
-        localSwitchWrap.classList.remove("active");
     }else if(mode === "charList"){
-        gameWrap.classList.add("hidden-view");
-        charWrap.classList.add("active");
+        inner.classList.add("char-modal-charlist-view");
         backBtn.style.display = "flex";
-        globalSwitchWrap.style.display = "block";
-        localSwitchWrap.classList.add("active");
     }
 }
 
