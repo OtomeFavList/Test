@@ -125,6 +125,7 @@
     width: min(92vw, 1200px);
     max-height: 80vh;
     min-height: 420px;
+    height: 80vh; /* 新增，和角色弹窗对齐 */
     background:#ffffff;
     border-radius:14px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.18);
@@ -133,6 +134,14 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+#annual-global-game-modal .annual-modal-header {
+    flex-shrink: 0; /* 新增：头部禁止压缩 */
+}
+#annual-global-game-modal .annual-modal-scroll-wrap {
+    flex: 1; /* 新增：滚动外壳占剩余全部高度 */
+    overflow-y: auto;
+    padding: 0 12px 12px 12px;
 }
 /* ==========弹窗头部【新增】========== */
 .annual-modal-header {
@@ -184,9 +193,8 @@
 }
 /* ✅游戏列表容器 - 完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
 .annual-global-game-list {
-    flex:1;
+    /* 删除 flex:1; 删除 overflow-y:auto; 滚动交给外层 scroll-wrap */
     min-height:260px;
-    overflow-y:auto;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -404,9 +412,10 @@
         height: 26px;
         font-size: 18px;
     }
+    /* ===== 修改：移动端游戏弹窗input边距由外层scroll-wrap控制 ===== */
     .annual-global-search-input {
-        width: calc(100% - 32px);
-        margin: 0 16px 10px 16px;
+        width: 100%;
+        margin: 0 0 10px 0;
     }
     /* ✅同步main.css手机端game-option-item布局，解决卡片高度不足、文字裁切 */
     .annual-global-game-list .game-option-item {
@@ -463,6 +472,11 @@
         line-height: 1.5 !important;
         word-break: break-all !important;
         white-space: normal !important;
+    }
+    /* ===== 修改：移动端角色弹窗搜索输入框边距由外层scroll-wrap控制 ===== */
+    .annual-global-char-search-input {
+        width: 100%;
+        margin: 0 0 10px 0;
     }
     /* 新增：小滚动外壳移动端最大高度调整 */
     .char-list-inner-scroll-wrap {
@@ -626,6 +640,24 @@
 }
 #annual-global-char-modal.active {
     display: flex;
+}
+/* 角色弹窗内层容器：对齐游戏弹窗样式 */
+#annual-global-char-modal .annual-global-modal-inner {
+    width: min(92vw, 1200px);
+    max-height: 80vh;
+    min-height: 420px;
+    height: 80vh;
+    background:#ffffff;
+    border-radius:14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+    padding:0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#annual-global-char-modal .annual-modal-header {
+    flex-shrink: 0;
 }
 /* 返回按钮 ←，完全复刻关闭×按钮样式 */
 .annual-modal-back-btn {
