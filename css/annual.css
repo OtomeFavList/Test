@@ -182,6 +182,7 @@
 }
 /* input与列表容器，补回原来的padding */
 .annual-global-search-input {
+    flex-shrink:0; /* 新增：固定不参与滚动 */
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
     padding:11px 14px;
@@ -419,6 +420,7 @@
     .annual-global-search-input {
         width: 100%;
         margin: 0 0 10px 0;
+        flex-shrink:0; /* 保持固定 */
     }
     /* ✅同步main.css手机端game-option-item布局，解决卡片高度不足、文字裁切 */
     .annual-global-game-list .game-option-item {
@@ -479,8 +481,9 @@
     }
     /* ===== 修改：移动端角色弹窗搜索输入框边距由外层scroll-wrap控制 ===== */
     .annual-global-char-search-input {
-        width: 100%;
-        margin: 0 0 10px 0;
+        width:calc(100% - 32px);
+        margin:0 16px 10px 16px;
+        flex-shrink:0; /* 保持固定 */
     }
     /* 新增：小滚动外壳移动端最大高度调整 */
     .char-list-inner-scroll-wrap {
@@ -705,6 +708,7 @@
     display: flex;
 }
 .annual-global-char-search-input {
+    flex-shrink:0; /* 新增：固定不参与滚动 */
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
     padding:11px 14px;
@@ -824,6 +828,7 @@
     .annual-global-char-search-input {
         width:calc(100% - 32px);
         margin:0 16px 10px 16px;
+        flex-shrink:0; /* 保持固定 */
     }
     .annual-modal-global-switch-group,
     .annual-modal-game-switch-group {
