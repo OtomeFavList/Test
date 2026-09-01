@@ -185,7 +185,7 @@
 /* input与列表容器，补回原来的padding */
 .annual-global-search-input {
     width:calc(100% - 40px);
-    margin:0 20px;
+    margin:0 20px 10px 20px; /* 增加margin-bottom */
     padding:11px 14px;
     border:1px solid #ddd;
     border-radius: 10px;
@@ -199,7 +199,7 @@
     flex:1;
     overflow-y:auto;
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); /* 调整最小宽度 */
     gap:14px;
     padding:10px 20px 20px 20px;
     border:1px solid #eee;
@@ -374,7 +374,14 @@
     background-color: var(--annual-export-bg, #fff7f9);
 }
 
-/* ========== 移动端适配 - 分界1：平板及以下设备 ========== */
+/* ========== 移动端适配 - 分界1：平板横向 ========== */
+@media (max-width: 1024px) {
+    .annual-global-modal-inner {
+        width: min(95vw, 680px);
+    }
+}
+
+/* ========== 移动端适配 - 分界2：平板纵向及手机横向 ========== */
 @media (max-width: 768px) {
     .annual-top-content-row {
         flex-direction: column;
@@ -419,11 +426,11 @@
     }
     .annual-global-search-input {
         width: calc(100% - 32px);
-        margin: 0 16px;
+        margin: 0 16px 10px 16px;
     }
 }
 
-/* ========== 移动端适配 - 分界2：手机设备 ========== */
+/* ========== 移动端适配 - 分界3：手机纵向 ========== */
 @media (max-width: 480px) {
     .annual-global-game-list .game-option-item {
         flex-direction: column;
@@ -436,5 +443,17 @@
     }
     .annual-global-game-list .game-option-info {
         width: 100%;
+    }
+    .annual-modal-header {
+        padding: 12px 14px;
+    }
+    .annual-modal-close-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 16px;
+    }
+    .annual-global-search-input {
+        padding: 10px 12px;
+        font-size: 14px;
     }
 }
