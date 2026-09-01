@@ -2,7 +2,7 @@
 .mode-switch-wrap {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 6px;    /* 由12px → 6px，按钮互相靠近 */
     margin: 16px 0 24px;
 }
 .mode-switch-wrap .mode-btn {
@@ -452,8 +452,8 @@
     .annual-global-char-game-list {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
-        padding: 10px 16px 16px 16px !important;
-        margin: 0 16px 16px 16px !important;
+        padding: 10px 12px 12px 12px !important; /* 左右由16px→12px，减少拥挤 */
+        margin: 0 12px 12px 12px !important;    /* margin左右16px→12px */
         min-height:260px;
         /* ✅删除 max‑height:38vh !important; overflow‑y:auto !important; */
     }
@@ -484,12 +484,33 @@
     }
     /* ===== 修改：移动端角色弹窗搜索输入框边距由外层scroll-wrap控制 ===== */
     .annual-global-char-search-input {
-        width: 100%;
-        margin: 0 0 10px 0;
+        width:calc(100% - 24px);   /* 左右边距12px，和游戏弹窗input对齐 */
+        margin:0 12px 10px 12px;
+    }
+    /* ===== 角色弹窗头部返回按钮左距调整 ===== */
+    .annual-modal-back-btn {
+        left:12px;
+        width: 26px;
+        height:26px;
+        font-size:18px;
+    }
+    /* ===== 开关组padding缩小 ===== */
+    .annual-modal-global-switch-group,
+    .annual-modal-game-switch-group {
+        padding:0 12px 8px 12px;
+    }
+    /* ===== 视图容器padding缩小 ===== */
+    .annual-modal-view-container {
+        padding:0 12px 12px 12px;
+    }
+    /* ===== 新增：防止开关文字被挤压 ===== */
+    .annual-modal-global-switch-group label,
+    .annual-modal-game-switch-group label {
+        flex-shrink: 0;
     }
     /* 新增：小滚动外壳移动端最大高度调整 */
     .char-list-inner-scroll-wrap {
-        max-height: 38vh;
+        max-height: 55vh;  /* 38vh →55vh，滚动区域拉长，不会只剩小圆球 */
     }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
@@ -571,7 +592,7 @@
         font-size: 16px;
     }
     .annual-global-search-input {
-        padding: 10px 12px;
+        padding: 11px 12px;   /* 10px →11px，与角色弹窗input padding上下一致 */
         font-size: 14px;
     }
 }
@@ -819,23 +840,32 @@
     #annual-global-char-modal .annual-global-modal-inner {
         width: 100%;
         max-height: 85vh;
+        padding: 0;
     }
     .annual-modal-back-btn {
-        left:16px;
+        left:12px;
         width: 26px;
         height:26px;
         font-size:18px;
     }
     .annual-global-char-search-input {
-        width:calc(100% - 32px);
-        margin:0 16px 10px 16px;
+        width:calc(100% - 24px);
+        margin:0 12px 10px 12px;
     }
     .annual-modal-global-switch-group,
     .annual-modal-game-switch-group {
-        padding:0 16px 8px 16px;
+        padding:0 12px 8px 12px;
     }
     .annual-modal-view-container {
-        padding:0 16px 16px 16px;
+        padding:0 12px 12px 12px;
+    }
+    /* 覆盖PC的max-height */
+    .char-list-inner-scroll-wrap {
+        max-height: 55vh;
+    }
+    .annual-modal-global-switch-group label,
+    .annual-modal-game-switch-group label {
+        flex-shrink: 0;
     }
 }
 @media (min-width:769px) and (max-width:1200px) {
