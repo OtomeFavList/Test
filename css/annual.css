@@ -195,8 +195,8 @@
 .annual-global-game-list {
     /* 恢复滚动，复刻FavList搜索行为 */
     min-height:260px;
-    max-height: 42vh;  /* 新增：最大高度，超出就滚动 */
-    overflow-y: auto;   /* 新增：恢复纵向滚动条 */
+    /* ❌删除 max-height: 42vh; */
+    /* ❌删除 overflow-y: auto; */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -401,8 +401,7 @@
         padding: 10px 16px 16px 16px;
         margin: 0 16px 16px 16px;
         min-height:260px;
-        max-height:38vh !important;
-        overflow-y:auto !important;
+        /* ❌删除 max-height:38vh !important; overflow-y:auto !important; */
     }
     .annual-global-game-list .game-option-item img {
         width: 80px !important;
