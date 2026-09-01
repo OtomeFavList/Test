@@ -2,13 +2,11 @@
  * 年度报告模块 annual.js
  * 存储key: "annual-report-data"，与喜好表数据隔离
  */
-
-// =========【修复：不再导入基础类型布尔，规避ES Module值拷贝陷阱】===========
 import { renderGameSelectItem, getWebImageUrl, gameTemplateList } from '/js/main.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
-// ============【修复1：配色持久化，对齐script.js，不再单纯内存变量】============
+// ============【配色持久化，对齐script.js】============
 const annualExportDefault = {
     bg: "#fff7f9",
     title: "#b33a3a",
@@ -55,8 +53,10 @@ const getDefaultAnnualData = () => ({
 });
 
 let annualData = getDefaultAnnualData();
-
 let btnAnnualExport;
+
+// =========【新增】全局弹窗：记录当前操作的TOP条目下标 0/1/2；null=弹窗关闭
+let activeTopItemIndex = null;
 
 /**
  * 更新单个TOP条目UI显隐状态
@@ -68,7 +68,6 @@ function refreshTopItemUi(itemDom, dataItem) {
     const contentRow = itemDom.querySelector(".annual-top-content-row");
     const addBtn = itemDom.querySelector(".annual-add-game-btn");
     const hasGame = !!dataItem.gameId;
-
     if (hasGame) {
         nameEl.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
@@ -112,14 +111,13 @@ function bindStatInputs() {
     });
 }
 
-// =========【新增：实时判断游戏模板是否就绪，基于数组长度，规避ES Module布尔拷贝陷阱】===========
 function isGameTemplateReady() {
     return Array.isArray(gameTemplateList) && gameTemplateList.length > 0;
 }
 
 /**
- * 渲染年度报告游戏候选列表（顶层函数）
- * @param {HTMLElement} wrap
+ * 渲染【全局模态弹窗】游戏候选列表
+ * @param {HTMLElement} wrap 弹窗内列表容器
  * @param {string} keyword
  */
 function renderGameList(wrap, keyword) {
@@ -133,30 +131,59 @@ function renderGameList(wrap, keyword) {
         if(!kw) return true;
         return String(g.name).toLowerCase().includes(kw);
     });
-
     filtered.forEach((game, listIndex)=>{
         const div = document.createElement("div");
         div.className = "game-option-item";
         div.innerHTML = renderGameSelectItem(game, listIndex);
         div.addEventListener("click", ()=>{
-            const topItemDom = div.closest(".annual-top-item");
-            const dataIdx = Number(topItemDom.dataset.rank) - 1;
-            const nameTextEl = topItemDom.querySelector(".annual-game-name-text");
-            const coverImg = topItemDom.querySelector(".annual-top-cover");
-            const panelDom = topItemDom.querySelector(".annual-game-select-panel");
+            if (activeTopItemIndex === null) return;
+            // 回填到当前激活的topList条目
+            const targetItem = annualData.topList[activeTopItemIndex];
+            targetItem.gameId = game.id;
+            targetItem.gameName = game.name;
+            targetItem.coverSrc = game.cover ?? "";
 
-            nameTextEl.textContent = game.name;
-            annualData.topList[dataIdx].gameId = game.id;
-            annualData.topList[dataIdx].gameName = game.name;
-            annualData.topList[dataIdx].coverSrc = game.cover ?? "";
-            coverImg.src = getWebImageUrl(annualData.topList[dataIdx].coverSrc);
-
-            refreshTopItemUi(topItemDom, annualData.topList[dataIdx]);
-            panelDom.classList.remove("active");
+            // 更新对应DOM条目UI
+            const topItemDomList = Array.from(document.querySelectorAll(".annual-top-item"));
+            const targetDom = topItemDomList[activeTopItemIndex];
+            if(targetDom){
+                const nameTextEl = targetDom.querySelector(".annual-game-name-text");
+                const coverImg = targetDom.querySelector(".annual-top-cover");
+                nameTextEl.textContent = game.name;
+                coverImg.src = getWebImageUrl(targetItem.coverSrc);
+                refreshTopItemUi(targetDom, targetItem);
+            }
             saveAnnualData();
+            // 关闭全局弹窗
+            closeAnnualGlobalGameModal();
         });
         wrap.appendChild(div);
     });
+}
+
+/**
+ * 打开年度全局游戏选择弹窗
+ */
+function openAnnualGlobalGameModal(targetIndex){
+    activeTopItemIndex = targetIndex;
+    const modal = document.getElementById("annual‑global‑game‑modal");
+    if(!modal) return;
+    modal.classList.add("active");
+    const searchInput = modal.querySelector(".annual‑global‑search‑input");
+    const listWrap = modal.querySelector(".annual‑global‑game‑list");
+    searchInput.value = "";
+    searchInput.focus();
+    renderGameList(listWrap, "");
+}
+
+/**
+ * 关闭年度全局游戏选择弹窗
+ */
+function closeAnnualGlobalGameModal(){
+    activeTopItemIndex = null;
+    const modal = document.getElementById("annual‑global‑game‑modal");
+    if(!modal) return;
+    modal.classList.remove("active");
 }
 
 function bindTop3Items() {
@@ -166,9 +193,6 @@ function bindTop3Items() {
         const dataIdx = rank - 1;
         const dataItem = annualData.topList[dataIdx];
 
-        const panel = item.querySelector(".annual-game-select-panel");
-        const panelInput = item.querySelector(".annual-panel-search-input");
-        const listWrap = item.querySelector(".annual-game-select-list");
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
@@ -181,13 +205,6 @@ function bindTop3Items() {
         }
         refreshTopItemUi(item, dataItem);
 
-        // 搜索框输入过滤
-        panelInput.removeEventListener("input", panelInput._inputHandler);
-        panelInput._inputHandler = ()=>{
-            renderGameList(listWrap, panelInput.value);
-        };
-        panelInput.addEventListener("input", panelInput._inputHandler);
-
         // 自定义文本框双向绑定
         textarea.removeEventListener("input", textarea._inputHandler);
         textarea._inputHandler = ()=>{
@@ -199,7 +216,7 @@ function bindTop3Items() {
 }
 
 /**
- * 更新滑块进度百分比【修复2：提升到模块顶层，全局作用域，和script.js行为对齐】
+ * 更新滑块进度百分比
  * @param {HTMLInputElement} sliderEl
  */
 function updateSliderProgress(sliderEl) {
@@ -233,7 +250,6 @@ function bindAnnualExportPanel() {
         return;
     }
 
-    // 初始化控件值
     colorBg.value = annualExportConfig.bg;
     colorTitle.value = annualExportConfig.title;
     colorGamename.value = annualExportConfig.gamename;
@@ -243,18 +259,16 @@ function bindAnnualExportPanel() {
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
 
-    // 初始化页面全局CSS变量
     document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
     document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
     document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
     document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
     document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
 
-    // 恢复默认设置按钮
     btnResetColor.removeEventListener("click", btnResetColor._handler);
     btnResetColor._handler = () => {
         annualExportConfig = {...annualExportDefault};
-        saveAnnualExportConfig(); //【修复：重置也要持久化】
+        saveAnnualExportConfig();
         colorBg.value = annualExportConfig.bg;
         colorTitle.value = annualExportConfig.title;
         colorGamename.value = annualExportConfig.gamename;
@@ -262,7 +276,6 @@ function bindAnnualExportPanel() {
         colorBorder.value = annualExportConfig.border;
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
-
         document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
         document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
@@ -272,7 +285,6 @@ function bindAnnualExportPanel() {
     };
     btnResetColor.addEventListener("click", btnResetColor._handler);
 
-    // 颜色输入双向绑定【修复：修改颜色立刻更新body CSS变量，页面实时变色，并持久化】
     colorBg.oninput = () => {
         annualExportConfig.bg = colorBg.value;
         document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
@@ -299,32 +311,26 @@ function bindAnnualExportPanel() {
         saveAnnualExportConfig();
     };
 
-    // 字号滑块
     sliderFont.oninput = () => {
         const val = Number(sliderFont.value);
         annualExportConfig.customTextFontSize = val;
         fontValueDisplay.textContent = `${val}px`;
         updateSliderProgress(sliderFont);
-        saveAnnualExportConfig(); //字号变更同样持久化
+        saveAnnualExportConfig();
     };
 
-    // 导出图片按钮
     btnExportImage.removeEventListener("click", btnExportImage._handler);
     btnExportImage._handler = async () => {
         const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
         if (!annualWrap || !snapshotBox) return;
-
         snapshotBox.innerHTML = annualWrap.innerHTML;
         snapshotBox.classList.add("export-snapshot", "annual-mode");
-
-        //【修复4：快照强制读取当前内存配置，防止快照读取CSS缓存旧值】
         snapshotBox.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         snapshotBox.style.setProperty("--annual-export-title", annualExportConfig.title);
         snapshotBox.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
         snapshotBox.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         snapshotBox.style.setProperty("--annual-export-border", annualExportConfig.border);
         snapshotBox.dataset.annualFontSize = String(annualExportConfig.customTextFontSize);
-
         try {
             const canvas = await html2canvas(snapshotBox, {
                 useCORS:true,
@@ -345,7 +351,6 @@ function bindAnnualExportPanel() {
     btnExportImage.addEventListener("click", btnExportImage._handler);
 }
 
-// 旧导出兼容保留
 function bindAnnualExport() {
     btnAnnualExport = document.getElementById("btn-annual-export");
     if(!btnAnnualExport) return;
@@ -375,49 +380,44 @@ function bindAnnualExport() {
     btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
 
-/**
- * 对外暴露初始化函数，由index.html在游戏模板就绪后手动调用
- */
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            // 添加游戏按钮点击
+            // 点击添加游戏按钮：打开全局弹窗，记录下标
             const clickAddBtn = e.target.closest(".annual-add-game-btn");
             if(clickAddBtn){
                 const itemDom = clickAddBtn.closest(".annual-top-item");
                 if(!itemDom) return;
-                const panelDom = itemDom.querySelector(".annual-game-select-panel");
-                const searchInput = itemDom.querySelector(".annual-panel-search-input");
-                const listContainer = itemDom.querySelector(".annual-game-select-list");
-                if(!panelDom || !searchInput || !listContainer) return;
-
-                const isOpen = panelDom.classList.contains("active");
-                if(isOpen){
-                    panelDom.classList.remove("active");
-                }else{
-                    // 关闭其他所有面板
-                    document.querySelectorAll(".annual-game-select-panel.active").forEach(p=>{
-                        if(p!==panelDom) p.classList.remove("active");
-                    });
-                    panelDom.classList.add("active");
-                    searchInput.focus();
-                    // 打开立刻渲染游戏列表，等待模板就绪
-                    if(isGameTemplateReady()){
-                        renderGameList(listContainer, searchInput.value);
-                    }else{
-                        listContainer.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
-                    }
-                }
+                const rank = Number(itemDom.dataset.rank);
+                const idx = rank - 1;
+                openAnnualGlobalGameModal(idx);
                 return;
             }
-            const activePanel = document.querySelector(".annual-game-select-panel.active");
-            if(!activePanel) return;
-            const clickPanelInner = e.target.closest(".annual-game-select-panel");
-            if(clickPanelInner) return;
-            activePanel.classList.remove("active");
+
+            const modalEl = document.getElementById("annual‑global‑game‑modal");
+            if(!modalEl || !modalEl.classList.contains("active")) return;
+
+            // 点击弹窗内部，不关闭
+            const insideModal = e.target.closest(".annual‑global‑modal‑inner");
+            if(insideModal) return;
+
+            // 点击遮罩，关闭弹窗
+            closeAnnualGlobalGameModal();
         });
+
+        // 全局弹窗搜索input事件委托
+        document.addEventListener("input", (e)=>{
+            const input = e.target.closest(".annual‑global‑search‑input");
+            if(!input) return;
+            const listWrap = document.querySelector(".annual‑global‑game‑list");
+            if(listWrap){
+                renderGameList(listWrap, input.value);
+            }
+        });
+
         window._annualPanelClickBound = true;
     }
+
     loadAnnualData();
     bindStatInputs();
     bindTop3Items();
@@ -425,7 +425,6 @@ export function initAnnualModule(){
     bindAnnualExportPanel();
 }
 
-// ==========关键修复：ES Module导出函数挂载window全局，供index.html调用==========
 if(typeof window !== "undefined"){
     window.initAnnualModule = initAnnualModule;
 }
