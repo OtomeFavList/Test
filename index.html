@@ -708,10 +708,23 @@ z-index: -999;
             if (typeof window.uiBootstrap === "function") {
                 await window.uiBootstrap();
             }
-            // 4. 初始化年度报告模块（如果存在）
-            if (typeof window.initAnnualModule === "function") {
-                window.initAnnualModule();
+
+            // =========修复：等待annual.js模块挂载到window，解决ES Module加载时序竞争=========
+            async function safeInitAnnual(){
+                let retry = 0;
+                while(typeof window.initAnnualModule !== "function" && retry < 20){
+                    await new Promise(r=>setTimeout(r,50));
+                    retry++;
+                }
+                if(typeof window.initAnnualModule === "function"){
+                    window.initAnnualModule();
+                    console.log("✅年度报告模块已初始化");
+                }else{
+                    console.warn("⚠️年度报告模块初始化失败，window.initAnnualModule仍然未定义");
+                }
             }
+            await safeInitAnnual();
+
             // 清理进度回调，防止内存残留
             window.onGameLoadProgress = null;
         };
