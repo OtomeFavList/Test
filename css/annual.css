@@ -897,3 +897,15 @@
 .char-modal-charlist-view .annual-modal-game-switch-group { display:flex; }
 .char-modal-charlist-view .annual-global-char-game-list { display:none; }
 .char-modal-charlist-view .annual-global-char-char-list { display:grid; }
+
+/* ========== 补丁：开关组放到滚动容器内，增加上下边距，避免贴边 ========== */
+.char-list-inner-scroll-wrap .annual-modal-global-switch-group {
+    padding:12px 12px 8px 12px;
+}
+.char-list-inner-scroll-wrap .annual-modal-game-switch-group {
+    padding:0 12px 12px 12px;
+}
+/* 修复：游戏列表视图，开关和游戏卡片之间留出空隙 */
+.char-modal-gamelist-view .annual-global-char-game-list {
+    margin-top:8px;
+}
