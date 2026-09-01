@@ -451,8 +451,8 @@
     .annual-global-char-game-list {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
-        padding: 10px 16px 16px 16px !important; /* 改回16px，与游戏弹窗对齐 */
-        margin: 0 16px 16px 16px !important;    /* 改回16px */
+        padding: 10px 12px 12px 12px !important;
+        margin: 0 12px 12px 12px !important;
         min-height:260px;
         /* ✅删除 max‑height:38vh !important; overflow‑y:auto !important; */
     }
@@ -485,14 +485,17 @@
     .annual-global-char-search-input {
         width: 100%;
         margin: 0;
-        padding: 11px 14px; /* 与游戏弹窗input一致 */
+        padding: 11px 12px; /* 左右12px，和开关组对齐 */
         font-size: 14px;
     }
-    /* ===== ①移动端开关组同步缩小gap，并保持16px左右边距 ===== */
-    .annual-modal-global-switch-group,
+    /* ===== ①移动端开关组同步缩小gap，并保持12px左右边距，与搜索框对齐 ===== */
+    .annual-modal-global-switch-group {
+        gap: 3px;
+        padding: 0 12px 8px 12px;
+    }
     .annual-modal-game-switch-group {
-        gap: 6px;
-        padding: 0 16px 8px 16px;
+        gap: 3px;
+        padding: 0 0 8px 0;
     }
     /* ===== 角色弹窗头部返回按钮左距调整 ===== */
     .annual-modal-back-btn {
@@ -501,9 +504,9 @@
         height:26px;
         font-size:18px;
     }
-    /* ==========④关键：视图容器顶部增加padding‑top，把搜索栏与游戏卡片框隔开，复刻游戏弹窗的空隙 ========== */
+    /* ==========④关键：视图容器顶部增加padding‑top，把搜索栏与游戏卡片框隔开，同时左右内边距归零，由子元素控制 ========== */
     .annual-modal-view-container {
-        padding:12px 12px 12px 12px;
+        padding:12px 0 12px 0;
     }
     /* ===== 防止开关文字被挤压 ===== */
     .annual-modal-global-switch-group label,
@@ -590,6 +593,13 @@
         line-height: 1.5 !important;
         word-break: break-all !important;
         white-space: normal !important;
+    }
+    /* 平板开关组gap统一缩小 */
+    .annual-modal-global-switch-group {
+        gap: 3px;
+    }
+    .annual-modal-game-switch-group {
+        gap: 3px;
     }
 }
 /* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
@@ -715,15 +725,15 @@
 .annual-modal-global-switch-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;  /* 12px → 6px，开关互相靠近 */
+    gap: 3px;  /* 12px → 6px → 3px，开关互相靠近 */
     padding: 0 20px 8px 20px;
 }
 /* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
 .annual-modal-game-switch-group {
     display: none;
     flex-wrap: wrap;
-    gap: 6px;  /* 12px → 6px，开关互相靠近 */
-    padding: 0 20px 8px 20px;
+    gap: 3px;  /* 12px → 6px → 3px，开关互相靠近 */
+    padding: 0 0 8px 0; /* 左右边距由外层滚动容器提供，避免双重边距 */
 }
 .annual-modal-game-switch-group.active {
     display: flex;
@@ -849,16 +859,19 @@
     .annual-global-char-search-input {
         width: 100%;
         margin: 0;
-        padding: 11px 14px;
+        padding: 11px 12px;
         font-size: 14px;
     }
-    .annual-modal-global-switch-group,
+    .annual-modal-global-switch-group {
+        gap: 3px;
+        padding: 0 12px 8px 12px;
+    }
     .annual-modal-game-switch-group {
-        gap: 6px;
-        padding: 0 16px 8px 16px;
+        gap: 3px;
+        padding: 0 0 8px 0;
     }
     .annual-modal-view-container {
-        padding:12px 12px 12px 12px;
+        padding:12px 0 12px 0;
     }
     /* 覆盖PC的max-height */
     .char-list-inner-scroll-wrap {
