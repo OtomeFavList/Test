@@ -393,14 +393,25 @@ export function initAnnualModule(){
                 openAnnualGlobalGameModal(idx);
                 return;
             }
+
+            // 【新增】弹窗右上角×关闭按钮
+            const clickCloseBtn = e.target.closest(".annual-modal-close-btn");
+            if(clickCloseBtn){
+                closeAnnualGlobalGameModal();
+                return;
+            }
+
             const modalEl = document.getElementById("annual-global-game-modal");
             if(!modalEl || !modalEl.classList.contains("active")) return;
+
             // 点击弹窗内部，不关闭
             const insideModal = e.target.closest(".annual-global-modal-inner");
             if(insideModal) return;
+
             // 点击遮罩，关闭弹窗
             closeAnnualGlobalGameModal();
         });
+
         // 全局弹窗搜索input事件委托
         document.addEventListener("input", (e)=>{
             const input = e.target.closest(".annual-global-search-input");
