@@ -482,3 +482,215 @@
         font-size: 14px;
     }
 }
+/* ========== 三、キャラTOP3 【新增模块样式】 ========== */
+.annual-char-top-item {
+    margin-bottom: 24px;
+}
+.annual-add-char-btn-wrap {
+    text-align: center;
+    margin: 8px 0 14px;
+}
+.annual-add-char-btn {
+    padding:10px 18px;
+    min-height:42px;
+    font-size:15px;
+    border: none;
+    border-radius:8px;
+    background:#b33a3a;
+    color:#fff;
+    cursor:pointer;
+    transition:0.2s;
+}
+.annual-add-char-btn:hover {
+    background-color: #992e2e;
+}
+
+.annual-char-name-text {
+    font-size: 22px;
+    color: var(--annual-export-gamename, #000000);
+    word-break: break-all;
+    margin: 8px 0 12px;
+}
+.annual-char-top-content-row {
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+}
+.annual-char-cover-wrap {
+    flex-shrink:0;
+    width:140px;
+}
+.annual-char-cover {
+    width:100%;
+    height:auto;
+    border-radius:8px;
+    border:1px solid #eee;
+}
+.annual-char-text-wrap {
+    flex:1;
+    min-width:260px;
+}
+.annual-char-textarea {
+    width: 100%;
+    min-height: 120px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid var(--annual-export-border, #f6a5b8);
+    border-radius: 8px;
+    background: #fcfcfc;
+    font-size: 15px;
+    color: var(--annual-export-customtext, #c98fac);
+    resize: vertical;
+}
+
+/* ========== 年度报告全局角色弹窗 #annual‑global‑char-modal ========== */
+#annual-global-char-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding:16px;
+    box-sizing: border-box;
+}
+#annual-global-char-modal.active {
+    display: flex;
+}
+
+/* 返回按钮 ←，完全复刻关闭×按钮样式 */
+.annual-modal-back-btn {
+    position:absolute;
+    left:20px;
+    top:50%;
+    transform: translateY(-50%);
+    width:28px;
+    height:28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+.annual-modal-back-btn:hover{
+    background: #992e2e !important;
+    color: #b33a3a !important;
+}
+
+/* 全局开关组：搜索框上方，默认显示 */
+.annual-modal-global-switch-group {
+    padding:0 20px 8px 20px;
+}
+/* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
+.annual-modal-game-switch-group {
+    padding:0 20px 8px 20px;
+    display:none;
+}
+.annual-modal-game-switch-group.active {
+    display:block;
+}
+
+.annual-global-char-search-input {
+    width:calc(100% - 40px);
+    margin:0 20px 10px 20px;
+    padding:11px 14px;
+    border:1px solid #ddd;
+    border-radius: 10px;
+    background:#fcfcfc;
+    font-size:15px;
+    box-sizing: border-box;
+}
+
+/* 视图容器：两个互斥视图 */
+.annual-modal-view-container {
+    flex:1;
+    min-height:260px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    padding:0 20px 20px 20px;
+}
+.annual-global-char-game-list {
+    flex:1;
+    overflow-y:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:14px;
+    border:1px solid #eee;
+    border-radius:10px;
+    padding:10px;
+}
+.annual-global-char-char-list {
+    flex:1;
+    overflow-y:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+    gap:14px;
+    border:1px solid #eee;
+    border-radius:10px;
+    padding:10px;
+    display:none;
+}
+.annual-global-char-char-list.active {
+    display:grid;
+}
+.annual-global-char-game-list.hidden-view {
+    display:none;
+}
+
+/* 弹窗内游戏item直接复用已有的.game-option-item，角色item直接复用.char-item */
+
+/* ========== 快照模式隐藏角色TOP3交互控件 ========== */
+.snapshot-container.export-snapshot .annual-add-char-btn {
+    display:none !important;
+}
+
+/* ========== 移动端适配 角色TOP3与角色弹窗 ========== */
+@media (max-width: 768px) {
+    .annual-char-top-content-row {
+        flex-direction: column;
+    }
+    .annual-char-cover-wrap {
+        width: 120px;
+    }
+    .annual-char-name-text {
+        font-size: 18px;
+    }
+    #annual-global-char-modal .annual-global-modal-inner {
+        width: 100%;
+        max-height: 85vh;
+    }
+    .annual-modal-back-btn {
+        left:16px;
+        width: 26px;
+        height:26px;
+        font-size:18px;
+    }
+    .annual-global-char-search-input {
+        width:calc(100% - 32px);
+        margin:0 16px 10px 16px;
+    }
+    .annual-modal-global-switch-group,
+    .annual-modal-game-switch-group {
+        padding:0 16px 8px 16px;
+    }
+    .annual-modal-view-container {
+        padding:0 16px 16px 16px;
+    }
+    .annual-global-char-game-list {
+        grid-template-columns:1fr !important;
+    }
+}
+@media (min-width:769px) and (max-width:1200px) {
+    .annual-global-char-game-list {
+        grid-template-columns:repeat(auto-fill,minmax(280px,1fr)) !important;
+    }
+}
