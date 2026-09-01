@@ -446,7 +446,7 @@
     }
     /* ==========②③角色弹窗游戏列表与滚动外壳调整 ========== */
     .char-list-inner-scroll-wrap {
-        max-height: 68vh;  /* 55vh →68vh，滚动区域进一步拉长 */
+        max-height: 72vh;  /* 68vh →72vh，滚动区域进一步拉长 */
     }
     .annual-global-char-game-list {
         grid-template-columns: 1fr !important;
@@ -488,9 +488,10 @@
         padding: 11px 14px; /* 与游戏弹窗input一致 */
         font-size: 14px;
     }
-    /* ===== 开关组padding同步游戏弹窗列表左右16px ===== */
+    /* ===== ①移动端开关组同步缩小gap，并保持16px左右边距 ===== */
     .annual-modal-global-switch-group,
     .annual-modal-game-switch-group {
+        gap: 6px;
         padding: 0 16px 8px 16px;
     }
     /* ===== 角色弹窗头部返回按钮左距调整 ===== */
@@ -500,9 +501,9 @@
         height:26px;
         font-size:18px;
     }
-    /* ===== 视图容器padding保留12px（内部列表已独立16px） ===== */
+    /* ==========④关键：视图容器顶部增加padding‑top，把搜索栏与游戏卡片框隔开，复刻游戏弹窗的空隙 ========== */
     .annual-modal-view-container {
-        padding:0 12px 12px 12px;
+        padding:12px 12px 12px 12px;
     }
     /* ===== 防止开关文字被挤压 ===== */
     .annual-modal-global-switch-group label,
@@ -714,14 +715,14 @@
 .annual-modal-global-switch-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 6px;  /* 12px → 6px，开关互相靠近 */
     padding: 0 20px 8px 20px;
 }
 /* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
 .annual-modal-game-switch-group {
     display: none;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 6px;  /* 12px → 6px，开关互相靠近 */
     padding: 0 20px 8px 20px;
 }
 .annual-modal-game-switch-group.active {
@@ -853,14 +854,15 @@
     }
     .annual-modal-global-switch-group,
     .annual-modal-game-switch-group {
+        gap: 6px;
         padding: 0 16px 8px 16px;
     }
     .annual-modal-view-container {
-        padding:0 12px 12px 12px;
+        padding:12px 12px 12px 12px;
     }
     /* 覆盖PC的max-height */
     .char-list-inner-scroll-wrap {
-        max-height: 68vh;
+        max-height: 72vh;
     }
     .annual-modal-global-switch-group label,
     .annual-modal-game-switch-group label {
