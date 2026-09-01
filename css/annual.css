@@ -446,7 +446,7 @@
     }
     /* ==========②③角色弹窗游戏列表与滚动外壳调整 ========== */
     .char-list-inner-scroll-wrap {
-        max-height: 72vh;  /* 68vh →72vh，滚动区域进一步拉长 */
+        max-height: 55vh;
     }
     .annual-global-char-game-list {
         grid-template-columns: 1fr !important;
@@ -862,7 +862,7 @@
     }
     /* 覆盖PC的max-height */
     .char-list-inner-scroll-wrap {
-        max-height: 72vh;
+        max-height: 55vh;
     }
     .annual-modal-global-switch-group label,
     .annual-modal-game-switch-group label {
