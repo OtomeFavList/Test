@@ -434,13 +434,13 @@ function openAnnualGlobalCharModal(targetIndex){
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
     searchInput.focus();
-    // 重置开关DOM勾选
-    modal.querySelector(".annual-modal-global-sub-char").checked = false;
-    modal.querySelector(".annual-modal-global-hide-char").checked = false;
-    modal.querySelector(".annual-modal-global-fd-char").checked = false;
-    modal.querySelector(".annual-modal-local-sub-char").checked = false;
-    modal.querySelector(".annual-modal-local-hide-char").checked = false;
-    modal.querySelector(".annual-modal-local-fd-char").checked = false;
+    // 重置开关DOM勾选（对齐HTML真实id）
+    modal.querySelector("#annual-modal-global-sub-char").checked = false;
+    modal.querySelector("#annual-modal-global-hide-char").checked = false;
+    modal.querySelector("#annual-modal-global-fd-game").checked = false;
+    modal.querySelector("#annual-modal-game-sub-char").checked = false;
+    modal.querySelector("#annual-modal-game-hide-char").checked = false;
+    modal.querySelector("#annual-modal-game-fd-game").checked = false;
 
     renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), "");
 }
@@ -805,33 +805,33 @@ export function initAnnualModule(){
 
             // -------- 弹窗开关点击事件委托（角色弹窗） --------
             // 全局开关
-            if(e.target.closest(".annual-modal-global-sub-char")){
+            if(e.target.closest("#annual-modal-global-sub-char")){
                 charModalGlobal.subChar = !charModalGlobal.subChar;
                 if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
-            if(e.target.closest(".annual-modal-global-hide-char")){
+            if(e.target.closest("#annual-modal-global-hide-char")){
                 charModalGlobal.hideChar = !charModalGlobal.hideChar;
                 if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
-            if(e.target.closest(".annual-modal-global-fd-char")){
+            if(e.target.closest("#annual-modal-global-fd-game")){
                 charModalGlobal.fdChar = !charModalGlobal.fdChar;
                 if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
             // 本游戏局部开关
-            if(e.target.closest(".annual-modal-local-sub-char")){
+            if(e.target.closest("#annual-modal-game-sub-char")){
                 charModalLocal.subChar = !charModalLocal.subChar;
                 renderCharModalCharList();
                 return;
             }
-            if(e.target.closest(".annual-modal-local-hide-char")){
+            if(e.target.closest("#annual-modal-game-hide-char")){
                 charModalLocal.hideChar = !charModalLocal.hideChar;
                 renderCharModalCharList();
                 return;
             }
-            if(e.target.closest(".annual-modal-local-fd-char")){
+            if(e.target.closest("#annual-modal-game-fd-game")){
                 charModalLocal.fdChar = !charModalLocal.fdChar;
                 renderCharModalCharList();
                 return;
