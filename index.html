@@ -882,18 +882,22 @@ z-index: -999;
 <!-- ===== 新增年度报告脚本 ===== -->
 <script type="module" src="./js/annual.js"></script>
 
-<!-- ===== 年度报告全局游戏选择弹窗（body直接子节点） ===== -->
+<!-- ===== 年度报告全局游戏选择弹窗（body直接子节点）【修改后】 ===== -->
 <div id="annual-global-game-modal">
     <div class="annual-global-modal-inner">
-        <!-- 弹窗头部：居中标题 + 右上角关闭×按钮 -->
+        <!-- 弹窗头部【固定，不参与滚动】 -->
         <div class="annual-modal-header">
             <div class="annual-modal-header-title">搜索游戏</div>
             <button class="annual-modal-close-btn">×</button>
         </div>
-        <input class="annual-global-search-input" placeholder="搜索游戏名称">
-        <div class="annual-global-game-list"></div>
+        <!-- ✅新增大滚动外壳，所有可滚动内容全部放里面 -->
+        <div class="annual-modal-scroll-wrap">
+            <input class="annual-global-search-input" placeholder="搜索游戏名称">
+            <div class="annual-global-game-list"></div>
+        </div>
     </div>
 </div>
+
 <!-- ========== 年度报告全局角色选择弹窗【修改后】 ========== -->
 <div id="annual-global-char-modal">
     <div class="annual-global-modal-inner">
