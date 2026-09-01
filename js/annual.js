@@ -176,8 +176,8 @@ function renderGameList(wrap, keyword) {
         return String(g.name).toLowerCase().includes(kw);
     });
 
-    // ✅【核心修改：完全复用FavList主列表的中英日排序逻辑 localeCompare("zh‑CN")】
-    const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh‑CN"));
+    // ✅【核心修改：完全复用FavList主列表的中英日排序逻辑 localeCompare("zh-CN")】
+    const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
 
     sorted.forEach((game, listIndex)=>{
         if(!game) return;
