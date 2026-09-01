@@ -1,202 +1,317 @@
-/* ========== 模式切换按钮组（顶部，site-title下方） ========== */
-.mode-switch-wrap {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin: 16px 0 24px;
+/* ========== 全局重置 ========== */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    /* 已移除GenJyuuGothic，消除缺失字体警告 */
+    font-family: sans-serif,system-ui;
 }
-.mode-switch-wrap .mode-btn {
-    padding: 10px 22px;
-    border: 2px solid #f6a5b8;
-    border-radius: 8px;
-    background: #fff7f9;
-    color: #b85878;
-    font-size: 16px;
-    font-weight: normal;
-    cursor: pointer;
-    transition: 0.2s;
+/* 额外优化：防止手机端横向滚动 */
+html {
+    overflow-x: hidden;
 }
-.mode-switch-wrap .mode-btn:hover {
-    background: #fce8ed;
+
+/* ========== 字体定义（全部注释，不加载外部字体文件） ========== */
+/*
+@font-face {
+    font-family: "GenJyuuGothic";
+    src: url("./font/GenJyuuGothic-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
 }
-.mode-switch-wrap .mode-btn.active {
-    background: #f6a5b8;
-    color: #ffffff;
+@font-face {
+    font-family: "GenJyuuGothic";
+    src: url("./font/GenJyuuGothic-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
 }
-/* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
-.mode-wrap {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
+@font-face {
+    font-family: "Noto Sans SC Black";
+    src: url("./font/NotoSansSC-Black.woff2") format("woff2");
+    font-weight: 900;
+    font-display: swap;
 }
-.mode-wrap.mode-hidden {
-    visibility: hidden;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
+@font-face {
+    font-family: "Noto Sans SC";
+    src: url("./font/NotoSansSC-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
 }
-/* ========== site-title 年度报告覆盖样式 ========== */
-.site-title.annual-active h1 {
-    font-size: 42px;
-    color: #b33a3a;
+*/
+
+/* ==========【重要】卡片内部动态生成滑出面板 char / cp 两套（JS动态插入DOM） ========== */
+.char-slide-panel-char{
+    display:none;
+    margin:8px 0;
+    border:1px solid #f6a5b8;
+    border-radius:8px;
+    padding:12px;
+    background:#fff7f9;
 }
-.site-title.annual-active .title-sub-cn,
-.site-title.annual-active .sub-desc {
-    display: none !important;
+.char-slide-panel-cp {
+    display:none;
+    margin:8px 0;
+    border:1px solid #f6a5b8;
+    border-radius:8px;
+    padding:12px;
+    background:#fff7f9;
+    position:relative;
 }
-/* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
-.annual-page-title {
-    display: none;
+.char-slide-panel-char.active,
+.char-slide-panel-cp.active {
+    display:block;
 }
-/* ========== 统计行：整段居中、字号16px，颜色变量控制 ========== */
-.annual-stat-line {
-    font-size: 16px;
-    line-height: 2.2;
-    text-align: center;
-    color: var(--annual-export-customtext, #c98fac);
+
+.panel-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    gap:12px;
 }
-.annual-input {
-    width: 80px;
-    padding: 4px 6px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    font-size: 16px;
-    background: #fcfcfc;
-    margin: 0 4px;
-    color:#000000;
+.panel-header h4{
+    margin:0;
 }
-/* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
-.annual-top-label {
-    font-size: 22px;
-    font-weight: bold;
-    color: var(--annual-export-subtitle, #b85878);
-    margin-bottom: 10px;
+.panel-close-btn {
+    border:none;
+    background:transparent;
+    font-size:20px;
+    cursor:pointer;
+    color:#b33a3a;
 }
-/* 游戏名称显示：黑色22px，自动换行 */
-.annual-game-name-text {
-    font-size: 22px;
-    color: var(--annual-export-gamename, #000000);
-    word-break: break-all;
-    margin: 8px 0 12px;
+.heroine-box, .hero-list-box {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:12px;
 }
-/* ========== TOP3游戏条目 ========== */
-.annual-top-item {
-    margin-bottom: 24px;
+
+/* ========== body基础 ========== */
+body{
+    background: var(--export-bg, #fff7f9);
+    padding:20px;
+    transition:background 0.2s;
 }
-.annual-search-row {
-    display: none !important;
+
+/* ========== 页面标题区域 site-title ========== */
+.site-title{
+    text-align:center;
+    margin:30px 0 0; /* 修改：去掉下边距 */
 }
-/* +添加游戏按钮，居中 */
-.annual-add-game-btn-wrap {
-    text-align: center;
-    margin: 8px 0 14px;
+.site-title h1{
+    font-family:sans-serif;
+    font-size:42px;
+    font-weight:900;
+    letter-spacing:1px;
+    color: var(--export-title, #b33a3a);
 }
-.annual-add-game-btn {
+.title-sub-cn{
+    font-size:16px;
+    margin:8px 0;
+    color:#666;
+    font-weight:normal;
+}
+.sub-desc{
+    text-align:center;
+    font-size:16px;
+    color:#666;
+    margin-bottom:30px; /* 修改：40px → 30px */
+}
+
+/* ========== 外层容器 wrap ========== */
+.wrap{
+    max-width:1200px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:30px;
+}
+
+/* ========== 大卡片组件 big-card ========== */
+.big-card{
+    background:#ffffff;
+    border:2px solid var(--export-border, #f6a5b8);
+    border-radius:16px;
+    padding:24px;
+    transition:border-color 0.2s;
+}
+.big-card h2{
+    margin-bottom:20px;
+    font-size:24px;
+    border-left:5px solid var(--export-subtitle, #b85878);
+    padding-left:12px;
+    color: var(--export-subtitle, #b85878);
+    font-weight:bold;
+}
+
+/* ========== 设置页开关组件 switch-row / switch / slider ========== */
+.switch-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:14px 0;
+    flex-wrap:wrap;
+}
+.switch-desc{
+    font-size:14px;
+    color:#666;
+    line-height:1.6;
+    max-width:900px;
+    font-weight:normal !important;
+}
+.switch{
+    position:relative;
+    width:50px;
+    height:26px;
+}
+.switch input{
+    opacity:0;
+    width:0;
+    height:0;
+}
+.slider{
+    position:absolute;
+    cursor:pointer;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    background:#ccc;
+    border-radius:34px;
+    transition:.3s;
+}
+.slider:before{
+    position:absolute;
+    content:"";
+    height:20px;
+    width:20px;
+    left:3px;
+    bottom:3px;
+    background:white;
+    border-radius:50%;
+    transition:.3s;
+}
+input:checked + .slider{
+    background:#e895a8;
+}
+input:checked + .slider:before{
+    transform:translateX(24px);
+}
+
+/* ========== 表单输入 form-row ========== */
+.form-row{
+    margin:16px 0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    max-width:600px;
+}
+.form-row input{
+    padding:10px;
+    border:1px solid #eee;
+    border-radius:8px;
+    font-size:16px;
+    background:#fcfcfc;
+}
+
+/* ========== 全局普通按钮 button基础样式 ========== */
+button{
     padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
+    border:none;
     border-radius:8px;
     background:#b33a3a;
     color:#fff;
     cursor:pointer;
+    font-size:15px;
     transition:0.2s;
 }
-.annual-add-game-btn:hover {
-    background-color: #992e2e;
+button:hover{
+    background:#992e2e;
 }
-/* ==========【修复】年度报告全局居中游戏选择模态弹窗（body直接子节点） 全部半角符号 ========== */
-#annual-global-game-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background-color: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding:16px;
-    box-sizing: border-box;
+.btn-fold{
+    background:#888 !important;
 }
-#annual-global-game-modal.active {
-    display: flex;
+.btn-fold:hover{
+    background:#666 !important;
 }
-.annual-global-modal-inner {
-    width: min(92vw, 1200px);
-    max-height: 80vh;
-    min-height: 420px;
-    background:#ffffff;
-    border-radius:14px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
-    padding:0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+/* 删除按钮统一灰色 */
+.btn-del.del-game {
+    background-color:#888 !important;
+    color:#fff;
 }
-/* ==========弹窗头部【新增】========== */
-.annual-modal-header {
+.btn-del.del-game:hover {
+    background-color:#666 !important;
+}
+
+/* ==========【新增】游戏卡片每组模块，增加上下间距，解决拥挤 ========== */
+.game-card-block-item{
+    margin-bottom:24px;
+}
+.game-card-empty-tip{
+    margin:10px 0 18px 0;
+    font-size:18px;
+}
+
+/* ========== 居中按钮块 center-btn-block ========== */
+.center-btn-block{
     display:flex;
-    align-items:center;
     justify-content:center;
-    position:relative;
-    padding:16px 20px;
+    margin:16px 0 0; /* 修改：去掉下边距 */
+    gap:12px;
 }
-.annual-modal-header-title {
-    font-size:20px;
-    font-weight:bold;
-    color:#b33a3a;
+
+/* ========== 游戏搜索面板 game-search-box 【核心修复】 ========== */
+.game-search-box{
+    margin:16px 0;
+    display:none; /* 默认隐藏 */
+    flex-direction:column;
+    gap:10px;
+    align-items:stretch;
+    padding:16px;
+    /* border:1px solid #f6a5b8; */
+    border-radius:12px;
+    background:#fff;
 }
-/* 关闭按钮：1:1复刻 .game‑fold‑icon‑expand 样式 */
-.annual-modal-close-btn {
-    position:absolute;
-    right:20px;
-    top:50%;
-    transform: translateY(-50%);
-    width:28px;
-    height:28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
+.game-search-box.active{
+    display:flex; /* 激活恢复flex布局，保证内部filter-group正常排列 */
 }
-.annual-modal-close-btn:hover{
-    background: #992e2e !important;
-    color: #b33a3a !important;
-}
-/* input与列表容器，补回原来的padding */
-.annual-global-search-input {
-    width:calc(100% - 40px);
-    margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
+.game-search-box input{
+    padding:10px;
+    width:100%;
+    border:1px solid #eee;
+    border-radius:8px;
     background:#fcfcfc;
-    font-size:15px;
-    box-sizing: border-box;
 }
-/* ✅游戏列表容器 - 完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
-.annual-global-game-list {
-    flex:1;
-    min-height:260px;
+.filter-group{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.filter-group select{
+    padding:8px;
+    border-radius:6px;
+    border:1px solid #eee;
+    background:#fcfcfc;
+}
+
+/* ========== 游戏选择列表 game-list-select ========== */
+.game-list-select{
+    max-height:320px;
     overflow-y:auto;
+    border:1px solid #eee;
+    border-radius:10px;
+    padding:10px;
+    margin:12px 0;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
-    padding:10px 20px 20px 20px;
-    border:1px solid #eee;
-    border-radius:10px;
-    margin:0 20px 20px 20px;
+    background:#fff;
 }
-/* 弹窗内游戏选项 1:1复刻FavList .game-option-item */
-.annual-global-game-list .game-option-item{
+
+/* ========== 游戏选项单项 game-option-item ========== */
+.game-option-item{
     border:1px solid #eee;
     border-radius:10px;
     padding:12px;
@@ -205,109 +320,551 @@
     gap:12px;
     align-items:flex-start;
     background:#fff;
-    width: 100%;
 }
-.annual-global-game-list .game-option-item:hover{
+.game-option-item:hover{
     background:#fff0f3;
     border-color:#e895a8;
 }
-.annual-global-game-list .game-option-item img{
+.game-option-item img{
     width:120px;
     height:auto;
     border-radius:6px;
     object-fit:cover;
     flex-shrink:0;
 }
-.annual-global-game-list .game-option-info{
+.game-option-info{
     flex:1;
 }
-.annual-global-game-list .game-option-name{
+.game-option-name{
     font-weight:bold;
     font-size:16px;
     margin-bottom:6px;
 }
-.annual-global-game-list .game-option-info p{
+.game-option-info p{
     font-size:14px;
     line-height:1.6;
     color:#333;
 }
-/* ========== TOP3内容行：左侧封面，右侧文本域 ========== */
-.annual-top-content-row {
+
+/* ========== 已添加游戏卡片 game-card ========== */
+.game-card{
+    background:#ffffff;
+    border:1px solid #f6a5b8;
+    border-radius:12px;
+    padding:18px;
+    margin:16px 0;
+}
+/* JS渲染头部：名称 + 五颗爱心 + 删除按钮 */
+.game-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.game-card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #000000;
+    margin: 0;
+}
+
+.game-card-hearts {
+    display: flex;
+    gap: 4px;
+}
+
+/* ❌ 已删除 .game-card-hearts .heart 旧样式（含 font-variant-emoji） */
+/* ✅ 统一由下方全局 .heart SVG 样式接管 */
+
+.game-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-fav {
+    background:transparent;
+    color:#ccc;
+    font-size:20px;
+    padding:0 4px;
+}
+.btn-fav.active {
+    color:#b33a3a;
+}
+.btn-toggle-char,
+.btn-toggle-cp,
+.btn-delete-game {
+    padding:4px 8px;
+    font-size:14px;
+}
+
+/* ========== 修改部分：游戏开关行间距和单元最小宽度 ========== */
+.game-switch-row{
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;  /* 16 → 12，两块开关之间距离 */
+    margin: 10px 0 16px;
+    flex-wrap: wrap;
+}
+/* 每一组【开关+文字】独立单元 */
+.game-switch-row > div {
+    display: flex;
+    align-items: flex-start;
+    gap:12px;
+    flex: 0 1 auto;
+    min-width:180px; /* 280 →180，允许单元收缩，消除多余空白 */
+}
+.game-switch-row span {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.game-card-buttons{
     display:flex;
-    gap:16px;
-    align-items:flex-start;
+    gap:10px;
+    margin:12px 0;
+}
+
+/* Character / CP 模块容器 */
+.game-card-section {
+    margin-bottom: 20px;
+}
+.game-card-section .btn-character,
+.game-card-section .btn-couple {
+    margin-bottom: 10px;
+}
+.section-title {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: normal;
+    color: #666;
+}
+.char-list-wrap,
+.cp-wrap {
+    min-height: 220px;
+}
+
+/* 空状态提示 */
+.empty-hint {
+    font-size: 16px;
+    color: #666;
+    padding: 12px 0;
+}
+
+/* 折叠面板类 */
+.panel-collapsed .char-list-wrap,
+.panel-collapsed .cp-wrap {
+    display:none;
+}
+.char-panel-wrap,
+.cp-panel-wrap {
+    margin:10px 0;
+}
+
+/* ✅修改后：移除 justify‑content: space‑between */
+.game-card-head{
+    display:flex;
+    align-items:center;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+    gap:10px;
+    /* 已删除 padding-left:34px，不再内部缩进，按钮向外凸出 */
+    overflow: visible !important;
+}
+.heart-rate{
+    display:flex;
+    gap:6px;
+    margin:8px 0;
+}
+/* ❌ 已删除 .heart 旧样式（含 font-family / font-variant-emoji） */
+/* ✅ 统一由下方全局 .heart SVG 样式接管 */
+
+.game-switch-group{
+    display:flex;
+    align-items:center;
+    gap:8px;
     flex-wrap:wrap;
 }
-.annual-top-cover-wrap {
-    flex-shrink:0;
-    width:140px;
+
+/* ========== 角色区域 char-section char-pool char-item ========== */
+.char-section{
+    margin:16px 0;
+    padding:12px 0;
+    border-top:1px solid #eee;
+    overflow: visible !important;
 }
-.annual-top-cover {
-    width:100%;
-    height:auto;
-    border-radius:8px;
+.char-title{
+    font-weight:normal;
+    margin:10px 0;
+}
+.char-pool{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:14px;
+    margin:10px 0;
+}
+/* 滑出面板内角色池缩小最小宽度 */
+.game-search-box .char-pool{
+    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+}
+/* ========== char-item 修复：flex纵向布局，解决长名字高度错位 ========== */
+.char-item{
+    width: 120px;
+    min-height:168px;
+    text-align:center;
     border:1px solid #eee;
+    padding:8px;
+    border-radius:10px;
+    cursor:pointer;
+    background:#fff;
+    transition:0.2s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
 }
-.annual-top-text-wrap {
-    flex:1;
-    min-width:260px;
+.char-item.selected{
+    border-color:#e895a8;
+    background:#fff0f3;
 }
-.annual-top-textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--annual-export-border, #f6a5b8);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: vertical;
+.char-item:hover{
+    border-color:#f0b8c8;
 }
-/* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
-.snapshot-container.export-snapshot .annual-add-game-btn,
-.snapshot-container.export-snapshot #btn-annual-export {
-    display:none !important;
+.char-item .char-card-img-box {
+    position:relative;
+    width:100%;
+    aspect-ratio:1 / 1;
+    border:1px solid #e2e2e2;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:8px;
+    flex-shrink:0;
 }
-/* ==========【修复权重BUG】hidden-when-empty，降低!important权重，快照可以覆盖 ========== */
-.hidden-when-empty {
+.char-item .char-card-img-box img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    decoding:async;
+}
+.char-item .char-card-name {
+    font-size:14px;
+    color:#222;
+    line-height:1.4;
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    word-break:break-word;
+}
+.char-img-switch{
+    font-size:12px;
+    margin-top:4px;
+    color:#666;
+    cursor:pointer;
+    text-decoration:underline;
+}
+.char-img-switch:hover{
+    color:#c0392b;
+}
+/* 关键：同一行卡片强制拉伸等高，替换原 align-items:flex-end */
+.char-selected-row{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin:12px 0;
+    align-items:stretch;
+}
+
+/* ========== 【渲染输出选中角色卡片 char-card-item ========== */
+.char-card-item{
+    width:120px;
+    min-height:168px;
+    text-align:center;
+    border:1px solid #eee;
+    padding:8px;
+    border-radius:10px;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+.char-card-item.selected{
+    border-color:#e895a8;
+    background:#fff0f3;
+}
+.char-card-img-box{
+    position:relative;
+    width:100%;
+    aspect-ratio:1 / 1;
+    border:1px solid #e2e2e2;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:8px;
+    flex-shrink:0;
+}
+.char-card-img-box img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    decoding:async;
+}
+.char-card-name{
+    font-size:14px;
+    color:#222;
+    line-height:1.4;
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    word-break:break-word;
+}
+
+/* ==========【新增】角色图片切换按钮 左右翻图按钮 ========== */
+.char-switch-btn{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.45);
+    color:#fff;
+    border:none;
+    font-size:12px;
+    padding:0;
+    z-index:2;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+/* 图片切换按钮，禁止点击事件冒泡到父卡片的视觉反馈，提高移动端点击权重 */
+.char-switch-btn{
+    pointer-events:auto !important;
+    touch-action: manipulation;
+}
+.char-switch-prev{
+    left:3px;
+}
+.char-switch-next{
+    right:3px;
+}
+.char-switch-btn:hover{
+    background:rgba(0,0,0,0.65);
+}
+
+/* 无多立绘时隐藏图片切换按钮，仅 char‑has‑multi‑img 才显示 */
+.char-card-img-box .char-switch-prev,
+.char-card-img-box .char-switch-next {
     display: none;
 }
-.mode-wrap[data-mode="annual"] .hidden-when-empty{
-    display:none !important;
+.char-card-img-box.char-multi-img .char-switch-prev,
+.char-card-img-box.char-multi-img .char-switch-next {
+    display: flex;
 }
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible {
-    display: flex !important;
+
+/* 选中预览区卡片内按钮（白色半透）同步缩小 */
+.char-selected-row .char-switch-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.75);
+    font-size: 12px;
+    cursor: pointer;
 }
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text {
-    display: block !important;
+.char-selected-row .char-switch-prev {
+    left: 3px;
 }
-/* ========== 年度报告快照配色变量 ========== */
-.snapshot-container.export-snapshot.annual-mode {
-    --annual-export-bg: #fff7f9;
-    --annual-export-title: #b33a3a;
-    --annual-export-gamename: #000000;
-    --annual-export-customtext: #c98fac;
-    --annual-export-border: #f6a5b8;
+.char-selected-row .char-switch-next {
+    right: 3px;
 }
-/* ==========年度报告字号滑块轨道【修复滑块百分比轨道不变化】========== */
-.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
+.char-selected-row .char-switch-btn:hover {
+    background:rgba(255,255,255,0.9);
+}
+
+/* ========== CP布局 cp-layout-row 【移除25%｜75%固定占比，左右分栏，间距对齐character】 ========== */
+.cp-group{
+    margin:16px 0;
+    padding-top:12px;
+    border-top:1px solid #eee;
+    overflow: visible !important;
+}
+.cp-layout-row{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    margin:12px 0;
+    padding-bottom:18px;
+    border-bottom:1px solid #eee;
+    width:100%;
+}
+.heroine-column{
+    flex-shrink:0;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+}
+.hero-list-column{
+    flex:1;
+}
+/* 卡片换行容器间距与角色区域统一 */
+.char-card-wrapper{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:stretch;
+}
+
+/* ========== checkbox过渡 ========== */
+input[type="checkbox"] {
+    transition: all 0.22s ease;
+}
+
+/* ========== 剧透弹窗遮罩 ========== */
+.modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    display: none; /* 默认隐藏 */
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.modal-mask.active {
+    display: flex;
+}
+
+.modal-box {
+    background:#ffffff;
+    padding:24px 28px;
+    border-radius:12px;
+    border:2px solid #f6a5b8;
+    max-width:420px;
+    width:90%;
+}
+
+.modal-box h3{
+    margin-bottom:14px;
+    color:#b33a3a;
+    text-align:center;
+}
+.modal-box p.text-gray-desc{
+    text-align:center;
+    line-height:1.8;
+}
+.modal-btns{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    margin-top:20px;
+}
+/* 加载弹窗仅有单个按钮时强制居中 */
+#game-load-modal .modal-btns {
+    justify-content: center;
+}
+
+/* ========== 剧透弹窗按钮 ========== */
+#spoiler-cancel,
+#spoiler-confirm {
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:#b33a3a;
+    color:#fff;
+    cursor:pointer;
+    font-size:15px;
+    transition:0.2s;
+}
+#spoiler-cancel:hover,
+#spoiler-confirm:hover {
+    background:#992e2e;
+}
+
+/* ========== 导出颜色设置 color-set-row ========== */
+.color-set-row{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    margin:16px 0;
+}
+.color-item{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+.color-item input[type="color"]{
+    width:80px;
+    height:40px;
+    border:none;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+/* ==========【新增】自定义文本字体大小滑块 ========== */
+.font-size-set-row {
+    margin:16px 0;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:20px;
+    flex-wrap:wrap;
+    max-width:480px;
+    padding:10px 0;
+    /* Firefox伪元素定位必需 */
+    position: relative;
+}
+.font-size-set-row label {
+    font-size:16px;
+    color:#c98fac;
+    white-space:nowrap;
+}
+.font-size-value-display {
+    font-size:16px;
+    color:#c98fac;
+    white-space:nowrap;
+}
+.font-size-set-row input[type="range"] {
+    flex:1;
+    min-width:140px;
+    height:6px;
     background:transparent;
+    border-radius:999px;
+    outline:none;
     -webkit-appearance:none;
     appearance:none;
     z-index:2;
     position:relative;
 }
-.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::-webkit-slider-runnable-track {
+.font-size-set-row input[type="range"]::-webkit-slider-container {
+    height:6px;
+}
+/* WebKit Chrome/Safari 保留原有background‑size方案 */
+.font-size-set-row input[type="range"]::-webkit-slider-runnable-track {
     height:6px;
     border-radius:999px;
     background-color: #fff7f9;
     background-image: linear-gradient(to right, #e895a8 0%, #e895a8 100%);
     background-repeat: no-repeat;
-    background-size: var(--annual-slider-progress,0%) 100%;
+    background-size: var(--slider-progress,0%) 100%;
 }
-.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::-webkit-slider-thumb {
+.font-size-set-row input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance:none;
+    appearance:none;
     width:16px;
     height:16px;
     border-radius:50%;
@@ -316,11 +873,26 @@
     cursor:pointer;
     margin-top:-5px;
 }
+.font-size-set-row input[type="range"]::-moz-range-thumb {
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#e895a8;
+    border:none;
+    cursor:pointer;
+}
+/* Firefox原生轨道置透明 */
+.font-size-set-row input[type="range"]::-moz-range-track {
+    height:6px;
+    background: transparent;
+    border-radius:999px;
+}
+/* ========== 【关键修复】仅Firefox渲染伪元素轨道，Chrome/Safari完全不生成这一层 ========== */
 @-moz-document url-prefix() {
-    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
+    .font-size-set-row input[type="range"] {
         position: relative;
     }
-    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::before {
+    .font-size-set-row input[type="range"]::before {
         content:"";
         position:absolute;
         left:0;
@@ -332,7 +904,7 @@
         background:#fff7f9;
         z-index:-1;
     }
-    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::after {
+    .font-size-set-row input[type="range"]::after {
         content:"";
         position:absolute;
         left:0;
@@ -341,225 +913,90 @@
         height:6px;
         border-radius:999px;
         background:#e895a8;
-        width:var(--annual-slider-progress,0%);
+        width:var(--slider-progress,0%);
         z-index:-1;
     }
 }
-/* ==========年度报告页面常态配色变量绑定 ========== */
-.mode-wrap[data-mode="annual"] {
-    --annual-export-bg:#fff7f9;
-    --annual-export-title:#b33a3a;
-    --annual-export-gamename:#000000;
-    --annual-export-customtext:#c98fac;
-    --annual-export-border:#f6a5b8;
-    --annual-export-subtitle:#b85878;
-    background-color: var(--annual-export-bg, #fff7f9);
-}
-/* ========== 移动端适配 - 分界1：平板横向 ========== */
-@media (max-width: 1024px) {
-    .annual-global-modal-inner {
-        width: min(95vw, 1000px);
+@media (max-width:1200px) {
+    .font-size-set-row {
+        max-width:100%;
+    }
+    .font-size-set-row input[type="range"] {
+        min-width:120px;
     }
 }
-/* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
-/* ① 普通手机（≤ 768px）：强制单列 */
-@media (max-width: 768px) {
-    .annual-top-content-row {
-        flex-direction: column;
-    }
-    .annual-top-cover-wrap {
-        width: 120px;
-    }
-    .mode-switch-wrap {
-        flex-wrap: wrap;
-    }
-    .site-title.annual-active h1 {
-        font-size: 30px;
-    }
-    .annual-game-name-text {
-        font-size: 18px;
-    }
-    .annual-global-modal-inner {
-        width: 100%;
-        max-height: 85vh;
-        min-height:420px;
-    }
-    .annual-global-game-list {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-        padding: 10px 16px 16px 16px;
-        margin: 0 16px 16px 16px;
-        min-height:260px;
-    }
-    .annual-global-game-list .game-option-item img {
-        width: 80px !important;
-    }
-    .annual-modal-header {
-        padding: 14px 16px;
-    }
-    .annual-modal-close-btn {
-        right: 16px;
-        width: 26px;
-        height: 26px;
-        font-size: 18px;
-    }
-    .annual-global-search-input {
-        width: calc(100% - 32px);
-        margin: 0 16px 10px 16px;
-    }
-    /* ✅同步main.css手机端game-option-item布局，解决卡片高度不足、文字裁切 */
-    .annual-global-game-list .game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* ==========【修改：角色弹窗游戏列表 手机端完全复刻游戏弹窗】 ========== */
-    .annual-global-char-game-list {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-        padding: 10px 16px 16px 16px !important;
-        margin:0 !important;
-        min-height:260px;
-    }
-    .annual-global-char-game-list .game-option-item img {
-        width: 80px !important;
-    }
-    .annual-global-char-game-list .game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-char-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-char-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-char-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* 新增：小滚动外壳移动端最大高度调整 */
-    .char-list-inner-scroll-wrap {
-        max-height: 38vh;
-    }
+
+/* ========== 导出尺寸选择 size-select ========== */
+.size-select{
+    margin:16px 0;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
 }
-/* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
-@media (min-width:769px) and (max-width:1200px) {
-    .annual-global-game-list {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-        gap: 14px !important;
-    }
-    .annual-global-game-list .game-option-item img {
-        width: 80px !important;
-    }
-    /* ✅平板端同步main.css卡片防裁切 */
-    .annual-global-game-list .game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* ==========【修改：角色弹窗游戏列表 平板端完全复刻游戏弹窗】 ========== */
-    .annual-global-char-game-list {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-        gap: 14px !important;
-        padding:10px 20px 20px 20px !important;
-        margin:0 !important;
-    }
-    .annual-global-char-game-list .game-option-item img {
-        width: 80px !important;
-    }
-    .annual-global-char-game-list .game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-char-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-char-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-char-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
+.size-select label {
+    color:#c98fac;
 }
-/* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
-/* ========== 手机纵向480px微调（只调控件尺寸，不改动布局网格） ========== */
-@media (max-width: 480px) {
-    .annual-modal-header {
-        padding: 12px 14px;
-    }
-    .annual-modal-close-btn {
-        width: 24px;
-        height: 24px;
-        font-size: 16px;
-    }
-    .annual-global-search-input {
-        padding: 10px 12px;
-        font-size: 14px;
-    }
+
+/* ========== About模块 about-block ========== */
+.about-block{
+    text-align:center;
+    margin-top:50px;
+    padding:20px;
 }
-/* ========== 三、キャラTOP3 【新增模块样式】 ========== */
-.annual-char-top-item {
-    margin-bottom: 24px;
+.about-block h2{
+    color:#b33a3a;
 }
-.annual-add-char-btn-wrap {
-    text-align: center;
-    margin: 8px 0 14px;
+.about-block p{
+    margin:8px 0;
+    font-size:16px;
+    line-height:1.8;
+    color:#666;
 }
-.annual-add-char-btn {
+.about-block p.email-text{
+    color:#222222;
+}
+
+/* ========== 文本颜色公共类 ========== */
+h1{
+    color: var(--export-title, #b33a3a);
+}
+h2{
+    color: inherit;
+}
+.text-light-pink{
+    font-weight:normal !important;
+}
+.text-light-pink:not(.base-info-item) {
+    color: #c98fac;
+}
+.text-black{
+    color: #222222;
+}
+.text-gray-desc{
+    color:#666;
+    font-weight:normal;
+}
+/* ========== 基础信息文字颜色【常态页面 + 快照统一使用CSS变量，实时生效】 ========== */
+.base-info-item {
+    color: var(--export-baseinfotext, #c98fac);
+}
+/* ========== 新增：页面常态下游戏卡片标题使用游戏名变量（和快照规则统一） ========== */
+.added-game-card > .game-card-head .game-card-head-title-wrap h3 {
+    color: var(--export-gamename, #000000);
+}
+/* ========== 新增：仅三处自定义输出文本绑定自定义文本色（页面常态 + 导出快照共用） ========== */
+.game-head-text-output,
+.game-char-text-output,
+.game-cp-text-output {
+    color: var(--export-customtext, #c98fac);
+}
+
+/* ========== 移动端适配 max-width:768px ========== */
+/* 已移除并合并到下方统一的 @media (max-width:900px) */
+
+/* ========== 按钮统一：新增游戏按钮与导出图片按钮尺寸对齐 ========== */
+#btn-add-game,
+#btn-export {
     padding:10px 18px;
     min-height:42px;
     font-size:15px;
@@ -570,255 +1007,1062 @@
     cursor:pointer;
     transition:0.2s;
 }
-.annual-add-char-btn:hover {
+#btn-add-game:hover,
+#btn-export:hover {
     background-color: #992e2e;
 }
-.annual-char-name-text {
-    font-size: 22px;
-    color: var(--annual-export-gamename, #000000);
-    word-break: break-all;
-    margin: 8px 0 12px;
-}
-.annual-char-top-content-row {
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-}
-.annual-char-cover-wrap {
-    flex-shrink:0;
-    width:140px;
-}
-.annual-char-cover {
-    width:100%;
-    height:auto;
-    border-radius:8px;
-    border:1px solid #eee;
-}
-.annual-char-text-wrap {
-    flex:1;
-    min-width:260px;
-}
-.annual-char-textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--annual-export-border, #f6a5b8);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: vertical;
-}
-/* ========== 年度报告全局角色弹窗 #annual‑global‑char-modal ========== */
-#annual-global-char-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background-color: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
+
+/* 游戏卡片头部PC端同一行布局 */
+.added-game-card {
     padding:16px;
-    box-sizing: border-box;
+    margin-bottom:14px;
+    background:#ffffff;
+    /* 删除粉色边框 */
+    /* border:1px solid var(--export-border, #f6a5b8); */
 }
-#annual-global-char-modal.active {
+.game-card-header-row {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+}
+
+/* 卡片底部按钮区域，放在CP下方 */
+.card-bottom-buttons {
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+}
+
+/* =========手机端适配========= */
+/* 已移除并合并到下方统一的 @media (max-width:900px) */
+
+/* 角色选择面板item，和游戏选择item统一风格（旧废弃面板，保留类备用） */
+.char-select-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:12px 8px;
+    cursor:pointer;
+    border:1px solid #eee;
+    border-radius:6px;
+}
+.char-select-item:hover{
+    background:#f8e8ec;
+}
+.char-select-item.selected{
+    background:#f6d8e0;
+    border-color:#e8a0b0;
+}
+.char-option-img-wrap{
+    width:120px;
+    height:120px;
+    overflow:hidden;
+    border-radius:4px;
+    margin-bottom:8px;
+}
+.char-option-img-wrap img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+.char-option-name{
+    font-size:14px;
+    text-align:center;
+}
+
+/* ========== 双列表表单 form-row-double ========== */
+.form-row-double {
     display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 16px 0;
 }
-/* 返回按钮 ←，完全复刻关闭×按钮样式 */
-.annual-modal-back-btn {
+.form-row-double > .form-row {
+    flex: 1;
+    min-width: 260px;
+    max-width: unset;
+}
+
+/* ========== CP面板方案C布局样式【修复后完整版本】 ========== */
+.cp-female-block{
+    margin:12px 0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+/* 待选女主：完全复制 char-item 样式，增加flex纵向布局修复高度 */
+.cp-female-card-btn{
+    width: 120px;
+    min-height:168px;
+    text-align:center;
+    border:1px solid #eee;
+    padding:8px;
+    border-radius:10px;
+    cursor:pointer;
+    background:#fff;
+    transition:0.2s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+.cp-female-card-btn.selected{
+    border-color:#e895a8;
+    background:#fff0f3;
+}
+.cp-female-card-btn:hover{
+    border-color:#f0b8c8;
+}
+.cp-female-card-btn .char-card-img-box {
+    position:relative;
+    width:100%;
+    aspect-ratio:1 / 1;
+    border:1px solid #e2e2e2;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:8px;
+    flex-shrink:0;
+}
+.cp-female-card-btn .char-card-img-box img {
     position:absolute;
-    left:20px;
-    top:50%;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    decoding:async;
+}
+.cp-female-name{
+    font-size:14px;
+    color:#222;
+    text-align:center;
+    line-height:1.4;
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    word-break:break-word;
+}
+
+/* ✅修改：增加position:relative，替换原有cp‑male‑select‑wrap定义 */
+.cp-male-select-wrap{
+    min-height: 180px;
+    border:none;
+    border-radius:0;
+    position: relative;
+    /* 增加上下间距，隔开列表与按钮 */
+    padding-bottom:4px;
+}
+.cp-male-title{
+    font-weight:bold;
+    margin-bottom:8px;
+}
+.cp-male-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:stretch;
+}
+/* 待选男主 cp‑male‑item：1:1复刻 char‑item，flex纵向布局修复高度 */
+.cp-male-item{
+    width: 120px;
+    min-height:168px;
+    text-align:center;
+    border:1px solid #eee;
+    padding:8px;
+    border-radius:10px;
+    cursor:pointer;
+    background:#fff;
+    transition:0.2s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+.cp-male-item.selected{
+    border-color:#e895a8;
+    background:#fff0f3;
+}
+.cp-male-item:hover{
+    border-color:#f0b8c8;
+}
+.cp-male-item .char-card-img-box {
+    position:relative;
+    width:100%;
+    aspect-ratio:1 / 1;
+    border:1px solid #e2e2e2;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:8px;
+    flex-shrink:0;
+}
+.cp-male-item .char-card-img-box img {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    decoding:async;
+}
+.cp-male-item .char-card-name {
+    font-size:14px;
+    color:#222;
+    line-height:1.4;
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    word-break:break-word;
+}
+
+/* ========== 【新增】CP已选角色卡片（已选女主、已选男主，完全对齐 char‑card‑item） ========== */
+.cp-selected-card-item{
+    width:120px;
+    min-height:168px;
+    text-align:center;
+    border:1px solid #eee;
+    padding:8px;
+    border-radius:10px;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+.cp-selected-card-item.selected{
+    border-color:#e895a8;
+    background:#fff0f3;
+}
+.cp-selected-card-item .char-card-img-box{
+    position:relative;
+    width:100%;
+    aspect-ratio:1 / 1;
+    border:1px solid #e2e2e2;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:8px;
+    flex-shrink:0;
+}
+.cp-selected-card-item .char-card-img-box img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    decoding:async;
+}
+.cp-selected-card-item .char-card-name{
+    font-size:14px;
+    color:#222;
+    line-height:1.4;
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    word-break:break-word;
+}
+
+/* ========== CP待选卡片 图片切换按钮（复用char‑switch‑btn基础类） ========== */
+.cp-female-card-btn .char-card-img-box,
+.cp-male-item .char-card-img-box {
+    position: relative !important;
+    overflow: hidden !important;
+}
+.cp-female-card-btn .char-switch-btn,
+.cp-male-item .char-switch-btn {
+    position: absolute;
+    top: 50%;
     transform: translateY(-50%);
-    width:28px;
-    height:28px;
+    background:rgba(0,0,0,0.45);
+    color:#fff;
+    border:none;
+    z-index:2;
+    cursor:pointer;
+}
+.cp-female-card-btn .char-switch-prev,
+.cp-male-item .char-switch-prev {
+    left:3px;
+}
+.cp-female-card-btn .char-switch-next,
+.cp-male-item .char-switch-next {
+    right:3px;
+}
+.cp-female-card-btn .char-switch-btn:hover,
+.cp-male-item .char-switch-btn:hover {
+    background:rgba(0,0,0,0.65);
+}
+
+/* ========== CP选择面板底部按钮栏【修改定位与gap】 ========== */
+.cp-select-btn-bar{
+    display: flex;
+    gap: 12px;
+    margin-top:8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    padding-left: 12px;
+}
+.cp-confirm-btn,
+.cp-cancel-btn{
+    padding:6px 14px;
+}
+
+/* ========== 【新增】角色立绘切换 loading 指示器 ========== */
+.char-card-img-box {
+    position: relative !important;
+}
+.img-loader-spinner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index: 2;
+}
+.img-loader-spinner::after {
+    content:"";
+    width:32px;
+    height:32px;
+    border:3px solid #ddd;
+    border-top-color:#e895a8;
+    border-radius:50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    0%{transform:rotate(0deg);}
+    100%{transform:rotate(360deg);}
+}
+
+/* ==========【新增】折叠状态游戏名旁图标展开按钮 ========== */
+.game-fold-icon-expand {
+    position: absolute;
+    left: -34px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
     border: 1px solid #b33a3a;
     border-radius: 8px;
     background: transparent;
     font-size: 20px;
     color: #b33a3a;
     cursor: pointer;
-    padding: 0 !important;
+    padding: 0 !important;        /* 清除全局button默认padding */
     line-height: 1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
+    width: 28px;
+    height:28px;
 }
-.annual-modal-back-btn:hover{
+/* 提高权重，覆盖全局button:hover */
+.game-fold-icon-expand:hover{
     background: #992e2e !important;
     color: #b33a3a !important;
 }
-/* 全局开关组：搜索框上方，默认显示 */
-.annual-modal-global-switch-group {
-    padding:0 20px 8px 20px;
-}
-/* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
-.annual-modal-game-switch-group {
-    padding:0 20px 8px 20px;
-    display:none;
-}
-.annual-modal-game-switch-group.active {
-    display:block;
-}
-/* ✅复用main.css filter‑group，实现按钮PC一行铺开、移动端自动换行 */
-.annual-modal-global-switch-group .filter-group,
-.annual-modal-game-switch-group .filter-group {
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
+
+/* 标题容器开启相对定位，给左侧绝对定位按钮做参照 */
+.game-card-head-title-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    /* ✅修改：移除padding‑left，让游戏名称文字直接贴左边对齐，和下方按钮对齐 */
+    /* padding-left: 36px; */
+    gap: 8px;
 }
 
-.annual-global-char-search-input {
-    width:calc(100% - 40px);
-    margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
-    background:#fcfcfc;
-    font-size:15px;
-    box-sizing: border-box;
+.added-game-card[data-fold="true"] .game-fold-icon-expand {
+    display: inline-flex;
+    align-items:center;
+    justify-content:center;
 }
-/* 视图容器：两个互斥视图 */
-.annual-modal-view-container {
-    flex:1;
-    min-height:260px;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    padding:0 20px 20px 20px;
+.added-game-card[data-fold="false"] .game-fold-icon-expand {
+    display: none;
 }
-/* ==========【新增】卡片独立小滚动外壳 ========== */
-.char-list-inner-scroll-wrap {
-    flex: 1;
-    min-height: 220px;
-    max-height: 42vh;
-    overflow‑y: auto;
+
+/* 卡片折叠整体隐藏内容 */
+.added-game-card[data-fold="true"] .game-card-block-item,
+.added-game-card[data-fold="true"] .card-bottom-buttons,
+/* ✅需求①：折叠时隐藏两个单独显示开关 */
+.added-game-card[data-fold="true"] .game-switch-row,
+/* 折叠时同时隐藏独立的自定义文本框 */
+.added-game-card[data-fold="true"] .game-custom-text-wrap {
+    display: none !important;
 }
-/* ==========【修改】角色弹窗游戏列表：PC端完全对齐annual‑global‑game-list参数，滚动交给外层外壳 ========== */
-.annual-global-char-game-list {
-    min-height:260px;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-    gap:14px;
-    padding:10px 20px 20px 20px;
-    border:1px solid #eee;
-    border-radius:10px;
-    margin:0;
+
+/* ========== 导出图片快照模式：自定义配色（仅生成图片时生效，普通页面不受影响） ========== */
+.snapshot-container.export-snapshot {
+    --export-bg: #fff7f9;
+    --export-title: #b33a3a;
+    --export-subtitle: #b85878;
+    --export-baseinfotext: #c98fac;
+    --export-customtext: #c98fac;
+    --export-gamename: #000000;
+    --export-border: #f6a5b8;
+    background-color: var(--export-bg) !important;
 }
-.annual-global-char-game-list .game-option-item {
-    border:1px solid #eee;
-    border-radius:10px;
-    padding:12px;
-    cursor:pointer;
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    background:#fff;
-    width:100%;
+/* 大标题 Otome FavList */
+.snapshot-container.export-snapshot .site-title h1 {
+    color: var(--export-title) !important;
 }
-.annual-global-char-game-list .game-option-item:hover{
-    background:#fff0f3;
-    border-color:#e895a8;
+/* 小标题：基础信息、游戏列表等 h2 */
+.snapshot-container.export-snapshot .big-card h2 {
+    color: var(--export-subtitle) !important;
+    border-left-color: var(--export-subtitle) !important;
 }
-.annual-global-char-game-list .game-option-item img{
-    width:120px;
-    height:auto;
-    border-radius:6px;
-    object-fit:cover;
-    flex-shrink:0;
+/* 【基础信息文字】昵称、游玩总数、入坑时间、入坑作品 */
+.snapshot-container.export-snapshot .base-info-item {
+    color: var(--export-baseinfotext) !important;
 }
-.annual-global-char-game-list .game-option-info{
-    flex:1;
+/* 【游戏卡片内游戏名称】 */
+.snapshot-container.export-snapshot .added-game-card > .game-card-head .game-card-head-title-wrap h3 {
+    color: var(--export-gamename) !important;
 }
-.annual-global-char-game-list .game-option-name{
-    font-weight:bold;
-    font-size:16px;
-    margin-bottom:6px;
+/* 【游戏卡片用户自定义文本】★严格限定：只作用三处自定义输出文本，不影响任何其他文字 */
+.snapshot-container.export-snapshot .game-head-text-output,
+.snapshot-container.export-snapshot .game-char-text-output,
+.snapshot-container.export-snapshot .game-cp-text-output {
+    color: var(--export-customtext) !important;
 }
-.annual-global-char-game-list .game-option-info p{
-    font-size:14px;
-    line-height:1.6;
-    color:#333;
+/* 卡片边框（big-card、added‑game‑card） */
+.snapshot-container.export-snapshot .big-card,
+.snapshot-container.export-snapshot .added-game-card {
+    border-color: var(--export-border) !important;
 }
-.annual-global-char-char-list {
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-    gap:14px;
-    border:1px solid #eee;
-    border-radius:10px;
-    padding:10px;
-    display:none;
+
+/* ========== 快照模式新增规则 【重点】 ========== */
+.snapshot-container.export-snapshot {
+    --export-bg: #fff7f9;
+    --export-title: #b33a3a;
+    --export-subtitle: #b85878;
+    --export-baseinfotext: #c98fac;
+    --export-customtext: #c98fac;
+    --export-gamename: #000000;
+    --export-border: #f6a5b8;
+    /* 新增：统一标题色变量 Character / Couple 三级标题 */
+    --export-section-title-color: var(--export-gamename);
+    background-color: var(--export-bg) !important;
 }
-.annual-global-char-char-list.active {
-    display:grid;
+
+/* 1. 快照模式：全局隐藏所有按钮、开关、交互控件【核心】 */
+.snapshot-container.export-snapshot button,
+.snapshot-container.export-snapshot .switch,
+.snapshot-container.export-snapshot .slider,
+.snapshot-container.export-snapshot .char-switch-btn,
+.snapshot-container.export-snapshot .panel-close-btn,
+.snapshot-container.export-snapshot .heart-rate,
+.snapshot-container.export-snapshot .card-bottom-buttons,
+.snapshot-container.export-snapshot .game-switch-row,
+.snapshot-container.export-snapshot .btn-character,
+.snapshot-container.export-snapshot .btn-couple,
+.snapshot-container.export-snapshot .game-fold-icon-expand {
+    display: none !important;
 }
-.annual-global-char-game-list.hidden-view {
-    display:none;
+
+/* 2. 快照强制所有游戏卡片展开，无视data-fold折叠属性 */
+.snapshot-container.export-snapshot .added-game-card[data-fold] {
+    display: block !important;
 }
-/* 弹窗内游戏item直接复用已有的.game-option-item，角色item直接复用.char-item */
-/* ========== 快照模式隐藏角色TOP3交互控件 ========== */
-.snapshot-container.export-snapshot .annual-add-char-btn {
-    display:none !important;
+.snapshot-container.export-snapshot .added-game-card .game-card-block-item {
+    display: block !important;
 }
-/* ========== 移动端适配 角色TOP3与角色弹窗 ========== */
-@media (max-width: 768px) {
-    .annual-char-top-content-row {
-        flex-direction: column;
-    }
-    .annual-char-cover-wrap {
-        width: 120px;
-    }
-    .annual-char-name-text {
-        font-size: 18px;
-    }
-    #annual-global-char-modal .annual-global-modal-inner {
-        width: 100%;
-        max-height: 85vh;
-    }
-    .annual-modal-back-btn {
-        left:16px;
-        width: 26px;
-        height:26px;
-        font-size:18px;
-    }
-    .annual-global-char-search-input {
-        width:calc(100% - 32px);
-        margin:0 16px 10px 16px;
-    }
-    .annual-modal-global-switch-group,
-    .annual-modal-game-switch-group {
-        padding:0 16px 8px 16px;
-    }
-    .annual-modal-view-container {
-        padding:0 16px 16px 16px;
-    }
+
+/* 3. 滑出面板（char-slide-panel）在快照模式全部隐藏，只保留最终渲染结果区域 */
+.snapshot-container.export-snapshot .char-slide-panel-char,
+.snapshot-container.export-snapshot .char-slide-panel-cp {
+    display: none !important;
 }
-@media (min-width:769px) and (max-width:1200px) {
+
+/* 4. 新增：Character / Couple 三级标题样式（仅JS动态插入快照时使用） */
+.snapshot-container.export-snapshot .snapshot-section-title {
+    font-size: 18px;
+    margin: 12px 0 8px;
+    color: var(--export-section-title-color);
+    font-weight: bold;
 }
-/* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
-#annual-global-char-modal .annual-global-modal-inner {
+
+/* 5. 隐藏设置区域、导出相关DOM（防止意外被捕获） */
+.snapshot-container.export-snapshot #card-setting,
+.snapshot-container.export-snapshot .color-set-row,
+.snapshot-container.export-snapshot .size-select,
+.snapshot-container.export-snapshot #btn-export {
+    display: none !important;
+}
+
+/* 6. 空提示文字样式微调（可选） */
+.snapshot-container.export-snapshot .empty-hint {
+    display: none !important;
+}
+
+/* ===================== 导出预览弹窗样式 复用modal-mask ===================== */
+/* 预览弹窗层级高于剧透弹窗(9999) → z-index:10000 */
+#export-preview-modal.modal-mask {
+    z-index: 10000;
+}
+.modal-preview-box {
+    background:#ffffff;
+    border-radius:12px;
+    border:2px solid #f6a5b8;
+    width: min(90vw, 1100px);
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
-    height: 85vh;
+    overflow: hidden;
 }
-#annual-global-char-modal .annual-modal-header {
+.modal-preview-head {
+    padding:16px 20px;
+    border-bottom:1px solid #eee;
+}
+.modal-preview-head h3 {
+    color:#b33a3a;
+    margin:0;
+}
+/* 滚动容器：承载预览图片，纵向滚动 */
+.preview-scroll-wrap {
+    flex:1;
+    padding:16px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    position: relative; /* 为内部绝对定位loading提供锚点 */
+}
+.preview-scroll-wrap .preview-img-item {
+    display:block;
+    max-width:100%;
+    height:auto;
+    margin:0 auto 16px;
+    border-bottom:1px solid #f0d8e0;
+    padding-bottom:16px;
+    position: relative;
+    z-index: 1;
+}
+/* 最后一张图片移除底部分隔线 */
+.preview-scroll-wrap .preview-img-item:last-child {
+    border-bottom:none;
+    margin-bottom:0;
+    padding-bottom:0;
+}
+/* 底部固定按钮栏 */
+.modal-preview-footer {
+    padding:16px 20px;
+    border-top:1px solid #eee;
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+.modal-preview-footer button:disabled {
+    background:#cccccc !important;
+    cursor:not-allowed !important;
+    opacity:0.7;
+}
+
+/* ========== 弹窗内置加载指示器 ========== */
+.preview-inner-loading {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 2;
+}
+.preview-inner-loading .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border:4px solid #eee;
+    border-top-color:#e895a8;
+    border-radius:50%;
+    animation: spin 0.8s linear infinite;
+}
+.preview-inner-loading p {
+    color:#444;
+    font-size:16px;
+}
+
+/* ========== 修复导出预览弹窗加载状态高度不足问题 ========== */
+.modal-preview-box {
+    background:#ffffff;
+    border-radius:12px;
+    border:2px solid #f6a5b8;
+    width: min(90vw, 1100px);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* 最小高度保证弹窗不会被压缩到过低 */
+    min-height: 420px;
+}
+
+/* 加载状态下，滚动容器强制分配足够高度，防止内容被截断 */
+.preview-scroll-wrap {
+    flex:1;
+    padding:16px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    position: relative;
+    /* 最小高度保证loading区域完整展示 */
+    min-height: 260px;
+}
+
+/* 加载遮罩优化：垂直居中不受父容器高度挤压，上下预留安全边距 */
+.preview-inner-loading {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px; /* 加大加载圈与文字间距，避免拥挤裁切 */
+    z-index: 2;
+    /* 上下增加内边距，防止靠近上下边界被截断 */
+    padding: 40px 20px;
+}
+
+.preview-inner-loading .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border:4px solid #eee;
+    border-top-color:#e895a8;
+    border-radius:50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0; /* 禁止加载圆圈被缩小 */
+}
+.preview-inner-loading p {
+    color:#444;
+    font-size:18px;
+    line-height:1.6;
+    text-align:center;
+}
+
+/* ================================================================ */
+/* ========== ✅ 【核心修改】爱心 SVG 样式（替代文本 Emoji） ========== */
+/* 删除所有旧 .heart / .game-card-hearts .heart 样式（含 font-variant-emoji） */
+/* 统一使用纯色 SVG 矢量爱心，彻底解决安卓浏览器强制转 Emoji 问题 */
+/* ================================================================ */
+.heart {
+    display: inline-flex;
+    align-items: center;
+    color: #cccccc;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.heart.active {
+    color: #e895a8;
+}
+.heart svg {
+    width: 26px;
+    height: 26px;
+    display: block;
     flex-shrink: 0;
 }
-#annual-global-char-modal .annual-modal-scroll-wrap {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 12px 12px 12px;
+
+/* ===================== 导出模块按钮调整 ===================== */
+/* 导出按钮区域单独纵向居中布局，不污染全局center-btn-block */
+.center-btn-block.export-btn-wrap {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
-/* 视图模式 class 控制 */
-.char-modal-gamelist-view .annual-modal-global-switch-group { display:block; }
-.char-modal-gamelist-view .annual-global-char-search-input { display:block; }
-.char-modal-gamelist-view .annual-modal-game-switch-group { display:none; }
-.char-modal-gamelist-view .annual-global-char-game-list { display:block; }
-.char-modal-gamelist-view .annual-global-char-char-list { display:none; }
-.char-modal-charlist-view .annual-modal-global-switch-group { display:none; }
-.char-modal-charlist-view .annual-global-char-search-input { display:none; }
-.char-modal-charlist-view .annual-modal-game-switch-group { display:block; }
-.char-modal-charlist-view .annual-global-char-game-list { display:none; }
-.char-modal-charlist-view .annual-global-char-char-list { display:block; }
+.center-btn-block.export-btn-wrap .switch-desc {
+    text-align: center;
+}
+/* 恢复默认按钮：左对齐，覆盖原有居中样式 */
+.center-btn-block.left-align-btn {
+    justify-content: flex-start !important;
+}
+
+/* ===================== 使用指南弹窗样式（更大更长，滚动） ===================== */
+#guide-modal.modal-mask {
+    z-index: 10001; /* 高于预览弹窗 */
+}
+.modal-guide-box {
+    background:#ffffff;
+    border-radius:12px;
+    border:2px solid #f6a5b8;
+    width: min(92vw, 960px);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.guide-scroll-wrap {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+.modal-guide-box .modal-btns {
+    padding:16px 20px;
+    border-top:1px solid #eee;
+    margin-top:0;
+}
+/* 弹窗内卡片移除外边距，防止双重间距 */
+.modal-guide-box .big-card {
+    padding:0;
+    border:none;
+}
+/* 移动端缩小弹窗边距 */
+@media (max-width:768px){
+    .modal-guide-scroll {
+        padding:16px;
+    }
+}
+
+/* ========== 统一移动端适配 (≤ 1200px) ========== */
+/* 所有移动端设备（手机、平板、折叠屏）共享的排版、尺寸、防溢出 */
+@media (max-width:1200px) {
+    /* 防溢出 */
+    .big-card,
+    .game-card,
+    .char-slide-panel-char,
+    .char-slide-panel-cp,
+    .game-search-box,
+    .game-list-select {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* 游戏封面缩小 */
+    .game-option-item img {
+        width: 80px !important;
+    }
+
+    /* 角色卡片缩小 */
+    .char-item,
+    .char-card-item,
+    .cp-female-card-btn,
+    .cp-male-item,
+    .cp-selected-card-item {
+        width: 100px !important;
+        min-height: 132px !important;
+    }
+
+    /* 角色池网格缩小 */
+    .char-pool {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+    }
+    .game-search-box .char-pool {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+    }
+
+    /* CP 布局弹性换行 */
+    .cp-layout-row {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+    .heroine-column,
+    .hero-list-column {
+        flex: unset !important;
+        width: auto !important;
+    }
+    .heroine-box {
+        flex-wrap: wrap !important;
+        gap: 10px;
+    }
+
+    /* 移动端待选游戏卡片内容防裁切 */
+    .game-option-item {
+        display: flex !important;
+        gap: 10px !important;
+        padding: 10px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+    .game-option-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+    }
+    .game-option-name {
+        font-size: 16px !important;
+        line-height: 1.4 !important;
+        word-break: break-word !important;
+    }
+    .game-option-info p {
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        word-break: break-all !important;
+        white-space: normal !important;
+    }
+
+    /* 其他移动端视觉微调（原 900px 中保留的） */
+    .char-selected-row .char-card-item {
+        width: 90px;
+        min-height: 150px;
+    }
+    .cp-select-btn-bar {
+        justify-content: flex-end;
+    }
+    .game-fold-icon-expand {
+        width: 26px;
+        height: 26px;
+        font-size: 18px;
+    }
+    .game-card-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .game-card-header-row > .game-card-title,
+    .game-card-header-row > .heart-rate {
+        display: flex;
+    }
+    .game-switch-group {
+        width: 100%;
+    }
+}
+
+/* ========== 列数控制（分层） ========== */
+
+/* ① 普通手机（≤ 768px）：强制单列 */
+@media (max-width:768px) {
+    .game-list-select {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    /* 弹窗内边距（保留你原有的 768 弹窗优化） */
+    .modal-guide-scroll {
+        padding: 16px;
+    }
+}
+
+/* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
+@media (min-width:769px) and (max-width:1200px) {
+    .game-list-select {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+        gap: 14px !important;
+    }
+}
+
+/* ③ 桌面（> 1200px）：无需额外代码，使用默认样式 */
+
+/* ========== 自定义文本输入框样式（新增） ========== */
+.game-custom-text-wrap {
+  margin-top: 10px;
+  min-height: 44px;
+  width: 100%;
+}
+.game-custom-text-wrap textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  resize: vertical;
+  font-size: 14px;
+  box-sizing: border-box;
+  /* textarea自身滚动，不要写overflow:visible！textarea不支持visible */
+  overflow: auto;
+}
+.game-custom-text-wrap textarea:focus {
+  outline: none;
+  border-color: #f6a5b8;
+}
+
+/* ========== 关闭原生resize，自制垂直拖拽控件 ========== */
+.game-custom-text-wrap {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 关闭浏览器原生拖拽！根源解决拖拽失效 */
+.game-custom-text-wrap textarea {
+    resize: none !important;
+    overflow: auto;
+    padding-bottom: 26px; /* 减小底部留空，避免文字被遮挡 */
+}
+
+/* 可视化拖拽手柄：实心红色下三角，紧贴右下角 */
+.game-custom-text-wrap .resize-handle {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    width: 24px;
+    height: 24px;
+    cursor: ns-resize;
+    z-index: 2;
+    /* ❗删除 flex，避免浏览器渲染分歧 */
+    /* display: flex;
+    align-items: flex-end;
+    justify-content: flex-end; */
+}
+
+/* 红色三角图形 */
+.game-custom-text-wrap .resize-handle::after {
+    content: "";
+    display: block;
+    width: 14px;
+    height: 14px;
+    background-color: #b33a3a;
+    /* 裁剪为右下角直角三角形 */
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+/* 拖拽激活状态样式 */
+.game-custom-text-wrap .resize-handle:active::after {
+    opacity: 0.7;
+}
+
+/* 快照模式统一隐藏拖拽控件 */
+.snapshot-container.export-snapshot .resize-handle {
+    display: none !important;
+}
+
+/* 移动端放大三角与热区：紧贴textarea右下角 */
+@media (max-width:1200px) {
+    .game-custom-text-wrap {
+        position: relative;
+        overflow: hidden;
+        /* ❗移除 border-radius，全局统一无圆角 */
+    }
+
+    .game-custom-text-wrap .resize-handle {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        pointer-events: auto;
+    }
+
+    .game-custom-text-wrap .resize-handle::after {
+        content: "";
+        position: absolute;
+        right: 0px;
+        bottom: 4px;
+        width: 16px;
+        height: 16px;
+        background-color: #b33a3a;
+        clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+}
+
+/* ========== 右下角悬浮回到添加游戏按钮 ▲【back‑to‑add-btn】 ========== */
+.float-scroll-btn.back-to-add {
+    position: fixed;
+    right: 24px;
+    bottom: 72px; /* 向上挪，给下方▼按钮留出位置 */
+    width: 40px;
+    height: 40px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    color: #b33a3a;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    z-index: 998;
+    transition: 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ==========右下角悬浮滚动到最后一张角色卡 ▼【scroll‑to‑last‑game-btn】放在▲上方 ========== */
+.float-scroll-btn.scroll-last-card {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    color: #b33a3a;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    z-index: 998;
+    transition: 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 提高权重，覆盖全局button:hover，和展开按钮hover规则完全一致 */
+.float-scroll-btn.back-to-add:hover,
+.float-scroll-btn.scroll-last-card:hover {
+    background: #992e2e !important;
+    color: #b33a3a !important;
+}
+/* 快照导出模式自动隐藏（和所有交互按钮规则保持一致） */
+.snapshot-container.export-snapshot .float-scroll-btn {
+    display: none !important;
+}
+/* 移动端微调位置，避免被底部遮挡 */
+@media (max-width:768px) {
+    .float-scroll-btn.back-to-add {
+        right: 16px;
+        bottom: 64px;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+    .float-scroll-btn.scroll-last-card {
+        right: 16px;
+        bottom: 16px;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+}
+.float-scroll-btn {
+    /* 原有样式保留，追加 */
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+/* ========== 防图片保存、选中、拖拽 CSS防护 ========== */
+/* 禁止图片拖拽 */
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    user-select: none;
+}
+/* 禁止整个页面文本/图片选中，保留输入框、textarea可选中文字 */
+body {
+    user-select: none;
+    -webkit-user-select: none;
+}
+input,
+textarea {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+/* 禁止图片右键菜单的快捷保存；增加蒙版占位方案（可选） */
+.char-card-img-box img,
+.game-option-item img,
+.cp-female-card-btn img,
+.cp-male-item img,
+.char-item img,
+.char-card-item img,
+.cp-selected-card-item img {
+    pointer-events: none;
+}
+
+/* ========== 增加 background-image 渐变 ========== */
+.font-size-set-row input[type="range"] {
+    /* 新增这两行，其余保留原有 */
+    background-image: linear-gradient(#e895a8, #e895a8);
+    background-size: var(--slider-progress, 0%) 100%;
+    background-repeat: no-repeat;
+}
