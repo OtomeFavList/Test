@@ -105,7 +105,6 @@ function refreshTopItemUi(itemDom, dataItem) {
     const contentRow = itemDom.querySelector(".annual-top-content-row");
     const addBtn = itemDom.querySelector(".annual-add-game-btn");
     const hasGame = !!dataItem.gameId;
-
     if (hasGame) {
         nameEl.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
@@ -164,7 +163,6 @@ function renderGameList(wrap, keyword) {
     const state = getGameTemplateState();
     const gameTemplateList = state.list;
     const gameTemplateReady = state.ready;
-
     console.log("[annual.js renderGameList] gameTemplateReady=", gameTemplateReady, "listLength=", gameTemplateList?.length);
 
     if(!gameTemplateList || !isGameTemplateReady()) {
@@ -178,20 +176,21 @@ function renderGameList(wrap, keyword) {
         return String(g.name).toLowerCase().includes(kw);
     });
 
-    filtered.forEach((game, listIndex)=>{
+    // ✅【核心修改：完全复用FavList主列表的中英日排序逻辑 localeCompare("zh‑CN")】
+    const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh‑CN"));
+
+    sorted.forEach((game, listIndex)=>{
         if(!game) return;
         const div = document.createElement("div");
         div.className = "game-option-item";
         div.innerHTML = renderGameSelectItem(game, listIndex);
         div.addEventListener("click", ()=>{
             if (activeTopItemIndex === null) return;
-
             // 回填到当前激活的topList条目
             const targetItem = annualData.topList[activeTopItemIndex];
             targetItem.gameId = game.id;
             targetItem.gameName = game.name;
             targetItem.coverSrc = game.cover ?? "";
-
             // 更新对应DOM条目UI
             const topItemDomList = Array.from(document.querySelectorAll(".annual-top-item"));
             const targetDom = topItemDomList[activeTopItemIndex];
@@ -202,7 +201,6 @@ function renderGameList(wrap, keyword) {
                 coverImg.src = getWebImageUrl(targetItem.coverSrc);
                 refreshTopItemUi(targetDom, targetItem);
             }
-
             saveAnnualData();
             // 关闭全局弹窗
             closeAnnualGlobalGameModal();
@@ -219,18 +217,14 @@ function openAnnualGlobalGameModal(targetIndex){
     if(!_annualRealInitialized && isGameTemplateReady()){
         realInitAnnualModule();
     }
-
     activeTopItemIndex = targetIndex;
     const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
-
     modal.classList.add("active");
     const searchInput = modal.querySelector(".annual-global-search-input");
     const listWrap = modal.querySelector(".annual-global-game-list");
-
     searchInput.value = "";
     searchInput.focus();
-
     // 打开弹窗，再次校验模板状态
     renderGameList(listWrap, "");
 }
@@ -254,16 +248,13 @@ function bindTop3Items() {
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
-
         // 回填数据
         nameTextEl.textContent = dataItem.gameName ?? "";
         textarea.value = dataItem.text ?? "";
         if(dataItem.coverSrc){
             coverImg.src = getWebImageUrl(dataItem.coverSrc);
         }
-
         refreshTopItemUi(item, dataItem);
-
         // 自定义文本框双向绑定
         textarea.removeEventListener("input", textarea._inputHandler);
         textarea._inputHandler = ()=>{
@@ -349,31 +340,26 @@ function bindAnnualExportPanel() {
         document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         saveAnnualExportConfig();
     };
-
     colorTitle.oninput = () => {
         annualExportConfig.title = colorTitle.value;
         document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
         saveAnnualExportConfig();
     };
-
     colorGamename.oninput = () => {
         annualExportConfig.gamename = colorGamename.value;
         document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
         saveAnnualExportConfig();
     };
-
     colorCustomtext.oninput = () => {
         annualExportConfig.customtext = colorCustomtext.value;
         document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         saveAnnualExportConfig();
     };
-
     colorBorder.oninput = () => {
         annualExportConfig.border = colorBorder.value;
         document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
         saveAnnualExportConfig();
     };
-
     sliderFont.oninput = () => {
         const val = Number(sliderFont.value);
         annualExportConfig.customTextFontSize = val;
@@ -386,7 +372,6 @@ function bindAnnualExportPanel() {
     btnExportImage._handler = async () => {
         const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
         if (!annualWrap || !snapshotBox) return;
-
         snapshotBox.innerHTML = annualWrap.innerHTML;
         snapshotBox.classList.add("export-snapshot", "annual-mode");
         snapshotBox.style.setProperty("--annual-export-bg", annualExportConfig.bg);
@@ -395,7 +380,6 @@ function bindAnnualExportPanel() {
         snapshotBox.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         snapshotBox.style.setProperty("--annual-export-border", annualExportConfig.border);
         snapshotBox.dataset.annualFontSize = String(annualExportConfig.customTextFontSize);
-
         try {
             const canvas = await html2canvas(snapshotBox, {
                 useCORS:true,
@@ -419,14 +403,12 @@ function bindAnnualExportPanel() {
 function bindAnnualExport() {
     btnAnnualExport = document.getElementById("btn-annual-export");
     if(!btnAnnualExport) return;
-
     btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
     btnAnnualExport._clickHandler = async ()=>{
         const snapshotBox = document.getElementById("snapshot-container");
         const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
         snapshotBox.innerHTML = annualWrap.innerHTML;
         snapshotBox.classList.add("export-snapshot");
-
         try {
             const canvas = await html2canvas(snapshotBox, {
                 useCORS:true,
@@ -453,15 +435,12 @@ function bindAnnualExport() {
 function realInitAnnualModule(){
     if(_annualRealInitialized) return;
     _annualRealInitialized = true;
-
     console.log("✅[annual.js] realInitAnnualModule 游戏模板就绪，执行业务初始化");
-
     loadAnnualData();
     bindStatInputs();
     bindTop3Items();
     bindAnnualExport();
     bindAnnualExportPanel();
-
     // 如果弹窗已经打开，立刻刷新游戏列表
     const modal = document.getElementById("annual-global-game-modal");
     if(modal && modal.classList.contains("active")){
@@ -484,21 +463,17 @@ export function initAnnualModule(){
                 openAnnualGlobalGameModal(idx);
                 return;
             }
-
             // 【新增】弹窗右上角×关闭按钮
             const clickCloseBtn = e.target.closest(".annual-modal-close-btn");
             if(clickCloseBtn){
                 closeAnnualGlobalGameModal();
                 return;
             }
-
             const modalEl = document.getElementById("annual-global-game-modal");
             if(!modalEl || !modalEl.classList.contains("active")) return;
-
             // 点击弹窗内部，不关闭
             const insideModal = e.target.closest(".annual-global-modal-inner");
             if(insideModal) return;
-
             // 点击遮罩，关闭弹窗
             closeAnnualGlobalGameModal();
         });
