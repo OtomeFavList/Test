@@ -23,7 +23,6 @@
     background: #f6a5b8;
     color: #ffffff;
 }
-
 /* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
 .mode-wrap {
     width: 100%;
@@ -37,7 +36,6 @@
     overflow: hidden;
     pointer-events: none;
 }
-
 /* ========== site-title 年度报告覆盖样式 ========== */
 .site-title.annual-active h1 {
     font-size: 42px;
@@ -47,12 +45,10 @@
 .site-title.annual-active .sub-desc {
     display: none !important;
 }
-
 /* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
 .annual-page-title {
     display: none;
 }
-
 /* ========== 统计行：整段居中、字号16px，颜色变量控制 ========== */
 .annual-stat-line {
     font-size: 16px;
@@ -70,7 +66,6 @@
     margin: 0 4px;
     color:#000000;
 }
-
 /* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
 .annual-top-label {
     font-size: 22px;
@@ -78,7 +73,6 @@
     color: var(--annual-export-subtitle, #b85878);
     margin-bottom: 10px;
 }
-
 /* 游戏名称显示：黑色22px，自动换行 */
 .annual-game-name-text {
     font-size: 22px;
@@ -86,7 +80,6 @@
     word-break: break-all;
     margin: 8px 0 12px;
 }
-
 /* ========== TOP3游戏条目 ========== */
 .annual-top-item {
     margin-bottom: 24px;
@@ -94,7 +87,6 @@
 .annual-search-row {
     display: none !important;
 }
-
 /* +添加游戏按钮，居中 */
 .annual-add-game-btn-wrap {
     text-align: center;
@@ -114,7 +106,6 @@
 .annual-add-game-btn:hover {
     background-color: #992e2e;
 }
-
 /* ==========【修复】年度报告全局居中游戏选择模态弹窗（body直接子节点） 全部半角符号 ========== */
 #annual-global-game-modal {
     position: fixed;
@@ -130,7 +121,6 @@
 #annual-global-game-modal.active {
     display: flex;
 }
-
 .annual-global-modal-inner {
     /* ✅ 修改：弹窗最大宽度对齐主页面容器1200px，和FavList待选框宽度一致 */
     width: min(92vw, 1200px);
@@ -145,7 +135,6 @@
     flex-direction: column;
     overflow: hidden;
 }
-
 /* ==========弹窗头部【新增】========== */
 .annual-modal-header {
     display:flex;
@@ -159,7 +148,6 @@
     font-weight:bold;
     color:#b33a3a;
 }
-
 /* 关闭按钮：1:1复刻 .game‑fold‑icon‑expand 样式 */
 .annual-modal-close-btn {
     position:absolute;
@@ -184,7 +172,6 @@
     background: #992e2e !important;
     color: #b33a3a !important;
 }
-
 /* input与列表容器，补回原来的padding */
 .annual-global-search-input {
     width:calc(100% - 40px);
@@ -196,7 +183,6 @@
     font-size:15px;
     box-sizing: border-box;
 }
-
 /* ✅游戏列表容器 - 完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
 .annual-global-game-list {
     flex:1;
@@ -210,7 +196,6 @@
     border-radius:10px;
     margin:0 20px 20px 20px;
 }
-
 /* 弹窗内游戏选项 1:1复刻FavList .game-option-item */
 .annual-global-game-list .game-option-item{
     border:1px solid #eee;
@@ -247,7 +232,6 @@
     line-height:1.6;
     color:#333;
 }
-
 /* ========== TOP3内容行：左侧封面，右侧文本域 ========== */
 .annual-top-content-row {
     display:flex;
@@ -281,13 +265,11 @@
     color: var(--annual-export-customtext, #c98fac);
     resize: vertical;
 }
-
 /* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
 .snapshot-container.export-snapshot .annual-add-game-btn,
 .snapshot-container.export-snapshot #btn-annual-export {
     display:none !important;
 }
-
 /* ==========【修复权重BUG】hidden-when-empty，降低!important权重，快照可以覆盖 ========== */
 .hidden-when-empty {
     display: none;
@@ -301,7 +283,6 @@
 .snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text {
     display: block !important;
 }
-
 /* ========== 年度报告快照配色变量 ========== */
 .snapshot-container.export-snapshot.annual-mode {
     --annual-export-bg: #fff7f9;
@@ -310,7 +291,6 @@
     --annual-export-customtext: #c98fac;
     --annual-export-border: #f6a5b8;
 }
-
 /* ==========年度报告字号滑块轨道【修复滑块百分比轨道不变化】========== */
 .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
     background:transparent;
@@ -366,7 +346,6 @@
         z-index:-1;
     }
 }
-
 /* ==========年度报告页面常态配色变量绑定 ========== */
 .mode-wrap[data-mode="annual"] {
     --annual-export-bg:#fff7f9;
@@ -377,14 +356,12 @@
     --annual-export-subtitle:#b85878;
     background-color: var(--annual-export-bg, #fff7f9);
 }
-
 /* ========== 移动端适配 - 分界1：平板横向 ========== */
 @media (max-width: 1024px) {
     .annual-global-modal-inner {
         width: min(95vw, 1000px);
     }
 }
-
 /* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
 /* ① 普通手机（≤ 768px）：强制单列 */
 @media (max-width: 768px) {
@@ -431,8 +408,30 @@
         width: calc(100% - 32px);
         margin: 0 16px 10px 16px;
     }
+    /* ✅同步main.css手机端game-option-item布局，解决卡片高度不足、文字裁切 */
+    .annual-global-game-list .game-option-item {
+        display: flex !important;
+        gap: 10px !important;
+        padding: 10px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+    .annual-global-game-list .game-option-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+    }
+    .annual-global-game-list .game-option-name {
+        font-size: 16px !important;
+        line-height: 1.4 !important;
+        word-break: break-word !important;
+    }
+    .annual-global-game-list .game-option-info p {
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        word-break: break-all !important;
+        white-space: normal !important;
+    }
 }
-
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
     .annual-global-game-list {
@@ -443,10 +442,31 @@
     .annual-global-game-list .game-option-item img {
         width: 80px !important;
     }
+    /* ✅平板端同步main.css卡片防裁切 */
+    .annual-global-game-list .game-option-item {
+        display: flex !important;
+        gap: 10px !important;
+        padding: 10px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+    .annual-global-game-list .game-option-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+    }
+    .annual-global-game-list .game-option-name {
+        font-size: 16px !important;
+        line-height: 1.4 !important;
+        word-break: break-word !important;
+    }
+    .annual-global-game-list .game-option-info p {
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        word-break: break-all !important;
+        white-space: normal !important;
+    }
 }
-
 /* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
-
 /* ========== 手机纵向480px微调（只调控件尺寸，不改动布局网格） ========== */
 @media (max-width: 480px) {
     .annual-modal-header {
