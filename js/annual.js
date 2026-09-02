@@ -341,18 +341,19 @@ function renderCharModalGameList(wrap, keyword) {
         }
     }
 
-    // 渲染搜索命中的角色项（优先展示角色卡片，完全复用char-item样式，文本区加高2/3，双层居中）
+    // 渲染搜索命中的角色项（优先展示角色卡片）
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item";
         const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
+        // ✅需求②：文本容器高度扩大2/3；角色名居中多行；游戏名灰色小字换行居中在下方
         div.innerHTML = `
             <div class="char-card-img-box">
                 <img src="${imgSrc}" alt="${char.name}" decoding="async">
             </div>
-            <div class="char-card-name" style="height:calc(100% * 1.666);display:flex;flex-direction:column;justify-content:center;gap:2px;">
-                <div style="text-align:center;white-space:normal;word-break:break-all;">${char.name}</div>
-                <div style="font-size:11px;color:#888;text-align:center;white-space:normal;word-break:break-all;">${game.name}</div>
+            <div class="char-card-name" style="min-height:calc(var(--char‑name‑height,48px) * 1.66);text-align:center;display:flex;flex-direction:column;justify-content:center;gap:2px;">
+                <div class="char‑display‑name">${char.name}</div>
+                <div class="char‑source‑game" style="font-size:11px;color:#888;word-break:break-word;">${game.name}</div>
             </div>
         `;
         div.addEventListener("click", ()=>{
@@ -362,6 +363,7 @@ function renderCharModalGameList(wrap, keyword) {
             targetItem.charId = char.id;
             targetItem.charName = char.name;
             targetItem.coverSrc = imgSrc;
+
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
             const targetDom = charItemDoms[activeCharTopItemIndex];
             if(targetDom){
@@ -377,17 +379,17 @@ function renderCharModalGameList(wrap, keyword) {
         wrap.appendChild(div);
     }
 
-    // 如果同时存在角色结果和游戏结果，插入分隔块，游戏卡片另起区域
-    if(matchedCharacters.length > 0 && matchedGames.size > 0){
+    // ✅需求③：角色和游戏之间加分隔线，只有同时存在角色与游戏结果时渲染分割
+    if(matchedCharacters.length > 0 && matchedGames.size > 0) {
         const separator = document.createElement("div");
         separator.style.width = "100%";
         separator.style.height = "1px";
-        separator.style.background = "#ddd";
-        separator.style.margin = "14px 0";
+        separator.style.background = "#dddddd";
+        separator.style.margin = "12px 0";
         wrap.appendChild(separator);
     }
 
-    // 渲染匹配的游戏卡片，保持原有全部逻辑与样式
+    // 渲染匹配的游戏卡片，完全保留原有逻辑与样式，和未搜索状态保持一致
     const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
     const { sortFilterOptionList } = window.Core || {};
     let sortedGames = gameList;
