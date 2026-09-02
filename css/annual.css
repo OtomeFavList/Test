@@ -28,8 +28,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    /* ❗删除gap:30px，和main.css保持一致，mode-wrap内部卡片之间的间距交给卡片自身margin/padding，外层不再用flex gap */
-    gap: 0;
+    gap: 30px;
 }
 .mode-wrap.mode-hidden {
     visibility: hidden;
@@ -37,16 +36,14 @@
     overflow: hidden;
     pointer-events: none;
 }
-/* ========== site-title 年度报告覆盖样式【修复间距跳动】 ========== */
+/* ========== site-title 年度报告覆盖样式 ========== */
 .site-title.annual-active h1 {
     font-size: 42px;
     color: #b33a3a;
 }
-/* 只做视觉隐藏，保留文档流占位高度，绝对不能display:none */
 .site-title.annual-active .title-sub-cn,
 .site-title.annual-active .sub-desc {
-    /* 删掉 display: none !important; */
-    visibility: hidden;
+    display: none !important;
 }
 /* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
 .annual-page-title {
