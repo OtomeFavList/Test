@@ -560,6 +560,14 @@
     .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
         font-size:10px !important;
     }
+    .annual-global-char-game-list .search-char-result-wrap {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 10px !important;
+    }
+    .annual-global-char-game-list .search-game-result-wrap {
+        grid-template-columns:1fr !important;
+        gap:10px !important;
+    }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
@@ -662,6 +670,14 @@
     }
     .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
         font-size:10.5px !important;
+    }
+    .annual-global-char-game-list .search-char-result-wrap {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+        gap: 12px !important;
+    }
+    .annual-global-char-game-list .search-game-result-wrap {
+        grid-template-columns:repeat(auto-fill, minmax(280px,1fr)) !important;
+        gap:14px !important;
     }
 }
 /* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
@@ -881,7 +897,21 @@
     color:#333;
 }
 
-/* ========== 搜索命中角色卡片（直接搜索角色名结果），完全复刻二级角色待选char-item布局，文本区高度扩容2/3 ========== */
+/* ========== 搜索命中角色卡片（直接搜索角色名结果），完全复刻二级角色待选char-item布局 ========== */
+/* 【新增：搜索结果双层子容器：角色结果块、游戏结果块，实现上下分开排布，互不干扰】 */
+.annual-global-char-game-list .search-char-result-wrap {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+    gap:14px;
+    width:100%;
+}
+.annual-global-char-game-list .search-game-result-wrap {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:14px;
+    width:100%;
+}
+/* 角色搜索结果卡片，完全复用二级待选char-item样式 */
 .annual-global-char-game-list .search-result-char-item {
     border:1px solid #eee;
     border-radius:10px;
@@ -898,10 +928,9 @@
     background:#fff0f3;
     border-color:#e895a8;
 }
-
 .annual-global-char-game-list .search-result-char-item .char-card-img-box {
     width:100%;
-    aspect-ratio: 1 / 1.25;
+    aspect-ratio: 1 / 1; /* ✅修复：强制正方形，不再拉长 */
     overflow:hidden;
     border-radius:6px;
 }
@@ -910,16 +939,14 @@
     height:100%;
     object-fit:cover;
 }
-
-/* 文本容器：高度比普通char-item文本区域多2/3 */
+/* ✅修复：垂直+水平全部居中，移除自定义flex扩容，复用原生char-item行为 */
 .annual-global-char-game-list .search-result-char-item .char-card-name-wrap {
-    flex: 1.66; /* 高度扩容至原来约5/3 = +2/3 */
     display:flex;
     flex-direction:column;
     gap:4px;
     justify-content: center;
+    align-items: center; /* 新增：垂直居中，解决上方空、下方贴边框 */
 }
-
 /* 角色名：居中，允许多行自动换行 */
 .annual-global-char-game-list .search-result-char-item .char-card-name {
     font-weight:bold;
@@ -928,7 +955,6 @@
     word-break: break-word;
     line-height:1.4;
 }
-
 /* 游戏名：灰色小字，居中，自动换行 */
 .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
     font-size:11px;
