@@ -341,14 +341,7 @@ function renderCharModalGameList(wrap, keyword) {
         }
     }
 
-    // ========== 拆分：角色结果容器、游戏结果容器，两者互相隔离 ==========
-    const charResultWrap = document.createElement("div");
-    charResultWrap.className = "search-result-char-wrap";
-
-    const gameResultWrap = document.createElement("div");
-    gameResultWrap.className = "search-result-game-wrap";
-
-    // 渲染搜索命中的角色项（优先展示角色卡片，放入独立角色容器）
+    // 渲染搜索命中的角色项（优先展示角色卡片）
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item search-result-char-item";
@@ -369,6 +362,7 @@ function renderCharModalGameList(wrap, keyword) {
             targetItem.charId = char.id;
             targetItem.charName = char.name;
             targetItem.coverSrc = imgSrc;
+
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
             const targetDom = charItemDoms[activeCharTopItemIndex];
             if(targetDom){
@@ -381,10 +375,10 @@ function renderCharModalGameList(wrap, keyword) {
             saveAnnualData();
             closeAnnualGlobalCharModal();
         });
-        charResultWrap.appendChild(div);
+        wrap.appendChild(div);
     }
 
-    // 渲染匹配的游戏卡片，放入独立游戏容器
+    // 渲染匹配的游戏卡片
     const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
     const { sortFilterOptionList } = window.Core || {};
     let sortedGames = gameList;
@@ -394,6 +388,7 @@ function renderCharModalGameList(wrap, keyword) {
     } else {
         sortedGames = [...gameList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
     }
+
     sortedGames.forEach((game) => {
         if (!game) return;
         const div = document.createElement("div");
@@ -405,16 +400,8 @@ function renderCharModalGameList(wrap, keyword) {
             switchCharModalView("charList");
             renderCharModalCharList();
         });
-        gameResultWrap.appendChild(div);
+        wrap.appendChild(div);
     });
-
-    // 顺序挂载：角色区块 → 游戏区块，实现强制换行分割
-    if(matchedCharacters.length > 0){
-        wrap.appendChild(charResultWrap);
-    }
-    if(matchedGames.size > 0){
-        wrap.appendChild(gameResultWrap);
-    }
 
     // 无结果提示
     if(matchedCharacters.length === 0 && matchedGames.size === 0){
