@@ -467,9 +467,6 @@
         padding: 10px !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
-        /* ========== 新增：卡片自身左右外边距，实现卡片和屏幕两边留出距离，外层list保持padding:0 ========== */
-        margin-left: 12px !important;
-        margin-right: 12px !important;
     }
     .annual-global-char-game-list .game-option-info {
         flex: 1 1 0 !important;
