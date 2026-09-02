@@ -397,10 +397,11 @@
     .annual-global-game-list {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
-        padding: 10px 16px 16px 16px;
-        margin: 0 16px 16px 16px;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 10px 0 10px 0;
+        margin: 0;
         min-height:260px;
-        /* ❌删除 max-height:38vh !important; overflow-y:auto !important; */
     }
     .annual-global-game-list .game-option-item img {
         width: 80px !important;
@@ -728,6 +729,11 @@
     gap: 3px;  /* 12px → 6px → 3px，开关互相靠近 */
     padding: 0 20px 8px 20px;
 }
+/* 消除switch-row在弹窗开关组内的垂直margin，避免横向折行时产生额外间隙 */
+.annual-modal-global-switch-group > .switch-row {
+    margin: 0;
+}
+
 /* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
 .annual-modal-game-switch-group {
     display: none;
@@ -738,6 +744,11 @@
 .annual-modal-game-switch-group.active {
     display: flex;
 }
+/* 单游戏开关组内部同样清除switch-row上下margin */
+.annual-modal-game-switch-group > .switch-row {
+    margin: 0;
+}
+
 .annual-global-char-search-input {
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
@@ -754,15 +765,8 @@
     min-height:260px;
     display:flex;
     flex-direction:column;
-    overflow:hidden;
     padding:0;
-}
-/* ==========【新增】卡片独立小滚动外壳 ========== */
-.char-list-inner-scroll-wrap {
-    flex: 1;
-    min-height: 220px;
-    max-height: 42vh;
-    overflow-y: auto;
+    /* 删除 overflow:hidden; */
 }
 /* ========== ✅角色弹窗游戏列表：1:1复刻 annual‑global‑game-list，滚动交给外层 char‑list‑inner‑scroll‑wrap，列表自身不做overflow-y ========== */
 .annual-global-char-game-list {
@@ -821,7 +825,7 @@
     border-radius:10px;
     padding:10px;
     display:none;
-    /* ❌列表本身不写overflow，滚动交给外层 char‑list‑inner‑scroll‑wrap */
+    /* ❌列表本身不写overflow，滚动交给外层 annual‑modal‑scroll‑wrap */
 }
 .annual-global-char-char-list.active {
     display:grid;
@@ -872,10 +876,6 @@
     }
     .annual-modal-view-container {
         padding:12px 0 12px 0;
-    }
-    /* 覆盖PC的max-height */
-    .char-list-inner-scroll-wrap {
-        max-height: 55vh;
     }
     .annual-modal-global-switch-group label,
     .annual-modal-game-switch-group label {
