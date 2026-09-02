@@ -1071,29 +1071,44 @@
 /* ========== 新增修改：修复 TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 ========== */
 /* ================================================================ */
 
-/* ① 修复 annual-top-label-row 一行布局：垂直居中对齐全部元素，修正换行挤压 */
+/* ==========【问题④】NO.x + 名称 + ×按钮 严格垂直中线对齐 ========== */
 .annual-top-label-row {
     display: flex;
-    align-items: center;
+    align-items: center !important;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
 }
+
 .annual-top-label-row .annual-top-label {
     flex-shrink: 0;
     align-self: center;
+    margin: 0;
+    line-height: 1; /* 消除行盒基线偏移 */
 }
+
 .annual-top-label-row .annual-game-name-text,
 .annual-top-label-row .annual-char-name-text {
     flex: 1;
     min-width: 0;
     margin: 0;
-    font-weight: bold; /* ✅修复问题③：游戏名、角色名加粗 */
+    font-weight: bold;
     align-self: center;
+    line-height: 1.2;
 }
+
 .annual-top-label-row .annual-item-delete-btn {
     flex-shrink: 0;
-    align-self: center; /* ✅修复问题①：×按钮垂直和NO.xxx、文字居中对齐 */
+    align-self: center;
+    margin:0;
+}
+
+/*【问题⑥】拖拽光标样式加固 */
+.annual-top-label-row[draggable="true"]{
+    cursor: grab;
+}
+.annual-top-label-row[draggable="true"]:active{
+    cursor: grabbing;
 }
 
 /* ② 删除按钮完整样式（复用弹窗关闭按钮） */
