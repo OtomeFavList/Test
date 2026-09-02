@@ -564,7 +564,7 @@
         grid-column: 1 / -1 !important;
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
         gap: 10px !important;
-        margin-bottom:16px !important;
+        /* ✅删除 margin-bottom:16px !important; */
     }
     .annual-global-char-game-list .search-game-result-wrap {
         grid-column: 1 / -1 !important;
@@ -678,7 +678,7 @@
         grid-column: 1 / -1 !important;
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
         gap: 12px !important;
-        margin-bottom:18px !important;
+        /* ✅删除 margin-bottom:18px !important; */
     }
     .annual-global-char-game-list .search-game-result-wrap {
         grid-column: 1 / -1 !important;
@@ -911,7 +911,7 @@
     grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
     gap:14px;
     width:100%;
-    margin-bottom: 20px; /* 角色结果块和下方游戏块垂直间距，不新增外框 */
+    /* ✅移除margin‑bottom:20px，块间距交给父容器grid gap统一控制，与普通游戏卡片间距一致 */
 }
 .annual-global-char-game-list .search-game-result-wrap {
     grid-column: 1 / -1;
