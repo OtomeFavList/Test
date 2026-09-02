@@ -127,6 +127,10 @@ body{
     justify-content:center;
     gap:12px;
 }
+/* 年度报告模式：sub‑desc被隐藏，取消guide按钮块上边距，避免h1‑>指南按钮间距错位 */
+.site-title.annual-active .center-btn-block.guide-btn-block {
+    margin-top: 0;
+}
 .center-btn-block{
     display:flex;
     justify-content:center;
@@ -2118,4 +2122,17 @@ textarea {
     background-image: linear-gradient(#e895a8, #e895a8);
     background-size: var(--slider-progress, 0%) 100%;
     background-repeat: no-repeat;
+}
+
+/* ========== 模式切换按钮组（新增，用于间距控制） ========== */
+.mode-switch-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    /*
+    拆解：
+    margin‑top:4px → 实现【指南按钮块底部 到 mode‑switch‑wrap顶部】=4px（A距离，已减半）
+    margin‑bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，以FavList设置卡片上边距离为基准，保持不变）
+    */
+    margin: 4px 0 30px;
 }
