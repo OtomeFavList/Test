@@ -491,11 +491,11 @@
     }
     /* ===== ①移动端开关组同步缩小gap，并保持12px左右边距，与搜索框对齐 ===== */
     .annual-modal-global-switch-group {
-        gap: 3px;
+        gap: 12px;
         padding: 0 12px 8px 12px;
     }
     .annual-modal-game-switch-group {
-        gap: 3px;
+        gap: 12px;
         padding: 0 0 8px 0;
     }
     /* ===== 角色弹窗头部返回按钮左距调整 ===== */
@@ -595,12 +595,12 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* 平板开关组gap统一缩小 */
+    /* 平板开关组gap与主站保持一致 */
     .annual-modal-global-switch-group {
-        gap: 3px;
+        gap: 12px;
     }
     .annual-modal-game-switch-group {
-        gap: 3px;
+        gap: 12px;
     }
 }
 /* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
@@ -726,7 +726,7 @@
 .annual-modal-global-switch-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 3px;  /* 12px → 6px → 3px，开关互相靠近 */
+    gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
     padding: 0 20px 8px 20px;
 }
 /* 消除switch-row在弹窗开关组内的垂直margin，避免横向折行时产生额外间隙 */
@@ -738,7 +738,7 @@
 .annual-modal-game-switch-group {
     display: none;
     flex-wrap: wrap;
-    gap: 3px;  /* 12px → 6px → 3px，开关互相靠近 */
+    gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
     padding: 0 0 8px 0; /* 左右边距由外层滚动容器提供，避免双重边距 */
 }
 .annual-modal-game-switch-group.active {
@@ -867,11 +867,11 @@
         font-size: 14px;
     }
     .annual-modal-global-switch-group {
-        gap: 3px;
+        gap: 12px;
         padding: 0 12px 8px 12px;
     }
     .annual-modal-game-switch-group {
-        gap: 3px;
+        gap: 12px;
         padding: 0 0 8px 0;
     }
     .annual-modal-view-container {
