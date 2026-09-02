@@ -270,40 +270,140 @@ function renderCharModalGameList(wrap, keyword) {
         return;
     }
     const kw = (keyword ?? "").toLowerCase().trim();
-    // ===== 修改：同时匹配游戏名和角色名 =====
-    const filtered = gameTemplateList.filter(g => {
-        if (!kw) return true;
-        // 匹配游戏名
-        const matchGameName = String(g.name).toLowerCase().includes(kw);
-        // 匹配任意角色名
-        const hasCharMatch = Array.isArray(g.charList) && g.charList.some(c => String(c.name).toLowerCase().includes(kw));
-        return matchGameName || hasCharMatch;
-    });
-    // ✅完全复用FavList中英日排序
-    const { sortFilterOptionList } = window.Core || {};
-    let sorted = filtered;
-    if (typeof sortFilterOptionList === 'function') {
-        const sortedNames = sortFilterOptionList(filtered.map(g=>g.name));
-        sorted = sortedNames.map(name=>filtered.find(g=>g.name===name)).filter(Boolean);
-    } else {
-        sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+
+    // 关键词为空：原始逻辑，只渲染游戏列表
+    if (!kw) {
+        const filtered = [...gameTemplateList];
+        const { sortFilterOptionList } = window.Core || {};
+        let sorted = filtered;
+        if (typeof sortFilterOptionList === 'function') {
+            const sortedNames = sortFilterOptionList(filtered.map(g=>g.name));
+            sorted = sortedNames.map(name=>filtered.find(g=>g.name===name)).filter(Boolean);
+        } else {
+            sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+        }
+        sorted.forEach((game) => {
+            if (!game) return;
+            const div = document.createElement("div");
+            div.className = "game-option-item";
+            div.innerHTML = renderGameSelectItem(game);
+            div.addEventListener("click", () => {
+                charModalCurrentGameId = game.id;
+                charModalLocal = { subChar:false, hideChar:false, fdChar:false };
+                switchCharModalView("charList");
+                renderCharModalCharList();
+            });
+            wrap.appendChild(div);
+        });
+        return;
     }
 
-    sorted.forEach((game) => {
+    // ====== 有搜索词：同时收集匹配角色、匹配游戏 ======
+    const matchedCharacters = [];
+    const matchedGames = new Set();
+
+    for(const game of gameTemplateList) {
+        const gameNameLow = String(game.name).toLowerCase();
+        const matchGame = gameNameLow.includes(kw);
+        if(matchGame) matchedGames.add(game.id);
+
+        if(!Array.isArray(game.charList)) continue;
+        for(const char of game.charList) {
+            const charNameLow = String(char.name).toLowerCase();
+            if(!charNameLow.includes(kw)) continue;
+
+            // 【开关过滤：仅使用全局开关charModalGlobal，不使用游戏局部charModalLocal】
+            const isSub = char.isSub ?? false;
+            const isHidden = !!char.isHidden;
+            const isFD = !!char.isFD;
+            const showHide = charModalGlobal.hideChar;
+            const showFD = charModalGlobal.fdChar;
+            const showSub = charModalGlobal.subChar;
+
+            let pass = false;
+            if(isSub){
+                if(isHidden && isFD) pass = showSub && showHide && showFD;
+                else if(isHidden && !isFD) pass = showSub && showHide;
+                else if(!isHidden && isFD) pass = showSub && showFD;
+                else pass = showSub;
+            }else{
+                if(!isHidden && !isFD) pass = true;
+                else if(isHidden && !isFD) pass = showHide;
+                else if(!isHidden && isFD) pass = showFD;
+                else if(isHidden && isFD) pass = showHide || showFD;
+                else pass = true;
+            }
+
+            if(pass){
+                matchedCharacters.push({game, char});
+                matchedGames.add(game.id);
+            }
+        }
+    }
+
+    // 渲染搜索命中的角色项（优先展示角色卡片）
+    for(const {game, char} of matchedCharacters){
+        const div = document.createElement("div");
+        div.className = "char-item";
+        const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
+        div.innerHTML = `
+            <div class="char-card-img-box">
+                <img src="${imgSrc}" alt="${char.name}" decoding="async">
+            </div>
+            <div class="char-card-name">${char.name}<span style="font-size:11px;color:#888;margin-left:4px;">${game.name}</span></div>
+        `;
+        div.addEventListener("click", ()=>{
+            if(activeCharTopItemIndex === null) return;
+            const targetItem = annualData.charTopList[activeCharTopItemIndex];
+            targetItem.gameId = game.id;
+            targetItem.charId = char.id;
+            targetItem.charName = char.name;
+            targetItem.coverSrc = imgSrc;
+
+            const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
+            const targetDom = charItemDoms[activeCharTopItemIndex];
+            if(targetDom){
+                const nameEl = targetDom.querySelector(".annual-char-name-text");
+                const imgEl = targetDom.querySelector(".annual-char-cover");
+                nameEl.textContent = char.name;
+                imgEl.src = imgSrc;
+                refreshCharTopItemUi(targetDom, targetItem);
+            }
+            saveAnnualData();
+            closeAnnualGlobalCharModal();
+        });
+        wrap.appendChild(div);
+    }
+
+    // 渲染匹配的游戏卡片
+    const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
+    const { sortFilterOptionList } = window.Core || {};
+    let sortedGames = gameList;
+    if (typeof sortFilterOptionList === 'function') {
+        const sortedNames = sortFilterOptionList(gameList.map(g=>g.name));
+        sortedGames = sortedNames.map(name=>gameList.find(g=>g.name===name)).filter(Boolean);
+    } else {
+        sortedGames = [...gameList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    sortedGames.forEach((game) => {
         if (!game) return;
         const div = document.createElement("div");
         div.className = "game-option-item";
         div.innerHTML = renderGameSelectItem(game);
         div.addEventListener("click", () => {
-            // 点击游戏卡片 → 切换到角色列表视图，记录gameId
             charModalCurrentGameId = game.id;
-            // 重置本游戏局部开关为false
             charModalLocal = { subChar:false, hideChar:false, fdChar:false };
             switchCharModalView("charList");
             renderCharModalCharList();
         });
         wrap.appendChild(div);
     });
+
+    // 无结果提示
+    if(matchedCharacters.length === 0 && matchedGames.size === 0){
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏或角色</div>`;
+    }
 }
 
 /**
