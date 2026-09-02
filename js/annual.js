@@ -346,15 +346,11 @@ function renderCharModalGameList(wrap, keyword) {
         const div = document.createElement("div");
         div.className = "char-item";
         const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
-        // ✅需求②：文本容器高度扩大2/3；角色名居中多行；游戏名灰色小字换行居中在下方
         div.innerHTML = `
             <div class="char-card-img-box">
                 <img src="${imgSrc}" alt="${char.name}" decoding="async">
             </div>
-            <div class="char-card-name" style="min-height:calc(var(--char‑name‑height,48px) * 1.66);text-align:center;display:flex;flex-direction:column;justify-content:center;gap:2px;">
-                <div class="char‑display‑name">${char.name}</div>
-                <div class="char‑source‑game" style="font-size:11px;color:#888;word-break:break-word;">${game.name}</div>
-            </div>
+            <div class="char-card-name">${char.name}<span style="font-size:11px;color:#888;margin-left:4px;">${game.name}</span></div>
         `;
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
@@ -379,17 +375,7 @@ function renderCharModalGameList(wrap, keyword) {
         wrap.appendChild(div);
     }
 
-    // ✅需求③：角色和游戏之间加分隔线，只有同时存在角色与游戏结果时渲染分割
-    if(matchedCharacters.length > 0 && matchedGames.size > 0) {
-        const separator = document.createElement("div");
-        separator.style.width = "100%";
-        separator.style.height = "1px";
-        separator.style.background = "#dddddd";
-        separator.style.margin = "12px 0";
-        wrap.appendChild(separator);
-    }
-
-    // 渲染匹配的游戏卡片，完全保留原有逻辑与样式，和未搜索状态保持一致
+    // 渲染匹配的游戏卡片
     const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
     const { sortFilterOptionList } = window.Core || {};
     let sortedGames = gameList;
