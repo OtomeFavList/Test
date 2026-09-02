@@ -50,17 +50,9 @@ const getDefaultAnnualData = () => ({
     finished: "",
     ongoing: "",
     notStart: "",
-    topList: [
-        { gameId: "", gameName: "", coverSrc: "", text: "" },
-        { gameId: "", gameName: "", coverSrc: "", text: "" },
-        { gameId: "", gameName: "", coverSrc: "", text: "" }
-    ],
-    // ========= 新增：キャラTOP3数据 =========
-    charTopList: [
-        { gameId: "", charId: "", charName: "", coverSrc: "", text: "" },
-        { gameId: "", charId: "", charName: "", coverSrc: "", text: "" },
-        { gameId: "", charId: "", charName: "", coverSrc: "", text: "" }
-    ]
+    // 修复：不再预置3条空数据，初始为空数组
+    topList: [],
+    charTopList: []
 });
 
 let annualData = getDefaultAnnualData();
@@ -780,7 +772,10 @@ function bindGameTopDrag(){
 
     container.addEventListener("dragstart",(e)=>{
         const row = e.target.closest(".annual-top-label-row");
-        if(!row) { e.preventDefault(); return; }
+        if(!row) {
+            e.preventDefault();
+            return;
+        }
         const itemDom = row.closest(".annual-top-item");
         const all = Array.from(container.querySelectorAll(".annual-top-item"));
         dragSourceIndex = all.indexOf(itemDom); // DOM列表中的真实下标，不再读dataset.rank
@@ -842,7 +837,10 @@ function bindCharTopDrag(){
 
     container.addEventListener("dragstart",(e)=>{
         const row = e.target.closest(".annual-top-label-row");
-        if(!row) { e.preventDefault(); return; }
+        if(!row) {
+            e.preventDefault();
+            return;
+        }
         const itemDom = row.closest(".annual-char-top-item");
         const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
         dragSourceIndex = all.indexOf(itemDom);
@@ -935,23 +933,28 @@ function setupTouchSort(containerSel, dataArr, afterSwap){
     },{passive:true});
 
     container.addEventListener("touchmove",(e)=>{
-        if(!dragItem) return;
+        if(!dragItem || dragIndex === null) return;
         e.preventDefault();
         const touchY = e.touches[0].clientY;
         const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
-        items.forEach((it,idx)=>{
-            if(idx === dragIndex) return;
-            const rect = it.getBoundingClientRect();
-            const midY = rect.top + rect.height/2;
+
+        // 查找目标插入位置
+        let targetIdx = dragIndex;
+        for(let i=0; i<items.length; i++){
+            if(i === dragIndex) continue;
+            const rect = items[i].getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
             if(touchY > midY){
-                // swap数组
-                const temp = dataArr[dragIndex];
-                dataArr[dragIndex] = dataArr[idx];
-                dataArr[idx] = temp;
-                dragIndex = idx;
-                afterSwap();
+                targetIdx = i;
             }
-        })
+        }
+        if(targetIdx === dragIndex) return;
+
+        // 数组移位，不是循环swap
+        const temp = dataArr.splice(dragIndex, 1)[0];
+        dataArr.splice(targetIdx, 0, temp);
+        dragIndex = targetIdx;
+        afterSwap();
     },{passive:false});
 
     container.addEventListener("touchend",()=>{
