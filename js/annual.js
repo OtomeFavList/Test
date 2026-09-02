@@ -655,6 +655,143 @@ function bindCharTop3Items() {
 }
 
 /**
+ * ✅新增：拖拽后，刷新游戏TOP全部NO.N标签文本（根据数组真实下标，不依赖data‑rank）
+ */
+function rerenderGameTopNoLabel(){
+    const items = Array.from(document.querySelectorAll(".annual-top-item"));
+    items.forEach((dom, arrIdx)=>{
+        const labelEl = dom.querySelector(".annual-top-label");
+        labelEl.textContent = `NO.${arrIdx+1}`;
+    });
+}
+/**
+ * ✅新增：拖拽后，刷新角色TOP全部NO.N标签文本
+ */
+function rerenderCharTopNoLabel(){
+    const items = Array.from(document.querySelectorAll(".annual-char-top-item"));
+    items.forEach((dom, arrIdx)=>{
+        const labelEl = dom.querySelector(".annual-top-label");
+        labelEl.textContent = `NO.${arrIdx+1}`;
+    });
+}
+
+/**
+ * ✅新增：绑定拖拽事件（游戏TOP）
+ */
+function bindGameTopDrag(){
+    const container = document.getElementById("annual-game-top-drag-container");
+    if(!container) return;
+    let dragSourceIndex = null;
+
+    container.addEventListener("dragstart",(e)=>{
+        const row = e.target.closest(".annual-top-label-row");
+        if(!row) { e.preventDefault(); return; }
+        const itemDom = row.closest(".annual-top-item");
+        dragSourceIndex = Number(itemDom.dataset.rank)-1;
+        e.dataTransfer.effectAllowed = "move";
+        itemDom.classList.add("drag‑source");
+    });
+
+    container.addEventListener("dragover",(e)=>{
+        e.preventDefault();
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if(!targetRow) return;
+        const targetItemDom = targetRow.closest(".annual-top-item");
+        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        if(dragSourceIndex === null || dragSourceIndex === targetIdx) return;
+        targetItemDom.classList.add("drag‑over");
+    });
+
+    container.addEventListener("dragleave",(e)=>{
+        const itemDom = e.target.closest(".annual-top-item");
+        if(itemDom) itemDom.classList.remove("drag‑over");
+    });
+
+    container.addEventListener("drop",(e)=>{
+        e.preventDefault();
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if(!targetRow || dragSourceIndex === null) return;
+        const targetItemDom = targetRow.closest(".annual-top-item");
+        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        targetItemDom.classList.remove("drag‑over");
+        if(dragSourceIndex === targetIdx) return;
+        // 数组交换位置
+        const temp = annualData.topList[dragSourceIndex];
+        annualData.topList[dragSourceIndex] = annualData.topList[targetIdx];
+        annualData.topList[targetIdx] = temp;
+        saveAnnualData();
+        bindTop3Items();
+        rerenderGameTopNoLabel();
+        dragSourceIndex = null;
+    });
+
+    container.addEventListener("dragend",()=>{
+        container.querySelectorAll(".annual-top-item").forEach(dom=>{
+            dom.classList.remove("drag‑source","drag‑over");
+        });
+        dragSourceIndex = null;
+    });
+}
+
+/**
+ * ✅新增：绑定拖拽事件（角色TOP）
+ */
+function bindCharTopDrag(){
+    const container = document.getElementById("annual-char-top-drag-container");
+    if(!container) return;
+    let dragSourceIndex = null;
+
+    container.addEventListener("dragstart",(e)=>{
+        const row = e.target.closest(".annual-top-label-row");
+        if(!row) { e.preventDefault(); return; }
+        const itemDom = row.closest(".annual-char-top-item");
+        dragSourceIndex = Number(itemDom.dataset.rank)-1;
+        e.dataTransfer.effectAllowed = "move";
+        itemDom.classList.add("drag‑source");
+    });
+
+    container.addEventListener("dragover",(e)=>{
+        e.preventDefault();
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if(!targetRow) return;
+        const targetItemDom = targetRow.closest(".annual-char-top-item");
+        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        if(dragSourceIndex === null || dragSourceIndex === targetIdx) return;
+        targetItemDom.classList.add("drag‑over");
+    });
+
+    container.addEventListener("dragleave",(e)=>{
+        const itemDom = e.target.closest(".annual-char-top-item");
+        if(itemDom) itemDom.classList.remove("drag‑over");
+    });
+
+    container.addEventListener("drop",(e)=>{
+        e.preventDefault();
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if(!targetRow || dragSourceIndex === null) return;
+        const targetItemDom = targetRow.closest(".annual-char-top-item");
+        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        targetItemDom.classList.remove("drag‑over");
+        if(dragSourceIndex === targetIdx) return;
+        // 数组交换
+        const temp = annualData.charTopList[dragSourceIndex];
+        annualData.charTopList[dragSourceIndex] = annualData.charTopList[targetIdx];
+        annualData.charTopList[targetIdx] = temp;
+        saveAnnualData();
+        bindCharTop3Items();
+        rerenderCharTopNoLabel();
+        dragSourceIndex = null;
+    });
+
+    container.addEventListener("dragend",()=>{
+        container.querySelectorAll(".annual-char-top-item").forEach(dom=>{
+            dom.classList.remove("drag‑source","drag‑over");
+        });
+        dragSourceIndex = null;
+    });
+}
+
+/**
  * 更新滑块进度百分比
  * @param {HTMLInputElement} sliderEl
  */
@@ -828,7 +965,10 @@ function realInitAnnualModule(){
     loadAnnualData();
     bindStatInputs();
     bindTop3Items();
-    bindCharTop3Items(); // 新增
+    bindCharTop3Items();
+    // ✅新增：初始化拖拽绑定
+    bindGameTopDrag();
+    bindCharTopDrag();
     bindAnnualExport();
     bindAnnualExportPanel();
     // 如果游戏弹窗打开刷新列表
@@ -850,25 +990,27 @@ function realInitAnnualModule(){
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            // ========== 游戏TOP3：添加游戏按钮 ==========
-            const clickAddBtn = e.target.closest(".annual-add-game-btn");
-            if(clickAddBtn){
-                const itemDom = clickAddBtn.closest(".annual-top-item");
-                if(!itemDom) return;
-                const rank = Number(itemDom.dataset.rank);
-                const idx = rank - 1;
-                openAnnualGlobalGameModal(idx);
+            // ========== ✅修改：全局板块添加游戏按钮，不再使用item内部按钮 ==========
+            const globalAddGameBtn = e.target.closest("#annual-global-add-game-btn");
+            if(globalAddGameBtn){
+                // 查找topList第一个空gameId的下标
+                const emptyIdx = annualData.topList.findIndex(item=>!item.gameId);
+                if(emptyIdx === -1){
+                    alert("TOP游戏列表已满，请先删除一项再添加");
+                    return;
+                }
+                openAnnualGlobalGameModal(emptyIdx);
                 return;
             }
-
-            // ========== キャラTOP3：添加角色按钮 ==========
-            const clickAddCharBtn = e.target.closest(".annual-add-char-btn");
-            if(clickAddCharBtn){
-                const itemDom = clickAddCharBtn.closest(".annual-char-top-item");
-                if(!itemDom) return;
-                const rank = Number(itemDom.dataset.rank);
-                const idx = rank - 1;
-                openAnnualGlobalCharModal(idx);
+            // ========== ✅修改：全局板块添加角色按钮 ==========
+            const globalAddCharBtn = e.target.closest("#annual-global-add-char-btn");
+            if(globalAddCharBtn){
+                const emptyIdx = annualData.charTopList.findIndex(item=>!item.charId);
+                if(emptyIdx === -1){
+                    alert("TOP角色列表已满，请先删除一项再添加");
+                    return;
+                }
+                openAnnualGlobalCharModal(emptyIdx);
                 return;
             }
 
