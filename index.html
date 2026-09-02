@@ -19,10 +19,12 @@
         body.modal-lock {
             overflow: hidden;
         }
-        /* 年度报告模式下隐藏副标题 */
+        /* 年度报告模式：视觉隐藏，保留文档流占位，保证高度不变，修复模式切换间距跳动 */
         .site-title.annual-active .title-sub-cn,
         .site-title.annual-active .sub-desc {
-            display: none;
+            visibility: hidden;
+            height: auto;
+            overflow: hidden;
         }
         /* NO.1/NO.2/NO.3 固定颜色 #b85878 */
         .annual-top-label {
