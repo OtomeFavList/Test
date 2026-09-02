@@ -344,7 +344,7 @@ function renderCharModalGameList(wrap, keyword) {
     // 渲染搜索命中的角色项（优先展示角色卡片）
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
-        div.className = "char-item";
+        div.className = "char-item search-result-char-item";
         const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
         div.innerHTML = `
             <div class="char-card-img-box">
@@ -378,15 +378,8 @@ function renderCharModalGameList(wrap, keyword) {
         wrap.appendChild(div);
     }
 
-    // 【新增：同时有角色结果和游戏结果时插入隔断，强制游戏卡片另起一行】
-    const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
-    if(matchedCharacters.length > 0 && gameList.length > 0) {
-        const divider = document.createElement('div');
-        divider.className = 'char-search-divider';
-        wrap.appendChild(divider);
-    }
-
     // 渲染匹配的游戏卡片
+    const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
     const { sortFilterOptionList } = window.Core || {};
     let sortedGames = gameList;
     if (typeof sortFilterOptionList === 'function') {
