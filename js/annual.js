@@ -341,7 +341,7 @@ function renderCharModalGameList(wrap, keyword) {
         }
     }
 
-    // 渲染搜索命中的角色项（优先展示角色卡片）
+    // 渲染搜索命中的角色项（优先展示角色卡片，完全复用char-item样式，文本区加高2/3，双层居中）
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item";
@@ -350,7 +350,10 @@ function renderCharModalGameList(wrap, keyword) {
             <div class="char-card-img-box">
                 <img src="${imgSrc}" alt="${char.name}" decoding="async">
             </div>
-            <div class="char-card-name">${char.name}<span style="font-size:11px;color:#888;margin-left:4px;">${game.name}</span></div>
+            <div class="char-card-name" style="height:calc(100% * 1.666);display:flex;flex-direction:column;justify-content:center;gap:2px;">
+                <div style="text-align:center;white-space:normal;word-break:break-all;">${char.name}</div>
+                <div style="font-size:11px;color:#888;text-align:center;white-space:normal;word-break:break-all;">${game.name}</div>
+            </div>
         `;
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
@@ -359,7 +362,6 @@ function renderCharModalGameList(wrap, keyword) {
             targetItem.charId = char.id;
             targetItem.charName = char.name;
             targetItem.coverSrc = imgSrc;
-
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
             const targetDom = charItemDoms[activeCharTopItemIndex];
             if(targetDom){
@@ -375,7 +377,17 @@ function renderCharModalGameList(wrap, keyword) {
         wrap.appendChild(div);
     }
 
-    // 渲染匹配的游戏卡片
+    // 如果同时存在角色结果和游戏结果，插入分隔块，游戏卡片另起区域
+    if(matchedCharacters.length > 0 && matchedGames.size > 0){
+        const separator = document.createElement("div");
+        separator.style.width = "100%";
+        separator.style.height = "1px";
+        separator.style.background = "#ddd";
+        separator.style.margin = "14px 0";
+        wrap.appendChild(separator);
+    }
+
+    // 渲染匹配的游戏卡片，保持原有全部逻辑与样式
     const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
     const { sortFilterOptionList } = window.Core || {};
     let sortedGames = gameList;
