@@ -344,13 +344,16 @@ function renderCharModalGameList(wrap, keyword) {
     // 渲染搜索命中的角色项（优先展示角色卡片）
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
-        div.className = "char-item";
+        div.className = "char-item search-result-char-item";
         const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
         div.innerHTML = `
             <div class="char-card-img-box">
                 <img src="${imgSrc}" alt="${char.name}" decoding="async">
             </div>
-            <div class="char-card-name">${char.name}<span style="font-size:11px;color:#888;margin-left:4px;">${game.name}</span></div>
+            <div class="char-card-name-wrap">
+                <div class="char-card-name">${char.name}</div>
+                <div class="char-card-game-sub">${game.name}</div>
+            </div>
         `;
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
