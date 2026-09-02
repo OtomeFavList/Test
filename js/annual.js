@@ -341,7 +341,14 @@ function renderCharModalGameList(wrap, keyword) {
         }
     }
 
-    // 渲染搜索命中的角色项（优先展示角色卡片）
+    // ✅【改动：创建两个独立子容器，角色、游戏上下分块，不混在同一个grid】
+    const searchCharWrap = document.createElement("div");
+    searchCharWrap.className = "search-char-result-wrap";
+
+    const searchGameWrap = document.createElement("div");
+    searchGameWrap.className = "search-game-result-wrap";
+
+    // 渲染搜索命中的角色项（优先展示角色卡片，全部放入角色子容器）
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item search-result-char-item";
@@ -375,10 +382,10 @@ function renderCharModalGameList(wrap, keyword) {
             saveAnnualData();
             closeAnnualGlobalCharModal();
         });
-        wrap.appendChild(div);
+        searchCharWrap.appendChild(div);
     }
 
-    // 渲染匹配的游戏卡片
+    // 渲染匹配的游戏卡片，全部放入游戏子容器
     const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
     const { sortFilterOptionList } = window.Core || {};
     let sortedGames = gameList;
@@ -388,7 +395,6 @@ function renderCharModalGameList(wrap, keyword) {
     } else {
         sortedGames = [...gameList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
     }
-
     sortedGames.forEach((game) => {
         if (!game) return;
         const div = document.createElement("div");
@@ -400,8 +406,17 @@ function renderCharModalGameList(wrap, keyword) {
             switchCharModalView("charList");
             renderCharModalCharList();
         });
-        wrap.appendChild(div);
+        searchGameWrap.appendChild(div);
     });
+
+    // 输出到外层wrap：角色块在上，游戏块在下，完全上下分开
+    wrap.innerHTML = "";
+    if(matchedCharacters.length > 0) {
+        wrap.appendChild(searchCharWrap);
+    }
+    if(sortedGames.length > 0) {
+        wrap.appendChild(searchGameWrap);
+    }
 
     // 无结果提示
     if(matchedCharacters.length === 0 && matchedGames.size === 0){
