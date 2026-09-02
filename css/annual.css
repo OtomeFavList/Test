@@ -768,10 +768,19 @@
     padding:0;
     /* 删除 overflow:hidden; */
 }
-/* ========== ✅角色弹窗游戏列表：1:1复刻 annual‑global‑game-list，滚动交给外层 char‑list‑inner‑scroll‑wrap，列表自身不做overflow-y ========== */
+/* ========== ✅角色弹窗游戏列表：增加独立滚动内层外壳char‑list‑inner‑scroll-wrap ========== */
+/* 新增：游戏列表独立滚动容器，仅gamelist视图启用滚动，charlist视图不启用 */
+.char-list-inner-scroll-wrap {
+    width: 100%;
+    box-sizing: border-box;
+}
+.char-modal-gamelist-view .char-list-inner-scroll-wrap {
+    max-height: 52vh;
+    overflow-y: auto;
+}
+
 .annual-global-char-game-list {
     min-height:260px;
-    /* ❌删除 max‑height、overflow‑y:auto，交给外层char‑list‑inner‑scroll‑wrap */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -780,6 +789,7 @@
     border-radius:10px;
     margin:0 20px 20px 20px;
 }
+
 .annual-global-char-game-list .game-option-item {
     border:1px solid #eee;
     border-radius:10px;
@@ -792,10 +802,12 @@
     width:100%;
     box-sizing: border-box;
 }
+
 .annual-global-char-game-list .game-option-item:hover{
     background:#fff0f3;
     border-color:#e895a8;
 }
+
 .annual-global-char-game-list .game-option-item img{
     width:120px;
     height:auto;
@@ -803,110 +815,108 @@
     object-fit:cover;
     flex-shrink:0;
 }
+
 .annual-global-char-game-list .game-option-info{
     flex:1;
-    min-width: 0; /* 新增，防止长文本挤压 */
+    min-width: 0;
 }
+
 .annual-global-char-game-list .game-option-name{
     font-weight:bold;
     font-size:16px;
     margin-bottom:6px;
 }
+
 .annual-global-char-game-list .game-option-info p{
     font-size:14px;
     line-height:1.6;
     color:#333;
 }
+
 .annual-global-char-char-list {
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
     gap:14px;
-    border:1px solid #eee;
-    border-radius:10px;
     padding:10px;
     display:none;
-    /* ❌列表本身不写overflow，滚动交给外层 annual‑modal‑scroll‑wrap */
 }
+
 .annual-global-char-char-list.active {
     display:grid;
 }
+
 .annual-global-char-game-list.hidden-view {
     display:none;
 }
-/* 弹窗内游戏item直接复用已有的.game-option-item，角色item直接复用.char-item */
+
 /* ========== 快照模式隐藏角色TOP3交互控件 ========== */
 .snapshot-container.export-snapshot .annual-add-char-btn {
     display:none !important;
 }
+
 /* ========== 移动端适配 角色TOP3与角色弹窗 ========== */
 @media (max-width: 768px) {
+
     .annual-char-top-content-row {
         flex-direction: column;
     }
+
     .annual-char-cover-wrap {
         width: 120px;
     }
+
     .annual-char-name-text {
         font-size: 18px;
     }
+
     #annual-global-char-modal .annual-global-modal-inner {
         width: 100%;
         max-height: 85vh;
         padding: 0;
     }
+
     .annual-modal-back-btn {
         left:12px;
         width: 26px;
         height:26px;
         font-size:18px;
     }
+
     .annual-global-char-search-input {
         width: 100%;
         margin: 0;
         padding: 11px 12px;
         font-size: 14px;
     }
+
     .annual-modal-global-switch-group {
         gap: 12px;
         padding: 0 12px 8px 12px;
     }
+
     .annual-modal-game-switch-group {
         gap: 12px;
         padding: 0 0 8px 0;
     }
+
     .annual-modal-view-container {
         padding:12px 0 12px 0;
     }
+
     .annual-modal-global-switch-group label,
     .annual-modal-game-switch-group label {
         flex-shrink: 0;
     }
+
+    /* ✅移动端：游戏卡片列表容器边距和搜索栏12px严格对齐，消除视觉缩窄 */
+    .annual-global-char-game-list {
+        padding:10px 12px 12px 12px !important;
+        margin:0 !important;
+        border-radius:0 !important;
+        border:none !important;
+    }
+    /* 移动端独立滚动容器最大高度 */
+    .char-modal-gamelist-view .char-list-inner-scroll-wrap {
+        max-height: 55vh;
+    }
 }
-@media (min-width:769px) and (max-width:1200px) {
-    /* 空块保留，样式已在上方统一处理 */
-}
-/* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
-#annual-global-char-modal .annual-global-modal-inner {
-    display: flex;
-    flex-direction: column;
-    height: 85vh;
-}
-#annual-global-char-modal .annual-modal-header {
-    flex-shrink: 0;
-}
-#annual-global-char-modal .annual-modal-scroll-wrap {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 12px 12px 12px;
-}
-/* 视图模式 class 控制 */
-.char-modal-gamelist-view .annual-modal-global-switch-group { display:flex; }
-.char-modal-gamelist-view .annual-global-char-search-input { display:block; }
-.char-modal-gamelist-view .annual-modal-game-switch-group { display:none; }
-.char-modal-gamelist-view .annual-global-char-game-list { display:grid; }
-.char-modal-gamelist-view .annual-global-char-char-list { display:none; }
-.char-modal-charlist-view .annual-modal-global-switch-group { display:none; }
-.char-modal-charlist-view .annual-global-char-search-input { display:none; }
-.char-modal-charlist-view .annual-modal-game-switch-group { display:flex; }
-.char-modal-charlist-view .annual-global-char-game-list { display:none; }
-.char-modal-charlist-view .annual-global-char-char-list { display:grid; }
