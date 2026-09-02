@@ -452,8 +452,8 @@
     .annual-global-char-game-list {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
-        padding: 10px 12px 12px 12px !important;
-        margin: 0 12px 12px 12px !important;
+        padding: 10px 0 10px 0 !important;
+        margin: 0 !important;
         min-height:260px;
         max-height:42vh !important; /* ✅新增移动端卡片容器最大高度 */
         overflow-y:auto !important; /* ✅新增移动端独立滚动 */
@@ -568,8 +568,8 @@
         display: grid !important;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
         gap: 14px !important;
-        padding: 10px 20px 20px 20px !important;
-        margin: 0 20px 20px 20px !important;
+        padding: 10px 0 20px 0 !important;
+        margin: 0 !important;
         max-height:48vh !important; /* ✅平板端卡片容器最大高度 */
         overflow-y:auto !important; /* ✅平板端独立滚动 */
     }
