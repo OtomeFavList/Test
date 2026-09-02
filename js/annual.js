@@ -123,20 +123,20 @@ function getGameTemplateState() {
  * @param {Object} dataItem topList单条数据
  */
 function refreshTopItemUi(itemDom, dataItem) {
-    const nameEl = itemDom.querySelector(".annual-game-name-text");
+    const labelRow = itemDom.querySelector(".annual-top-label-row");
     const contentRow = itemDom.querySelector(".annual-top-content-row");
     const addBtn = itemDom.querySelector(".annual-add-game-btn");
     const hasGame = !!dataItem.gameId;
     if (hasGame) {
-        nameEl.classList.remove("hidden-when-empty");
+        labelRow.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
-        nameEl.classList.add("render-visible");
+        labelRow.classList.add("render-visible");
         contentRow.classList.add("render-visible");
         addBtn.classList.add("hidden-when-empty");
     } else {
-        nameEl.classList.add("hidden-when-empty");
+        labelRow.classList.add("hidden-when-empty");
         contentRow.classList.add("hidden-when-empty");
-        nameEl.classList.remove("render-visible");
+        labelRow.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
         addBtn.classList.remove("hidden-when-empty");
     }
@@ -148,20 +148,20 @@ function refreshTopItemUi(itemDom, dataItem) {
  * @param {Object} dataItem charTopList子项
  */
 function refreshCharTopItemUi(itemDom, dataItem) {
-    const nameEl = itemDom.querySelector(".annual-char-name-text");
+    const labelRow = itemDom.querySelector(".annual-top-label-row");
     const contentRow = itemDom.querySelector(".annual-char-top-content-row");
     const addBtnWrap = itemDom.querySelector(".annual-add-char-btn-wrap");
     const hasChar = !!dataItem.charId;
     if (hasChar) {
-        nameEl.classList.remove("hidden-when-empty");
+        labelRow.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
-        nameEl.classList.add("render-visible");
+        labelRow.classList.add("render-visible");
         contentRow.classList.add("render-visible");
         addBtnWrap.classList.add("hidden-when-empty");
     } else {
-        nameEl.classList.add("hidden-when-empty");
+        labelRow.classList.add("hidden-when-empty");
         contentRow.classList.add("hidden-when-empty");
-        nameEl.classList.remove("render-visible");
+        labelRow.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
         addBtnWrap.classList.remove("hidden-when-empty");
     }
@@ -869,6 +869,40 @@ export function initAnnualModule(){
                 const rank = Number(itemDom.dataset.rank);
                 const idx = rank - 1;
                 openAnnualGlobalCharModal(idx);
+                return;
+            }
+
+            // ========== 年度TOP条目删除按钮（游戏/角色） ==========
+            const delBtn = e.target.closest(".annual-item-delete-btn");
+            if(delBtn){
+                const itemDom = delBtn.closest(".annual-top-item, .annual-char-top-item");
+                if(!itemDom) return;
+                const rank = Number(itemDom.dataset.rank);
+                const dataIdx = rank - 1;
+                const type = delBtn.dataset.type;
+                if(type === "game"){
+                    // 清空游戏topList对应下标数据
+                    annualData.topList[dataIdx] = { gameId: "", gameName: "", coverSrc: "", text: "" };
+                    refreshTopItemUi(itemDom, annualData.topList[dataIdx]);
+                    // 清空DOM显示
+                    const nameEl = itemDom.querySelector(".annual-game-name-text");
+                    const coverImg = itemDom.querySelector(".annual-top-cover");
+                    const ta = itemDom.querySelector(".annual-top-textarea");
+                    nameEl.textContent = "";
+                    coverImg.src = "";
+                    ta.value = "";
+                }else if(type === "char"){
+                    // 清空角色charTopList对应下标数据
+                    annualData.charTopList[dataIdx] = { gameId: "", charId: "", charName: "", coverSrc: "", text: "" };
+                    refreshCharTopItemUi(itemDom, annualData.charTopList[dataIdx]);
+                    const nameEl = itemDom.querySelector(".annual-char-name-text");
+                    const coverImg = itemDom.querySelector(".annual-char-cover");
+                    const ta = itemDom.querySelector(".annual-char-textarea");
+                    nameEl.textContent = "";
+                    coverImg.src = "";
+                    ta.value = "";
+                }
+                saveAnnualData();
                 return;
             }
 
