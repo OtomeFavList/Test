@@ -524,6 +524,17 @@
         height: 24px;
         font-size: 16px;
     }
+    /* ==========新增：角色弹窗角色列表移动端适配，对齐FavList主站========== */
+    .annual-global-char-char-list {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 10px !important;
+        padding: 10px 0 10px 0 !important;
+        margin: 0 !important;
+    }
+    .annual-global-char-char-list .char-item {
+        width: 100% !important;
+        min-height: 132px !important;
+    }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
@@ -604,6 +615,17 @@
     }
     .annual-modal-game-switch-group {
         gap: 12px;
+    }
+    /* ==========新增：角色弹窗角色网格平板适配========== */
+    .annual-global-char-char-list {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+        gap: 12px !important;
+        padding: 10px 0 10px 0 !important;
+        margin: 0 !important;
+    }
+    .annual-global-char-char-list .char-item {
+        width: 100% !important;
+        min-height: 148px !important;
     }
 }
 /* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
@@ -827,8 +849,6 @@
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
     gap:14px;
-    border:1px solid #eee;
-    border-radius:10px;
     padding:10px;
     display:none;
     /* ❌列表本身不写overflow，滚动交给外层 annual‑modal‑scroll‑wrap */
