@@ -398,6 +398,12 @@
     .annual-top-cover-wrap {
         width: 80px;
     }
+    /* ✅角色TOP3移动端封面：固定90px，和二级待选角色卡片图片尺寸完全对齐 */
+    .annual-char-top-content-row {
+        flex-direction: row;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
     .annual-char-cover-wrap{
         width:90px;
     }
@@ -1078,3 +1084,112 @@
 .char-modal-charlist-view .annual-modal-game-switch-group { display:flex; }
 .char-modal-charlist-view .annual-global-char-game-list { display:none; }
 .char-modal-charlist-view .annual-global-char-char-list { display:grid; }
+
+/* ================================================================ */
+/* ========== 新增修改：修复 TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 ========== */
+/* ================================================================ */
+
+/* ① 修复 annual-top-label-row 一行布局 */
+.annual-top-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.annual-top-label-row .annual-top-label {
+    flex-shrink: 0;
+}
+.annual-top-label-row .annual-game-name-text,
+.annual-top-label-row .annual-char-name-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+/* ② 删除按钮完整样式（复用弹窗关闭按钮） */
+.annual-item-delete-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.annual-item-delete-btn:hover {
+    background: #992e2e !important;
+    color: #ffffff !important;
+}
+
+/* ③ 年度报告自定义文本框（含拖拽手柄） */
+.annual-custom-text-wrap {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    margin-top: 0;
+}
+.annual-custom-text-wrap textarea {
+    width: 100%;
+    min-height: 120px;
+    box-sizing: border-box;
+    padding: 8px 10px 26px 10px;
+    border: 1px solid var(--annual-export-border, #f6a5b8);
+    border-radius: 8px;
+    background: #fcfcfc;
+    font-size: 15px;
+    color: var(--annual-export-customtext, #c98fac);
+    resize: none !important;
+    overflow: auto;
+}
+.annual-custom-text-wrap textarea:focus {
+    outline: none;
+    border-color: #f6a5b8;
+}
+.annual-custom-text-wrap .resize-handle {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    width: 24px;
+    height: 24px;
+    cursor: ns-resize;
+    z-index: 2;
+}
+.annual-custom-text-wrap .resize-handle::after {
+    content: "";
+    display: block;
+    width: 14px;
+    height: 14px;
+    background-color: #b33a3a;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+.annual-custom-text-wrap .resize-handle:active::after {
+    opacity: 0.7;
+}
+/* 快照模式隐藏拖拽手柄 */
+.snapshot-container.export-snapshot .annual-custom-text-wrap .resize-handle {
+    display: none !important;
+}
+/* 移动端放大拖拽热区 */
+@media (max-width: 1200px) {
+    .annual-custom-text-wrap .resize-handle {
+        width: 32px;
+        height: 32px;
+    }
+    .annual-custom-text-wrap .resize-handle::after {
+        right: 0px;
+        bottom: 4px;
+        width: 16px;
+        height: 16px;
+    }
+}
