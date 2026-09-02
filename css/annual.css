@@ -1078,15 +1078,14 @@
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
+    margin-bottom: 12px;
 }
-
 .annual-top-label-row .annual-top-label {
     flex-shrink: 0;
     align-self: center;
     margin: 0;
     line-height: 1; /* 消除行盒基线偏移 */
 }
-
 .annual-top-label-row .annual-game-name-text,
 .annual-top-label-row .annual-char-name-text {
     flex: 1;
@@ -1096,7 +1095,6 @@
     align-self: center;
     line-height: 1.2;
 }
-
 .annual-top-label-row .annual-item-delete-btn {
     flex-shrink: 0;
     align-self: center;
