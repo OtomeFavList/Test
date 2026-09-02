@@ -427,6 +427,12 @@
         height:auto;
         object-fit:cover;
     }
+    /* 保证移动端：游戏、角色文本框宽度规则完全一致 */
+    .annual-top-text-wrap,
+    .annual-char-text-wrap {
+        flex: 1;
+        min-width: 260px;
+    }
     .site-title.annual-active h1 {
         font-size: 30px;
     }
@@ -1031,53 +1037,6 @@
 /* ========== 快照模式隐藏角色TOP3交互控件 ========== */
 .snapshot-container.export-snapshot .annual-add-char-btn {
     display:none !important;
-}
-/* ========== 移动端适配 角色TOP3与角色弹窗 ========== */
-@media (max-width: 768px) {
-    .annual-char-top-content-row {
-        flex-direction: column;
-    }
-    .annual-char-cover-wrap {
-        width: 120px;
-    }
-    .annual-char-name-text {
-        font-size: 18px;
-    }
-    #annual-global-char-modal .annual-global-modal-inner {
-        width: 100%;
-        max-height: 85vh;
-        padding: 0;
-    }
-    .annual-modal-back-btn {
-        left:12px;
-        width: 26px;
-        height:26px;
-        font-size:18px;
-    }
-    .annual-global-char-search-input {
-        width: 100%;
-        margin: 0;
-        padding: 11px 12px;
-        font-size: 14px;
-    }
-    .annual-modal-global-switch-group {
-        gap: 12px;
-        padding: 0 12px 8px 12px;
-    }
-    .annual-modal-game-switch-group {
-        gap: 12px;
-        padding: 0 0 8px 0;
-    }
-    .annual-modal-view-container {
-        padding:12px 0 12px 0;
-    }
-    .annual-modal-global-switch-group label,
-    .annual-modal-game-switch-group label {
-        flex-shrink: 0;
-    }
-}
-@media (min-width:769px) and (max-width:1200px) {
-    /* 空块保留，样式已在上方统一处理 */
 }
 /* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
 #annual-global-char-modal .annual-global-modal-inner {
