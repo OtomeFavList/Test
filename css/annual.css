@@ -3,7 +3,7 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin: 16px 0 24px;
+    margin: 0 0 var(--space-mode-to-firstcard) 0;
 }
 .mode-switch-wrap .mode-btn {
     padding: 10px 22px;
