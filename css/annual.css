@@ -550,14 +550,14 @@
         min-height: 132px !important;
     }
     /* 搜索结果角色卡片移动端复刻待选角色样式 */
-    .annual-global-char-game-list .search-result-char-item {
+    .annual-global-char-game-list .char-item {
         padding: 10px !important;
         gap:6px !important;
     }
-    .annual-global-char-game-list .search-result-char-item .char-card-name {
+    .annual-global-char-game-list .char-item .char-card-name {
         font-size:14px !important;
     }
-    .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
+    .annual-global-char-game-list .char-item .char-card-game-sub {
         font-size:10px !important;
     }
 }
@@ -653,14 +653,14 @@
         min-height: 148px !important;
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
-    .annual-global-char-game-list .search-result-char-item {
+    .annual-global-char-game-list .char-item {
         padding: 10px !important;
         gap:7px !important;
     }
-    .annual-global-char-game-list .search-result-char-item .char-card-name {
+    .annual-global-char-game-list .char-item .char-card-name {
         font-size:14.5px !important;
     }
-    .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
+    .annual-global-char-game-list .char-item .char-card-game-sub {
         font-size:10.5px !important;
     }
 }
@@ -881,56 +881,56 @@
     color:#333;
 }
 
-/* ========== 搜索命中角色卡片（直接搜索角色名结果），完全复刻二级角色待选char-item布局，文本区高度扩容2/3 ========== */
-.annual-global-char-game-list .search-result-char-item {
+/* ==========【新增】搜索结果角色组隔断，强制换行，把角色网格和游戏网格彻底分开 ========== */
+.annual-global-char-game-list .char-search-divider {
+    grid-column: 1 / -1; /* 占满整行，强制后续元素另起新行 */
+    height: 0;
+    margin-top: 14px;
+    padding-top:14px;
+    border-top:1px dashed #ddd;
+}
+
+/* ========== 搜索命中角色卡片：直接复用 .char-item，完全复刻待选角色页面尺寸、排布、间距 ========== */
+.annual-global-char-game-list .char-item {
     border:1px solid #eee;
     border-radius:10px;
     padding:12px;
     cursor:pointer;
     background:#fff;
-    width:100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap:8px;
 }
-.annual-global-char-game-list .search-result-char-item:hover{
+.annual-global-char-game-list .char-item:hover{
     background:#fff0f3;
     border-color:#e895a8;
 }
-
-.annual-global-char-game-list .search-result-char-item .char-card-img-box {
+.annual-global-char-game-list .char-item .char-card-img-box {
     width:100%;
     aspect-ratio: 1 / 1.25;
     overflow:hidden;
     border-radius:6px;
 }
-.annual-global-char-game-list .search-result-char-item .char-card-img-box img {
+.annual-global-char-game-list .char-item .char-card-img-box img {
     width:100%;
     height:100%;
     object-fit:cover;
 }
-
-/* 文本容器：高度比普通char-item文本区域多2/3 */
-.annual-global-char-game-list .search-result-char-item .char-card-name-wrap {
-    flex: 1.66; /* 高度扩容至原来约5/3 = +2/3 */
+.annual-global-char-game-list .char-item .char-card-name-wrap {
     display:flex;
     flex-direction:column;
     gap:4px;
     justify-content: center;
 }
-
-/* 角色名：居中，允许多行自动换行 */
-.annual-global-char-game-list .search-result-char-item .char-card-name {
+.annual-global-char-game-list .char-item .char-card-name {
     font-weight:bold;
     font-size:15px;
     text-align:center;
     word-break: break-word;
     line-height:1.4;
 }
-
-/* 游戏名：灰色小字，居中，自动换行 */
-.annual-global-char-game-list .search-result-char-item .char-card-game-sub {
+.annual-global-char-game-list .char-item .char-card-game-sub {
     font-size:11px;
     color:#888;
     text-align:center;
