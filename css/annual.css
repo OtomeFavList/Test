@@ -3,7 +3,12 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin: 16px 0 24px;
+    /*
+    拆解：
+    margin‑top:8px → 实现【指南按钮块底部 到 mode‑switch‑wrap顶部】=8px（A距离，对齐h1→title‑sub‑cn的8px间距）
+    margin‑bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，对齐sub‑desc→指南按钮上端的30px）
+    */
+    margin: 8px 0 30px;
 }
 .mode-switch-wrap .mode-btn {
     padding: 10px 22px;
@@ -28,13 +33,22 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    /* ⚠️关键修复：mode-wrap 移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
+    big‑card之间的垂直间距，全部交给 .big‑card { margin‑top } 来实现，不再使用容器gap */
+    gap: 0;
 }
 .mode-wrap.mode-hidden {
     visibility: hidden;
     height: 0;
     overflow: hidden;
     pointer-events: none;
+}
+/* 【新增】所有mode-wrap内部的第一个big‑card清除上边距，其余big‑card统一用margin‑top实现卡片之间间距，替代原来gap:30px */
+.mode-wrap .big-card {
+    margin-top: 30px;
+}
+.mode-wrap .big-card:first-child {
+    margin-top: 0;
 }
 /* ========== site-title 年度报告覆盖样式 ========== */
 .site-title.annual-active h1 {
