@@ -98,7 +98,7 @@ body{
 /* ========== 页面标题区域 site-title ========== */
 .site-title{
     text-align:center;
-    margin:30px 0 0; /* 修改：去掉下边距 */
+    margin:30px 0 0;
 }
 .site-title h1{
     font-family:sans-serif;
@@ -117,9 +117,22 @@ body{
     text-align:center;
     font-size:16px;
     color:#666;
-    margin-bottom:30px; /* 修改：40px → 30px */
+    /* sub‑desc 的 margin‑bottom 就是【sub‑desc下端 → 使用指南按钮上端】的目标B距离源基准，保留这个margin‑bottom作为源参考，不再在这里产生实际空白；空白转移给下面 .guide-btn-block margin‑top */
+    margin-bottom:0;
 }
-
+/* 【新增】使用指南按钮专属块，承接sub‑desc下方的间距，实现：sub‑desc下端 → 指南按钮上端 = 原sub‑desc旧margin‑bottom:30px */
+.center-btn-block.guide-btn-block {
+    margin-top: 30px;
+    margin-bottom: 0;
+    justify-content:center;
+    gap:12px;
+}
+.center-btn-block{
+    display:flex;
+    justify-content:center;
+    margin:16px 0 0;
+    gap:12px;
+}
 /* ========== 外层容器 wrap ========== */
 .wrap{
     max-width:1200px;
