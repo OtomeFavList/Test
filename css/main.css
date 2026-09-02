@@ -129,6 +129,7 @@ body{
 /* ========== 使用指南按钮容器与按钮【新增】 ========== */
 .guide-btn-wrap {
     margin-top: var(--space-guide-to-mode);
+    /* 关键：把原来margin-bottom:0改为0，完全不输出间距；间距交给mode‑switch‑wrap的margin‑top */
     margin-bottom: 0;
     justify-content: center;
 }
@@ -155,7 +156,19 @@ body{
     margin:0 auto;
     display:flex;
     flex-direction:column;
-    gap:30px;
+    /* ❗重点：移除wrap全局gap，gap会在不同mode‑wrap可见/隐藏时产生可变间距，改用mode‑switch‑wrap下外边距控制到卡片的距离 */
+    gap: 0;
+}
+
+/* 模式切换按钮组：【main.css全局追加】 */
+.mode-switch-wrap {
+    margin-top: 0;
+    margin-bottom: var(--space-mode-to-firstcard);
+}
+
+/* 强制两个mode-wrap内部，第一个big-card消除全部top外边距，完全由mode‑switch‑wrap的margin‑bottom控制 */
+.mode-wrap > .big-card:first-child {
+    margin-top: 0 !important;
 }
 
 /* ========== 大卡片组件 big-card ========== */
