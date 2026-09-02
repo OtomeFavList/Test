@@ -303,13 +303,23 @@
 .hidden-when-empty {
     display: none;
 }
+/* ✅【问题②】移除 !important，让DOM初始状态真正隐藏；只在JS添加render‑visible才显示 */
 .mode-wrap[data-mode="annual"] .hidden-when-empty{
-    display:none !important;
+    display:none;
 }
+.mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible {
+    display: flex;
+}
+.mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible.annual-game-name-text,
+.mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible.annual-char-name-text {
+    display: block;
+}
+/* 快照模式保持原有逻辑不变 */
 .snapshot-container.export-snapshot .hidden-when-empty.render-visible {
     display: flex !important;
 }
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text {
+.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text,
+.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-char-name-text {
     display: block !important;
 }
 /* ========== 年度报告快照配色变量 ========== */
@@ -394,11 +404,16 @@
         align-items: flex-start;
         flex-wrap: wrap;
     }
-    /* 游戏封面尺寸：参考主站游戏卡片封面尺寸 */
+    /* ✅【问题④】已添加游戏封面：严格等于弹窗待选游戏item图片80px */
     .annual-top-cover-wrap {
         width: 80px;
     }
-    /* ✅角色TOP3移动端封面：固定90px，和二级待选角色卡片图片尺寸完全对齐 */
+    .annual-top-cover {
+        width: 80px;
+        height: auto;
+        object-fit: cover;
+    }
+    /* ✅【问题④】已添加角色封面：严格等于二级待选角色卡片图片90px */
     .annual-char-top-content-row {
         flex-direction: row;
         align-items: flex-start;
@@ -406,6 +421,11 @@
     }
     .annual-char-cover-wrap{
         width:90px;
+    }
+    .annual-char-cover {
+        width:90px;
+        height:auto;
+        object-fit:cover;
     }
     .site-title.annual-active h1 {
         font-size: 30px;
@@ -1089,7 +1109,7 @@
 /* ========== 新增修改：修复 TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 ========== */
 /* ================================================================ */
 
-/* ① 修复 annual-top-label-row 一行布局 */
+/* ① 修复 annual-top-label-row 一行布局：垂直居中对齐全部元素，修正换行挤压 */
 .annual-top-label-row {
     display: flex;
     align-items: center;
@@ -1099,12 +1119,19 @@
 }
 .annual-top-label-row .annual-top-label {
     flex-shrink: 0;
+    align-self: center;
 }
 .annual-top-label-row .annual-game-name-text,
 .annual-top-label-row .annual-char-name-text {
     flex: 1;
     min-width: 0;
     margin: 0;
+    font-weight: bold; /* ✅修复问题③：游戏名、角色名加粗 */
+    align-self: center;
+}
+.annual-top-label-row .annual-item-delete-btn {
+    flex-shrink: 0;
+    align-self: center; /* ✅修复问题①：×按钮垂直和NO.xxx、文字居中对齐 */
 }
 
 /* ② 删除按钮完整样式（复用弹窗关闭按钮） */
