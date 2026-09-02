@@ -303,70 +303,68 @@
     <!-- 独立卡片2：二、ゲームTOP3 -->
     <div class="big-card annual-card-top3">
         <h2>二、ゲームTOP3</h2>
-        <!-- NO.1 -->
-        <div class="annual-top-item" data-rank="1">
-            <div class="annual-add-game-btn-wrap">
-                <button class="annual-add-game-btn">+ 添加游戏</button>
-            </div>
-            <div class="annual-top-label-row hidden-when-empty">
-                <div class="annual-top-label">NO.1</div>
-                <div class="annual-game-name-text"></div>
-                <button class="annual-item-delete-btn" data-type="game">×</button>
-            </div>
-            <div class="annual-top-content-row hidden-when-empty">
-                <div class="annual-top-cover-wrap">
-                    <img class="annual-top-cover" alt="">
+        <!-- ✅全局唯一添加游戏按钮，板块顶部，移除每个item内部按钮 -->
+        <div class="annual-global-add-game-btn-wrap center-btn-block">
+            <button id="annual-global-add-game-btn" class="annual-add-game-btn">+ 添加游戏</button>
+        </div>
+        <!-- 拖拽容器 -->
+        <div id="annual-game-top-drag-container">
+            <!-- NO.1 -->
+            <div class="annual-top-item" data-rank="1" data-drag-type="game-top">
+                <!-- ✅删除内部 annual-add-game-btn-wrap -->
+                <!-- draggable="true" NO+名称整行作为拖拽交互源 -->
+                <div class="annual-top-label-row hidden-when-empty" draggable="true">
+                    <div class="annual-top-label">NO.1</div>
+                    <div class="annual-game-name-text"></div>
+                    <button class="annual-item-delete-btn" data-type="game">×</button>
                 </div>
-                <div class="annual-top-text-wrap">
-                    <div class="annual-custom-text-wrap">
-                        <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
-                        <div class="resize-handle"></div>
+                <div class="annual-top-content-row hidden-when-empty">
+                    <div class="annual-top-cover-wrap">
+                        <img class="annual-top-cover" alt="">
+                    </div>
+                    <div class="annual-top-text-wrap">
+                        <div class="annual-custom-text-wrap">
+                            <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- NO.2 -->
-        <div class="annual-top-item" data-rank="2">
-            <div class="annual-add-game-btn-wrap">
-                <button class="annual-add-game-btn">+ 添加游戏</button>
-            </div>
-            <div class="annual-top-label-row hidden-when-empty">
-                <div class="annual-top-label">NO.2</div>
-                <div class="annual-game-name-text"></div>
-                <button class="annual-item-delete-btn" data-type="game">×</button>
-            </div>
-            <div class="annual-top-content-row hidden-when-empty">
-                <div class="annual-top-cover-wrap">
-                    <img class="annual-top-cover" alt="">
+            <!-- NO.2 -->
+            <div class="annual-top-item" data-rank="2" data-drag-type="game-top">
+                <div class="annual-top-label-row hidden-when-empty" draggable="true">
+                    <div class="annual-top-label">NO.2</div>
+                    <div class="annual-game-name-text"></div>
+                    <button class="annual-item-delete-btn" data-type="game">×</button>
                 </div>
-                <div class="annual-top-text-wrap">
-                    <div class="annual-custom-text-wrap">
-                        <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
-                        <div class="resize-handle"></div>
+                <div class="annual-top-content-row hidden-when-empty">
+                    <div class="annual-top-cover-wrap">
+                        <img class="annual-top-cover" alt="">
+                    </div>
+                    <div class="annual-top-text-wrap">
+                        <div class="annual-custom-text-wrap">
+                            <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- NO.3 -->
-        <div class="annual-top-item" data-rank="3">
-            <div class="annual-add-game-btn-wrap">
-                <button class="annual-add-game-btn">+ 添加游戏</button>
-            </div>
-            <div class="annual-top-label-row hidden-when-empty">
-                <div class="annual-top-label">NO.3</div>
-                <div class="annual-game-name-text"></div>
-                <button class="annual-item-delete-btn" data-type="game">×</button>
-            </div>
-            <div class="annual-top-content-row hidden-when-empty">
-                <div class="annual-top-cover-wrap">
-                    <img class="annual-top-cover" alt="">
+            <!-- NO.3 -->
+            <div class="annual-top-item" data-rank="3" data-drag-type="game-top">
+                <div class="annual-top-label-row hidden-when-empty" draggable="true">
+                    <div class="annual-top-label">NO.3</div>
+                    <div class="annual-game-name-text"></div>
+                    <button class="annual-item-delete-btn" data-type="game">×</button>
                 </div>
-                <div class="annual-top-text-wrap">
-                    <div class="annual-custom-text-wrap">
-                        <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
-                        <div class="resize-handle"></div>
+                <div class="annual-top-content-row hidden-when-empty">
+                    <div class="annual-top-cover-wrap">
+                        <img class="annual-top-cover" alt="">
+                    </div>
+                    <div class="annual-top-text-wrap">
+                        <div class="annual-custom-text-wrap">
+                            <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -376,68 +374,67 @@
     <!-- 独立卡片3：三、キャラTOP3【新增】 -->
     <div class="big-card annual-card-char-top3">
         <h2>三、キャラTOP3</h2>
-        <!-- NO.1 -->
-        <div class="annual-char-top-item" data-rank="1">
-            <div class="annual-add-char-btn-wrap">
-                <button class="annual-add-char-btn">+ 添加角色</button>
-            </div>
-            <div class="annual-top-label-row hidden-when-empty">
-                <div class="annual-top-label">NO.1</div>
-                <div class="annual-char-name-text"></div>
-                <button class="annual-item-delete-btn" data-type="char">×</button>
-            </div>
-            <div class="annual-char-top-content-row hidden-when-empty">
-                <div class="annual-char-cover-wrap">
-                    <img class="annual-char-cover" alt="">
+        <!-- ✅全局唯一添加角色按钮，板块顶部，移除每个item内部按钮 -->
+        <div class="annual-global-add-char-btn-wrap center-btn-block">
+            <button id="annual-global-add-char-btn" class="annual-add-char-btn">+ 添加角色</button>
+        </div>
+        <!-- 角色拖拽容器 -->
+        <div id="annual-char-top-drag-container">
+            <!-- NO.1 -->
+            <div class="annual-char-top-item" data-rank="1" data-drag-type="char-top">
+                <!-- ✅删除内部 annual-add-char-btn-wrap -->
+                <div class="annual-top-label-row hidden-when-empty" draggable="true">
+                    <div class="annual-top-label">NO.1</div>
+                    <div class="annual-char-name-text"></div>
+                    <button class="annual-item-delete-btn" data-type="char">×</button>
                 </div>
-                <div class="annual-char-text-wrap">
-                    <div class="annual-custom-text-wrap">
-                        <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
-                        <div class="resize-handle"></div>
+                <div class="annual-char-top-content-row hidden-when-empty">
+                    <div class="annual-char-cover-wrap">
+                        <img class="annual-char-cover" alt="">
+                    </div>
+                    <div class="annual-char-text-wrap">
+                        <div class="annual-custom-text-wrap">
+                            <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- NO.2 -->
-        <div class="annual-char-top-item" data-rank="2">
-            <div class="annual-add-char-btn-wrap">
-                <button class="annual-add-char-btn">+ 添加角色</button>
-            </div>
-            <div class="annual-top-label-row hidden-when-empty">
-                <div class="annual-top-label">NO.2</div>
-                <div class="annual-char-name-text"></div>
-                <button class="annual-item-delete-btn" data-type="char">×</button>
-            </div>
-            <div class="annual-char-top-content-row hidden-when-empty">
-                <div class="annual-char-cover-wrap">
-                    <img class="annual-char-cover" alt="">
+            <!-- NO.2 -->
+            <div class="annual-char-top-item" data-rank="2" data-drag-type="char-top">
+                <div class="annual-top-label-row hidden-when-empty" draggable="true">
+                    <div class="annual-top-label">NO.2</div>
+                    <div class="annual-char-name-text"></div>
+                    <button class="annual-item-delete-btn" data-type="char">×</button>
                 </div>
-                <div class="annual-char-text-wrap">
-                    <div class="annual-custom-text-wrap">
-                        <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
-                        <div class="resize-handle"></div>
+                <div class="annual-char-top-content-row hidden-when-empty">
+                    <div class="annual-char-cover-wrap">
+                        <img class="annual-char-cover" alt="">
+                    </div>
+                    <div class="annual-char-text-wrap">
+                        <div class="annual-custom-text-wrap">
+                            <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- NO.3 -->
-        <div class="annual-char-top-item" data-rank="3">
-            <div class="annual-add-char-btn-wrap">
-                <button class="annual-add-char-btn">+ 添加角色</button>
-            </div>
-            <div class="annual-top-label-row hidden-when-empty">
-                <div class="annual-top-label">NO.3</div>
-                <div class="annual-char-name-text"></div>
-                <button class="annual-item-delete-btn" data-type="char">×</button>
-            </div>
-            <div class="annual-char-top-content-row hidden-when-empty">
-                <div class="annual-char-cover-wrap">
-                    <img class="annual-char-cover" alt="">
+            <!-- NO.3 -->
+            <div class="annual-char-top-item" data-rank="3" data-drag-type="char-top">
+                <div class="annual-top-label-row hidden-when-empty" draggable="true">
+                    <div class="annual-top-label">NO.3</div>
+                    <div class="annual-char-name-text"></div>
+                    <button class="annual-item-delete-btn" data-type="char">×</button>
                 </div>
-                <div class="annual-char-text-wrap">
-                    <div class="annual-custom-text-wrap">
-                        <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
-                        <div class="resize-handle"></div>
+                <div class="annual-char-top-content-row hidden-when-empty">
+                    <div class="annual-char-cover-wrap">
+                        <img class="annual-char-cover" alt="">
+                    </div>
+                    <div class="annual-char-text-wrap">
+                        <div class="annual-custom-text-wrap">
+                            <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
             </div>
