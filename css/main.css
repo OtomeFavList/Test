@@ -1,11 +1,4 @@
 /* ========== 全局重置 ========== */
-:root {
-    /* A参考距离：大标题h1下端 → title‑sub‑cn（日乙个人喜爱表）上端，用于【指南按钮底部 ↔ mode‑switch‑wrap顶部】 */
-    --space-guide-to-mode: 8px;
-    /* B参考距离：sub‑desc（生成属于你的FavList）下端 → 使用指南按钮上端，用于【mode‑switch‑wrap底部 ↔ 第一个big‑card上边框】 */
-    --space-mode-to-firstcard: 30px;
-}
-
 *{
     margin:0;
     padding:0;
@@ -126,28 +119,6 @@ body{
     color:#666;
     margin-bottom:30px; /* 修改：40px → 30px */
 }
-/* ========== 使用指南按钮容器与按钮【新增】 ========== */
-.guide-btn-wrap {
-    margin-top: var(--space-guide-to-mode);
-    margin-bottom: 0;
-    justify-content: center;
-}
-
-.guide-btn {
-    padding: 8px 22px;
-    border: 2px solid #f6a5b8;
-    border-radius: 8px;
-    background: #fff7f9;
-    color: #b85878;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.guide-btn:hover {
-    background: #fce8ed;
-}
 
 /* ========== 外层容器 wrap ========== */
 .wrap{
@@ -173,10 +144,6 @@ body{
     padding-left:12px;
     color: var(--export-subtitle, #b85878);
     font-weight:bold;
-}
-/* 第一个big-card清除顶部外边距，完全交由mode‑switch‑wrap的下外边距控制间距 */
-.wrap > .mode-wrap .big-card:first-child {
-    margin-top: 0 !important;
 }
 
 /* ========== 设置页开关组件 switch-row / switch / slider ========== */
