@@ -336,7 +336,7 @@ function renderCharModalGameList(wrap, keyword) {
 
             if(pass){
                 matchedCharacters.push({game, char});
-                matchedGames.add(game.id);
+                // ✅移除 matchedGames.add(game.id);
             }
         }
     }
