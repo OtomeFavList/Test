@@ -1826,7 +1826,41 @@ h2{
     .game-list-select {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
+        padding: 8px !important;  /* 修改：原padding:10px → 8px，缩减左右内边距 */
     }
+
+    /* ========== 核心修复：游戏列表区域全部组件缩减左右padding，扩大内容可用宽度 ========== */
+    /* 搜索面板整体：缩减左右内边距 */
+    .game-search-box {
+        padding: 10px 8px !important; /* 修改：原16px → 上下10px，左右8px */
+    }
+
+    /* char / cp 滑出选择面板（展开待选角色框） */
+    .char-slide-panel-char,
+    .char-slide-panel-cp {
+        padding: 10px 8px !important; /* 修改：原padding:12px → 上下10px，左右8px */
+    }
+
+    /* 单张已添加游戏卡片 game-card */
+    .game-card {
+        padding: 14px 10px !important; /* 修改：原padding:18px → 上下14px，左右10px */
+    }
+
+    /* 游戏卡片内部自定义文本框外层容器，消除多余横向留白 */
+    .game-custom-text-wrap {
+        padding: 0 !important;
+    }
+
+    /* 筛选select容器，消除多余横向间隙 */
+    .filter-group {
+        gap: 6px !important;
+    }
+
+    /* 游戏搜索面板内单项游戏选项，缩小内部padding */
+    .game-option-item {
+        padding: 10px 8px !important;
+    }
+
     /* 弹窗内边距（保留你原有的 768 弹窗优化） */
     .modal-guide-scroll {
         padding: 16px;
