@@ -413,7 +413,7 @@
         height: auto;
         object-fit: cover;
     }
-    /* ✅【问题④】已添加角色封面：严格等于二级待选角色卡片图片90px */
+    /* ✅【问题④】已添加角色封面：严格等于二级待选角色卡片图片90px，强制正方形 */
     .annual-char-top-content-row {
         flex-direction: row;
         align-items: flex-start;
@@ -424,7 +424,8 @@
     }
     .annual-char-cover {
         width:90px;
-        height:auto;
+        height:90px;
+        aspect-ratio: 1 / 1;
         object-fit:cover;
     }
     /* 保证移动端：游戏、角色文本框宽度规则完全一致 */
