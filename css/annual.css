@@ -388,20 +388,33 @@
 /* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
 /* ① 普通手机（≤ 768px）：强制单列 */
 @media (max-width: 768px) {
+    /* 移动端：图片+文本框横向并排，不再纵向堆叠 */
     .annual-top-content-row {
-        flex-direction: column;
-    }
-    .annual-top-cover-wrap {
-        width: 120px;
-    }
-    .mode-switch-wrap {
+        flex-direction: row;
+        align-items: flex-start;
         flex-wrap: wrap;
+    }
+    /* 游戏封面尺寸：参考主站游戏卡片封面尺寸 */
+    .annual-top-cover-wrap {
+        width: 80px;
+    }
+    .annual-char-cover-wrap{
+        width:90px;
     }
     .site-title.annual-active h1 {
         font-size: 30px;
     }
     .annual-game-name-text {
         font-size: 18px;
+    }
+    .annual-char-name-text{
+        font-size:18px;
+    }
+    /* 删除按钮移动端缩小 */
+    .annual-item-delete-btn{
+        width:26px;
+        height:26px;
+        font-size:18px;
     }
     .annual-global-modal-inner {
         width: 100%;
