@@ -1823,44 +1823,50 @@ h2{
 
 /* ① 普通手机（≤ 768px）：强制单列 */
 @media (max-width:768px) {
+    /* 关键：外层big-card缩减内边距，消除第一层挤压 */
+    .big-card {
+        padding: 16px 12px !important;
+    }
+
     .game-list-select {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
-        padding: 8px !important;  /* 修改：原padding:10px → 8px，缩减左右内边距 */
+        padding: 6px !important;
     }
-
     /* ========== 核心修复：游戏列表区域全部组件缩减左右padding，扩大内容可用宽度 ========== */
-    /* 搜索面板整体：缩减左右内边距 */
+    /* 搜索面板整体：上下保留，进一步压缩左右 */
     .game-search-box {
-        padding: 10px 8px !important; /* 修改：原16px → 上下10px，左右8px */
+        padding: 10px 6px !important;
     }
-
     /* char / cp 滑出选择面板（展开待选角色框） */
     .char-slide-panel-char,
     .char-slide-panel-cp {
-        padding: 10px 8px !important; /* 修改：原padding:12px → 上下10px，左右8px */
+        padding: 10px 6px !important;
     }
-
-    /* 单张已添加游戏卡片 game-card */
+    /* 单张已添加游戏卡片 game‑card，进一步减少左右留白 */
     .game-card {
-        padding: 14px 10px !important; /* 修改：原padding:18px → 上下14px，左右10px */
+        padding: 14px 8px !important;
     }
-
     /* 游戏卡片内部自定义文本框外层容器，消除多余横向留白 */
     .game-custom-text-wrap {
         padding: 0 !important;
     }
-
-    /* 筛选select容器，消除多余横向间隙 */
+    /* 筛选select容器，消除多余横向间隙，允许select尽可能占满宽度 */
     .filter-group {
         gap: 6px !important;
     }
-
+    .filter-group select {
+        flex: 1;
+        min-width: 90px;
+    }
     /* 游戏搜索面板内单项游戏选项，缩小内部padding */
     .game-option-item {
-        padding: 10px 8px !important;
+        padding: 10px 6px !important;
     }
-
+    /* 开关行：确认无硬编码最大宽度，允许100%伸展 */
+    .game-switch-row {
+        width: 100%;
+    }
     /* 弹窗内边距（保留你原有的 768 弹窗优化） */
     .modal-guide-scroll {
         padding: 16px;
