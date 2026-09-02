@@ -125,20 +125,17 @@ function getGameTemplateState() {
 function refreshTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
     const contentRow = itemDom.querySelector(".annual-top-content-row");
-    const addBtn = itemDom.querySelector(".annual-add-game-btn");
     const hasGame = !!dataItem.gameId;
     if (hasGame) {
         labelRow.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
         labelRow.classList.add("render-visible");
         contentRow.classList.add("render-visible");
-        addBtn.classList.add("hidden-when-empty");
     } else {
         labelRow.classList.add("hidden-when-empty");
         contentRow.classList.add("hidden-when-empty");
         labelRow.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
-        addBtn.classList.remove("hidden-when-empty");
     }
 }
 
@@ -150,20 +147,17 @@ function refreshTopItemUi(itemDom, dataItem) {
 function refreshCharTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
     const contentRow = itemDom.querySelector(".annual-char-top-content-row");
-    const addBtnWrap = itemDom.querySelector(".annual-add-char-btn-wrap");
     const hasChar = !!dataItem.charId;
     if (hasChar) {
         labelRow.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
         labelRow.classList.add("render-visible");
         contentRow.classList.add("render-visible");
-        addBtnWrap.classList.add("hidden-when-empty");
     } else {
         labelRow.classList.add("hidden-when-empty");
         contentRow.classList.add("hidden-when-empty");
         labelRow.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
-        addBtnWrap.classList.remove("hidden-when-empty");
     }
 }
 
@@ -233,6 +227,12 @@ function renderGameList(wrap, keyword) {
         div.innerHTML = renderGameSelectItem(game, listIndex);
         div.addEventListener("click", ()=>{
             if (activeTopItemIndex === null) return;
+            //【问题③】重复游戏校验：排除当前正在编辑这一条，其余不能重复
+            const isDuplicate = annualData.topList.some((item,i)=> i !== activeTopItemIndex && item.gameId === game.id);
+            if(isDuplicate){
+                alert("该游戏已经添加，不可重复添加");
+                return;
+            }
             // 回填到当前激活的topList条目
             const targetItem = annualData.topList[activeTopItemIndex];
             targetItem.gameId = game.id;
@@ -364,6 +364,12 @@ function renderCharModalGameList(wrap, keyword) {
         `;
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
+            //【问题③】重复角色校验，忽略当前编辑条目
+            const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
+            if(isDuplicate){
+                alert("该角色已经添加，不可重复添加");
+                return;
+            }
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = game.id;
             targetItem.charId = char.id;
@@ -482,6 +488,12 @@ function renderCharModalCharList() {
         `;
         div.addEventListener("click",()=>{
             if(activeCharTopItemIndex === null) return;
+            //【问题③】重复角色校验
+            const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
+            if(isDuplicate){
+                alert("该角色已经添加，不可重复添加");
+                return;
+            }
             // 回填数据到charTopList
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = charModalCurrentGameId;
@@ -676,6 +688,72 @@ function rerenderCharTopNoLabel(){
 }
 
 /**
+ * 【问题②】动态追加游戏TOP DOM条目，不限数量
+ */
+function appendNewGameTopDom(){
+    const container = document.getElementById("annual-game-top-drag-container");
+    const idx = annualData.topList.length - 1;
+    const itemDom = document.createElement("div");
+    itemDom.className = "annual-top-item";
+    itemDom.dataset.rank = idx + 1;
+    itemDom.dataset.dragType = "game-top";
+    itemDom.innerHTML = `
+        <div class="annual-top-label-row hidden-when-empty" draggable="true">
+            <div class="annual-top-label">NO.${idx+1}</div>
+            <div class="annual-game-name-text"></div>
+            <button class="annual-item-delete-btn" data-type="game">×</button>
+        </div>
+        <div class="annual-top-content-row hidden-when-empty">
+            <div class="annual-top-cover-wrap">
+                <img class="annual-top-cover" alt="">
+            </div>
+            <div class="annual-top-text-wrap">
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(itemDom);
+    bindTop3Items();
+    rerenderGameTopNoLabel();
+}
+
+/**
+ * 【问题②】动态追加角色TOP DOM条目，不限数量
+ */
+function appendNewCharTopDom(){
+    const container = document.getElementById("annual-char-top-drag-container");
+    const idx = annualData.charTopList.length - 1;
+    const itemDom = document.createElement("div");
+    itemDom.className = "annual-char-top-item";
+    itemDom.dataset.rank = idx + 1;
+    itemDom.dataset.dragType = "char-top";
+    itemDom.innerHTML = `
+        <div class="annual-top-label-row hidden-when-empty" draggable="true">
+            <div class="annual-top-label">NO.${idx+1}</div>
+            <div class="annual-char-name-text"></div>
+            <button class="annual-item-delete-btn" data-type="char">×</button>
+        </div>
+        <div class="annual-char-top-content-row hidden-when-empty">
+            <div class="annual-char-cover-wrap">
+                <img class="annual-char-cover" alt="">
+            </div>
+            <div class="annual-char-text-wrap">
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(itemDom);
+    bindCharTop3Items();
+    rerenderCharTopNoLabel();
+}
+
+/**
  * ✅新增：绑定拖拽事件（游戏TOP）
  */
 function bindGameTopDrag(){
@@ -689,6 +767,8 @@ function bindGameTopDrag(){
         const itemDom = row.closest(".annual-top-item");
         dragSourceIndex = Number(itemDom.dataset.rank)-1;
         e.dataTransfer.effectAllowed = "move";
+        //【问题⑥关键修复】必须设置dataTransfer数据，否则部分浏览器鼠标显示禁止🚫符号
+        e.dataTransfer.setData("text/plain", String(dragSourceIndex));
         itemDom.classList.add("drag‑source");
     });
 
@@ -747,6 +827,8 @@ function bindCharTopDrag(){
         const itemDom = row.closest(".annual-char-top-item");
         dragSourceIndex = Number(itemDom.dataset.rank)-1;
         e.dataTransfer.effectAllowed = "move";
+        //【问题⑥关键修复】必须设置dataTransfer数据
+        e.dataTransfer.setData("text/plain", String(dragSourceIndex));
         itemDom.classList.add("drag‑source");
     });
 
@@ -789,6 +871,74 @@ function bindCharTopDrag(){
         });
         dragSourceIndex = null;
     });
+}
+
+// ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
+function bindTouchDrag(){
+    // 游戏TOP触摸拖拽
+    setupTouchSort("#annual-game-top-drag-container", annualData.topList, ()=>{
+        bindTop3Items();
+        rerenderGameTopNoLabel();
+        saveAnnualData();
+    });
+    // 角色TOP触摸拖拽
+    setupTouchSort("#annual-char-top-drag-container", annualData.charTopList, ()=>{
+        bindCharTop3Items();
+        rerenderCharTopNoLabel();
+        saveAnnualData();
+    });
+}
+
+/**
+ * 通用触摸排序工具函数
+ * @param {string} containerSel 容器选择器
+ * @param {Array} dataArr 对应数据数组
+ * @param {Function} afterSwap 交换完成回调
+ */
+function setupTouchSort(containerSel, dataArr, afterSwap){
+    const container = document.querySelector(containerSel);
+    if(!container) return;
+    let touchStartY = 0;
+    let dragItem = null;
+    let dragIndex = null;
+
+    container.addEventListener("touchstart",(e)=>{
+        const row = e.target.closest(".annual-top-label-row");
+        if(!row) return;
+        dragItem = row.closest(".annual-top-item,.annual-char-top-item");
+        if(!dragItem) return;
+        touchStartY = e.touches[0].clientY;
+        dragIndex = Number(dragItem.dataset.rank)-1;
+        dragItem.classList.add("drag‑source");
+    },{passive:true});
+
+    container.addEventListener("touchmove",(e)=>{
+        if(!dragItem) return;
+        e.preventDefault();
+        const touchY = e.touches[0].clientY;
+        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        items.forEach((it,idx)=>{
+            if(idx === dragIndex) return;
+            const rect = it.getBoundingClientRect();
+            const midY = rect.top + rect.height/2;
+            if(touchY > midY){
+                // swap数组
+                const temp = dataArr[dragIndex];
+                dataArr[dragIndex] = dataArr[idx];
+                dataArr[idx] = temp;
+                dragIndex = idx;
+                afterSwap();
+            }
+        })
+    },{passive:false});
+
+    container.addEventListener("touchend",()=>{
+        if(dragItem){
+            dragItem.classList.remove("drag‑source");
+        }
+        dragItem = null;
+        dragIndex = null;
+    },{passive:true});
 }
 
 /**
@@ -969,6 +1119,7 @@ function realInitAnnualModule(){
     // ✅新增：初始化拖拽绑定
     bindGameTopDrag();
     bindCharTopDrag();
+    bindTouchDrag(); //【问题⑥】初始化触摸拖拽支持移动端
     bindAnnualExport();
     bindAnnualExportPanel();
     // 如果游戏弹窗打开刷新列表
@@ -993,24 +1144,23 @@ export function initAnnualModule(){
             // ========== ✅修改：全局板块添加游戏按钮，不再使用item内部按钮 ==========
             const globalAddGameBtn = e.target.closest("#annual-global-add-game-btn");
             if(globalAddGameBtn){
-                // 查找topList第一个空gameId的下标
-                const emptyIdx = annualData.topList.findIndex(item=>!item.gameId);
-                if(emptyIdx === -1){
-                    alert("TOP游戏列表已满，请先删除一项再添加");
-                    return;
-                }
-                openAnnualGlobalGameModal(emptyIdx);
+                //【问题②】不限数量：直接push空对象，不再依赖固定3个数组空位；【问题①】彻底解决离散空位NO1/NO3有值NO2空
+                const newIndex = annualData.topList.length;
+                annualData.topList.push({ gameId: "", gameName: "", coverSrc: "", text: "" });
+                saveAnnualData();
+                // 新增DOM条目
+                appendNewGameTopDom();
+                openAnnualGlobalGameModal(newIndex);
                 return;
             }
             // ========== ✅修改：全局板块添加角色按钮 ==========
             const globalAddCharBtn = e.target.closest("#annual-global-add-char-btn");
             if(globalAddCharBtn){
-                const emptyIdx = annualData.charTopList.findIndex(item=>!item.charId);
-                if(emptyIdx === -1){
-                    alert("TOP角色列表已满，请先删除一项再添加");
-                    return;
-                }
-                openAnnualGlobalCharModal(emptyIdx);
+                const newIndex = annualData.charTopList.length;
+                annualData.charTopList.push({ gameId: "", charId: "", charName: "", coverSrc: "", text: "" });
+                saveAnnualData();
+                appendNewCharTopDom();
+                openAnnualGlobalCharModal(newIndex);
                 return;
             }
 
@@ -1023,26 +1173,16 @@ export function initAnnualModule(){
                 const dataIdx = rank - 1;
                 const type = delBtn.dataset.type;
                 if(type === "game"){
-                    // 清空游戏topList对应下标数据
-                    annualData.topList[dataIdx] = { gameId: "", gameName: "", coverSrc: "", text: "" };
-                    refreshTopItemUi(itemDom, annualData.topList[dataIdx]);
-                    // 清空DOM显示
-                    const nameEl = itemDom.querySelector(".annual-game-name-text");
-                    const coverImg = itemDom.querySelector(".annual-top-cover");
-                    const ta = itemDom.querySelector(".annual-top-textarea");
-                    nameEl.textContent = "";
-                    coverImg.src = "";
-                    ta.value = "";
+                    //【问题②不限条数：splice真正删除数组项，移除DOM节点，不再留空占位对象】
+                    annualData.topList.splice(dataIdx,1);
+                    itemDom.remove();
+                    bindTop3Items();
+                    rerenderGameTopNoLabel();
                 }else if(type === "char"){
-                    // 清空角色charTopList对应下标数据
-                    annualData.charTopList[dataIdx] = { gameId: "", charId: "", charName: "", coverSrc: "", text: "" };
-                    refreshCharTopItemUi(itemDom, annualData.charTopList[dataIdx]);
-                    const nameEl = itemDom.querySelector(".annual-char-name-text");
-                    const coverImg = itemDom.querySelector(".annual-char-cover");
-                    const ta = itemDom.querySelector(".annual-char-textarea");
-                    nameEl.textContent = "";
-                    coverImg.src = "";
-                    ta.value = "";
+                    annualData.charTopList.splice(dataIdx,1);
+                    itemDom.remove();
+                    bindCharTop3Items();
+                    rerenderCharTopNoLabel();
                 }
                 saveAnnualData();
                 return;
