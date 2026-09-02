@@ -561,10 +561,13 @@
         font-size:10px !important;
     }
     .annual-global-char-game-list .search-char-result-wrap {
+        grid-column: 1 / -1 !important;
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
         gap: 10px !important;
+        margin-bottom:16px !important;
     }
     .annual-global-char-game-list .search-game-result-wrap {
+        grid-column: 1 / -1 !important;
         grid-template-columns:1fr !important;
         gap:10px !important;
     }
@@ -672,10 +675,13 @@
         font-size:10.5px !important;
     }
     .annual-global-char-game-list .search-char-result-wrap {
+        grid-column: 1 / -1 !important;
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
         gap: 12px !important;
+        margin-bottom:18px !important;
     }
     .annual-global-char-game-list .search-game-result-wrap {
+        grid-column: 1 / -1 !important;
         grid-template-columns:repeat(auto-fill, minmax(280px,1fr)) !important;
         gap:14px !important;
     }
@@ -900,12 +906,15 @@
 /* ========== 搜索命中角色卡片（直接搜索角色名结果），完全复刻二级角色待选char-item布局 ========== */
 /* 【新增：搜索结果双层子容器：角色结果块、游戏结果块，实现上下分开排布，互不干扰】 */
 .annual-global-char-game-list .search-char-result-wrap {
+    grid-column: 1 / -1;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
     gap:14px;
     width:100%;
+    margin-bottom: 20px; /* 角色结果块和下方游戏块垂直间距，不新增外框 */
 }
 .annual-global-char-game-list .search-game-result-wrap {
+    grid-column: 1 / -1;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -923,6 +932,7 @@
     display: flex;
     flex-direction: column;
     gap:8px;
+    min-height: 148px; /* ✅和主站char-item保持一致高度，复刻二级角色选择页面设置 */
 }
 .annual-global-char-game-list .search-result-char-item:hover{
     background:#fff0f3;
