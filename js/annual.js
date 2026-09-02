@@ -124,24 +124,21 @@ function getGameTemplateState() {
  */
 function refreshTopItemUi(itemDom, dataItem) {
     const nameEl = itemDom.querySelector(".annual-game-name-text");
-    const delBtn = itemDom.querySelector(".annual-item-delete-btn");
     const contentRow = itemDom.querySelector(".annual-top-content-row");
-    const addBtnWrap = itemDom.querySelector(".annual-add-game-btn-wrap");
+    const addBtn = itemDom.querySelector(".annual-add-game-btn");
     const hasGame = !!dataItem.gameId;
     if (hasGame) {
         nameEl.classList.remove("hidden-when-empty");
-        delBtn.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
         nameEl.classList.add("render-visible");
         contentRow.classList.add("render-visible");
-        addBtnWrap.classList.add("hidden-when-empty");
+        addBtn.classList.add("hidden-when-empty");
     } else {
         nameEl.classList.add("hidden-when-empty");
-        delBtn.classList.add("hidden-when-empty");
         contentRow.classList.add("hidden-when-empty");
         nameEl.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
-        addBtnWrap.classList.remove("hidden-when-empty");
+        addBtn.classList.remove("hidden-when-empty");
     }
 }
 
@@ -152,20 +149,17 @@ function refreshTopItemUi(itemDom, dataItem) {
  */
 function refreshCharTopItemUi(itemDom, dataItem) {
     const nameEl = itemDom.querySelector(".annual-char-name-text");
-    const delBtn = itemDom.querySelector(".annual-item-delete-btn");
     const contentRow = itemDom.querySelector(".annual-char-top-content-row");
     const addBtnWrap = itemDom.querySelector(".annual-add-char-btn-wrap");
     const hasChar = !!dataItem.charId;
     if (hasChar) {
         nameEl.classList.remove("hidden-when-empty");
-        delBtn.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
         nameEl.classList.add("render-visible");
         contentRow.classList.add("render-visible");
         addBtnWrap.classList.add("hidden-when-empty");
     } else {
         nameEl.classList.add("hidden-when-empty");
-        delBtn.classList.add("hidden-when-empty");
         contentRow.classList.add("hidden-when-empty");
         nameEl.classList.remove("render-visible");
         contentRow.classList.remove("render-visible");
@@ -875,46 +869,6 @@ export function initAnnualModule(){
                 const rank = Number(itemDom.dataset.rank);
                 const idx = rank - 1;
                 openAnnualGlobalCharModal(idx);
-                return;
-            }
-
-            // ========== 游戏TOP3 删除按钮点击 ==========
-            const clickGameDelBtn = e.target.closest(".annual-top-item .annual-item-delete-btn");
-            if(clickGameDelBtn){
-                const itemDom = clickGameDelBtn.closest(".annual-top-item");
-                const rank = Number(itemDom.dataset.rank);
-                const dataIdx = rank - 1;
-                // 重置本条游戏topList数据为默认空对象
-                annualData.topList[dataIdx] = { gameId: "", gameName: "", coverSrc: "", text: "" };
-                saveAnnualData();
-                // 重置DOM文本与图片
-                const nameTextEl = itemDom.querySelector(".annual-game-name-text");
-                const coverImg = itemDom.querySelector(".annual-top-cover");
-                const textarea = itemDom.querySelector(".annual-top-textarea");
-                nameTextEl.textContent = "";
-                coverImg.src = "";
-                textarea.value = "";
-                refreshTopItemUi(itemDom, annualData.topList[dataIdx]);
-                return;
-            }
-
-            // ========== 角色TOP3 删除按钮点击 ==========
-            const clickCharDelBtn = e.target.closest(".annual-char-top-item .annual-item-delete-btn");
-            if(clickCharDelBtn){
-                const itemDom = clickCharDelBtn.closest(".annual-char-top-item");
-                const rank = Number(itemDom.dataset.rank);
-                const dataIdx = rank - 1;
-                // 重置本条charTopList数据
-                annualData.charTopList[dataIdx] = { gameId: "", charId: "", charName: "", coverSrc: "", text: "" };
-                saveAnnualData();
-                // 重置DOM
-                const nameEl = itemDom.querySelector(".annual-char-name-text");
-                const imgEl = itemDom.querySelector(".annual-char-cover");
-                const textarea = itemDom.querySelector(".annual-char-textarea");
-                nameEl.textContent = "";
-                imgEl.src = "";
-                textarea.value = "";
-                refreshCharTopItemUi(itemDom, annualData.charTopList[dataIdx]);
                 return;
             }
 
