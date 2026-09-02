@@ -615,24 +615,23 @@ function closeAnnualGlobalGameModal(){
 
 function bindTop3Items() {
     const topItems = document.querySelectorAll(".annual-top-item");
-    topItems.forEach((item, idx)=>{
-        const rank = Number(item.dataset.rank);
-        const dataIdx = rank - 1;
-        const dataItem = annualData.topList[dataIdx];
+    topItems.forEach((item, domIndex)=>{
+        // domIndex：DOM遍历顺序 = 数组真实下标，不再读取data‑rank做索引
+        const dataItem = annualData.topList[domIndex];
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
         const coverImg = item.querySelector(".annual-top-cover");
-        // 回填数据
+
         nameTextEl.textContent = dataItem.gameName ?? "";
         textarea.value = dataItem.text ?? "";
         if(dataItem.coverSrc){
             coverImg.src = getWebImageUrl(dataItem.coverSrc);
         }
         refreshTopItemUi(item, dataItem);
-        // 自定义文本框双向绑定
+
         textarea.removeEventListener("input", textarea._inputHandler);
         textarea._inputHandler = ()=>{
-            annualData.topList[dataIdx].text = textarea.value;
+            annualData.topList[domIndex].text = textarea.value;
             saveAnnualData();
         };
         textarea.addEventListener("input", textarea._inputHandler);
@@ -641,10 +640,8 @@ function bindTop3Items() {
 
 function bindCharTop3Items() {
     const charItems = document.querySelectorAll(".annual-char-top-item");
-    charItems.forEach((item, idx)=>{
-        const rank = Number(item.dataset.rank);
-        const dataIdx = rank - 1;
-        const dataItem = annualData.charTopList[dataIdx];
+    charItems.forEach((item, domIndex)=>{
+        const dataItem = annualData.charTopList[domIndex];
         const nameTextEl = item.querySelector(".annual-char-name-text");
         const textarea = item.querySelector(".annual-char-textarea");
         const coverImg = item.querySelector(".annual-char-cover");
@@ -656,10 +653,9 @@ function bindCharTop3Items() {
         }
         refreshCharTopItemUi(item, dataItem);
 
-        // textarea双向绑定
         textarea.removeEventListener("input", textarea._charInputHandler);
         textarea._charInputHandler = ()=>{
-            annualData.charTopList[dataIdx].text = textarea.value;
+            annualData.charTopList[domIndex].text = textarea.value;
             saveAnnualData();
         };
         textarea.addEventListener("input", textarea._charInputHandler);
@@ -674,6 +670,7 @@ function rerenderGameTopNoLabel(){
     items.forEach((dom, arrIdx)=>{
         const labelEl = dom.querySelector(".annual-top-label");
         labelEl.textContent = `NO.${arrIdx+1}`;
+        dom.dataset.rank = String(arrIdx + 1); // 同步更新属性
     });
 }
 /**
@@ -684,6 +681,7 @@ function rerenderCharTopNoLabel(){
     items.forEach((dom, arrIdx)=>{
         const labelEl = dom.querySelector(".annual-top-label");
         labelEl.textContent = `NO.${arrIdx+1}`;
+        dom.dataset.rank = String(arrIdx + 1); //同步更新属性
     });
 }
 
@@ -692,14 +690,13 @@ function rerenderCharTopNoLabel(){
  */
 function appendNewGameTopDom(){
     const container = document.getElementById("annual-game-top-drag-container");
-    const idx = annualData.topList.length - 1;
     const itemDom = document.createElement("div");
     itemDom.className = "annual-top-item";
-    itemDom.dataset.rank = idx + 1;
     itemDom.dataset.dragType = "game-top";
+    // 不写死NO.xxx、不写死data‑rank，全部交给rerenderGameTopNoLabel
     itemDom.innerHTML = `
         <div class="annual-top-label-row hidden-when-empty" draggable="true">
-            <div class="annual-top-label">NO.${idx+1}</div>
+            <div class="annual-top-label"></div>
             <div class="annual-game-name-text"></div>
             <button class="annual-item-delete-btn" data-type="game">×</button>
         </div>
@@ -725,14 +722,12 @@ function appendNewGameTopDom(){
  */
 function appendNewCharTopDom(){
     const container = document.getElementById("annual-char-top-drag-container");
-    const idx = annualData.charTopList.length - 1;
     const itemDom = document.createElement("div");
     itemDom.className = "annual-char-top-item";
-    itemDom.dataset.rank = idx + 1;
     itemDom.dataset.dragType = "char-top";
     itemDom.innerHTML = `
         <div class="annual-top-label-row hidden-when-empty" draggable="true">
-            <div class="annual-top-label">NO.${idx+1}</div>
+            <div class="annual-top-label"></div>
             <div class="annual-char-name-text"></div>
             <button class="annual-item-delete-btn" data-type="char">×</button>
         </div>
@@ -754,6 +749,28 @@ function appendNewCharTopDom(){
 }
 
 /**
+ * 根据 topList 数组完整重建游戏TOP DOM，初始化使用
+ */
+function rebuildGameTopDomAll(){
+    const container = document.getElementById("annual-game-top-drag-container");
+    container.innerHTML = "";
+    annualData.topList.forEach(()=>{
+        appendNewGameTopDom();
+    });
+}
+
+/**
+ * 根据 charTopList 数组完整重建角色TOP DOM，初始化使用
+ */
+function rebuildCharTopDomAll(){
+    const container = document.getElementById("annual-char-top-drag-container");
+    container.innerHTML = "";
+    annualData.charTopList.forEach(()=>{
+        appendNewCharTopDom();
+    });
+}
+
+/**
  * ✅新增：绑定拖拽事件（游戏TOP）
  */
 function bindGameTopDrag(){
@@ -765,9 +782,9 @@ function bindGameTopDrag(){
         const row = e.target.closest(".annual-top-label-row");
         if(!row) { e.preventDefault(); return; }
         const itemDom = row.closest(".annual-top-item");
-        dragSourceIndex = Number(itemDom.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-top-item"));
+        dragSourceIndex = all.indexOf(itemDom); // DOM列表中的真实下标，不再读dataset.rank
         e.dataTransfer.effectAllowed = "move";
-        //【问题⑥关键修复】必须设置dataTransfer数据，否则部分浏览器鼠标显示禁止🚫符号
         e.dataTransfer.setData("text/plain", String(dragSourceIndex));
         itemDom.classList.add("drag‑source");
     });
@@ -777,7 +794,8 @@ function bindGameTopDrag(){
         const targetRow = e.target.closest(".annual-top-label-row");
         if(!targetRow) return;
         const targetItemDom = targetRow.closest(".annual-top-item");
-        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-top-item"));
+        const targetIdx = all.indexOf(targetItemDom);
         if(dragSourceIndex === null || dragSourceIndex === targetIdx) return;
         targetItemDom.classList.add("drag‑over");
     });
@@ -792,7 +810,8 @@ function bindGameTopDrag(){
         const targetRow = e.target.closest(".annual-top-label-row");
         if(!targetRow || dragSourceIndex === null) return;
         const targetItemDom = targetRow.closest(".annual-top-item");
-        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-top-item"));
+        const targetIdx = all.indexOf(targetItemDom);
         targetItemDom.classList.remove("drag‑over");
         if(dragSourceIndex === targetIdx) return;
         // 数组交换位置
@@ -825,9 +844,9 @@ function bindCharTopDrag(){
         const row = e.target.closest(".annual-top-label-row");
         if(!row) { e.preventDefault(); return; }
         const itemDom = row.closest(".annual-char-top-item");
-        dragSourceIndex = Number(itemDom.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
+        dragSourceIndex = all.indexOf(itemDom);
         e.dataTransfer.effectAllowed = "move";
-        //【问题⑥关键修复】必须设置dataTransfer数据
         e.dataTransfer.setData("text/plain", String(dragSourceIndex));
         itemDom.classList.add("drag‑source");
     });
@@ -837,7 +856,8 @@ function bindCharTopDrag(){
         const targetRow = e.target.closest(".annual-top-label-row");
         if(!targetRow) return;
         const targetItemDom = targetRow.closest(".annual-char-top-item");
-        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
+        const targetIdx = all.indexOf(targetItemDom);
         if(dragSourceIndex === null || dragSourceIndex === targetIdx) return;
         targetItemDom.classList.add("drag‑over");
     });
@@ -852,7 +872,8 @@ function bindCharTopDrag(){
         const targetRow = e.target.closest(".annual-top-label-row");
         if(!targetRow || dragSourceIndex === null) return;
         const targetItemDom = targetRow.closest(".annual-char-top-item");
-        const targetIdx = Number(targetItemDom.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
+        const targetIdx = all.indexOf(targetItemDom);
         targetItemDom.classList.remove("drag‑over");
         if(dragSourceIndex === targetIdx) return;
         // 数组交换
@@ -908,7 +929,8 @@ function setupTouchSort(containerSel, dataArr, afterSwap){
         dragItem = row.closest(".annual-top-item,.annual-char-top-item");
         if(!dragItem) return;
         touchStartY = e.touches[0].clientY;
-        dragIndex = Number(dragItem.dataset.rank)-1;
+        const all = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        dragIndex = all.indexOf(dragItem);
         dragItem.classList.add("drag‑source");
     },{passive:true});
 
@@ -1114,12 +1136,14 @@ function realInitAnnualModule(){
     console.log("✅[annual.js] realInitAnnualModule 游戏模板就绪，执行业务初始化");
     loadAnnualData();
     bindStatInputs();
+    // 从localStorage读取数据后，完全重建DOM，保证DOM数量与数组长度完全一致
+    rebuildGameTopDomAll();
+    rebuildCharTopDomAll();
     bindTop3Items();
     bindCharTop3Items();
-    // ✅新增：初始化拖拽绑定
     bindGameTopDrag();
     bindCharTopDrag();
-    bindTouchDrag(); //【问题⑥】初始化触摸拖拽支持移动端
+    bindTouchDrag();
     bindAnnualExport();
     bindAnnualExportPanel();
     // 如果游戏弹窗打开刷新列表
@@ -1169,16 +1193,18 @@ export function initAnnualModule(){
             if(delBtn){
                 const itemDom = delBtn.closest(".annual-top-item, .annual-char-top-item");
                 if(!itemDom) return;
-                const rank = Number(itemDom.dataset.rank);
-                const dataIdx = rank - 1;
                 const type = delBtn.dataset.type;
+                let dataIdx;
                 if(type === "game"){
-                    //【问题②不限条数：splice真正删除数组项，移除DOM节点，不再留空占位对象】
+                    const all = Array.from(document.querySelectorAll(".annual-top-item"));
+                    dataIdx = all.indexOf(itemDom);
                     annualData.topList.splice(dataIdx,1);
                     itemDom.remove();
                     bindTop3Items();
                     rerenderGameTopNoLabel();
                 }else if(type === "char"){
+                    const all = Array.from(document.querySelectorAll(".annual-char-top-item"));
+                    dataIdx = all.indexOf(itemDom);
                     annualData.charTopList.splice(dataIdx,1);
                     itemDom.remove();
                     bindCharTop3Items();
