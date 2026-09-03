@@ -1238,12 +1238,15 @@
 /* ========== 选中排序模式样式【重写】 ========== */
 /* 全部设备移除原生拖拽光标，不再使用浏览器draggable拖拽 */
 .annual-top-label-row,
-.annual-top-label-row * {
+.annual-top-label-row *,
+.annual-top-label,
+.annual-game-name-text,
+.annual-char-name-text {
     -webkit-user-drag: none;
     user-drag: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
     cursor: default;
 }
 
@@ -1251,26 +1254,30 @@
 .sort-insert-indicator {
     height: 4px;
     width: 100%;
-    background-color: #b33a3a;
+    background-color: #d86b6b;
     border-radius: 2px;
-    margin: 0;
+    margin: 12px 0;
     pointer-events: auto;
     cursor: pointer;
-    /* 扩大上下热区，方便移动端点击 */
     padding: 8px 0;
     background-clip: content-box;
+    transition: background-color 0.15s;
+}
+/* ✅第一次点击激活状态：#b33a3a深红色 */
+.sort-insert-indicator.active-hit {
+    background-color: #b33a3a;
 }
 
-/* JS把sort-selected-item加到外层itemDom，目标：给内部label-row加高亮 */
-.annual-top-item.sort-selected-item > .annual-top-label-row,
-.annual-char-top-item.sort-selected-item > .annual-top-label-row {
-    outline: 2px solid #b33a3a;
-    outline-offset: 2px;
-}
-/* 大卡片本身禁止高亮 */
+/* ✅选中排序模式：外层卡片虚线 #f6a5b8 */
 .annual-top-item.sort-selected-item,
 .annual-char-top-item.sort-selected-item {
+    border: 2px dashed #f6a5b8;
+    border-radius: 8px;
     opacity: 1;
+}
+/* 内部label-row清除outline，不再高亮内部行 */
+.annual-top-item.sort-selected-item > .annual-top-label-row,
+.annual-char-top-item.sort-selected-item > .annual-top-label-row {
     outline: none;
 }
 
