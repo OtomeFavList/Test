@@ -1237,12 +1237,14 @@
 
 /* ========== 选中排序模式样式【重写】 ========== */
 /* 全部设备移除原生拖拽光标，不再使用浏览器draggable拖拽 */
-.annual-top-label-row {
-    cursor: default;
-}
-.annual-top-label-row[draggable="true"] {
+.annual-top-label-row,
+.annual-top-label-row * {
     -webkit-user-drag: none;
     user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: default;
 }
 
 /* 插入指示线：仅进入选中模式才会被JS插入DOM，常态无 */
@@ -1259,13 +1261,13 @@
     background-clip: content-box;
 }
 
-/* 选中项：#b33a3a红色边框框选【只框NO+名称行 annual-top-label-row】 */
-.annual-top-label-row.sort-selected-item {
+/* JS把sort-selected-item加到外层itemDom，目标：给内部label-row加高亮 */
+.annual-top-item.sort-selected-item > .annual-top-label-row,
+.annual-char-top-item.sort-selected-item > .annual-top-label-row {
     outline: 2px solid #b33a3a;
     outline-offset: 2px;
 }
-
-/* 大卡片禁止被选中高亮 */
+/* 大卡片本身禁止高亮 */
 .annual-top-item.sort-selected-item,
 .annual-char-top-item.sort-selected-item {
     opacity: 1;
@@ -1278,9 +1280,4 @@
     opacity: 1 !important;
     display: none !important;
     outline: none !important;
-}
-
-/* 仅针对NO名称标题行，禁止iOS长按弹出菜单 */
-.annual-top-label-row {
-    -webkit-touch-callout: none;
 }
