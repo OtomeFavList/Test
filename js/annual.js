@@ -92,24 +92,33 @@ let _annualSortDocClickHandler = null;
  */
 function getGameTemplateState() {
     const core = window.Core;
+    let baseList = null;
+    let baseReady = false;
     if(core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true){
+        baseList = core.gameTemplateList;
+        baseReady = true;
+    }else{
+        // 兜底读取main导出挂载window的全局变量
+        const winList = window.__gameTemplateList;
+        const winReady = window.__gameTemplateReady;
+        if(Array.isArray(winList) && winList.length>0 && winReady === true){
+            baseList = winList;
+            baseReady = true;
+        }
+    }
+    if(!baseReady || !Array.isArray(baseList)){
         return {
-            list: core.gameTemplateList,
-            ready: true
+            list: null,
+            ready: false
         };
     }
-    // 兜底读取main导出挂载window的全局变量
-    const winList = window.__gameTemplateList;
-    const winReady = window.__gameTemplateReady;
-    if(Array.isArray(winList) && winList.length>0 && winReady === true){
-        return {
-            list: winList,
-            ready: true
-        };
-    }
+    // =========【补丁新增：annual内部把普通游戏列表 + FD续作列表合并；FavList完全不受影响】==========
+    const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
+    // 内存层面合并，不修改任何原始数组引用
+    const combinedList = [...baseList, ...fdList];
     return {
-        list: null,
-        ready: false
+        list: combinedList,
+        ready: true
     };
 }
 
