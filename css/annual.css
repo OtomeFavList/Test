@@ -1237,16 +1237,11 @@
 
 /* ========== 选中排序模式样式【重写】 ========== */
 /* 全部设备移除原生拖拽光标，不再使用浏览器draggable拖拽 */
-.annual-top-label-row {
-    -webkit-user-drag: none;
-    user-drag: none;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -webkit-touch-callout: none !important;
-    cursor: default;
-}
-/* 强制全部后代继承，不遗漏任何子节点 */
-.annual-top-label-row * {
+.annual-top-label-row,
+.annual-top-label-row *,
+.annual-top-label,
+.annual-game-name-text,
+.annual-char-name-text {
     -webkit-user-drag: none;
     user-drag: none;
     user-select: none !important;
