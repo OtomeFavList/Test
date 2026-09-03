@@ -1261,3 +1261,23 @@
 .annual-char-top-item {
     margin-bottom: 24px;
 }
+
+/* ========== 拖拽插入指示线 ========== */
+.sort‑insert‑indicator {
+    height: 4px;
+    width: 100%;
+    background-color: #b33a3a;
+    border-radius: 2px;
+    margin: 0;
+    pointer-events: auto;
+    cursor: pointer;
+}
+.sort‑selected‑item {
+    opacity: 0.65;
+}
+/* 快照导出模式：隐藏插入指示线与选中高亮 */
+.snapshot-container.export-snapshot .sort‑insert‑indicator,
+.snapshot-container.export-snapshot .sort‑selected‑item {
+    opacity: 1 !important;
+    display: none !important;
+}
