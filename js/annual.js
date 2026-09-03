@@ -133,7 +133,7 @@ function refreshTopItemUi(itemDom, dataItem) {
 
 /**
  * 更新キャラTOP3单条UI
- * @param {HTMLElement} itemDom .annual‑char‑top‑item
+ * @param {HTMLElement} itemDom .annual-char-top-item
  * @param {Object} dataItem charTopList子项
  */
 function refreshCharTopItemUi(itemDom, dataItem) {
@@ -608,7 +608,7 @@ function closeAnnualGlobalGameModal(){
 function bindTop3Items() {
     const topItems = document.querySelectorAll(".annual-top-item");
     topItems.forEach((item, domIndex)=>{
-        // domIndex：DOM遍历顺序 = 数组真实下标，不再读取data‑rank做索引
+        // domIndex：DOM遍历顺序 = 数组真实下标，不再读取data-rank做索引
         const dataItem = annualData.topList[domIndex];
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
@@ -655,7 +655,7 @@ function bindCharTop3Items() {
 }
 
 /**
- * ✅新增：拖拽后，刷新游戏TOP全部NO.N标签文本（根据数组真实下标，不依赖data‑rank）
+ * ✅新增：拖拽后，刷新游戏TOP全部NO.N标签文本（根据数组真实下标，不依赖data-rank）
  */
 function rerenderGameTopNoLabel(){
     const items = Array.from(document.querySelectorAll(".annual-top-item"));
@@ -685,7 +685,7 @@ function appendNewGameTopDom(){
     const itemDom = document.createElement("div");
     itemDom.className = "annual-top-item";
     itemDom.dataset.dragType = "game-top";
-    // 不写死NO.xxx、不写死data‑rank，全部交给rerenderGameTopNoLabel
+    // 不写死NO.xxx、不写死data-rank，全部交给rerenderGameTopNoLabel
     itemDom.innerHTML = `
         <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
@@ -951,7 +951,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) return;
-        // =========防御修复：阻止PC鼠标按下时触发文本选择，不影响textarea（不在label‑row内部）=========
+        // =========防御修复：阻止PC鼠标按下时触发文本选择，不影响textarea（不在label-row内部）=========
         e.preventDefault();
         const mouseStartY = e.clientY;
         const mouseStartX = e.clientX;
