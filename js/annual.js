@@ -839,9 +839,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 clearSelectState();
             };
         }
-        if(beforeItemDom.parentNode && indicatorDom.parentNode !== beforeItemDom.parentNode){
-            beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
-        }else if(beforeItemDom.parentNode && indicatorDom.parentNode === beforeItemDom.parentNode){
+        if(beforeItemDom.parentNode){
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         }
     }
@@ -873,6 +871,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             clearSelectState();
             return;
         }
+        if(itemIndex === -1) return;
         clearSelectState();
         selectedItem = itemDom;
         selectedIndex = itemIndex;
@@ -884,9 +883,16 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // ===== 触摸事件（移动端） =====
     container.addEventListener("touchstart", (e) => {
-        const itemDom = e.target.closest(".annual-top-item,.annual-char-top-item");
+        const labelRow = e.target.closest(".annual-top-label-row");
+        if (!labelRow) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            return;
+        }
+        const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
+            pressTimer = null;
             return;
         }
         const touch = e.touches[0];
@@ -900,8 +906,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     }, { passive: true });
 
     container.addEventListener("touchmove", (e) => {
-        const itemDom = e.target.closest(".annual-top-item,.annual-char-top-item");
-        if(itemDom && touchStartY !== null && touchStartX !== null){
+        if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
             const deltaX = Math.abs(touch.clientX - touchStartX);
@@ -931,9 +936,16 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // ===== PC鼠标事件 =====
     container.addEventListener("mousedown", (e)=>{
-        const itemDom = e.target.closest(".annual-top-item,.annual-char-top-item");
+        const labelRow = e.target.closest(".annual-top-label-row");
+        if (!labelRow) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            return;
+        }
+        const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
+            pressTimer = null;
             return;
         }
         e.preventDefault();
@@ -944,12 +956,15 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
         },2000);
+
         function onMouseMove(me){
-            const deltaY = Math.abs(me.clientY - mouseStartY);
-            const deltaX = Math.abs(me.clientX - mouseStartX);
-            if(deltaY>8 || deltaX>8){
-                clearTimeout(pressTimer);
-                pressTimer = null;
+            if(pressTimer !== null){
+                const deltaY = Math.abs(me.clientY - mouseStartY);
+                const deltaX = Math.abs(me.clientX - mouseStartX);
+                if(deltaY>8 || deltaX>8){
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
             }
             if(selectedIndex !== null){
                 updateIndicatorByPoint(me.clientY);
