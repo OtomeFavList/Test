@@ -1101,27 +1101,6 @@
     margin:0;
 }
 
-/*【问题⑥】拖拽光标样式加固 */
-/* PC端保留原生拖拽 */
-@media (min-width:769px) {
-    .annual-top-label-row[draggable="true"]{
-        cursor: grab;
-    }
-    .annual-top-label-row[draggable="true"]:active{
-        cursor: grabbing;
-    }
-}
-@media (max-width:768px) {
-    .annual-top-label-row {
-        cursor:default;
-    }
-    /* JS层面：移动端不要设置draggable="true"，或者CSS屏蔽拖拽高亮 */
-    .annual-top-label-row[draggable="true"] {
-        -webkit-user-drag: none;
-        user-drag: none;
-    }
-}
-
 /* ② 删除按钮完整样式（复用弹窗关闭按钮） */
 .annual-item-delete-btn {
     flex-shrink: 0;
@@ -1244,71 +1223,22 @@
     background-color: #992e2e;
 }
 
-/* ========== ✅拖拽交互样式 ========== */
-/* draggable行光标提示 */
-/* PC端保留原生拖拽 */
-@media (min-width:769px) {
-    .annual-top-label-row[draggable="true"]{
-        cursor: grab;
-    }
-    .annual-top-label-row[draggable="true"]:active{
-        cursor: grabbing;
-    }
-}
-@media (max-width:768px) {
-    .annual-top-label-row {
-        cursor:default;
-    }
-    /* JS层面：移动端不要设置draggable="true"，或者CSS屏蔽拖拽高亮 */
-    .annual-top-label-row[draggable="true"] {
-        -webkit-user-drag: none;
-        user-drag: none;
-    }
-}
-/* 拖拽源样式 */
-.annual-top-item.drag‑source,
-.annual-char-top-item.drag‑source {
-    opacity: 0.4;
-}
-/* 拖拽悬停放置目标高亮 */
-.annual-top-item.drag‑over,
-.annual-char-top-item.drag‑over {
-    outline: 2px dashed #b85878;
-    outline-offset: 4px;
-}
-/* 快照导出：拖拽高亮全部隐藏 */
-.snapshot-container.export-snapshot .drag‑source,
-.snapshot-container.export-snapshot .drag‑over {
-    opacity: 1 !important;
-    outline: none !important;
-}
-
 /* ========== 三、キャラTOP3 【新增模块样式】 ========== */
 .annual-char-top-item {
     margin-bottom: 24px;
 }
 
-/* ========== 拖拽插入指示线 ========== */
-.sort‑insert‑indicator {
-    height: 4px;
-    width: 100%;
-    background-color: #b33a3a;
-    border-radius: 2px;
-    margin: 0;
-    pointer-events: auto;
-    cursor: pointer;
+/* ========== 选中排序模式样式【重写】 ========== */
+/* 全部设备移除原生拖拽光标，不再使用浏览器draggable拖拽 */
+.annual-top-label-row {
+    cursor: default;
 }
-.sort‑selected‑item {
-    opacity: 0.65;
-}
-/* 快照导出模式：隐藏插入指示线与选中高亮 */
-.snapshot-container.export-snapshot .sort‑insert‑indicator,
-.snapshot-container.export-snapshot .sort‑selected‑item {
-    opacity: 1 !important;
-    display: none !important;
+.annual-top-label-row[draggable="true"] {
+    -webkit-user-drag: none;
+    user-drag: none;
 }
 
-/* ========== 拖拽插入指示线【修复】 ========== */
+/* 插入指示线：仅进入选中模式才会被JS插入DOM，常态无 */
 .sort‑insert‑indicator {
     height: 4px;
     width: 100%;
@@ -1321,18 +1251,20 @@
     padding: 8px 0;
     background-clip: content-box;
 }
+
 /* 选中项：#b33a3a红色边框框选【只框NO+名称行 annual‑top‑label‑row】 */
 .annual-top-label-row.sort‑selected‑item {
-    opacity: 0.65;
     outline: 2px solid #b33a3a;
     outline-offset: 2px;
 }
+
 /* 大卡片禁止被选中高亮 */
 .annual-top-item.sort‑selected‑item,
 .annual-char-top-item.sort‑selected‑item {
     opacity: 1;
     outline: none;
 }
+
 /* 快照导出模式：隐藏插入指示线与选中高亮 */
 .snapshot-container.export-snapshot .sort‑insert‑indicator,
 .snapshot-container.export-snapshot .sort‑selected‑item {
