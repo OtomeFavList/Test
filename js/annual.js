@@ -904,12 +904,17 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if (!targetRow) {
             return;
         }
+        // textarea：直接返回，不阻止默认，允许输入、滚动
+        if(e.target.closest("textarea")){
+            return;
+        }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
             pressTimer = null;
             return;
         }
+        // ✅仅此处：准备启动长按计时才阻止默认，避免浏览器触发原生选择菜单
         e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
