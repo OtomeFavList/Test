@@ -813,6 +813,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     function clearSelectState(){
         if(selectedItem){
             selectedItem.classList.remove("sort-selected-item");
+            selectedItem.classList.remove("sort-lock-layout");
         }
         selectedItem = null;
         selectedIndex = null;
@@ -896,6 +897,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedItem = itemDom;
         selectedIndex = itemIndex;
         selectedItem.classList.add("sort-selected-item");
+        selectedItem.classList.add("sort-lock-layout");
         console.log("[sort] 进入选中模式 index=", itemIndex);
     }
 
@@ -907,7 +909,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             clearTimeout(pressTimer);
             pressTimer = null;
         }
-        const targetRow = e.target.closest(".annual-top-label-row");
+        const targetRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
         if (!targetRow) {
             return;
         }
@@ -926,7 +928,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
             enterSelectMode(itemDom, idx);
-        }, 2000);
+        }, 1000);
     });
 
     container.addEventListener("touchmove", (e) => {
@@ -945,22 +947,27 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     }, { passive: true });
 
     container.addEventListener("touchend", () => {
-        clearTimeout(pressTimer);
-        pressTimer = null;
+        // 仅清除还未触发的长按定时器；已经进入选中模式(selectedItem存在)不做任何清除
+        if(pressTimer !== null){
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
         touchStartY = null;
         touchStartX = null;
     }, { passive: true });
 
     container.addEventListener("touchcancel", () => {
-        clearTimeout(pressTimer);
-        pressTimer = null;
+        if(pressTimer !== null){
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
         touchStartY = null;
         touchStartX = null;
     }, { passive: true });
 
     // ============ PC鼠标 mousedown 长按2s逻辑 ============
     container.addEventListener("mousedown", (e)=>{
-        const labelRow = e.target.closest(".annual-top-label-row");
+        const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
         if (!labelRow) {
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -980,7 +987,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
-        },2000);
+        },1000);
 
         function onMouseMove(me){
             if(pressTimer !== null){
