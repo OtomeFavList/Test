@@ -687,7 +687,7 @@ function appendNewGameTopDom(){
     itemDom.dataset.dragType = "game-top";
     // 不写死NO.xxx、不写死data‑rank，全部交给rerenderGameTopNoLabel
     itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty" draggable="true">
+        <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
             <div class="annual-game-name-text"></div>
             <button class="annual-item-delete-btn" data-type="game">×</button>
@@ -718,7 +718,7 @@ function appendNewCharTopDom(){
     itemDom.className = "annual-char-top-item";
     itemDom.dataset.dragType = "char-top";
     itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty" draggable="true">
+        <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
             <div class="annual-char-name-text"></div>
             <button class="annual-item-delete-btn" data-type="char">×</button>
@@ -762,136 +762,6 @@ function rebuildCharTopDomAll(){
     });
 }
 
-/**
- * ✅新增：绑定拖拽事件（游戏TOP）
- */
-function bindGameTopDrag(){
-    const container = document.getElementById("annual-game-top-drag-container");
-    if(!container) return;
-    let dragSourceIndex = null;
-
-    container.addEventListener("dragstart",(e)=>{
-        const row = e.target.closest(".annual-top-label-row");
-        if(!row) {
-            e.preventDefault();
-            return;
-        }
-        const itemDom = row.closest(".annual-top-item");
-        const all = Array.from(container.querySelectorAll(".annual-top-item"));
-        dragSourceIndex = all.indexOf(itemDom); // DOM列表中的真实下标，不再读dataset.rank
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", String(dragSourceIndex));
-        itemDom.classList.add("drag‑source");
-    });
-
-    container.addEventListener("dragover",(e)=>{
-        e.preventDefault();
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if(!targetRow) return;
-        const targetItemDom = targetRow.closest(".annual-top-item");
-        const all = Array.from(container.querySelectorAll(".annual-top-item"));
-        const targetIdx = all.indexOf(targetItemDom);
-        if(dragSourceIndex === null || dragSourceIndex === targetIdx) return;
-        targetItemDom.classList.add("drag‑over");
-    });
-
-    container.addEventListener("dragleave",(e)=>{
-        const itemDom = e.target.closest(".annual-top-item");
-        if(itemDom) itemDom.classList.remove("drag‑over");
-    });
-
-    container.addEventListener("drop",(e)=>{
-        e.preventDefault();
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if(!targetRow || dragSourceIndex === null) return;
-        const targetItemDom = targetRow.closest(".annual-top-item");
-        const all = Array.from(container.querySelectorAll(".annual-top-item"));
-        const targetIdx = all.indexOf(targetItemDom);
-        targetItemDom.classList.remove("drag‑over");
-        if(dragSourceIndex === targetIdx) return;
-        // 数组交换位置
-        const temp = annualData.topList[dragSourceIndex];
-        annualData.topList[dragSourceIndex] = annualData.topList[targetIdx];
-        annualData.topList[targetIdx] = temp;
-        saveAnnualData();
-        bindTop3Items();
-        rerenderGameTopNoLabel();
-        dragSourceIndex = null;
-    });
-
-    container.addEventListener("dragend",()=>{
-        container.querySelectorAll(".annual-top-item").forEach(dom=>{
-            dom.classList.remove("drag‑source","drag‑over");
-        });
-        dragSourceIndex = null;
-    });
-}
-
-/**
- * ✅新增：绑定拖拽事件（角色TOP）
- */
-function bindCharTopDrag(){
-    const container = document.getElementById("annual-char-top-drag-container");
-    if(!container) return;
-    let dragSourceIndex = null;
-
-    container.addEventListener("dragstart",(e)=>{
-        const row = e.target.closest(".annual-top-label-row");
-        if(!row) {
-            e.preventDefault();
-            return;
-        }
-        const itemDom = row.closest(".annual-char-top-item");
-        const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
-        dragSourceIndex = all.indexOf(itemDom);
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", String(dragSourceIndex));
-        itemDom.classList.add("drag‑source");
-    });
-
-    container.addEventListener("dragover",(e)=>{
-        e.preventDefault();
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if(!targetRow) return;
-        const targetItemDom = targetRow.closest(".annual-char-top-item");
-        const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
-        const targetIdx = all.indexOf(targetItemDom);
-        if(dragSourceIndex === null || dragSourceIndex === targetIdx) return;
-        targetItemDom.classList.add("drag‑over");
-    });
-
-    container.addEventListener("dragleave",(e)=>{
-        const itemDom = e.target.closest(".annual-char-top-item");
-        if(itemDom) itemDom.classList.remove("drag‑over");
-    });
-
-    container.addEventListener("drop",(e)=>{
-        e.preventDefault();
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if(!targetRow || dragSourceIndex === null) return;
-        const targetItemDom = targetRow.closest(".annual-char-top-item");
-        const all = Array.from(container.querySelectorAll(".annual-char-top-item"));
-        const targetIdx = all.indexOf(targetItemDom);
-        targetItemDom.classList.remove("drag‑over");
-        if(dragSourceIndex === targetIdx) return;
-        // 数组交换
-        const temp = annualData.charTopList[dragSourceIndex];
-        annualData.charTopList[dragSourceIndex] = annualData.charTopList[targetIdx];
-        annualData.charTopList[targetIdx] = temp;
-        saveAnnualData();
-        bindCharTop3Items();
-        rerenderCharTopNoLabel();
-        dragSourceIndex = null;
-    });
-
-    container.addEventListener("dragend",()=>{
-        container.querySelectorAll(".annual-char-top-item").forEach(dom=>{
-            dom.classList.remove("drag‑source","drag‑over");
-        });
-        dragSourceIndex = null;
-    });
-}
-
 // ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
 function bindTouchDrag(){
     // 游戏TOP触摸拖拽
@@ -909,12 +779,14 @@ function bindTouchDrag(){
 }
 
 /**
- * 方案C：双模式触摸排序工具函数
- * 模式A：短按直接拖拽（原有近距离拖拽）
- * 模式B：长按2000ms(2s)进入锁定选中模式；松手自由滚动，渲染#b33a3a插入横线，点击横线执行插入
+ * 统一排序工具函数：PC鼠标 / Mobile触摸 共用
+ * 行为：长按NO+名称行2000ms进入选中模式
+ *  - 进入选中模式：源卡片NO行被#b33a3a外框高亮；出现红色插入指示横线
+ *  - 松手后可以自由滚动页面，鼠标hover卡片更新指示线位置，点击横线执行【移动插入splice】，不是交换
+ *  - 再次长按任意NO+名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑
  * @param {string} containerSel 容器选择器
  * @param {Array} dataArr 对应数据数组
- * @param {Function} afterSwap 交换完成回调
+ * @param {Function} afterSort 插入完成回调
  */
 function setupTouchSort(containerSel, dataArr, afterSort){
     const container = document.querySelector(containerSel);
@@ -922,13 +794,12 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // -------- 内部状态 --------
     let pressTimer = null;
-    let selectedRow = null;     // 选中：NO+名称行 annual‑top‑label‑row
-    let selectedItem = null;    // 外层大卡片 .annual‑top‑item / .annual‑char‑top‑item
+    let selectedRow = null;     // 选中源：NO+名称行 annual‑top‑label‑row
+    let selectedItem = null;    // 源外层大卡片
     let selectedIndex = null;
     let indicatorDom = null;
-    let touchActive = false;    // 标记：手指是否还在屏幕上；松手后停止更新指示线
 
-    // 清除选中状态、移除指示线
+    // 清除选中状态、移除指示线，退出编辑模式
     function clearSelectState(){
         if(selectedRow){
             selectedRow.classList.remove("sort‑selected‑item");
@@ -936,42 +807,72 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedRow = null;
         selectedItem = null;
         selectedIndex = null;
-        touchActive = false;
         if(indicatorDom && indicatorDom.parentNode){
             indicatorDom.parentNode.removeChild(indicatorDom);
         }
         indicatorDom = null;
     }
 
-    // 创建/更新插入指示线，插入到目标item之前
+    // 创建/移动插入指示线，放置在 beforeItemDom 前面
     function showInsertIndicator(beforeItemDom){
         if(!indicatorDom){
             indicatorDom = document.createElement("div");
             indicatorDom.className = "sort‑insert‑indicator";
-            // 点击横线执行【移位插入】
+            // 点击横线执行【移位插入 splice】
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
                 const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
                 const targetIndex = allItems.indexOf(beforeItemDom);
+                // 原地，不做操作
                 if(selectedIndex === targetIndex || selectedIndex === targetIndex - 1){
                     clearSelectState();
                     return;
                 }
-                // splice移位插入，不是交换
+                // splice移动插入，不是交换
                 const temp = dataArr.splice(selectedIndex, 1)[0];
                 const insertPos = (targetIndex > selectedIndex) ? targetIndex - 1 : targetIndex;
                 dataArr.splice(insertPos, 0, temp);
+
                 afterSort();
                 clearSelectState();
             };
         }
-        if(beforeItemDom.parentNode){
+        if(beforeItemDom.parentNode && indicatorDom.parentNode !== beforeItemDom.parentNode){
+            beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
+        }else if(beforeItemDom.parentNode && indicatorDom.parentNode === beforeItemDom.parentNode){
+            // 已经在同一个父节点，移动位置
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         }
     }
 
-    // 长按2000ms进入锁定选中模式：高亮【标题行】，不是外层卡片
+    // 根据鼠标/触摸坐标，计算应当在哪一个item前面显示指示线
+    function updateIndicatorByPoint(clientY){
+        if(selectedIndex === null) return;
+        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        let hoverTarget = null;
+        for(const it of items){
+            const rect = it.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            if(clientY < mid){
+                hoverTarget = it;
+                break;
+            }
+        }
+        if(!hoverTarget){
+            if(indicatorDom && indicatorDom.parentNode) indicatorDom.remove();
+            indicatorDom = null;
+        }else{
+            showInsertIndicator(hoverTarget);
+        }
+    }
+
+    // 长按2000ms进入锁定选中模式：高亮【源标题行】
     function enterSelectMode(rowDom, itemDom, itemIndex){
+        // 如果已经处于选中模式：再次长按任意标题行 → 直接退出编辑模式
+        if(selectedRow !== null){
+            clearSelectState();
+            return;
+        }
         clearSelectState();
         selectedRow = rowDom;
         selectedItem = itemDom;
@@ -979,16 +880,15 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedRow.classList.add("sort‑selected‑item");
     }
 
+    // ===== 触摸事件（移动端） =====
     container.addEventListener("touchstart", (e) => {
-        touchActive = true;
         const targetRow = e.target.closest(".annual-top-label-row");
         if (!targetRow) {
-            clearSelectState();
+            clearTimeout(pressTimer);
             return;
         }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) return;
-
         const touch = e.touches[0];
         const touchStartY = touch.clientY;
         const touchStartX = touch.clientX;
@@ -998,66 +898,90 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         pressTimer = setTimeout(() => {
             enterSelectMode(targetRow, itemDom, idx);
         }, 2000);
+
     }, { passive: true });
 
     container.addEventListener("touchmove", (e) => {
-        if(!touchActive) return;
-        const touch = e.touches[0];
-        const deltaY = Math.abs(touch.clientY - touchStartY);
-        const deltaX = Math.abs(touch.clientX - touchStartX);
-
-        // 滑动距离大，取消长按预备，不进入选中模式
-        if(deltaY > 8 || deltaX >8){
-            clearTimeout(pressTimer);
-            pressTimer = null;
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if(targetRow){
+            const touch = e.touches[0];
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+            // 滑动距离超过阈值，取消长按预备
+            if(deltaY > 8 || deltaX >8){
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
         }
-
-        // 只有手指还在屏幕 + 已经选中，才计算hover与指示线；松手后不再更新指示线
-        if(selectedItem && selectedIndex !== null && touchActive){
-            const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
-            let hoverTarget = null;
-            for(const it of items){
-                const rect = it.getBoundingClientRect();
-                const mid = rect.top + rect.height / 2;
-                if(touch.clientY < mid){
-                    hoverTarget = it;
-                    break;
-                }
-            }
-            if(!hoverTarget){
-                if(indicatorDom && indicatorDom.parentNode) indicatorDom.remove();
-                indicatorDom = null;
-            }else{
-                showInsertIndicator(hoverTarget);
-            }
+        // 如果已经进入选中模式，移动手指更新指示线位置
+        if(selectedIndex !== null && e.touches.length>0){
+            updateIndicatorByPoint(e.touches[0].clientY);
         }
     }, { passive: true });
 
     container.addEventListener("touchend", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
-        touchActive = false;
-        // touchend：不清除选中！保持锁定，松手自由滚动页面
+        // touchend：不清除选中！保持锁定，松手自由滚动页面，指示线保留
     }, { passive: true });
 
     container.addEventListener("touchcancel", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
-        touchActive = false;
     }, { passive: true });
 
-    // 点击空白 / 再次点击已选中标题行，取消选中
+    // ===== PC鼠标事件（兼容电脑端，同一套行为） =====
+    container.addEventListener("mousedown", (e)=>{
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if (!targetRow) {
+            clearTimeout(pressTimer);
+            return;
+        }
+        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
+        if (!itemDom) return;
+        const mouseStartY = e.clientY;
+        const mouseStartX = e.clientX;
+        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        const idx = allItems.indexOf(itemDom);
+
+        pressTimer = setTimeout(()=>{
+            enterSelectMode(targetRow, itemDom, idx);
+        },2000);
+
+        function onMouseMove(me){
+            const deltaY = Math.abs(me.clientY - mouseStartY);
+            const deltaX = Math.abs(me.clientX - mouseStartX);
+            if(deltaY>8 || deltaX>8){
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if(selectedIndex !== null){
+                updateIndicatorByPoint(me.clientY);
+            }
+        }
+        function onMouseUp(){
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        }
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+    });
+
+    // 鼠标移动hover容器内，选中模式下更新指示线
+    container.addEventListener("mousemove",(e)=>{
+        if(selectedIndex !== null){
+            updateIndicatorByPoint(e.clientY);
+        }
+    });
+
+    // 点击逻辑：点击横线交给indicatorDom.onclick；点击空白取消选中
     container.addEventListener("click", (e)=>{
         if(!selectedRow) return;
-        const clickTargetRow = e.target.closest(".annual-top-label-row");
         const clickIndicator = e.target.closest(".sort‑insert‑indicator");
         if(clickIndicator){
             // 交给indicatorDom.onclick处理
-            return;
-        }
-        // 再次点击已选中的标题行 → 取消选中
-        if(clickTargetRow === selectedRow){
-            clearSelectState();
             return;
         }
         // 点击空白区域取消选中
@@ -1255,8 +1179,6 @@ function realInitAnnualModule(){
     rebuildCharTopDomAll();
     bindTop3Items();
     bindCharTop3Items();
-    bindGameTopDrag();
-    bindCharTopDrag();
     bindTouchDrag();
     bindAnnualExport();
     bindAnnualExportPanel();
