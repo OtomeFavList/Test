@@ -919,20 +919,24 @@ function bindTouchDrag(){
 function setupTouchSort(containerSel, dataArr, afterSort){
     const container = document.querySelector(containerSel);
     if (!container) return;
+
     // -------- 内部状态 --------
     let pressTimer = null;
-    // 选中锁定模式状态：方案C唯一模式
-    let selectedItem = null;
+    let selectedRow = null;     // 选中：NO+名称行 annual‑top‑label‑row
+    let selectedItem = null;    // 外层大卡片 .annual‑top‑item / .annual‑char‑top‑item
     let selectedIndex = null;
     let indicatorDom = null;
+    let touchActive = false;    // 标记：手指是否还在屏幕上；松手后停止更新指示线
 
     // 清除选中状态、移除指示线
     function clearSelectState(){
-        if(selectedItem){
-            selectedItem.classList.remove("sort‑selected‑item");
+        if(selectedRow){
+            selectedRow.classList.remove("sort‑selected‑item");
         }
+        selectedRow = null;
         selectedItem = null;
         selectedIndex = null;
+        touchActive = false;
         if(indicatorDom && indicatorDom.parentNode){
             indicatorDom.parentNode.removeChild(indicatorDom);
         }
@@ -966,15 +970,17 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
     }
 
-    // 长按2000ms进入锁定选中模式
-    function enterSelectMode(itemDom, itemIndex){
+    // 长按2000ms进入锁定选中模式：高亮【标题行】，不是外层卡片
+    function enterSelectMode(rowDom, itemDom, itemIndex){
         clearSelectState();
+        selectedRow = rowDom;
         selectedItem = itemDom;
         selectedIndex = itemIndex;
-        selectedItem.classList.add("sort‑selected‑item");
+        selectedRow.classList.add("sort‑selected‑item");
     }
 
     container.addEventListener("touchstart", (e) => {
+        touchActive = true;
         const targetRow = e.target.closest(".annual-top-label-row");
         if (!targetRow) {
             clearSelectState();
@@ -982,34 +988,32 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) return;
+
         const touch = e.touches[0];
         const touchStartY = touch.clientY;
         const touchStartX = touch.clientX;
-
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
 
-        // 长按定时器
         pressTimer = setTimeout(() => {
-            enterSelectMode(itemDom, idx);
+            enterSelectMode(targetRow, itemDom, idx);
         }, 2000);
-
     }, { passive: true });
 
     container.addEventListener("touchmove", (e) => {
+        if(!touchActive) return;
         const touch = e.touches[0];
         const deltaY = Math.abs(touch.clientY - touchStartY);
         const deltaX = Math.abs(touch.clientX - touchStartX);
 
-        // 手指移动距离大，取消长按，不进入选中模式；**不再接管拖拽，交给浏览器原生滚动**
+        // 滑动距离大，取消长按预备，不进入选中模式
         if(deltaY > 8 || deltaX >8){
             clearTimeout(pressTimer);
             pressTimer = null;
         }
 
-        // ========== 只有已经长按选中以后，才处理指示线，不阻止页面滚动 ==========
-        if(selectedItem && selectedIndex !== null){
-            // ❗删掉e.preventDefault()，允许页面自由滚动
+        // 只有手指还在屏幕 + 已经选中，才计算hover与指示线；松手后不再更新指示线
+        if(selectedItem && selectedIndex !== null && touchActive){
             const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
             let hoverTarget = null;
             for(const it of items){
@@ -1032,27 +1036,40 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     container.addEventListener("touchend", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
-        // touchend **不清除selectedItem**，保持锁定选中状态，松手后可以自由滚动页面
+        touchActive = false;
+        // touchend：不清除选中！保持锁定，松手自由滚动页面
     }, { passive: true });
 
-    // 点击空白区域退出选中锁定模式
+    container.addEventListener("touchcancel", () => {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        touchActive = false;
+    }, { passive: true });
+
+    // 点击空白 / 再次点击已选中标题行，取消选中
     container.addEventListener("click", (e)=>{
-        if(!selectedItem) return;
-        // 点击指示线会执行自身onclick，不会进入这里
-        const clickTarget = e.target.closest(".annual-top-item,.annual-char-top-item,.sort‑insert‑indicator");
-        if(!clickTarget){
+        if(!selectedRow) return;
+        const clickTargetRow = e.target.closest(".annual-top-label-row");
+        const clickIndicator = e.target.closest(".sort‑insert‑indicator");
+        if(clickIndicator){
+            // 交给indicatorDom.onclick处理
+            return;
+        }
+        // 再次点击已选中的标题行 → 取消选中
+        if(clickTargetRow === selectedRow){
             clearSelectState();
             return;
         }
-        // 再次点击已经选中的卡片，取消选中
-        if(clickTarget === selectedItem){
+        // 点击空白区域取消选中
+        const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
+        if(!clickItem){
             clearSelectState();
         }
     });
 
     // 点击容器外部全局清除选中
     document.addEventListener("click", function docClickHandler(e){
-        if(!selectedItem) return;
+        if(!selectedRow) return;
         const insideContainer = e.target.closest(containerSel);
         if(!insideContainer){
             clearSelectState();
