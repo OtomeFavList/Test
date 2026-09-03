@@ -1321,11 +1321,17 @@
     padding: 8px 0;
     background-clip: content-box;
 }
-/* 选中项：#b33a3a红色边框框选，保留原有半透明 */
-.sort‑selected‑item {
+/* 选中项：#b33a3a红色边框框选【只框NO+名称行 annual‑top‑label‑row】 */
+.annual-top-label-row.sort‑selected‑item {
     opacity: 0.65;
     outline: 2px solid #b33a3a;
     outline-offset: 2px;
+}
+/* 大卡片禁止被选中高亮 */
+.annual-top-item.sort‑selected‑item,
+.annual-char-top-item.sort‑selected‑item {
+    opacity: 1;
+    outline: none;
 }
 /* 快照导出模式：隐藏插入指示线与选中高亮 */
 .snapshot-container.export-snapshot .sort‑insert‑indicator,
