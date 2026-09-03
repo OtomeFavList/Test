@@ -1268,15 +1268,16 @@
     height:5px;
 }
 
-/* ✅选中排序模式：外层卡片虚线 #f6a5b8 */
+/* ✅选中排序模式：外层卡片虚线 #f6a5b8；解决①下陷缩小：使用outline代替border，outline不占用盒模型空间！！ */
 .annual-top-item.sort-selected-item,
 .annual-char-top-item.sort-selected-item {
-    border: 2px dashed #f6a5b8;
+    outline: 2px dashed #f6a5b8;
+    outline-offset: 2px;
     border-radius: 8px;
     opacity: 1;
-    /* 核心修复：禁止任何缩放、位移，消除下陷缩小效果 */
     transform: none !important;
     scale: 1 !important;
+    /* 重要：不改动原有border，改用outline，不会挤压内部内容，不会改变卡片布局尺寸 */
     box-sizing: border-box;
 }
 /* 选中模式布局锁定，禁止浏览器手势触发的位移偏移 */
