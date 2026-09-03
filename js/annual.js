@@ -824,6 +824,15 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         indicatorDom = null;
     }
 
+    //【新增④】进入选中模式立刻渲染指示线占位DOM，解决横线不自动显示
+    function renderAllInsertIndicators() {
+        if(!selectedItem) return;
+        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        if(items.length === 0) return;
+        // 默认先把指示线放在第一个item前面，等待move事件再更新位置
+        showInsertIndicator(items[0]);
+    }
+
     // 创建/更新插入指示线，插入到目标item之前
     function showInsertIndicator(beforeItemDom){
         if(!indicatorDom){
@@ -869,7 +878,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         let hoverTarget = null;
         for(const it of items){
             const rect = it.getBoundingClientRect();
-            // ✅修复坐标判断：使用item上边界，而不是mid，防止向下滚动错乱
             if(clientY < rect.top + rect.height * 0.45){
                 hoverTarget = it;
                 break;
@@ -899,12 +907,12 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedItem.classList.add("sort-selected-item");
         selectedItem.classList.add("sort-lock-layout");
         console.log("[sort] 进入选中模式 index=", itemIndex);
+        //【修复④】进入模式立刻渲染指示线DOM
+        renderAllInsertIndicators();
     }
 
     // ============ 移动端 touch 事件 ============
-    // ✅移除passive:true，允许preventDefault阻止iOS原生长按文本菜单
     container.addEventListener("touchstart", (e) => {
-        // 安全保护：清除上一轮残留定时器
         if(pressTimer !== null){
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -919,7 +927,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        // ✅阻止iOS系统长按弹出文本选择菜单，释放手势给js定时器
         e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
@@ -928,10 +935,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
             enterSelectMode(itemDom, idx);
-        }, 1000);
+        }, 2000); // 需求是长按2s，原值1000改为2000
     });
 
     container.addEventListener("touchmove", (e) => {
+        // 只有还未触发长按的阶段才判断移动阈值，已经进入选中模式不销毁状态【修复③】
         if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
@@ -941,13 +949,14 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 pressTimer = null;
             }
         }
+        // 选中模式下只更新指示线，卡片DOM本身禁止位移【修复②】
         if(selectedIndex !== null && e.touches.length>0){
             updateIndicatorByPoint(e.touches[0].clientY);
         }
     }, { passive: true });
 
     container.addEventListener("touchend", () => {
-        // 仅清除还未触发的长按定时器；已经进入选中模式(selectedItem存在)不做任何清除
+        // touchend：**只销毁未触发的长按定时器，绝不清除选中状态selectedItem**【修复③】
         if(pressTimer !== null){
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -965,7 +974,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartX = null;
     }, { passive: true });
 
-    // ============ PC鼠标 mousedown 长按2s逻辑 ============
+    // ============ PC鼠标 mousedown 长按2000ms逻辑 ============
     container.addEventListener("mousedown", (e)=>{
         const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
         if (!labelRow) {
@@ -987,7 +996,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
-        },1000);
+        },2000); // 2000ms长按
 
         function onMouseMove(me){
             if(pressTimer !== null){
@@ -1003,6 +1012,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             }
         }
         function onMouseUp(){
+            // mouseup：只清除定时器，不清除选中状态【修复③】
             clearTimeout(pressTimer);
             pressTimer = null;
             mouseStartY = null;
@@ -1014,7 +1024,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         document.addEventListener("mouseup", onMouseUp);
     });
 
-    // ✅删除容器外层多余mousemove，避免重复调用updateIndicatorByPoint
     // 容器内点击
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
