@@ -951,6 +951,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) return;
+        // =========防御修复：阻止PC鼠标按下时触发文本选择，不影响textarea（不在label‑row内部）=========
+        e.preventDefault();
         const mouseStartY = e.clientY;
         const mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
