@@ -1256,16 +1256,16 @@
     width: 100%;
     background-color: #d86b6b;
     border-radius: 2px;
-    margin: 12px 0;
+    /* 外边距控制和卡片之间间距，去掉padding+content‑box，背景直接铺满整个元素 */
+    margin: 14px 0;
     pointer-events: auto;
     cursor: pointer;
-    padding: 8px 0;
-    background-clip: content-box;
     transition: background-color 0.15s;
 }
 /* ✅第一次点击激活状态：#b33a3a深红色 */
 .sort-insert-indicator.active-hit {
     background-color: #b33a3a;
+    height:5px;
 }
 
 /* ✅选中排序模式：外层卡片虚线 #f6a5b8 */
@@ -1274,11 +1274,32 @@
     border: 2px dashed #f6a5b8;
     border-radius: 8px;
     opacity: 1;
+    /* 核心修复：禁止任何缩放、位移，消除下陷缩小效果 */
+    transform: none !important;
+    scale: 1 !important;
+    box-sizing: border-box;
 }
+/* 选中模式布局锁定，禁止浏览器手势触发的位移偏移 */
+.annual-top-item.sort-lock-layout,
+.annual-char-top-item.sort-lock-layout {
+    transform: none !important;
+    translate: none !important;
+    position: relative;
+}
+
 /* 内部label-row清除outline，不再高亮内部行 */
 .annual-top-item.sort-selected-item > .annual-top-label-row,
 .annual-char-top-item.sort-selected-item > .annual-top-label-row {
     outline: none;
+}
+
+/* 封面图片区域禁止系统长按菜单（iOS） */
+.annual-top-cover,
+.annual-char-cover {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: auto;
 }
 
 /* 快照导出模式：隐藏插入指示线与选中高亮 */
