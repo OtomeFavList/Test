@@ -2119,3 +2119,11 @@ textarea {
     background-size: var(--slider-progress, 0%) 100%;
     background-repeat: no-repeat;
 }
+
+img {
+  /* 禁止图片长按弹出菜单 iOS/WebKit核心 */
+  -webkit-touch-callout: none;
+  /* 禁止文本选中，顺带防止图片被选中 */
+  user-select: none;
+  -webkit-user-select: none;
+}
