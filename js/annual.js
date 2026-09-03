@@ -910,14 +910,13 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
-            // ✅只有真正触发长按进入排序模式这一刻，才阻止默认行为，防止文本选中
-            e.preventDefault();
             enterSelectMode(itemDom, idx);
         }, 1000);
     }, {passive: false});
