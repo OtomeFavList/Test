@@ -920,6 +920,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // 仅排序行，阻止iOS原生长按菜单触发，不阻止页面滚动
+        e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
@@ -931,11 +933,13 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     });
 
     container.addEventListener("touchmove", (e) => {
-        if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
+        // 仅【长按等待阶段】做位移判断；已经进入选中模式不再取消
+        if(pressTimer !== null && selectedIndex === null && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
             const deltaX = Math.abs(touch.clientX - touchStartX);
-            if(deltaY > 12 || deltaX >12){
+            // 放大抖动阈值，适配iOS手指微小漂移
+            if(deltaY > 24 || deltaX > 24){
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
@@ -987,11 +991,15 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             enterSelectMode(itemDom, idx);
         },2000);
 
-        function onMouseMove(me){
-            if(pressTimer !== null){
+        // 使用变量保存句柄，防止重复挂载
+        let _mouseMoveHandler = null;
+        let _mouseUpHandler = null;
+
+        _mouseMoveHandler = function(me){
+            if(pressTimer !== null && selectedIndex === null){
                 const deltaY = Math.abs(me.clientY - mouseStartY);
                 const deltaX = Math.abs(me.clientX - mouseStartX);
-                if(deltaY>12 || deltaX>12){
+                if(deltaY>24 || deltaX>24){
                     clearTimeout(pressTimer);
                     pressTimer = null;
                 }
@@ -999,17 +1007,21 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             if(selectedIndex !== null){
                 updateIndicatorByPoint(me.clientY);
             }
-        }
-        function onMouseUp(){
+        };
+
+        _mouseUpHandler = function(){
             clearTimeout(pressTimer);
             pressTimer = null;
             mouseStartY = null;
             mouseStartX = null;
-            document.removeEventListener("mousemove", onMouseMove);
-            document.removeEventListener("mouseup", onMouseUp);
-        }
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
+            document.removeEventListener("mousemove", _mouseMoveHandler);
+            document.removeEventListener("mouseup", _mouseUpHandler);
+            _mouseMoveHandler = null;
+            _mouseUpHandler = null;
+        };
+
+        document.addEventListener("mousemove", _mouseMoveHandler);
+        document.addEventListener("mouseup", _mouseUpHandler);
     });
 
     // 容器内点击
