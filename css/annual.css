@@ -1102,11 +1102,24 @@
 }
 
 /*【问题⑥】拖拽光标样式加固 */
-.annual-top-label-row[draggable="true"]{
-    cursor: grab;
+/* PC端保留原生拖拽 */
+@media (min-width:769px) {
+    .annual-top-label-row[draggable="true"]{
+        cursor: grab;
+    }
+    .annual-top-label-row[draggable="true"]:active{
+        cursor: grabbing;
+    }
 }
-.annual-top-label-row[draggable="true"]:active{
-    cursor: grabbing;
+@media (max-width:768px) {
+    .annual-top-label-row {
+        cursor:default;
+    }
+    /* JS层面：移动端不要设置draggable="true"，或者CSS屏蔽拖拽高亮 */
+    .annual-top-label-row[draggable="true"] {
+        -webkit-user-drag: none;
+        user-drag: none;
+    }
 }
 
 /* ② 删除按钮完整样式（复用弹窗关闭按钮） */
@@ -1233,11 +1246,24 @@
 
 /* ========== ✅拖拽交互样式 ========== */
 /* draggable行光标提示 */
-.annual-top-label-row[draggable="true"]{
-    cursor: grab;
+/* PC端保留原生拖拽 */
+@media (min-width:769px) {
+    .annual-top-label-row[draggable="true"]{
+        cursor: grab;
+    }
+    .annual-top-label-row[draggable="true"]:active{
+        cursor: grabbing;
+    }
 }
-.annual-top-label-row[draggable="true"]:active{
-    cursor: grabbing;
+@media (max-width:768px) {
+    .annual-top-label-row {
+        cursor:default;
+    }
+    /* JS层面：移动端不要设置draggable="true"，或者CSS屏蔽拖拽高亮 */
+    .annual-top-label-row[draggable="true"] {
+        -webkit-user-drag: none;
+        user-drag: none;
+    }
 }
 /* 拖拽源样式 */
 .annual-top-item.drag‑source,
