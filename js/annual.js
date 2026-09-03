@@ -799,19 +799,22 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     let pressTimer = null;
     let touchStartY = null;
     let touchStartX = null;
+
     // 选中锁定模式状态
     let selectedItem = null;
     let selectedIndex = null;
     let indicatorDom = null;
     // ✅指示线两次点击状态标记
     let indicatorFirstClick = false;
+
     // PC鼠标按下临时变量
     let mouseStartY = null;
     let mouseStartX = null;
+
     // ✅新增：防止长按松手后立刻触发click误清除选中
     let selectCoolDown = false;
-    // ==========【新增】选中模式下，第一次click忽略，第二次点击才退出选中
-    let selectedFirstClickAfterEnter = false;
+    // ✅新增：标记刚刚结束一次touch，屏蔽本次产生的幽灵click
+    let _touchJustEnded = false;
 
     // 清除选中状态、移除指示线
     function clearSelectState(){
@@ -823,8 +826,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedIndex = null;
         indicatorFirstClick = false;
         selectCoolDown = false;
-        // ✅重置标记
-        selectedFirstClickAfterEnter = false;
+        _touchJustEnded = false;
         if(indicatorDom && indicatorDom.parentNode){
             indicatorDom.parentNode.removeChild(indicatorDom);
         }
@@ -916,9 +918,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         console.log("[sort] 进入选中模式 index=", itemIndex);
         // ✅冷却：刚进入选中模式，300ms内忽略click事件，防止松手瞬间误清除
         selectCoolDown = true;
-        // ✅进入选中模式：标记需要跳过第一次click
-        selectedFirstClickAfterEnter = true;
-
         setTimeout(()=>{
             selectCoolDown = false;
         },300);
@@ -942,16 +941,19 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        // ✅阻止浏览器原生长按选文本
-        e.preventDefault();
+        // ✅移除这里无条件 e.preventDefault()！！！
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
+            // ✅真正要进入长按模式的时候，才阻止浏览器默认行为
+            e.preventDefault();
             enterSelectMode(itemDom, idx);
-        }, 2000); // 需求是长按2s，原值1000改为2000
+        }, 1000); // 需求是长按1s，改为1000
+        // ✅新一次触摸开始，清除刚刚触摸结束标记
+        _touchJustEnded = false;
     });
 
     container.addEventListener("touchmove", (e) => {
@@ -979,6 +981,12 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         touchStartY = null;
         touchStartX = null;
+        // ✅标记本次触摸刚刚结束，屏蔽浏览器随后产生的幽灵click
+        _touchJustEnded = true;
+        // 标记有效期只到下一次容器click触发，350ms兜底清除标记，防止卡死
+        setTimeout(()=>{
+            _touchJustEnded = false;
+        },350);
     }, { passive: true });
 
     container.addEventListener("touchcancel", () => {
@@ -988,6 +996,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         touchStartY = null;
         touchStartX = null;
+        _touchJustEnded = false;
     }, { passive: true });
 
     // ============ PC鼠标 mousedown 长按2000ms逻辑 ============
@@ -1014,8 +1023,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
-        },2000); // 2000ms长按
-
+        },1000); // 1000ms长按
         function onMouseMove(me){
             if(pressTimer !== null){
                 const deltaY = Math.abs(me.clientY - mouseStartY);
@@ -1029,7 +1037,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 updateIndicatorByPoint(me.clientY);
             }
         }
-
         function onMouseUp(){
             // mouseup：只清除定时器，不清除选中状态【修复③】
             clearTimeout(pressTimer);
@@ -1039,7 +1046,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             document.removeEventListener("mousemove", onMouseMove);
             document.removeEventListener("mouseup", onMouseUp);
         }
-
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
     });
@@ -1047,6 +1053,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     // 容器内点击
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
+        // ✅如果刚刚结束一次touch，直接忽略这个幽灵click事件
+        if(_touchJustEnded){
+            _touchJustEnded = false;
+            return;
+        }
         // ✅冷却期直接忽略本次click，解决长按松手立刻触发click清除
         if(selectCoolDown) return;
 
@@ -1054,16 +1065,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if(clickIndicator){
             return;
         }
-
         const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
-
-        // ✅关键：进入选中模式后的第一次click直接跳过（就是松手后浏览器自动冒泡的那一次click）
-        if(selectedFirstClickAfterEnter){
-            selectedFirstClickAfterEnter = false;
-            return;
-        }
-
-        // 只有第二次及以后点击：点击选中卡片本身 / 空白区域，才退出选中模式
+        // 点击选中卡片本身退出；点击空白区域退出
         if(clickItem === selectedItem || !clickItem){
             clearSelectState();
         }
