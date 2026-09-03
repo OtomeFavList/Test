@@ -868,7 +868,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         });
     }
 
-    // 长按2000ms进入锁定选中模式
+    // 长按1000ms进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
         // 如果长按当前已经选中的条目：直接退出选中模式（需求：再次长按NO/封面退出）
         if(selectedItem === itemDom){
@@ -918,7 +918,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
             enterSelectMode(itemDom, idx);
-        }, 2000);
+        }, 1000);
     }, {passive: false});
 
     // ✅【重大修改】touchmove：**只处理还未触发长按阶段的移动阈值判断；进入选中模式后完全不操作指示线，删除updateIndicatorByPoint调用**
@@ -953,7 +953,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartX = null;
     }, { passive: true });
 
-    // ============ PC鼠标 mousedown 长按2000ms逻辑 ============
+    // ============ PC鼠标 mousedown 长按1000ms逻辑 ============
     container.addEventListener("mousedown", (e)=>{
         const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
         if (!labelRow) {
@@ -975,7 +975,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
-        },2000);
+        },1000);
 
         function onMouseMove(me){
             // mousemove：仅长按未触发时判断移动阈值；进入排序模式**彻底删除更新指示线逻辑**
