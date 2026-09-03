@@ -875,6 +875,20 @@ export function preloadAdjacentImages(srcList, index) {
 
 // ===================== 游戏模板加载模块（不再import游戏，读取全局已加载数据） =====================
 export async function loadAllGameTemplates() {
+    // ==========【补丁新增：独立加载FD/续作游戏，不混入主gameDataList】==========
+    try {
+        // 动态导入fd‑games模块，执行FD游戏加载
+        const fdModule = await import("./fd‑games.js");
+        if(typeof fdModule.loadAllFDGames === "function"){
+            await fdModule.loadAllFDGames();
+        }
+    } catch(e){
+        console.warn("⚠️FD游戏模块加载失败，FD续作游戏将不可用", e);
+    }
+    // 将FD列表挂载到window兜底变量，仅annual读取；main自身gameTemplateList不包含FD，保护FavList
+    window.__fdGameTemplateList = Array.isArray(window.fdGameList) ? [...window.fdGameList] : [];
+    // ==========【补丁结束；下面原有代码完全不动】==========
+
     // 等待全局window.gameDataList就绪（data/games.js已经完成全部import）
     if (!Array.isArray(window.gameDataList)) {
         gameTemplateList = [];
