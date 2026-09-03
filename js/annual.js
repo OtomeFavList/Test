@@ -808,6 +808,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     // PC鼠标按下临时变量
     let mouseStartY = null;
     let mouseStartX = null;
+    // ✅新增：防止长按松手后立刻触发click误清除选中
+    let selectCoolDown = false;
 
     // 清除选中状态、移除指示线
     function clearSelectState(){
@@ -818,12 +820,12 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedItem = null;
         selectedIndex = null;
         indicatorFirstClick = false;
+        selectCoolDown = false;
         if(indicatorDom && indicatorDom.parentNode){
             indicatorDom.parentNode.removeChild(indicatorDom);
         }
         indicatorDom = null;
     }
-
     //【新增④】进入选中模式立刻渲染指示线占位DOM，解决横线不自动显示
     function renderAllInsertIndicators() {
         if(!selectedItem) return;
@@ -832,7 +834,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         // 默认先把指示线放在第一个item前面，等待move事件再更新位置
         showInsertIndicator(items[0]);
     }
-
     // 创建/更新插入指示线，插入到目标item之前
     function showInsertIndicator(beforeItemDom){
         if(!indicatorDom){
@@ -871,7 +872,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         indicatorDom.classList.remove("active-hit");
         indicatorFirstClick = false;
     }
-
     function updateIndicatorByPoint(clientY){
         if(selectedIndex === null) return;
         const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
@@ -890,7 +890,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             showInsertIndicator(hoverTarget);
         }
     }
-
     // 长按2000ms进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
         // 如果长按当前已经选中的条目：直接退出选中模式
@@ -907,10 +906,14 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedItem.classList.add("sort-selected-item");
         selectedItem.classList.add("sort-lock-layout");
         console.log("[sort] 进入选中模式 index=", itemIndex);
+        // ✅冷却：刚进入选中模式，300ms内忽略click事件，防止松手瞬间误清除
+        selectCoolDown = true;
+        setTimeout(()=>{
+            selectCoolDown = false;
+        },300);
         //【修复④】进入模式立刻渲染指示线DOM
         renderAllInsertIndicators();
     }
-
     // ============ 移动端 touch 事件 ============
     container.addEventListener("touchstart", (e) => {
         if(pressTimer !== null){
@@ -927,6 +930,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // ✅阻止浏览器原生长按选文本
         e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
@@ -937,7 +941,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             enterSelectMode(itemDom, idx);
         }, 2000); // 需求是长按2s，原值1000改为2000
     });
-
     container.addEventListener("touchmove", (e) => {
         // 只有还未触发长按的阶段才判断移动阈值，已经进入选中模式不销毁状态【修复③】
         if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
@@ -954,7 +957,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             updateIndicatorByPoint(e.touches[0].clientY);
         }
     }, { passive: true });
-
     container.addEventListener("touchend", () => {
         // touchend：**只销毁未触发的长按定时器，绝不清除选中状态selectedItem**【修复③】
         if(pressTimer !== null){
@@ -964,7 +966,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartY = null;
         touchStartX = null;
     }, { passive: true });
-
     container.addEventListener("touchcancel", () => {
         if(pressTimer !== null){
             clearTimeout(pressTimer);
@@ -973,7 +974,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartY = null;
         touchStartX = null;
     }, { passive: true });
-
     // ============ PC鼠标 mousedown 长按2000ms逻辑 ============
     container.addEventListener("mousedown", (e)=>{
         const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
@@ -990,6 +990,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         e.preventDefault();
         e.stopPropagation();
+        // ✅阻止浏览器鼠标长按选中文本
+        document.getSelection()?.removeAllRanges();
         mouseStartY = e.clientY;
         mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
@@ -997,7 +999,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
         },2000); // 2000ms长按
-
         function onMouseMove(me){
             if(pressTimer !== null){
                 const deltaY = Math.abs(me.clientY - mouseStartY);
@@ -1023,10 +1024,12 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
     });
-
     // 容器内点击
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
+        // ✅冷却期直接忽略本次click，解决长按松手立刻触发click清除
+        if(selectCoolDown) return;
+
         const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
             return;
