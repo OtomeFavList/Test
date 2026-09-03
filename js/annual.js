@@ -791,18 +791,27 @@ function bindTouchDrag(){
 function setupTouchSort(containerSel, dataArr, afterSort){
     const container = document.querySelector(containerSel);
     if (!container) return;
-
     // -------- 内部状态 --------
     let pressTimer = null;
-    let selectedRow = null;     // 选中源：NO+名称行 annual‑top‑label‑row
+    let selectedRow = null;     // 选中源：NO+名称行 annual-top-label-row
     let selectedItem = null;    // 源外层大卡片
     let selectedIndex = null;
     let indicatorDom = null;
+    // 修复：提升到顶层作用域，touchstart赋值、touchmove读取
+    let touchStartY = null;
+    let touchStartX = null;
+    // 避免重复绑定document全局click
+    if(!container._docClickBound){
+        container._docClickBound = true;
+    }else{
+        return;
+    }
 
     // 清除选中状态、移除指示线，退出编辑模式
     function clearSelectState(){
         if(selectedRow){
-            selectedRow.classList.remove("sort‑selected‑item");
+            // JS使用半角横杠 sort-selected-item，CSS必须同步改成半角
+            selectedRow.classList.remove("sort-selected-item");
         }
         selectedRow = null;
         selectedItem = null;
@@ -817,7 +826,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     function showInsertIndicator(beforeItemDom){
         if(!indicatorDom){
             indicatorDom = document.createElement("div");
-            indicatorDom.className = "sort‑insert‑indicator";
+            // JS半角横杠，CSS同步修改
+            indicatorDom.className = "sort-insert-indicator";
             // 点击横线执行【移位插入 splice】
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
@@ -832,7 +842,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 const temp = dataArr.splice(selectedIndex, 1)[0];
                 const insertPos = (targetIndex > selectedIndex) ? targetIndex - 1 : targetIndex;
                 dataArr.splice(insertPos, 0, temp);
-
                 afterSort();
                 clearSelectState();
             };
@@ -877,7 +886,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedRow = rowDom;
         selectedItem = itemDom;
         selectedIndex = itemIndex;
-        selectedRow.classList.add("sort‑selected‑item");
+        selectedRow.classList.add("sort-selected-item");
     }
 
     // ===== 触摸事件（移动端） =====
@@ -890,20 +899,19 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) return;
         const touch = e.touches[0];
-        const touchStartY = touch.clientY;
-        const touchStartX = touch.clientX;
+        // 赋值给顶层作用域变量
+        touchStartY = touch.clientY;
+        touchStartX = touch.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
-
         pressTimer = setTimeout(() => {
             enterSelectMode(targetRow, itemDom, idx);
         }, 2000);
-
     }, { passive: true });
 
     container.addEventListener("touchmove", (e) => {
         const targetRow = e.target.closest(".annual-top-label-row");
-        if(targetRow){
+        if(targetRow && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
             const deltaX = Math.abs(touch.clientX - touchStartX);
@@ -922,12 +930,16 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     container.addEventListener("touchend", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
+        touchStartY = null;
+        touchStartX = null;
         // touchend：不清除选中！保持锁定，松手自由滚动页面，指示线保留
     }, { passive: true });
 
     container.addEventListener("touchcancel", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
+        touchStartY = null;
+        touchStartX = null;
     }, { passive: true });
 
     // ===== PC鼠标事件（兼容电脑端，同一套行为） =====
@@ -943,11 +955,9 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
-
         pressTimer = setTimeout(()=>{
             enterSelectMode(targetRow, itemDom, idx);
         },2000);
-
         function onMouseMove(me){
             const deltaY = Math.abs(me.clientY - mouseStartY);
             const deltaX = Math.abs(me.clientX - mouseStartX);
@@ -979,7 +989,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     // 点击逻辑：点击横线交给indicatorDom.onclick；点击空白取消选中
     container.addEventListener("click", (e)=>{
         if(!selectedRow) return;
-        const clickIndicator = e.target.closest(".sort‑insert‑indicator");
+        const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
             // 交给indicatorDom.onclick处理
             return;
@@ -991,7 +1001,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
     });
 
-    // 点击容器外部全局清除选中
+    // 点击容器外部全局清除选中，增加容器标记防止重复绑定
     document.addEventListener("click", function docClickHandler(e){
         if(!selectedRow) return;
         const insideContainer = e.target.closest(containerSel);
