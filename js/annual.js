@@ -691,7 +691,7 @@ function appendNewGameTopDom(){
     itemDom.dataset.dragType = "game-top";
     // 不写死NO.xxx、不写死data-rank，全部交给rerenderGameTopNoLabel
     itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty" draggable="true">
+        <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
             <div class="annual-game-name-text"></div>
             <button class="annual-item-delete-btn" data-type="game">×</button>
@@ -722,7 +722,7 @@ function appendNewCharTopDom(){
     itemDom.className = "annual-char-top-item";
     itemDom.dataset.dragType = "char-top";
     itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty" draggable="true">
+        <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
             <div class="annual-char-name-text"></div>
             <button class="annual-item-delete-btn" data-type="char">×</button>
@@ -868,20 +868,30 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // 长按2000ms进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
+        // 如果长按当前已经选中的条目：直接退出选中模式
+        if(selectedItem === itemDom){
+            clearSelectState();
+            console.log("[sort] 退出选中模式");
+            return;
+        }
         if(selectedItem !== null){
             clearSelectState();
         }
         selectedItem = itemDom;
         selectedIndex = itemIndex;
         selectedItem.classList.add("sort-selected-item");
+        console.log("[sort] 进入选中模式 index=", itemIndex);
     }
 
     // ============ 移动端 touch 事件 ============
     container.addEventListener("touchstart", (e) => {
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if (!targetRow) {
+        // 安全保护：清除上一轮残留定时器
+        if(pressTimer !== null){
             clearTimeout(pressTimer);
             pressTimer = null;
+        }
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if (!targetRow) {
             return;
         }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
@@ -905,7 +915,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
             const deltaX = Math.abs(touch.clientX - touchStartX);
-            if(deltaY > 8 || deltaX >8){
+            if(deltaY > 12 || deltaX >12){
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
@@ -942,7 +952,9 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // 确定是拖拽目标行，阻止浏览器默认行为：文本选择、系统拖拽
         e.preventDefault();
+        e.stopPropagation();
         mouseStartY = e.clientY;
         mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
@@ -955,7 +967,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             if(pressTimer !== null){
                 const deltaY = Math.abs(me.clientY - mouseStartY);
                 const deltaX = Math.abs(me.clientX - mouseStartX);
-                if(deltaY>8 || deltaX>8){
+                if(deltaY>12 || deltaX>12){
                     clearTimeout(pressTimer);
                     pressTimer = null;
                 }
