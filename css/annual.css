@@ -1250,18 +1250,19 @@
     cursor: default;
 }
 
-/* 插入指示线：仅进入选中模式才会被JS插入DOM，常态无 */
+/* 插入指示线：排序模式下批量生成在每两个卡片中间；常态无DOM */
 .sort-insert-indicator {
     height: 4px;
-    width: 100%;
-    background-color: #d86b6b;
+    /* 宽度对齐选中卡片虚线框，不占满父容器；左右margin模拟向内缩进，匹配outline-offset:2px */
+    width: calc(100% - 16px);
+    margin: 14px auto;
+    background-color: #f6a5b8;
     border-radius: 2px;
-    /* 外边距控制和卡片之间间距，去掉padding+content‑box，背景直接铺满整个元素 */
-    margin: 14px 0;
     pointer-events: auto;
     cursor: pointer;
     transition: background-color 0.15s;
 }
+
 /* ✅第一次点击激活状态：#b33a3a深红色 */
 .sort-insert-indicator.active-hit {
     background-color: #b33a3a;
