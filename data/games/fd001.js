@@ -3,7 +3,7 @@
 // 字段约束：仅id、name、cover；禁止charList以及其他多余字段
 const gameData = {
     id: "fd001",
-    name: "虔诚之花的晚钟 1926",
+    name: "虔诚之花的晚钟 -Episodio1926-",
     cover: "game/fd/001.jpg"
 };
 export { gameData };
