@@ -1079,12 +1079,17 @@
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 12px;
+    /* ==========修复：关闭整行文本选择，阻止iOS原生长按文本菜单抢占手势========== */
+    user-select: none;
+    -webkit-user-select: none;
 }
 .annual-top-label-row .annual-top-label {
     flex-shrink: 0;
     align-self: center;
     margin: 0;
     line-height: 1; /* 消除行盒基线偏移 */
+    user-select: none;
+    -webkit-user-select: none;
 }
 .annual-top-label-row .annual-game-name-text,
 .annual-top-label-row .annual-char-name-text {
@@ -1094,6 +1099,8 @@
     font-weight: bold;
     align-self: center;
     line-height: 1.2;
+    user-select: none;
+    -webkit-user-select: none;
 }
 .annual-top-label-row .annual-item-delete-btn {
     flex-shrink: 0;
@@ -1271,4 +1278,9 @@
     opacity: 1 !important;
     display: none !important;
     outline: none !important;
+}
+
+/* 仅针对NO名称标题行，禁止iOS长按弹出菜单 */
+.annual-top-label-row {
+    -webkit-touch-callout: none;
 }
