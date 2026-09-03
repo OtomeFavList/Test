@@ -83,6 +83,10 @@ let charModalLocal = {
 // 模块内部状态标记
 let _annualRealInitialized = false;
 
+// 模块级标记，防止document重复绑定
+let _annualDocClickBound = false;
+let _annualSortDocClickHandler = null;
+
 /**
  * 获取游戏模板状态，双重来源：优先window.Core，兜底window.__gameTemplateXXX（main.js挂载全局）
  */
@@ -791,26 +795,19 @@ function bindTouchDrag(){
 function setupTouchSort(containerSel, dataArr, afterSort){
     const container = document.querySelector(containerSel);
     if (!container) return;
+
     // -------- 内部状态 --------
     let pressTimer = null;
     let selectedRow = null;     // 选中源：NO+名称行 annual-top-label-row
     let selectedItem = null;    // 源外层大卡片
     let selectedIndex = null;
     let indicatorDom = null;
-    // 修复：提升到顶层作用域，touchstart赋值、touchmove读取
     let touchStartY = null;
     let touchStartX = null;
-    // 避免重复绑定document全局click
-    if(!container._docClickBound){
-        container._docClickBound = true;
-    }else{
-        return;
-    }
 
     // 清除选中状态、移除指示线，退出编辑模式
     function clearSelectState(){
         if(selectedRow){
-            // JS使用半角横杠 sort-selected-item，CSS必须同步改成半角
             selectedRow.classList.remove("sort-selected-item");
         }
         selectedRow = null;
@@ -826,19 +823,15 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     function showInsertIndicator(beforeItemDom){
         if(!indicatorDom){
             indicatorDom = document.createElement("div");
-            // JS半角横杠，CSS同步修改
             indicatorDom.className = "sort-insert-indicator";
-            // 点击横线执行【移位插入 splice】
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
                 const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
                 const targetIndex = allItems.indexOf(beforeItemDom);
-                // 原地，不做操作
                 if(selectedIndex === targetIndex || selectedIndex === targetIndex - 1){
                     clearSelectState();
                     return;
                 }
-                // splice移动插入，不是交换
                 const temp = dataArr.splice(selectedIndex, 1)[0];
                 const insertPos = (targetIndex > selectedIndex) ? targetIndex - 1 : targetIndex;
                 dataArr.splice(insertPos, 0, temp);
@@ -849,7 +842,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if(beforeItemDom.parentNode && indicatorDom.parentNode !== beforeItemDom.parentNode){
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         }else if(beforeItemDom.parentNode && indicatorDom.parentNode === beforeItemDom.parentNode){
-            // 已经在同一个父节点，移动位置
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         }
     }
@@ -876,52 +868,48 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     }
 
     // 长按2000ms进入锁定选中模式：高亮【源标题行】
-    function enterSelectMode(rowDom, itemDom, itemIndex){
-        // 如果已经处于选中模式：再次长按任意标题行 → 直接退出编辑模式
+    function enterSelectMode(itemDom, itemIndex){
         if(selectedRow !== null){
             clearSelectState();
             return;
         }
         clearSelectState();
-        selectedRow = rowDom;
         selectedItem = itemDom;
         selectedIndex = itemIndex;
-        selectedRow.classList.add("sort-selected-item");
+        selectedRow = itemDom.querySelector(".annual-top-label-row");
+        if(selectedRow){
+            selectedRow.classList.add("sort-selected-item");
+        }
     }
 
     // ===== 触摸事件（移动端） =====
     container.addEventListener("touchstart", (e) => {
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if (!targetRow) {
+        const itemDom = e.target.closest(".annual-top-item,.annual-char-top-item");
+        if (!itemDom) {
             clearTimeout(pressTimer);
             return;
         }
-        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
-        if (!itemDom) return;
         const touch = e.touches[0];
-        // 赋值给顶层作用域变量
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
-            enterSelectMode(targetRow, itemDom, idx);
+            enterSelectMode(itemDom, idx);
         }, 2000);
     }, { passive: true });
 
     container.addEventListener("touchmove", (e) => {
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if(targetRow && touchStartY !== null && touchStartX !== null){
+        const itemDom = e.target.closest(".annual-top-item,.annual-char-top-item");
+        if(itemDom && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
             const deltaX = Math.abs(touch.clientX - touchStartX);
-            // 滑动距离超过阈值，取消长按预备
             if(deltaY > 8 || deltaX >8){
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
         }
-        // 如果已经进入选中模式，移动手指更新指示线位置
         if(selectedIndex !== null && e.touches.length>0){
             updateIndicatorByPoint(e.touches[0].clientY);
         }
@@ -932,7 +920,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         pressTimer = null;
         touchStartY = null;
         touchStartX = null;
-        // touchend：不清除选中！保持锁定，松手自由滚动页面，指示线保留
     }, { passive: true });
 
     container.addEventListener("touchcancel", () => {
@@ -942,23 +929,20 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartX = null;
     }, { passive: true });
 
-    // ===== PC鼠标事件（兼容电脑端，同一套行为） =====
+    // ===== PC鼠标事件 =====
     container.addEventListener("mousedown", (e)=>{
-        const targetRow = e.target.closest(".annual-top-label-row");
-        if (!targetRow) {
+        const itemDom = e.target.closest(".annual-top-item,.annual-char-top-item");
+        if (!itemDom) {
             clearTimeout(pressTimer);
             return;
         }
-        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
-        if (!itemDom) return;
-        // =========防御修复：阻止PC鼠标按下时触发文本选择，不影响textarea（不在label-row内部）=========
         e.preventDefault();
         const mouseStartY = e.clientY;
         const mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
-            enterSelectMode(targetRow, itemDom, idx);
+            enterSelectMode(itemDom, idx);
         },2000);
         function onMouseMove(me){
             const deltaY = Math.abs(me.clientY - mouseStartY);
@@ -981,36 +965,36 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         document.addEventListener("mouseup", onMouseUp);
     });
 
-    // 鼠标移动hover容器内，选中模式下更新指示线
     container.addEventListener("mousemove",(e)=>{
         if(selectedIndex !== null){
             updateIndicatorByPoint(e.clientY);
         }
     });
 
-    // 点击逻辑：点击横线交给indicatorDom.onclick；点击空白取消选中
     container.addEventListener("click", (e)=>{
         if(!selectedRow) return;
         const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
-            // 交给indicatorDom.onclick处理
             return;
         }
-        // 点击空白区域取消选中
         const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
         if(!clickItem){
             clearSelectState();
         }
     });
 
-    // 点击容器外部全局清除选中，增加容器标记防止重复绑定
-    document.addEventListener("click", function docClickHandler(e){
-        if(!selectedRow) return;
-        const insideContainer = e.target.closest(containerSel);
-        if(!insideContainer){
-            clearSelectState();
-        }
-    }, { once:false });
+    // 全局document click只绑定一次
+    if(!_annualDocClickBound){
+        _annualSortDocClickHandler = function docClickHandler(e){
+            if(!selectedRow) return;
+            const insideContainer = e.target.closest(containerSel);
+            if(!insideContainer){
+                clearSelectState();
+            }
+        };
+        document.addEventListener("click", _annualSortDocClickHandler, { once:false });
+        _annualDocClickBound = true;
+    }
 }
 
 /**
