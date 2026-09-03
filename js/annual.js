@@ -829,17 +829,23 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             indicatorDom = document.createElement("div");
             indicatorDom.className = "sort-insert-indicator";
             indicatorFirstClick = false;
+            // ✅修复：点击时实时读取nextElementSibling，不捕获外部beforeItemDom闭包
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
-                // ✅两击逻辑：第一次激活样式，第二次执行插入
                 if(!indicatorFirstClick){
                     indicatorDom.classList.add("active-hit");
                     indicatorFirstClick = true;
                     return;
                 }
-                // 第二次点击：执行插入
+                // 第二次点击执行插入：实时获取当前指示线后面的DOM节点
                 const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
-                const targetIndex = allItems.indexOf(beforeItemDom);
+                const targetDom = indicatorDom.nextElementSibling;
+                const targetIndex = allItems.indexOf(targetDom);
+                if(targetIndex === -1) {
+                    clearSelectState();
+                    return;
+                }
+                // 原地或者相邻位置，不需要移动
                 if(selectedIndex === targetIndex || selectedIndex === targetIndex - 1){
                     clearSelectState();
                     return;
@@ -851,7 +857,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 clearSelectState();
             };
         }
-        // 指示线已经在DOM中，不需要重复插入
+        // 已经在正确位置，跳过DOM操作
         if(indicatorDom.parentNode && indicatorDom.nextSibling === beforeItemDom){
             return;
         }
@@ -868,7 +874,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         let hoverTarget = null;
         for(const it of items){
             const rect = it.getBoundingClientRect();
-            // ✅修复坐标判断：使用item上边界，而不是mid，防止向下滚动错乱
             if(clientY < rect.top + rect.height * 0.45){
                 hoverTarget = it;
                 break;
@@ -901,7 +906,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // ============ 移动端 touch 事件 ============
     container.addEventListener("touchstart", (e) => {
-        // 安全保护：清除上一轮残留定时器
         if(pressTimer !== null){
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -910,7 +914,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if (!targetRow) {
             return;
         }
-        // 点击删除按钮不触发长按
         if(e.target.closest(".annual-item-delete-btn")){
             return;
         }
@@ -920,8 +923,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        // 仅排序行，阻止iOS原生长按菜单触发，不阻止页面滚动
-        e.preventDefault();
+        // ✅修复：删除e.preventDefault()，允许页面正常滚动；由CSS阻止系统长按菜单
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
@@ -933,17 +935,17 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     });
 
     container.addEventListener("touchmove", (e) => {
-        // 仅【长按等待阶段】做位移判断；已经进入选中模式不再取消
+        // 长按等待阶段，手指滑动取消长按计时
         if(pressTimer !== null && selectedIndex === null && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
             const deltaX = Math.abs(touch.clientX - touchStartX);
-            // 放大抖动阈值，适配iOS手指微小漂移
             if(deltaY > 24 || deltaX > 24){
                 clearTimeout(pressTimer);
                 pressTimer = null;
             }
         }
+        // 已经进入排序模式，手指移动更新指示线位置
         if(selectedIndex !== null && e.touches.length>0){
             updateIndicatorByPoint(e.touches[0].clientY);
         }
@@ -971,7 +973,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        // 点击删除按钮不触发长按排序
         if(e.target.closest(".annual-item-delete-btn")){
             return;
         }
@@ -981,8 +982,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // 不要全局阻止冒泡，仅阻止浏览器默认拖拽行为
         e.preventDefault();
-        e.stopPropagation();
         mouseStartY = e.clientY;
         mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
@@ -990,38 +991,29 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
         },2000);
+    });
 
-        // 使用变量保存句柄，防止重复挂载
-        let _mouseMoveHandler = null;
-        let _mouseUpHandler = null;
-
-        _mouseMoveHandler = function(me){
-            if(pressTimer !== null && selectedIndex === null){
-                const deltaY = Math.abs(me.clientY - mouseStartY);
-                const deltaX = Math.abs(me.clientX - mouseStartX);
-                if(deltaY>24 || deltaX>24){
-                    clearTimeout(pressTimer);
-                    pressTimer = null;
-                }
+    // PC鼠标移动：容器委托，不再动态创建document监听器，消除内存泄漏
+    container.addEventListener("mousemove", (me)=>{
+        if(pressTimer !== null && selectedIndex === null){
+            const deltaY = Math.abs(me.clientY - mouseStartY);
+            const deltaX = Math.abs(me.clientX - mouseStartX);
+            if(deltaY>24 || deltaX>24){
+                clearTimeout(pressTimer);
+                pressTimer = null;
             }
-            if(selectedIndex !== null){
-                updateIndicatorByPoint(me.clientY);
-            }
-        };
+        }
+        if(selectedIndex !== null){
+            updateIndicatorByPoint(me.clientY);
+        }
+    });
 
-        _mouseUpHandler = function(){
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            mouseStartY = null;
-            mouseStartX = null;
-            document.removeEventListener("mousemove", _mouseMoveHandler);
-            document.removeEventListener("mouseup", _mouseUpHandler);
-            _mouseMoveHandler = null;
-            _mouseUpHandler = null;
-        };
-
-        document.addEventListener("mousemove", _mouseMoveHandler);
-        document.addEventListener("mouseup", _mouseUpHandler);
+    // 鼠标抬起，清除计时
+    container.addEventListener("mouseup", ()=>{
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        mouseStartY = null;
+        mouseStartX = null;
     });
 
     // 容器内点击
@@ -1029,10 +1021,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if(!selectedItem) return;
         const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
+            // 交给indicatorDom.onclick处理，不拦截
             return;
         }
         const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
-        // 点击选中卡片本身退出；点击空白区域退出
+        // 点击选中卡片本身 / 空白区域退出排序模式
         if(clickItem === selectedItem || !clickItem){
             clearSelectState();
         }
