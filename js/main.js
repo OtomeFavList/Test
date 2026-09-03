@@ -1656,6 +1656,54 @@ function bindGlobalSwitchSpoilerEvents() {
 }
 
 /**
+ * 禁止移动端长按图片呼出系统菜单（iOS/安卓/鸿蒙，兼容动态img）
+ */
+function disableImageLongPressMenu() {
+  // 1. 拦截右键 / 移动端长按弹出系统菜单（contextmenu）
+  document.addEventListener('contextmenu', function (e) {
+    // 向上查找，判断点击元素或者祖先是不是img（处理img被包裹的场景）
+    const imgEl = e.target.closest('img');
+    if (imgEl) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { passive: false });
+
+  // 2. 拦截图片拖拽保存（防止拖拽图片弹出保存）
+  document.addEventListener('dragstart', function (e) {
+    const imgEl = e.target.closest('img');
+    if (imgEl) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { passive: false });
+
+  // 3. touchstart 标记按下，用于拦截长按；不破坏正常点击
+  let longPressTimer = null;
+  const LONGPRESS_DELAY = 300;
+
+  document.addEventListener('touchstart', function (e) {
+    const imgEl = e.target.closest('img');
+    if (!imgEl) return;
+    // 开启定时器，达到长按阈值就阻止后续默认行为
+    longPressTimer = setTimeout(() => {
+      e.preventDefault();
+    }, LONGPRESS_DELAY);
+  }, { passive: false });
+
+  // 手指离开 / 滑动，清除定时器，不影响正常点击、滑动
+  function clearLongPressTimer() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+  document.addEventListener('touchend', clearLongPressTimer, { passive: true });
+  document.addEventListener('touchcancel', clearLongPressTimer, { passive: true });
+  document.addEventListener('touchmove', clearLongPressTimer, { passive: true });
+}
+
+/**
  * 对外暴露启动入口，供index.html调用
  */
 export async function bootstrapCore() {
@@ -1791,4 +1839,7 @@ export async function bootstrapCore() {
     // 5.绑定全局开关+剧透弹窗事件（确认+取消双按钮）
     bindGlobalSwitchSpoilerEvents();
     // ⚠️移除bindDynamicGameCardSwitchEvents()调用，放到script.js渲染完列表后执行
+
+    // 页面初始化完成后执行禁用长按图片菜单
+    disableImageLongPressMenu();
 }
