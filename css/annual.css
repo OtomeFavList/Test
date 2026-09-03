@@ -1252,21 +1252,21 @@
 
 /* 插入指示线：排序模式下批量生成在每两个卡片中间；常态无DOM */
 .sort-insert-indicator {
-    height: 2px;
+    height: 4px;
     /* 宽度对齐选中卡片虚线框，不占满父容器；左右margin模拟向内缩进，匹配outline-offset:2px */
     width: calc(100% - 16px);
     margin: 14px auto;
     background-color: #f6a5b8;
-    border-radius: 1px;
+    border-radius: 2px;
     pointer-events: auto;
     cursor: pointer;
     transition: background-color 0.15s;
 }
 
-/* ✅第一次点击激活状态 */
+/* ✅第一次点击激活状态：#b33a3a深红色 */
 .sort-insert-indicator.active-hit {
     background-color: #b33a3a;
-    height: 3px;
+    height:4px;
 }
 
 /* ✅选中排序模式：外层卡片虚线 #f6a5b8；解决①下陷缩小：使用outline代替border，outline不占用盒模型空间！！ */
