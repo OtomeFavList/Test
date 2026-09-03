@@ -802,18 +802,14 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     // 选中锁定模式状态
     let selectedItem = null;
     let selectedIndex = null;
-    let indicatorDom = null;
-    // ✅指示线两次点击状态标记
-    let indicatorFirstClick = false;
     // PC鼠标按下临时变量
     let mouseStartY = null;
     let mouseStartX = null;
-    // ✅新增：防止长按松手后立刻触发click误清除选中
+    // ✅防止长按松手后立刻触发click误清除选中
     let selectCoolDown = false;
-    // ==========【新增】选中模式下，第一次click忽略，第二次点击才退出选中
     let selectedFirstClickAfterEnter = false;
 
-    // 清除选中状态、移除指示线
+    // 清除选中状态、**销毁全部**插入指示线DOM
     function clearSelectState(){
         if(selectedItem){
             selectedItem.classList.remove("sort-selected-item");
@@ -821,86 +817,60 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         selectedItem = null;
         selectedIndex = null;
-        indicatorFirstClick = false;
         selectCoolDown = false;
-        // ✅重置标记
         selectedFirstClickAfterEnter = false;
-        if(indicatorDom && indicatorDom.parentNode){
-            indicatorDom.parentNode.removeChild(indicatorDom);
-        }
-        indicatorDom = null;
+        // 删除容器内所有横线DOM
+        const allIndicators = Array.from(container.querySelectorAll(".sort-insert-indicator"));
+        allIndicators.forEach(el=>{
+            if(el.parentNode) el.parentNode.removeChild(el);
+        });
     }
 
-    //【新增④】进入选中模式立刻渲染指示线占位DOM，解决横线不自动显示
+    /**
+     * 进入排序模式：批量生成全部卡片之间的插入横线DOM
+     * 每条横线挂载 dataset.beforeIndex：代表插入到第beforeIndex条卡片之前
+     */
     function renderAllInsertIndicators() {
         if(!selectedItem) return;
         const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         if(items.length === 0) return;
-        // 默认先把指示线放在第一个item前面，等待move事件再更新位置
-        showInsertIndicator(items[0]);
-    }
-
-    // 创建/更新插入指示线，插入到目标item之前
-    function showInsertIndicator(beforeItemDom){
-        if(!indicatorDom){
-            indicatorDom = document.createElement("div");
+        // 循环：在每一个item前面插入指示线
+        items.forEach((beforeItemDom, beforeIndex)=>{
+            const indicatorDom = document.createElement("div");
             indicatorDom.className = "sort-insert-indicator";
-            indicatorFirstClick = false;
+            indicatorDom.dataset.beforeIndex = String(beforeIndex);
+            indicatorDom.dataset.firstClick = "false";
+
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
-                // ✅两击逻辑：第一次激活样式，第二次执行插入
-                if(!indicatorFirstClick){
+                const bIndex = Number(indicatorDom.dataset.beforeIndex);
+                const isFirst = indicatorDom.dataset.firstClick === "true";
+                if(!isFirst){
+                    // 第一次点击：变红
                     indicatorDom.classList.add("active-hit");
-                    indicatorFirstClick = true;
+                    indicatorDom.dataset.firstClick = "true";
                     return;
                 }
                 // 第二次点击：执行插入
-                const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
-                const targetIndex = allItems.indexOf(beforeItemDom);
-                if(selectedIndex === targetIndex || selectedIndex === targetIndex - 1){
+                // 边界：选中条目已经就在目标位置，直接退出
+                if(selectedIndex === bIndex || selectedIndex === bIndex -1){
                     clearSelectState();
                     return;
                 }
                 const temp = dataArr.splice(selectedIndex, 1)[0];
-                const insertPos = (targetIndex > selectedIndex) ? targetIndex - 1 : targetIndex;
+                const insertPos = (bIndex > selectedIndex) ? bIndex - 1 : bIndex;
                 dataArr.splice(insertPos, 0, temp);
                 afterSort();
+                // 插入完成自动退出排序模式
                 clearSelectState();
             };
-        }
-        // 指示线已经在DOM中，不需要重复插入
-        if(indicatorDom.parentNode && indicatorDom.nextSibling === beforeItemDom){
-            return;
-        }
-        if(beforeItemDom.parentNode){
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
-        }
-        indicatorDom.classList.remove("active-hit");
-        indicatorFirstClick = false;
-    }
-
-    function updateIndicatorByPoint(clientY){
-        if(selectedIndex === null) return;
-        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
-        let hoverTarget = null;
-        for(const it of items){
-            const rect = it.getBoundingClientRect();
-            if(clientY < rect.top + rect.height * 0.45){
-                hoverTarget = it;
-                break;
-            }
-        }
-        if(!hoverTarget){
-            if(indicatorDom && indicatorDom.parentNode) indicatorDom.remove();
-            indicatorDom = null;
-        }else{
-            showInsertIndicator(hoverTarget);
-        }
+        });
     }
 
     // 长按2000ms进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
-        // 如果长按当前已经选中的条目：直接退出选中模式
+        // 如果长按当前已经选中的条目：直接退出选中模式（需求：再次长按NO/封面退出）
         if(selectedItem === itemDom){
             clearSelectState();
             console.log("[sort] 退出选中模式");
@@ -914,24 +884,22 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedItem.classList.add("sort-selected-item");
         selectedItem.classList.add("sort-lock-layout");
         console.log("[sort] 进入选中模式 index=", itemIndex);
-        // ✅标记：接下来的第一次click是浏览器合成的松手事件，直接跳过，不做时间限制
         selectedFirstClickAfterEnter = true;
-        // ✅冷却仅用于touch场景
         selectCoolDown = true;
         setTimeout(()=>{
             selectCoolDown = false;
         },300);
-        //【修复④】进入模式立刻渲染指示线DOM
+        // ✅进入排序模式，批量生成全部卡片中间横线
         renderAllInsertIndicators();
     }
 
     // ============ 移动端 touch 事件 ============
-    // 修复：touchstart调用preventDefault必须设置passive:false，否则浏览器忽略阻止
     container.addEventListener("touchstart", (e) => {
         if(pressTimer !== null){
             clearTimeout(pressTimer);
             pressTimer = null;
         }
+        // 触发源：NO+名称行 / 内容封面区域
         const targetRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
         if (!targetRow) {
             return;
@@ -950,11 +918,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
             enterSelectMode(itemDom, idx);
-        }, 2000); // 需求是长按2s，原值1000改为2000
+        }, 2000);
     }, {passive: false});
 
+    // ✅【重大修改】touchmove：**只处理还未触发长按阶段的移动阈值判断；进入选中模式后完全不操作指示线，删除updateIndicatorByPoint调用**
     container.addEventListener("touchmove", (e) => {
-        // 只有还未触发长按的阶段才判断移动阈值，已经进入选中模式不销毁状态【修复③】
         if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
             const deltaY = Math.abs(touch.clientY - touchStartY);
@@ -964,14 +932,10 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 pressTimer = null;
             }
         }
-        // 选中模式下只更新指示线，卡片DOM本身禁止位移【修复②】
-        if(selectedIndex !== null && e.touches.length>0){
-            updateIndicatorByPoint(e.touches[0].clientY);
-        }
+        // 选中模式：不再做任何横线跟随移动逻辑；页面可以自由滑动
     }, { passive: true });
 
     container.addEventListener("touchend", () => {
-        // touchend：**只销毁未触发的长按定时器，绝不清除选中状态selectedItem**【修复③】
         if(pressTimer !== null){
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -1011,9 +975,10 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
-        },2000); // 2000ms长按
+        },2000);
 
         function onMouseMove(me){
+            // mousemove：仅长按未触发时判断移动阈值；进入排序模式**彻底删除更新指示线逻辑**
             if(pressTimer !== null){
                 const deltaY = Math.abs(me.clientY - mouseStartY);
                 const deltaX = Math.abs(me.clientX - mouseStartX);
@@ -1022,13 +987,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                     pressTimer = null;
                 }
             }
-            if(selectedIndex !== null){
-                updateIndicatorByPoint(me.clientY);
-            }
         }
-
         function onMouseUp(){
-            // mouseup：只清除定时器，不清除选中状态【修复③】
             clearTimeout(pressTimer);
             pressTimer = null;
             mouseStartY = null;
@@ -1036,35 +996,25 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             document.removeEventListener("mousemove", onMouseMove);
             document.removeEventListener("mouseup", onMouseUp);
         }
-
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
     });
 
-    // 容器内点击
+    // 容器内点击事件
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
-
-        // ✅冷却期直接忽略本次click，解决touch长按松手立刻触发click清除
         if(selectCoolDown) return;
-
+        // 如果点击对象是横线，onclick已经在DOM回调处理，此处直接return
         const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
             return;
         }
-
         const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
-
-        // ✅核心修复：无论时间长短，enterSelectMode之后产生的第一次click直接跳过（浏览器合成的松手事件）
         if(selectedFirstClickAfterEnter){
             selectedFirstClickAfterEnter = false;
             return;
         }
-
-        // 只有第二次及以后点击：点击选中卡片本身 / 空白区域，才退出选中模式
-        if(clickItem === selectedItem || !clickItem){
-            clearSelectState();
-        }
+        // 点击空白 / 其他卡片，不会退出；只有再次长按NO/封面区域才退出（符合需求）
     });
 }
 
