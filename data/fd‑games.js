@@ -1,7 +1,7 @@
 // data/fd‑games.js
 // FD/续作专用游戏文件清单，仅annual年度报告模块加载；FavList主模式不会读取这里
 const fdGameFileNames = [
-    // 示例："fd001.js","fd002.js",…… 后续新增FD文件只往这里追加文件名
+    // 后续新增FD文件只往这里追加文件名
     "fd001.js"
 ];
 window.fdGameList = [];
