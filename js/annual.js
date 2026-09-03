@@ -785,8 +785,8 @@ function bindTouchDrag(){
 /**
  * 统一排序工具函数：PC鼠标 / Mobile触摸 共用
  * 行为：长按NO+名称行2000ms进入选中模式
- *  - 进入选中模式：源卡片NO行被#b33a3a外框高亮；出现红色插入指示横线
- *  - 松手后可以自由滚动页面，鼠标hover卡片更新指示线位置，点击横线执行【移动插入splice】，不是交换
+ *  - 进入选中模式：源卡片外层卡片虚线#f6a5b8高亮；出现红色插入指示横线
+ *  - 松手后可以自由滚动页面，鼠标hover卡片更新指示线位置，**第一次点击横线变色，第二次点击执行【移动插入splice】，不是交换**
  *  - 再次长按任意NO+名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑
  * @param {string} containerSel 容器选择器
  * @param {Array} dataArr 对应数据数组
@@ -795,7 +795,6 @@ function bindTouchDrag(){
 function setupTouchSort(containerSel, dataArr, afterSort){
     const container = document.querySelector(containerSel);
     if (!container) return;
-
     // -------- 内部状态 --------
     let pressTimer = null;
     let touchStartY = null;
@@ -804,6 +803,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     let selectedItem = null;
     let selectedIndex = null;
     let indicatorDom = null;
+    // ✅指示线两次点击状态标记
+    let indicatorFirstClick = false;
     // PC鼠标按下临时变量
     let mouseStartY = null;
     let mouseStartX = null;
@@ -815,6 +816,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
         selectedItem = null;
         selectedIndex = null;
+        indicatorFirstClick = false;
         if(indicatorDom && indicatorDom.parentNode){
             indicatorDom.parentNode.removeChild(indicatorDom);
         }
@@ -826,8 +828,16 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if(!indicatorDom){
             indicatorDom = document.createElement("div");
             indicatorDom.className = "sort-insert-indicator";
+            indicatorFirstClick = false;
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
+                // ✅两击逻辑：第一次激活样式，第二次执行插入
+                if(!indicatorFirstClick){
+                    indicatorDom.classList.add("active-hit");
+                    indicatorFirstClick = true;
+                    return;
+                }
+                // 第二次点击：执行插入
                 const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
                 const targetIndex = allItems.indexOf(beforeItemDom);
                 if(selectedIndex === targetIndex || selectedIndex === targetIndex - 1){
@@ -841,9 +851,15 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 clearSelectState();
             };
         }
+        // 指示线已经在DOM中，不需要重复插入
+        if(indicatorDom.parentNode && indicatorDom.nextSibling === beforeItemDom){
+            return;
+        }
         if(beforeItemDom.parentNode){
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         }
+        indicatorDom.classList.remove("active-hit");
+        indicatorFirstClick = false;
     }
 
     function updateIndicatorByPoint(clientY){
@@ -852,8 +868,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         let hoverTarget = null;
         for(const it of items){
             const rect = it.getBoundingClientRect();
-            const mid = rect.top + rect.height / 2;
-            if(clientY < mid){
+            // ✅修复坐标判断：使用item上边界，而不是mid，防止向下滚动错乱
+            if(clientY < rect.top + rect.height * 0.45){
                 hoverTarget = it;
                 break;
             }
@@ -884,6 +900,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     }
 
     // ============ 移动端 touch 事件 ============
+    // ✅移除passive:true，允许preventDefault阻止iOS原生长按文本菜单
     container.addEventListener("touchstart", (e) => {
         // 安全保护：清除上一轮残留定时器
         if(pressTimer !== null){
@@ -900,6 +917,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // ✅阻止iOS系统长按弹出文本选择菜单，释放手势给js定时器
+        e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
@@ -908,7 +927,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         pressTimer = setTimeout(() => {
             enterSelectMode(itemDom, idx);
         }, 2000);
-    }, { passive: true });
+    });
 
     container.addEventListener("touchmove", (e) => {
         if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
@@ -931,6 +950,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartY = null;
         touchStartX = null;
     }, { passive: true });
+
     container.addEventListener("touchcancel", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
@@ -952,7 +972,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        // 确定是拖拽目标行，阻止浏览器默认行为：文本选择、系统拖拽
         e.preventDefault();
         e.stopPropagation();
         mouseStartY = e.clientY;
@@ -988,12 +1007,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         document.addEventListener("mouseup", onMouseUp);
     });
 
-    container.addEventListener("mousemove",(e)=>{
-        if(selectedIndex !== null){
-            updateIndicatorByPoint(e.clientY);
-        }
-    });
-
+    // ✅删除容器外层多余mousemove，避免重复调用updateIndicatorByPoint
     // 容器内点击
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
@@ -1002,15 +1016,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             return;
         }
         const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
-        if(clickItem === selectedItem){
-            clearSelectState();
-        }else if(!clickItem){
+        // 点击选中卡片本身退出；点击空白区域退出
+        if(clickItem === selectedItem || !clickItem){
             clearSelectState();
         }
     });
-
-    // 原代码中的document.addEventListener("click", docClickHandler) 已被移除，
-    // 因为容器内点击已处理，外部点击丢失选中作为小降级，优先修复长按不触发主bug。
 }
 
 /**
