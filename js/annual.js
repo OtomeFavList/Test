@@ -899,12 +899,9 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             clearTimeout(pressTimer);
             pressTimer = null;
         }
+        // 触发源：NO+名称行 / 内容封面区域
         const targetRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
         if (!targetRow) {
-            return;
-        }
-        // textarea 直接返回，绝不阻止默认
-        if(e.target.closest("textarea")){
             return;
         }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
@@ -913,12 +910,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-
-        // 🔑关键约束：只有点击目标行DOM本身才执行preventDefault；行内空白/子元素不阻止
-        if(e.target === targetRow){
-            e.preventDefault();
-        }
-
+        e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
