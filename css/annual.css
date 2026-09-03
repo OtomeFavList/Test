@@ -1307,3 +1307,30 @@
     opacity: 1 !important;
     display: none !important;
 }
+
+/* ========== 拖拽插入指示线【修复】 ========== */
+.sort‑insert‑indicator {
+    height: 4px;
+    width: 100%;
+    background-color: #b33a3a;
+    border-radius: 2px;
+    margin: 0;
+    pointer-events: auto;
+    cursor: pointer;
+    /* 扩大上下热区，方便移动端点击 */
+    padding: 8px 0;
+    background-clip: content-box;
+}
+/* 选中项：#b33a3a红色边框框选，保留原有半透明 */
+.sort‑selected‑item {
+    opacity: 0.65;
+    outline: 2px solid #b33a3a;
+    outline-offset: 2px;
+}
+/* 快照导出模式：隐藏插入指示线与选中高亮 */
+.snapshot-container.export-snapshot .sort‑insert‑indicator,
+.snapshot-container.export-snapshot .sort‑selected‑item {
+    opacity: 1 !important;
+    display: none !important;
+    outline: none !important;
+}
