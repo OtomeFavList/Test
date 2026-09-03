@@ -900,7 +900,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     }
 
     // ============ 移动端 touch 事件 ============
-    // ✅移除passive:true，允许preventDefault阻止iOS原生长按文本菜单
     container.addEventListener("touchstart", (e) => {
         // 安全保护：清除上一轮残留定时器
         if(pressTimer !== null){
@@ -911,14 +910,16 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if (!targetRow) {
             return;
         }
+        // 点击删除按钮不触发长按
+        if(e.target.closest(".annual-item-delete-btn")){
+            return;
+        }
         const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
             pressTimer = null;
             return;
         }
-        // ✅阻止iOS系统长按弹出文本选择菜单，释放手势给js定时器
-        e.preventDefault();
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
@@ -966,6 +967,10 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // 点击删除按钮不触发长按排序
+        if(e.target.closest(".annual-item-delete-btn")){
+            return;
+        }
         const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
@@ -1007,7 +1012,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         document.addEventListener("mouseup", onMouseUp);
     });
 
-    // ✅删除容器外层多余mousemove，避免重复调用updateIndicatorByPoint
     // 容器内点击
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
