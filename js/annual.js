@@ -910,7 +910,20 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        e.preventDefault();
+
+        // ========= 新增判断：只在 NO标签 / 名称文本 / 封面图片 才执行 preventDefault =========
+        const hitDragTrigger = !!e.target.closest(`
+            .annual-top-label,
+            .annual-game-name-text,
+            .annual-char-name-text,
+            .annual-top-cover,
+            .annual-char-cover
+        `);
+        // textarea、空白区域一律不阻止默认
+        if(hitDragTrigger){
+            e.preventDefault();
+        }
+
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
