@@ -83,7 +83,7 @@ let charModalLocal = {
 // 模块内部状态标记
 let _annualRealInitialized = false;
 
-// 模块级标记，防止document重复绑定
+// 模块级标记，用于全局document click防重复绑定（当前方案已移除，保留作为预留）
 let _annualDocClickBound = false;
 let _annualSortDocClickHandler = null;
 
@@ -691,7 +691,7 @@ function appendNewGameTopDom(){
     itemDom.dataset.dragType = "game-top";
     // 不写死NO.xxx、不写死data-rank，全部交给rerenderGameTopNoLabel
     itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty">
+        <div class="annual-top-label-row hidden-when-empty" draggable="true">
             <div class="annual-top-label"></div>
             <div class="annual-game-name-text"></div>
             <button class="annual-item-delete-btn" data-type="game">×</button>
@@ -722,7 +722,7 @@ function appendNewCharTopDom(){
     itemDom.className = "annual-char-top-item";
     itemDom.dataset.dragType = "char-top";
     itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty">
+        <div class="annual-top-label-row hidden-when-empty" draggable="true">
             <div class="annual-top-label"></div>
             <div class="annual-char-name-text"></div>
             <button class="annual-item-delete-btn" data-type="char">×</button>
@@ -798,19 +798,21 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // -------- 内部状态 --------
     let pressTimer = null;
-    let selectedRow = null;     // 选中源：NO+名称行 annual-top-label-row
-    let selectedItem = null;    // 源外层大卡片
-    let selectedIndex = null;
-    let indicatorDom = null;
     let touchStartY = null;
     let touchStartX = null;
+    // 选中锁定模式状态
+    let selectedItem = null;
+    let selectedIndex = null;
+    let indicatorDom = null;
+    // PC鼠标按下临时变量
+    let mouseStartY = null;
+    let mouseStartX = null;
 
-    // 清除选中状态、移除指示线，退出编辑模式
+    // 清除选中状态、移除指示线
     function clearSelectState(){
-        if(selectedRow){
-            selectedRow.classList.remove("sort-selected-item");
+        if(selectedItem){
+            selectedItem.classList.remove("sort-selected-item");
         }
-        selectedRow = null;
         selectedItem = null;
         selectedIndex = null;
         if(indicatorDom && indicatorDom.parentNode){
@@ -819,7 +821,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         indicatorDom = null;
     }
 
-    // 创建/移动插入指示线，放置在 beforeItemDom 前面
+    // 创建/更新插入指示线，插入到目标item之前
     function showInsertIndicator(beforeItemDom){
         if(!indicatorDom){
             indicatorDom = document.createElement("div");
@@ -844,7 +846,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
     }
 
-    // 根据鼠标/触摸坐标，计算应当在哪一个item前面显示指示线
     function updateIndicatorByPoint(clientY){
         if(selectedIndex === null) return;
         const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
@@ -865,31 +866,25 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
     }
 
-    // 长按2000ms进入锁定选中模式：高亮【源标题行】
+    // 长按2000ms进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
-        if(selectedRow !== null){
+        if(selectedItem !== null){
             clearSelectState();
-            return;
         }
-        if(itemIndex === -1) return;
-        clearSelectState();
         selectedItem = itemDom;
         selectedIndex = itemIndex;
-        selectedRow = itemDom.querySelector(".annual-top-label-row");
-        if(selectedRow){
-            selectedRow.classList.add("sort-selected-item");
-        }
+        selectedItem.classList.add("sort-selected-item");
     }
 
-    // ===== 触摸事件（移动端） =====
+    // ============ 移动端 touch 事件 ============
     container.addEventListener("touchstart", (e) => {
-        const labelRow = e.target.closest(".annual-top-label-row");
-        if (!labelRow) {
+        const targetRow = e.target.closest(".annual-top-label-row");
+        if (!targetRow) {
             clearTimeout(pressTimer);
             pressTimer = null;
             return;
         }
-        const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item");
+        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -926,7 +921,6 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartY = null;
         touchStartX = null;
     }, { passive: true });
-
     container.addEventListener("touchcancel", () => {
         clearTimeout(pressTimer);
         pressTimer = null;
@@ -934,7 +928,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartX = null;
     }, { passive: true });
 
-    // ===== PC鼠标事件 =====
+    // ============ PC鼠标 mousedown 长按2s逻辑 ============
     container.addEventListener("mousedown", (e)=>{
         const labelRow = e.target.closest(".annual-top-label-row");
         if (!labelRow) {
@@ -949,8 +943,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             return;
         }
         e.preventDefault();
-        const mouseStartY = e.clientY;
-        const mouseStartX = e.clientX;
+        mouseStartY = e.clientY;
+        mouseStartX = e.clientX;
         const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
@@ -973,6 +967,8 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         function onMouseUp(){
             clearTimeout(pressTimer);
             pressTimer = null;
+            mouseStartY = null;
+            mouseStartX = null;
             document.removeEventListener("mousemove", onMouseMove);
             document.removeEventListener("mouseup", onMouseUp);
         }
@@ -986,30 +982,23 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }
     });
 
+    // 容器内点击
     container.addEventListener("click", (e)=>{
-        if(!selectedRow) return;
+        if(!selectedItem) return;
         const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
             return;
         }
         const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
-        if(!clickItem){
+        if(clickItem === selectedItem){
+            clearSelectState();
+        }else if(!clickItem){
             clearSelectState();
         }
     });
 
-    // 全局document click只绑定一次
-    if(!_annualDocClickBound){
-        _annualSortDocClickHandler = function docClickHandler(e){
-            if(!selectedRow) return;
-            const insideContainer = e.target.closest(containerSel);
-            if(!insideContainer){
-                clearSelectState();
-            }
-        };
-        document.addEventListener("click", _annualSortDocClickHandler, { once:false });
-        _annualDocClickBound = true;
-    }
+    // 原代码中的document.addEventListener("click", docClickHandler) 已被移除，
+    // 因为容器内点击已处理，外部点击丢失选中作为小降级，优先修复长按不触发主bug。
 }
 
 /**
