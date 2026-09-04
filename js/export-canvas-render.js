@@ -1474,7 +1474,8 @@ export async function renderExportCanvas(
         const isFdSub = !!char.isFdSub;
         // 普通角色（无任何特殊标记）直接保留
         if (isSub || isHidden || isFD || isFdSub) {
-            const pass = (isSub && showSub) || (isHidden && globalHide) || (isFD && globalFD) || (isFdSub && showFdSub);
+            // ✅修复：隐藏/FD可见性判断必须包含局部开关，与页面getAllGameChar逻辑一致
+            const pass = (isSub && showSub) || (isHidden && (globalHide || localHide)) || (isFD && (globalFD || localFD)) || (isFdSub && showFdSub);
             if (!pass) continue;
         }
         // ========== 修改结束 ==========
@@ -1546,7 +1547,8 @@ export async function renderExportCanvas(
             const isFdSub = !!mChar.isFdSub;
             // 普通角色（无任何特殊标记）直接保留
             if (isSub || isHidden || isFD || isFdSub) {
-                const pass = (isSub && showSub) || (isHidden && globalHide) || (isFD && globalFD) || (isFdSub && showFdSub);
+                // ✅修复：隐藏/FD可见性判断必须包含局部开关，与页面getAllGameChar逻辑一致
+                const pass = (isSub && showSub) || (isHidden && (globalHide || localHide)) || (isFD && (globalFD || localFD)) || (isFdSub && showFdSub);
                 if (!pass) continue;
             }
             // ========== 修改结束 ==========
