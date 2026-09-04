@@ -7,7 +7,7 @@ const fdGameFileNames = [
 window.fdGameList = [];
 
 async function loadAllFDGames() {
-    const baseUrl = "../js/games/";
+    const baseUrl = "./js/games/";
     const total = fdGameFileNames.length;
     let loadedCount = 0;
     const importPromises = fdGameFileNames.map(async (fname) => {
