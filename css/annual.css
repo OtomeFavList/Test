@@ -1012,6 +1012,10 @@
     text-align:center;
     word-break: break-word;
     line-height:1.4;
+    width: 100%;  /* ✅补丁新增：撑满容器宽度，切换按钮落在名字框左右两端 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 /* 游戏名：灰色小字，居中，自动换行 */
 .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
