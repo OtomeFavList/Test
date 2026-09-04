@@ -7,7 +7,8 @@ import {
   preloadAndDecodeImage,
   preloadImageBitmap,
   convertR2ToJsDelivr,
-  getCharDisplayName
+  getCharDisplayName,
+  getCharNameList  // ✅补丁新增
 } from './main.js';
 
 // 最大并发图片加载数量，降低并发减少移动端解码资源竞争
@@ -1494,10 +1495,9 @@ export async function renderExportCanvas(
           console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasSrc);
           continue;
         }
-        // ✅补丁新增：计算用户选择的显示名
+        // ✅补丁修改：多名字显示名，统一用 getCharDisplayName
         const showHide = globalHide || localHide;
-        const hasHiddenName = !!char.hiddenName;
-        const displayName = (hasHiddenName && showHide && nameIdx === 1) ? (char.hiddenName || char.name || "") : (char.name || "");
+        const displayName = getCharDisplayName(char, nameIdx, showHide) || char.name || "";
         charItems.push({
           id: char.id,
           name: char.name,
@@ -1566,10 +1566,9 @@ export async function renderExportCanvas(
               console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasMSrc);
               continue;
             }
-            // ✅补丁新增：男主显示名
+            // ✅补丁修改：男主多名字显示名
             const mShowHide = globalHide || localHide;
-            const mHasHiddenName = !!mChar.hiddenName;
-            const mDisplayName = (mHasHiddenName && mShowHide && mNameIdx === 1) ? (mChar.hiddenName || mChar.name || "") : (mChar.name || "");
+            const mDisplayName = getCharDisplayName(mChar, mNameIdx, mShowHide) || mChar.name || "";
             maleItems.push({
               id: mChar.id,
               name: mChar.name,
@@ -1581,10 +1580,9 @@ export async function renderExportCanvas(
             allImageSrcList.push(canvasMSrc);
           }
         }
-        // ✅补丁新增：女主显示名
+        // ✅补丁修改：女主多名字显示名
         const fShowHide = globalHide || localHide;
-        const fHasHiddenName = !!fChar.hiddenName;
-        const fDisplayName = (fHasHiddenName && fShowHide && fNameIdx === 1) ? (fChar.hiddenName || fChar.name || "") : (fChar.name || "");
+        const fDisplayName = getCharDisplayName(fChar, fNameIdx, fShowHide) || fChar.name || "";
         if (maleItems.length > 0) {
           cpItems.push({
             femaleName: fChar.name,
