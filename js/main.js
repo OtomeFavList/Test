@@ -1294,41 +1294,11 @@ export function getAllGameChar(gameInfo) {
         const isSub = c.isSub ?? false;
         const isHidden = !!c.isHidden;
         const isFD = !!c.isFD;
-        const isFdSub = !!c.isFdSub; // ✅补丁新增：续作/FD次要角色标记，不写默认false
-        // ========== 【补丁新增：FD次要角色独立维度，仅受 showFdSub 控制，不复合 isHidden/isFD】 ==========
-        if (isFdSub) {
-            return showFdSub;
-        }
-        // ========== 【新增业务：Sub角色复合属性强制全部开关开启】 ==========
-        if (isSub) {
-            // sub角色同时有隐藏+FD：sub、隐藏、FD三个开关全部打开才显示
-            if (isHidden && isFD) {
-                return showSub && showHide && showFD;
-            }
-            // sub角色仅隐藏属性：sub开关 + 隐藏开关同时打开
-            if (isHidden && !isFD) {
-                return showSub && showHide;
-            }
-            // sub角色仅FD属性：sub开关 + FD开关同时打开
-            if (!isHidden && isFD) {
-                return showSub && showFD;
-            }
-            // 普通sub角色，无隐藏、无FD：只要sub开关开启即可
-            return showSub;
-        }
-
-        // ====== 非Sub角色，原有逻辑完全保留，不做任何改动 =====
-        if (!isHidden && !isFD) return true;
-        if (isHidden && !isFD) {
-            return showHide;
-        }
-        if (!isHidden && isFD) {
-            return showFD;
-        }
-        if (isHidden && isFD) {
-            return showHide || showFD;
-        }
-        return true;
+        const isFdSub = !!c.isFdSub;
+        // 普通角色（无任何特殊标记）：始终显示
+        if (!isSub && !isHidden && !isFD && !isFdSub) return true;
+        // ✅改为OR逻辑：角色有多个状态true时，任一对应开关开启即显示
+        return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
     });
 
     const female = chars.filter(c => c.gender === "female").sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
