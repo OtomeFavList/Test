@@ -18,7 +18,8 @@ import {
   getAllGameChar,
   getAvailableCharImages,
   getCharDisplayName,
-  getCharNameList,  // ✅补丁新增
+  getCharNameList,
+  getCharShowHide,  // ✅补丁新增
   isTodayConfirmed,
   saveConfirmDate,
   renderGameSelectItem,
@@ -129,7 +130,7 @@ export function initPage(Core = {}) {
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
             // ✅补丁修改：待选角色多名字循环切换
-            const showHideChar = appData.globalHideChar || gameItem.localHideChar;
+            const showHideChar = getCharShowHide(char, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             const nmList = getCharNameList(char, showHideChar);
             const nmTotal = nmList.length;
             const canSwitchNm = nmTotal > 1;
@@ -199,7 +200,7 @@ export function initPage(Core = {}) {
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
             // ✅补丁修改：待选角色多名字循环切换
-            const showHideChar = appData.globalHideChar || gameItem.localHideChar;
+            const showHideChar = getCharShowHide(char, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             const nmList = getCharNameList(char, showHideChar);
             const nmTotal = nmList.length;
             const canSwitchNm = nmTotal > 1;
@@ -305,7 +306,7 @@ export function initPage(Core = {}) {
             const showSrc = allSrc[imgIndex];
 
             // ✅补丁修改：CP女主待选多名字循环切换
-            const fShowHideNm = appData.globalHideChar || gameItem.localHideChar;
+            const fShowHideNm = getCharShowHide(fChar, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             const fNmList = getCharNameList(fChar, fShowHideNm);
             const fNmTotal = fNmList.length;
             const fCanSwitchNm = fNmTotal > 1;
@@ -378,7 +379,7 @@ export function initPage(Core = {}) {
                             const mSel = draftMap.has(mChar.id) ? "selected" : "";
 
                             // ✅补丁修改：CP男主待选多名字循环切换
-                            const mShowHideNm = appData.globalHideChar || gameItem.localHideChar;
+                            const mShowHideNm = getCharShowHide(mChar, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
                             const mNmList = getCharNameList(mChar, mShowHideNm);
                             const mNmTotal = mNmList.length;
                             const mCanSwitchNm = mNmTotal > 1;
@@ -887,7 +888,14 @@ export function initPage(Core = {}) {
         // ✅补丁修改：多名字循环切换
         const nmGameInfo = gameTemplateList.find(g => g.id === gameId);
         const nmChar = nmGameInfo?.charList?.find(c => c.id === charId);
-        const nmShowHide = appData.globalHideChar || (gameItem?.localHideChar ?? false);
+        // ✅补丁修改：隐藏开关或FD开关（角色isFD时）任一开启即显示隐藏名
+        const nmShowHide = getCharShowHide(
+            nmChar,
+            appData.globalHideChar,
+            gameItem?.localHideChar ?? false,
+            appData.globalFD,
+            gameItem?.localFD ?? false
+        );
         const nmList = getCharNameList(nmChar, nmShowHide);
         const nmTotal = nmList.length;
         const isPrevBtn = nameSwitchBtn.classList.contains("char-name-switch-prev");
@@ -916,7 +924,7 @@ export function initPage(Core = {}) {
           const gameInfo = gameTemplateList.find(g => g.id === gameId);
           const char = gameInfo?.charList?.find(c => c.id === charId);
           if (char) {
-            const showHide = appData.globalHideChar || gameItem.localHideChar;
+            const showHide = getCharShowHide(char, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             let curIdx;
             if (panelMode === "cp" && isCpFemale) {
               curIdx = Number(gameItem.cpEditState?.find(s => s.femaleId === charId)?.femaleNameIndex ?? 0);
