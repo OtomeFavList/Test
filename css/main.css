@@ -710,6 +710,49 @@ button:hover{
     background:rgba(255,255,255,0.9);
 }
 
+/* ========== ✅补丁新增：角色名切换按钮（复用char-switch-btn视觉，尺寸适配名字框） ========== */
+.char-card-name,
+.cp-female-name {
+    position: relative;
+}
+.char-name-text {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+.char-name-switch-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    border: none;
+    font-size: 10px;
+    padding: 0;
+    z-index: 2;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.char-name-switch-prev { left: 0; }
+.char-name-switch-next { right: 0; }
+.char-name-switch-btn:hover { background: rgba(0,0,0,0.6); }
+/* 无多名字时隐藏切换按钮 */
+.char-card-name .char-name-switch-btn,
+.cp-female-name .char-name-switch-btn {
+    display: none;
+}
+.char-card-name.char-name-multi .char-name-switch-btn,
+.cp-female-name.char-name-multi .char-name-switch-btn {
+    display: flex;
+}
+/* ========== 补丁结束 ========== */
+
 /* ========== CP布局 cp-layout-row 【移除25%｜75%固定占比，左右分栏，间距对齐character】 ========== */
 .cp-group{
     margin:16px 0;
@@ -1465,6 +1508,7 @@ h2{
 .snapshot-container.export-snapshot .switch,
 .snapshot-container.export-snapshot .slider,
 .snapshot-container.export-snapshot .char-switch-btn,
+.snapshot-container.export-snapshot .char-name-switch-btn,  /* ✅补丁新增 */
 .snapshot-container.export-snapshot .panel-close-btn,
 .snapshot-container.export-snapshot .heart-rate,
 .snapshot-container.export-snapshot .card-bottom-buttons,
