@@ -256,7 +256,6 @@ async function loadImagesWithLimit(urlList, limit) {
     } catch (err) {
       if (retryCount > 0) {
         console.warn(`图片加载重试[剩余${retryCount}次]:`, url, err);
-        // 国内网络阻断场景，拉长重试间隔，不要150ms快速重试
         await new Promise(r => setTimeout(r, 600));
         return loadSingleUrl(url, retryCount - 1);
       }
@@ -1458,12 +1457,18 @@ export async function renderExportCanvas(
     const localFD = gameItem.localFD;
     // ✅新增次要角色开关
     const showSub = appData.globalSubChar || (gameItem.localSubChar ?? false);
-
+    // ✅补丁新增：续作/FD次要角色开关
+    const showFdSub = appData.globalFdSubChar || (gameItem.localFdSubChar ?? false);
     const charItems = [];
     if (Array.isArray(gameItem.selectChars)) {
       for (const cid of gameItem.selectChars) {
         const char = gameInfo.charList?.find(c => c.id === cid);
         if (!char) continue;
+        // ========== ✅补丁新增：FD次要角色独立过滤（在sub判断之前） ==========
+        const isFdSub = !!char.isFdSub;
+        if (isFdSub && !showFdSub) {
+            continue;
+        }
         // ========== 修改：sub复合条件过滤（开始） ==========
         const isSub = char.isSub ?? false;
         const isHidden = !!char.isHidden;
@@ -1539,6 +1544,11 @@ export async function renderExportCanvas(
           for (const mi of cp.maleItems) {
             const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
             if (!mChar) continue;
+            // ========== ✅补丁新增：FD次要角色独立过滤（在sub判断之前） ==========
+            const isFdSub = !!mChar.isFdSub;
+            if (isFdSub && !showFdSub) {
+                continue;
+            }
             // ========== 修改：sub复合条件过滤（开始） ==========
             const isSub = mChar.isSub ?? false;
             const isHidden = !!mChar.isHidden;
