@@ -574,6 +574,7 @@ button:hover{
     align-items:center;
     justify-content:center;
     word-break:break-word;
+    width: 100%;  /* ✅补丁新增：撑满卡片宽度，切换按钮定位在整个名字框左右而非紧贴文字 */
 }
 .char-img-switch{
     font-size:12px;
@@ -640,6 +641,7 @@ button:hover{
     align-items:center;
     justify-content:center;
     word-break:break-word;
+    width: 100%;  /* ✅补丁新增：撑满卡片宽度，切换按钮定位在整个名字框左右而非紧贴文字 */
 }
 
 /* ==========【新增】角色图片切换按钮 左右翻图按钮 ========== */
@@ -1200,6 +1202,7 @@ h2{
     align-items:center;
     justify-content:center;
     word-break:break-word;
+    width: 100%;  /* ✅补丁新增：撑满卡片宽度，CP女主切换按钮定位在整个名字框左右 */
 }
 
 /* ✅修改：增加position:relative，替换原有cp‑male‑select‑wrap定义 */
@@ -1272,6 +1275,7 @@ h2{
     align-items:center;
     justify-content:center;
     word-break:break-word;
+    width: 100%;  /* ✅补丁新增：撑满卡片宽度，切换按钮定位在整个名字框左右而非紧贴文字 */
 }
 
 /* ========== 【新增】CP已选角色卡片（已选女主、已选男主，完全对齐 char‑card‑item） ========== */
@@ -1320,6 +1324,7 @@ h2{
     align-items:center;
     justify-content:center;
     word-break:break-word;
+    width: 100%;  /* ✅补丁新增：撑满卡片宽度，切换按钮定位在整个名字框左右而非紧贴文字 */
 }
 
 /* ========== CP待选卡片 图片切换按钮（复用char‑switch‑btn基础类） ========== */
