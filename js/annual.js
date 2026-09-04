@@ -3,7 +3,7 @@
 
 // =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
 
-import { renderGameSelectItem, getWebImageUrl } from '/js/main.js';
+import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages } from '/js/main.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
@@ -88,6 +88,8 @@ let _annualRealInitialized = false;
 // 模块级标记，用于全局document click防重复绑定（当前方案已移除，保留作为预留）
 let _annualDocClickBound = false;
 let _annualSortDocClickHandler = null;
+// ✅补丁新增：Annual模式独立角色立绘索引，key="${gameId}-${charId}"，不污染FavList的charImageSelect
+const annualCharImgIndex = new Map();
 
 /**
  * 获取基础游戏模板（仅普通游戏，不含FD续作）
@@ -138,6 +140,28 @@ function getGameTemplateState_WithFD() {
         list: combinedList,
         ready: true
     };
+}
+
+/**
+ * ✅补丁新增：获取角色在当前弹窗开关状态下的全部可用立绘src列表
+ * 复用 main.js getAvailableCharImages，传入弹窗全局/局部开关
+ * @param {Object} char 角色对象
+ * @returns {string[]} 可用图片相对路径数组
+ */
+function getAnnualCharAvailImages(char) {
+    if (!char) return [];
+    const availUnits = getAvailableCharImages(
+        char,
+        charModalGlobal.hideChar,
+        charModalGlobal.fdChar,
+        charModalLocal.hideChar,
+        charModalLocal.fdChar
+    );
+    const allSrc = [];
+    availUnits.forEach(u => {
+        if (Array.isArray(u.srcList)) allSrc.push(...u.srcList);
+    });
+    return allSrc;
 }
 
 /**
@@ -369,19 +393,52 @@ function renderCharModalGameList(wrap, keyword) {
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item search-result-char-item";
-        const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
+        // ========== ✅补丁新增：搜索结果角色卡片支持多立绘切换 ==========
+        // 搜索视图只有全局开关生效，局部开关传false
+        const availUnits = getAvailableCharImages(char, charModalGlobal.hideChar, charModalGlobal.fdChar, false, false);
+        const allSrc = [];
+        availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
+        const imgKey = `${game.id}-${char.id}`;
+        if (!annualCharImgIndex.has(imgKey)) annualCharImgIndex.set(imgKey, 0);
+        let imgIdx = annualCharImgIndex.get(imgKey);
+        if (imgIdx >= allSrc.length) imgIdx = 0;
+        const hasMultiImg = allSrc.length > 1;
+        const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
         div.innerHTML = `
-            <div class="char-card-img-box">
-                <img src="${imgSrc}" alt="${char.name}" decoding="async">
+            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
+                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-search-img-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>` : ""}
+                <img src="${currentImgSrc}" alt="${char.name}" decoding="async">
+                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next annual-search-img-next" data-game-id="${game.id}" data-char-id="${char.id}">&gt;</button>` : ""}
             </div>
             <div class="char-card-name-wrap">
                 <div class="char-card-name">${char.name}</div>
                 <div class="char-card-game-sub">${game.name}</div>
             </div>
         `;
+        if (hasMultiImg) {
+            const imgEl = div.querySelector("img");
+            const prevBtn = div.querySelector(".annual-search-img-prev");
+            const nextBtn = div.querySelector(".annual-search-img-next");
+            prevBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharImgIndex.get(imgKey) ?? 0;
+                idx = idx - 1;
+                if (idx < 0) idx = allSrc.length - 1;
+                annualCharImgIndex.set(imgKey, idx);
+                imgEl.src = getWebImageUrl(allSrc[idx] || "");
+            });
+            nextBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharImgIndex.get(imgKey) ?? 0;
+                idx = idx + 1;
+                if (idx >= allSrc.length) idx = 0;
+                annualCharImgIndex.set(imgKey, idx);
+                imgEl.src = getWebImageUrl(allSrc[idx] || "");
+            });
+        }
+        // ========== 补丁结束 ==========
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
-            //【问题③】重复角色校验，忽略当前编辑条目
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
             if(isDuplicate){
                 alert("该角色已经添加，不可重复添加");
@@ -391,15 +448,16 @@ function renderCharModalGameList(wrap, keyword) {
             targetItem.gameId = game.id;
             targetItem.charId = char.id;
             targetItem.charName = char.name;
-            targetItem.coverSrc = imgSrc;
-
+            // ✅使用当前选中的立绘索引
+            const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
+            targetItem.coverSrc = allSrc[finalIdx] || "";
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
             const targetDom = charItemDoms[activeCharTopItemIndex];
             if(targetDom){
                 const nameEl = targetDom.querySelector(".annual-char-name-text");
                 const imgEl = targetDom.querySelector(".annual-char-cover");
                 nameEl.textContent = char.name;
-                imgEl.src = imgSrc;
+                imgEl.src = getWebImageUrl(targetItem.coverSrc);
                 refreshCharTopItemUi(targetDom, targetItem);
             }
             saveAnnualData();
@@ -460,8 +518,23 @@ function renderCharModalCharList() {
         charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
         return;
     }
+    // ========== ✅补丁新增：有相关角色才显示对应单独开关（复用FavList逻辑） ==========
+    const rawCharList = gameInfo.charList || [];
+    const localSwitchVisibility = {
+        "#annual-modal-game-sub-char":   rawCharList.some(c => c.isSub === true),
+        "#annual-modal-game-hide-char":  rawCharList.some(c => c.isHidden === true),
+        "#annual-modal-game-fd-game":    rawCharList.some(c => c.isFD === true),
+        "#annual-modal-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
+    };
+    Object.entries(localSwitchVisibility).forEach(([sel, visible]) => {
+        const inputEl = modal.querySelector(sel);
+        if (!inputEl) return;
+        const switchWrap = inputEl.closest("label")?.parentElement;
+        if (switchWrap) switchWrap.style.display = visible ? "" : "none";
+    });
+    // ========== 补丁结束 ==========
     // 复制一套getAllGameChar过滤逻辑，使用弹窗本地开关，不碰appData
-    let chars = [...(gameInfo.charList || [])];
+    let chars = [...rawCharList];
     chars = chars.filter(c=>{
         const isSub = c.isSub ?? false;
         const isHidden = !!c.isHidden;
@@ -471,12 +544,9 @@ function renderCharModalCharList() {
         const showFD = charModalGlobal.fdChar || charModalLocal.fdChar;
         const showSub = charModalGlobal.subChar || charModalLocal.subChar;
         const showFdSub = charModalGlobal.fdSubChar || charModalLocal.fdSubChar;
-        // 普通角色（无任何特殊标记）：始终显示
         if (!isSub && !isHidden && !isFD && !isFdSub) return true;
-        // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
         return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
     });
-    // ✅角色名排序复用sortFilterOptionList
     const { sortFilterOptionList } = window.Core || {};
     let sortedChars = chars;
     if (typeof sortFilterOptionList === 'function') {
@@ -485,40 +555,70 @@ function renderCharModalCharList() {
     } else {
         sortedChars = [...chars].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
     }
-
     sortedChars.forEach(char=>{
         if(!char) return;
         const div = document.createElement("div");
         div.className = "char-item";
-        const imgSrc = getWebImageUrl(char.images?.[0]?.srcList?.[0] || "");
+        // ========== ✅补丁新增：多立绘切换逻辑（复用FavList char-switch-btn） ==========
+        const allSrc = getAnnualCharAvailImages(char);
+        const imgKey = `${charModalCurrentGameId}-${char.id}`;
+        if (!annualCharImgIndex.has(imgKey)) annualCharImgIndex.set(imgKey, 0);
+        let imgIdx = annualCharImgIndex.get(imgKey);
+        if (imgIdx >= allSrc.length) imgIdx = 0;
+        const hasMultiImg = allSrc.length > 1;
+        const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
         div.innerHTML = `
-            <div class="char-card-img-box">
-                <img src="${imgSrc}" alt="${char.name}" decoding="async">
+            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
+                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-char-img-prev" data-char-id="${char.id}">&lt;</button>` : ""}
+                <img src="${currentImgSrc}" alt="${char.name}" decoding="async">
+                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next annual-char-img-next" data-char-id="${char.id}">&gt;</button>` : ""}
             </div>
             <div class="char-card-name">${char.name}</div>
         `;
+        // 切换按钮事件（阻止冒泡，避免触发角色选中）
+        if (hasMultiImg) {
+            const imgEl = div.querySelector("img");
+            const prevBtn = div.querySelector(".annual-char-img-prev");
+            const nextBtn = div.querySelector(".annual-char-img-next");
+            prevBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharImgIndex.get(imgKey) ?? 0;
+                idx = idx - 1;
+                if (idx < 0) idx = allSrc.length - 1;
+                annualCharImgIndex.set(imgKey, idx);
+                imgEl.src = getWebImageUrl(allSrc[idx] || "");
+            });
+            nextBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharImgIndex.get(imgKey) ?? 0;
+                idx = idx + 1;
+                if (idx >= allSrc.length) idx = 0;
+                annualCharImgIndex.set(imgKey, idx);
+                imgEl.src = getWebImageUrl(allSrc[idx] || "");
+            });
+        }
+        // ========== 补丁结束 ==========
         div.addEventListener("click",()=>{
             if(activeCharTopItemIndex === null) return;
-            //【问题③】重复角色校验
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
             if(isDuplicate){
                 alert("该角色已经添加，不可重复添加");
                 return;
             }
-            // 回填数据到charTopList
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = charModalCurrentGameId;
             targetItem.charId = char.id;
             targetItem.charName = char.name;
-            targetItem.coverSrc = imgSrc;
-            // 更新DOM
+            // ✅使用当前选中的立绘索引，而非固定第一张
+            const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
+            targetItem.coverSrc = allSrc[finalIdx] || "";
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
             const targetDom = charItemDoms[activeCharTopItemIndex];
             if(targetDom){
                 const nameEl = targetDom.querySelector(".annual-char-name-text");
                 const imgEl = targetDom.querySelector(".annual-char-cover");
                 nameEl.textContent = char.name;
-                imgEl.src = imgSrc;
+                imgEl.src = getWebImageUrl(targetItem.coverSrc);
                 refreshCharTopItemUi(targetDom, targetItem);
             }
             saveAnnualData();
@@ -566,6 +666,8 @@ function openAnnualGlobalCharModal(targetIndex){
     charModalCurrentGameId = null;
     charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // ✅补丁新增：每次打开弹窗清空立绘索引缓存，避免上次选择残留
+    annualCharImgIndex.clear();
     switchCharModalView("gameList");
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
