@@ -588,6 +588,23 @@ export function getAvailableCharImages(char, globalHideSwitch, globalFDSwitch, l
 }
 
 /**
+ * ✅补丁新增：判断角色是否应显示隐藏名
+ * 规则：隐藏开关开启 OR（角色isFD=true 且 FD开关开启），任一满足即显示
+ * @param {Object} char 角色对象
+ * @param {boolean} globalHide 全局隐藏开关
+ * @param {boolean} localHide 单游戏隐藏开关
+ * @param {boolean} globalFD 全局FD开关
+ * @param {boolean} localFD 单游戏FD开关
+ * @returns {boolean}
+ */
+export function getCharShowHide(char, globalHide, localHide, globalFD, localFD) {
+    if (!char) return false;
+    if (globalHide || localHide) return true;
+    if (char.isFD && (globalFD || localFD)) return true;
+    return false;
+}
+
+/**
  * ✅补丁新增：获取角色可用名字列表（正常名 + 隐藏名数组）
  * 兼容 hiddenName 为字符串或数组；showHide=false 时只返回正常名
  * @param {Object} char
@@ -1231,7 +1248,7 @@ export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
         const targetSrc = allSrc[imgIndex];
 
         // ========== ✅补丁修改：角色名多名字循环切换 ==========
-        const showHide = globalHide || localHide;
+        const showHide = getCharShowHide(char, globalHide, localHide, globalFD, localFD);
         const nameList = getCharNameList(char, showHide);
         const totalNames = nameList.length;
         const canSwitchName = totalNames > 1;
@@ -1291,7 +1308,7 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
         if (fIndex >= fAllSrc.length) fIndex = 0;
         const fTargetSrc = fAllSrc[fIndex];
         // ========== ✅补丁修改：女主多名字循环切换 ==========
-        const fShowHide = globalHide || localHide;
+        const fShowHide = getCharShowHide(fChar, globalHide, localHide, globalFD, localFD);
         const fNameList = getCharNameList(fChar, fShowHide);
         const fTotalNames = fNameList.length;
         const fCanSwitch = fTotalNames > 1;
@@ -1320,7 +1337,7 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
             if (mIndex >= mAllSrc.length) mIndex = 0;
             const mTargetSrc = mAllSrc[mIndex];
             // ========== ✅补丁修改：男主多名字循环切换 ==========
-            const mShowHide = globalHide || localHide;
+            const mShowHide = getCharShowHide(mChar, globalHide, localHide, globalFD, localFD);
             const mNameList = getCharNameList(mChar, mShowHide);
             const mTotalNames = mNameList.length;
             const mCanSwitch = mTotalNames > 1;
@@ -1478,7 +1495,8 @@ function buildCoreContext() {
         getAllGameChar,
         getAvailableCharImages,
         getCharDisplayName,
-        getCharNameList,  // ✅补丁新增
+        getCharNameList,
+        getCharShowHide,  // ✅补丁新增
         preloadAndDecodeImage,
         preloadImageBitmap,
         preloadImagesInIdle,
@@ -1629,7 +1647,14 @@ function wrapClickHandler(e) {
         // ✅补丁修改：多名字循环切换，统一计算 totalNames
         const charGameInfo = gameTemplateList.find(g => g.id === gameId);
         const charObj = charGameInfo?.charList?.find(c => c.id === charId);
-        const nmShowHide = appData.globalHideChar || (gameItem?.localHideChar ?? false);
+        // ✅补丁修改：隐藏开关或FD开关（角色isFD时）任一开启即显示隐藏名
+        const nmShowHide = getCharShowHide(
+            charObj,
+            appData.globalHideChar,
+            gameItem?.localHideChar ?? false,
+            appData.globalFD,
+            gameItem?.localFD ?? false
+        );
         const nmNameList = getCharNameList(charObj, nmShowHide);
         const nmTotal = nmNameList.length;
         const isPrev = nameSwitchBtn.classList.contains("char-name-switch-prev");
