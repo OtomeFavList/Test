@@ -8,7 +8,8 @@ import {
   preloadImageBitmap,
   convertR2ToJsDelivr,
   getCharDisplayName,
-  getCharNameList  // ✅补丁新增
+  getCharNameList,
+  getCharShowHide  // ✅补丁新增
 } from './main.js';
 
 // 最大并发图片加载数量，降低并发减少移动端解码资源竞争
@@ -1495,8 +1496,8 @@ export async function renderExportCanvas(
           console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasSrc);
           continue;
         }
-        // ✅补丁修改：多名字显示名，统一用 getCharDisplayName
-        const showHide = globalHide || localHide;
+        // ✅补丁修改：多名字显示名，隐藏开关或FD开关（角色isFD时）任一开启即显示隐藏名
+        const showHide = getCharShowHide(char, globalHide, localHide, globalFD, localFD);
         const displayName = getCharDisplayName(char, nameIdx, showHide) || char.name || "";
         charItems.push({
           id: char.id,
@@ -1567,7 +1568,7 @@ export async function renderExportCanvas(
               continue;
             }
             // ✅补丁修改：男主多名字显示名
-            const mShowHide = globalHide || localHide;
+            const mShowHide = getCharShowHide(mChar, globalHide, localHide, globalFD, localFD);
             const mDisplayName = getCharDisplayName(mChar, mNameIdx, mShowHide) || mChar.name || "";
             maleItems.push({
               id: mChar.id,
@@ -1581,7 +1582,7 @@ export async function renderExportCanvas(
           }
         }
         // ✅补丁修改：女主多名字显示名
-        const fShowHide = globalHide || localHide;
+        const fShowHide = getCharShowHide(fChar, globalHide, localHide, globalFD, localFD);
         const fDisplayName = getCharDisplayName(fChar, fNameIdx, fShowHide) || fChar.name || "";
         if (maleItems.length > 0) {
           cpItems.push({
