@@ -6,7 +6,8 @@ import {
   getAvailableCharImages,
   preloadAndDecodeImage,
   preloadImageBitmap,
-  convertR2ToJsDelivr
+  convertR2ToJsDelivr,
+  getCharDisplayName
 } from './main.js';
 
 // 最大并发图片加载数量，降低并发减少移动端解码资源竞争
@@ -509,7 +510,7 @@ function calcCharAreaHeight(ctx, charItems, containerWidth, cardWidth, gap, font
   const rows = Math.ceil(charItems.length / cardsPerRow);
   let maxCardHeight = LAYOUT_SPACE.CHAR_CARD_MIN_H;
   charItems.forEach(item => {
-    const h = calcCharCardHeight(ctx, item.name, cardWidth, fontSize);
+    const h = calcCharCardHeight(ctx, item.displayName || item.name, cardWidth, fontSize);  // ✅补丁
     if (h > maxCardHeight) maxCardHeight = h;
   });
   let height = rows * maxCardHeight + (rows - 1) * gap;
@@ -676,10 +677,10 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
     const maleContainerWidth = (gameCardW - cardInnerPad * 2) - femaleCardWidth - colGap;
 
     for (const cp of cpItems) {
-      const fHeight = calcCharCardHeight(vCtx, cp.femaleName, femaleCardWidth, 14);
+      const fHeight = calcCharCardHeight(vCtx, cp.femaleDisplayName || cp.femaleName, femaleCardWidth, 14);  // ✅补丁
       let maxMaleH = LAYOUT_SPACE.CHAR_CARD_MIN_H;
       cp.maleItems.forEach(m => {
-        const h = calcCharCardHeight(vCtx, m.name, maleCardWidth, 14);
+        const h = calcCharCardHeight(vCtx, m.displayName || m.name, maleCardWidth, 14);  // ✅补丁
         if (h > maxMaleH) maxMaleH = h;
       });
       const perRow = calcCardsPerRow(maleCardWidth, maleGap, maleContainerWidth);
@@ -929,10 +930,10 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     const maleContainerWidth = (gameCardW - cardInnerPad * 2) - femaleCardWidth - colGap;
 
     for (const cp of cpItems) {
-      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleName, femaleCardWidth, 14);
+      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleDisplayName || cp.femaleName, femaleCardWidth, 14);  // ✅补丁
       let maxMaleH = LAYOUT_SPACE.CHAR_CARD_MIN_H;
       cp.maleItems.forEach(m => {
-        const h = calcCharCardHeight(painter.ctx, m.name, maleCardWidth, 14);
+        const h = calcCharCardHeight(painter.ctx, m.displayName || m.name, maleCardWidth, 14);  // ✅补丁
         if (h > maxMaleH) maxMaleH = h;
       });
       const perRow = calcCardsPerRow(maleCardWidth, maleGap, maleContainerWidth);
@@ -1104,7 +1105,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       const needDrawName = !(item.isHidden || item.isFD) || renderData.appData.exportShowHiddenFDName;
       if (needDrawName) {
         painter.drawTextWrapCenterInBox(
-          item.name,
+          item.displayName || item.name,  // ✅补丁：使用用户选择的显示名
           xPos + innerPad,
           nameBoxY,
           cardW - innerPad * 2,
@@ -1169,13 +1170,13 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     const imgSize = femaleCardW - innerPad * 2;
 
     for (const cp of cpItems) {
-      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleName, femaleCardW, 14);
+      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleDisplayName || cp.femaleName, femaleCardW, 14);  // ✅补丁
       const maleContainerW = (gameCardW - cardInnerPad * 2) - femaleCardW - colGap;
       const perRow = calcCardsPerRow(maleCardW, maleGap, maleContainerW);
       const maleRows = Math.ceil(cp.maleItems.length / perRow);
       let maxMaleH = LAYOUT_SPACE.CHAR_CARD_MIN_H;
       cp.maleItems.forEach(m => {
-        const h = calcCharCardHeight(painter.ctx, m.name, maleCardW, 14);
+        const h = calcCharCardHeight(painter.ctx, m.displayName || m.name, maleCardW, 14);  // ✅补丁
         if (h > maxMaleH) maxMaleH = h;
       });
       const rowH = Math.max(fHeight, maxMaleH);
@@ -1229,7 +1230,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       const fNameBoxY = femaleY + innerPad + imgSize + LAYOUT_SPACE.CHAR_IMG_BOX_MB;
       const fNameBoxH = rowH - (innerPad + imgSize + LAYOUT_SPACE.CHAR_IMG_BOX_MB) - innerPad;
       painter.drawTextWrapCenterInBox(
-        cp.femaleName,
+        cp.femaleDisplayName || cp.femaleName,  // ✅补丁
         femaleX + innerPad,
         fNameBoxY,
         femaleCardW - innerPad * 2,
@@ -1293,7 +1294,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
         const needDrawName = !(m.isHidden || m.isFD) || renderData.appData.exportShowHiddenFDName;
         if (needDrawName) {
           painter.drawTextWrapCenterInBox(
-            m.name,
+            m.displayName || m.name,  // ✅补丁
             mx + innerPad,
             mNameBoxY,
             maleCardW - innerPad * 2,
@@ -1481,6 +1482,7 @@ export async function renderExportCanvas(
         if (allSrc.length === 0) continue;
         const stored = gameItem.selectCharItems?.find(s => s.charId === cid);
         const idx = Number(stored?.imgIndex ?? 0);
+        const nameIdx = Number(stored?.nameIndex ?? 0);  // ✅补丁新增
         const src = allSrc[idx] || allSrc[0];
         const canvasSrc = convertR2ToJsDelivr(src);
         // =========【修改点A-1】防火墙：禁止空值、非http、R2 pub地址、github raw地址进入图片队列 ==========
@@ -1492,9 +1494,14 @@ export async function renderExportCanvas(
           console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasSrc);
           continue;
         }
+        // ✅补丁新增：计算用户选择的显示名
+        const showHide = globalHide || localHide;
+        const hasHiddenName = !!char.hiddenName;
+        const displayName = (hasHiddenName && showHide && nameIdx === 1) ? (char.hiddenName || char.name || "") : (char.name || "");
         charItems.push({
           id: char.id,
           name: char.name,
+          displayName: displayName,  // ✅补丁新增
           src: canvasSrc,
           isHidden: !!char.isHidden,
           isFD: !!char.isFD
@@ -1513,6 +1520,7 @@ export async function renderExportCanvas(
         fAvail.forEach(u => fAllSrc.push(...u.srcList));
         if (fAllSrc.length === 0) continue;
         const fIdx = Number(cp.femaleImgIndex ?? 0);
+        const fNameIdx = Number(cp.femaleNameIndex ?? 0);  // ✅补丁新增
         const fSrc = fAllSrc[fIdx] || fAllSrc[0];
         const canvasFSrc = convertR2ToJsDelivr(fSrc);
         // =========【修改点A-2】防火墙：禁止空值、非http、R2 pub地址、github raw地址进入图片队列 ==========
@@ -1546,6 +1554,7 @@ export async function renderExportCanvas(
             mAvail.forEach(u => mAllSrc.push(...u.srcList));
             if (mAllSrc.length === 0) continue;
             const mIdx = Number(mi.imgIndex ?? 0);
+            const mNameIdx = Number(mi.nameIndex ?? 0);  // ✅补丁新增
             const mSrc = mAllSrc[mIdx] || mAllSrc[0];
             const canvasMSrc = convertR2ToJsDelivr(mSrc);
             // =========【修改点A-3】防火墙：禁止空值、非http、R2 pub地址、github raw地址进入图片队列 ==========
@@ -1557,9 +1566,14 @@ export async function renderExportCanvas(
               console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasMSrc);
               continue;
             }
+            // ✅补丁新增：男主显示名
+            const mShowHide = globalHide || localHide;
+            const mHasHiddenName = !!mChar.hiddenName;
+            const mDisplayName = (mHasHiddenName && mShowHide && mNameIdx === 1) ? (mChar.hiddenName || mChar.name || "") : (mChar.name || "");
             maleItems.push({
               id: mChar.id,
               name: mChar.name,
+              displayName: mDisplayName,  // ✅补丁新增
               src: canvasMSrc,
               isHidden: !!mChar.isHidden,
               isFD: !!mChar.isFD
@@ -1567,9 +1581,14 @@ export async function renderExportCanvas(
             allImageSrcList.push(canvasMSrc);
           }
         }
+        // ✅补丁新增：女主显示名
+        const fShowHide = globalHide || localHide;
+        const fHasHiddenName = !!fChar.hiddenName;
+        const fDisplayName = (fHasHiddenName && fShowHide && fNameIdx === 1) ? (fChar.hiddenName || fChar.name || "") : (fChar.name || "");
         if (maleItems.length > 0) {
           cpItems.push({
             femaleName: fChar.name,
+            femaleDisplayName: fDisplayName,  // ✅补丁新增
             femaleSrc: canvasFSrc,
             maleItems: maleItems
           });
