@@ -17,7 +17,8 @@ import {
   renderCP,
   getAllGameChar,
   getAvailableCharImages,
-  getCharDisplayName,  // ✅补丁新增
+  getCharDisplayName,
+  getCharNameList,  // ✅补丁新增
   isTodayConfirmed,
   saveConfirmDate,
   renderGameSelectItem,
@@ -127,15 +128,16 @@ export function initPage(Core = {}) {
             // ✅重点：selected 来自临时草稿，不再读取 gameItem.selectChars
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
-            // ✅补丁新增：待选角色名字切换
+            // ✅补丁修改：待选角色多名字循环切换
             const showHideChar = appData.globalHideChar || gameItem.localHideChar;
-            const hasHiddenNm = !!char.hiddenName;
-            const canSwitchNm = hasHiddenNm && showHideChar;
+            const nmList = getCharNameList(char, showHideChar);
+            const nmTotal = nmList.length;
+            const canSwitchNm = nmTotal > 1;
             const nameSaveKey = `char-name-${gameId}-${char.id}`;
             if (!appData.charNameSelect) appData.charNameSelect = {};
             let nmIdx = Number(appData.charNameSelect[nameSaveKey] ?? 0);
-            if (nmIdx !== 0 && nmIdx !== 1) nmIdx = 0;
-            const dispNm = getCharDisplayName(char, nmIdx, showHideChar);
+            if (nmIdx >= nmTotal) nmIdx = 0;
+            const dispNm = nmList[nmIdx] || char.name || "";
             const nmMultiCls = canSwitchNm ? "char-name-multi" : "";
             const nmSwitchBtns = canSwitchNm ? `
                 <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&lt;</button>
@@ -196,15 +198,16 @@ export function initPage(Core = {}) {
             // ✅重点：selected 来自临时草稿
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
-            // ✅补丁新增：待选角色名字切换
+            // ✅补丁修改：待选角色多名字循环切换
             const showHideChar = appData.globalHideChar || gameItem.localHideChar;
-            const hasHiddenNm = !!char.hiddenName;
-            const canSwitchNm = hasHiddenNm && showHideChar;
+            const nmList = getCharNameList(char, showHideChar);
+            const nmTotal = nmList.length;
+            const canSwitchNm = nmTotal > 1;
             const nameSaveKey = `char-name-${gameId}-${char.id}`;
             if (!appData.charNameSelect) appData.charNameSelect = {};
             let nmIdx = Number(appData.charNameSelect[nameSaveKey] ?? 0);
-            if (nmIdx !== 0 && nmIdx !== 1) nmIdx = 0;
-            const dispNm = getCharDisplayName(char, nmIdx, showHideChar);
+            if (nmIdx >= nmTotal) nmIdx = 0;
+            const dispNm = nmList[nmIdx] || char.name || "";
             const nmMultiCls = canSwitchNm ? "char-name-multi" : "";
             const nmSwitchBtns = canSwitchNm ? `
                 <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&lt;</button>
@@ -301,13 +304,14 @@ export function initPage(Core = {}) {
             if(imgIndex >= allSrc.length) imgIndex = 0;
             const showSrc = allSrc[imgIndex];
 
-            // ✅补丁新增：CP女主待选名字切换
+            // ✅补丁修改：CP女主待选多名字循环切换
             const fShowHideNm = appData.globalHideChar || gameItem.localHideChar;
-            const fHasHiddenNm = !!fChar.hiddenName;
-            const fCanSwitchNm = fHasHiddenNm && fShowHideNm;
+            const fNmList = getCharNameList(fChar, fShowHideNm);
+            const fNmTotal = fNmList.length;
+            const fCanSwitchNm = fNmTotal > 1;
             let fNmIdx = Number(state.femaleNameIndex ?? 0);
-            if (fNmIdx !== 0 && fNmIdx !== 1) fNmIdx = 0;
-            const fDispNm = getCharDisplayName(fChar, fNmIdx, fShowHideNm);
+            if (fNmIdx >= fNmTotal) fNmIdx = 0;
+            const fDispNm = fNmList[fNmIdx] || fChar.name || "";
             const fNmMultiCls = fCanSwitchNm ? "char-name-multi" : "";
             const fNmSwitchBtns = fCanSwitchNm ? `
                 <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${fChar.id}" data-game-id="${gameId}" data-panel-mode="cp" data-cp-female="1">&lt;</button>
@@ -373,15 +377,16 @@ export function initPage(Core = {}) {
                             const mShowSrc = mSrcArr[mImgIndex];
                             const mSel = draftMap.has(mChar.id) ? "selected" : "";
 
-                            // ✅补丁新增：CP男主待选名字切换
+                            // ✅补丁修改：CP男主待选多名字循环切换
                             const mShowHideNm = appData.globalHideChar || gameItem.localHideChar;
-                            const mHasHiddenNm = !!mChar.hiddenName;
-                            const mCanSwitchNm = mHasHiddenNm && mShowHideNm;
+                            const mNmList = getCharNameList(mChar, mShowHideNm);
+                            const mNmTotal = mNmList.length;
+                            const mCanSwitchNm = mNmTotal > 1;
                             const mNameSaveKey = `char-name-${gameId}-${mChar.id}`;
                             if (!appData.charNameSelect) appData.charNameSelect = {};
                             let mNmIdx = Number(appData.charNameSelect[mNameSaveKey] ?? 0);
-                            if (mNmIdx !== 0 && mNmIdx !== 1) mNmIdx = 0;
-                            const mDispNm = getCharDisplayName(mChar, mNmIdx, mShowHideNm);
+                            if (mNmIdx >= mNmTotal) mNmIdx = 0;
+                            const mDispNm = mNmList[mNmIdx] || mChar.name || "";
                             const mNmMultiCls = mCanSwitchNm ? "char-name-multi" : "";
                             const mNmSwitchBtns = mCanSwitchNm ? `
                                 <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${mChar.id}" data-game-id="${gameId}" data-panel-mode="cp">&lt;</button>
@@ -867,7 +872,7 @@ export function initPage(Core = {}) {
         return; //处理完图片切换直接return，不再往下执行cp逻辑
       }
 
-      // ========== ✅补丁新增：待选面板 角色名切换按钮 ==========
+      // ========== ✅补丁修改：待选面板 角色名切换按钮（多名字循环） ==========
       const nameSwitchBtn = e.target.closest(".char-name-switch-btn");
       if (nameSwitchBtn) {
         e.stopPropagation();
@@ -879,17 +884,28 @@ export function initPage(Core = {}) {
         const isCpFemale = !!nameSwitchBtn.dataset.cpFemale;
         const gameItem = appData.gameList?.find(g => g.gameId === gameId);
         if (!gameItem) return;
+        // ✅补丁修改：多名字循环切换
+        const nmGameInfo = gameTemplateList.find(g => g.id === gameId);
+        const nmChar = nmGameInfo?.charList?.find(c => c.id === charId);
+        const nmShowHide = appData.globalHideChar || (gameItem?.localHideChar ?? false);
+        const nmList = getCharNameList(nmChar, nmShowHide);
+        const nmTotal = nmList.length;
+        const isPrevBtn = nameSwitchBtn.classList.contains("char-name-switch-prev");
         if (panelMode === "cp" && isCpFemale) {
-          // CP女主：写入 cpEditState.femaleNameIndex
+          // CP女主：循环写入 cpEditState.femaleNameIndex
           const st = gameItem.cpEditState?.find(s => s.femaleId === charId);
           if (st) {
-            st.femaleNameIndex = Number(st.femaleNameIndex ?? 0) === 1 ? 0 : 1;
+            let cur = Number(st.femaleNameIndex ?? 0);
+            if (cur >= nmTotal) cur = 0;
+            st.femaleNameIndex = isPrevBtn ? (cur - 1 + nmTotal) % nmTotal : (cur + 1) % nmTotal;
           }
         } else {
-          // Character / CP男主：写入全局 charNameSelect
+          // Character / CP男主：循环写入全局 charNameSelect
           const saveKey = `char-name-${gameId}-${charId}`;
           if (!appData.charNameSelect) appData.charNameSelect = {};
-          const newIdx = Number(appData.charNameSelect[saveKey] ?? 0) === 1 ? 0 : 1;
+          let curIdx = Number(appData.charNameSelect[saveKey] ?? 0);
+          if (curIdx >= nmTotal) curIdx = 0;
+          const newIdx = isPrevBtn ? (curIdx - 1 + nmTotal) % nmTotal : (curIdx + 1) % nmTotal;
           appData.charNameSelect[saveKey] = newIdx;
         }
         saveData();
