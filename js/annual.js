@@ -3,7 +3,7 @@
 
 // =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
 
-import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages } from '/js/main.js';
+import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList } from '/js/main.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
@@ -90,6 +90,8 @@ let _annualDocClickBound = false;
 let _annualSortDocClickHandler = null;
 // ✅补丁新增：Annual模式独立角色立绘索引，key="${gameId}-${charId}"，不污染FavList的charImageSelect
 const annualCharImgIndex = new Map();
+// ✅补丁新增：Annual模式独立角色名字索引，key="${gameId}-${charId}"，0=正常名，与立绘索引完全同构
+const annualCharNameIndex = new Map();
 
 /**
  * 获取基础游戏模板（仅普通游戏，不含FD续作）
@@ -357,8 +359,17 @@ function renderCharModalGameList(wrap, keyword) {
         if(!Array.isArray(game.charList)) continue;
         for(const char of game.charList) {
             const charNameLow = String(char.name).toLowerCase();
-            if(!charNameLow.includes(kw)) continue;
-
+            // ✅补丁新增：全局隐藏开关开启时，额外匹配隐藏名（兼容字符串/数组）
+            const showHideForSearch = charModalGlobal.hideChar;
+            let hiddenNameMatch = false;
+            if (showHideForSearch && char.hiddenName) {
+                if (Array.isArray(char.hiddenName)) {
+                    hiddenNameMatch = char.hiddenName.some(n => String(n).toLowerCase().includes(kw));
+                } else {
+                    hiddenNameMatch = String(char.hiddenName).toLowerCase().includes(kw);
+                }
+            }
+            if(!charNameLow.includes(kw) && !hiddenNameMatch) continue;
             // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
             const isSub = char.isSub ?? false;
             const isHidden = !!char.isHidden;
@@ -374,7 +385,6 @@ function renderCharModalGameList(wrap, keyword) {
             } else {
                 pass = (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
             }
-
             if(pass){
                 matchedCharacters.push({game, char});
                 // ✅移除 matchedGames.add(game.id);
@@ -404,14 +414,31 @@ function renderCharModalGameList(wrap, keyword) {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
+        // ========== ✅补丁新增：搜索结果角色卡片名字切换 ==========
+        const searchNameList = getCharNameList(char, charModalGlobal.hideChar);
+        const searchTotalNames = searchNameList.length;
+        const searchCanSwitchName = searchTotalNames > 1;
+        if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
+        let searchNameIdx = annualCharNameIndex.get(imgKey);
+        if (searchNameIdx >= searchTotalNames) searchNameIdx = 0;
+        const searchDisplayName = searchNameList[searchNameIdx] || char.name;
+        const searchNameMultiCls = searchCanSwitchName ? "char-name-multi" : "";
+        const searchNameSwitchBtns = searchCanSwitchName ? `
+            <button class="char-name-switch-btn char-name-switch-prev annual-search-name-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>
+            <button class="char-name-switch-btn char-name-switch-next annual-search-name-next" data-game-id="${game.id}" data-char-id="${char.id}">&gt;</button>
+        ` : "";
+        // ========== 补丁结束 ==========
         div.innerHTML = `
             <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
                 ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-search-img-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>` : ""}
-                <img src="${currentImgSrc}" alt="${char.name}" decoding="async">
+                <img src="${currentImgSrc}" alt="${searchDisplayName}" decoding="async">
                 ${hasMultiImg ? `<button class="char-switch-btn char-switch-next annual-search-img-next" data-game-id="${game.id}" data-char-id="${char.id}">&gt;</button>` : ""}
             </div>
             <div class="char-card-name-wrap">
-                <div class="char-card-name">${char.name}</div>
+                <div class="char-card-name ${searchNameMultiCls}">
+                    ${searchNameSwitchBtns}
+                    <span class="char-name-text">${searchDisplayName}</span>
+                </div>
                 <div class="char-card-game-sub">${game.name}</div>
             </div>
         `;
@@ -436,6 +463,26 @@ function renderCharModalGameList(wrap, keyword) {
                 imgEl.src = getWebImageUrl(allSrc[idx] || "");
             });
         }
+        // ========== ✅补丁新增：搜索结果名字切换事件 ==========
+        if (searchCanSwitchName) {
+            const nameTextEl = div.querySelector(".char-name-text");
+            const namePrevBtn = div.querySelector(".annual-search-name-prev");
+            const nameNextBtn = div.querySelector(".annual-search-name-next");
+            namePrevBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharNameIndex.get(imgKey) ?? 0;
+                idx = (idx - 1 + searchTotalNames) % searchTotalNames;
+                annualCharNameIndex.set(imgKey, idx);
+                nameTextEl.textContent = searchNameList[idx] || char.name;
+            });
+            nameNextBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharNameIndex.get(imgKey) ?? 0;
+                idx = (idx + 1) % searchTotalNames;
+                annualCharNameIndex.set(imgKey, idx);
+                nameTextEl.textContent = searchNameList[idx] || char.name;
+            });
+        }
         // ========== 补丁结束 ==========
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
@@ -447,7 +494,10 @@ function renderCharModalGameList(wrap, keyword) {
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = game.id;
             targetItem.charId = char.id;
-            targetItem.charName = char.name;
+            // ✅补丁新增：保存用户当前选择的名字及索引
+            const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+            targetItem.nameIndex = finalNameIdx;
+            targetItem.charName = searchNameList[finalNameIdx] || char.name;
             // ✅使用当前选中的立绘索引
             const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
             targetItem.coverSrc = allSrc[finalIdx] || "";
@@ -456,7 +506,7 @@ function renderCharModalGameList(wrap, keyword) {
             if(targetDom){
                 const nameEl = targetDom.querySelector(".annual-char-name-text");
                 const imgEl = targetDom.querySelector(".annual-char-cover");
-                nameEl.textContent = char.name;
+                nameEl.textContent = targetItem.charName;
                 imgEl.src = getWebImageUrl(targetItem.coverSrc);
                 refreshCharTopItemUi(targetDom, targetItem);
             }
@@ -567,13 +617,31 @@ function renderCharModalCharList() {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
+        // ========== ✅补丁新增：角色列表卡片名字切换（全局||局部隐藏开关） ==========
+        const charListShowHide = charModalGlobal.hideChar || charModalLocal.hideChar;
+        const charNameList = getCharNameList(char, charListShowHide);
+        const charTotalNames = charNameList.length;
+        const charCanSwitchName = charTotalNames > 1;
+        if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
+        let charNameIdx = annualCharNameIndex.get(imgKey);
+        if (charNameIdx >= charTotalNames) charNameIdx = 0;
+        const charDisplayName = charNameList[charNameIdx] || char.name;
+        const charNameMultiCls = charCanSwitchName ? "char-name-multi" : "";
+        const charNameSwitchBtns = charCanSwitchName ? `
+            <button class="char-name-switch-btn char-name-switch-prev annual-char-name-prev" data-char-id="${char.id}">&lt;</button>
+            <button class="char-name-switch-btn char-name-switch-next annual-char-name-next" data-char-id="${char.id}">&gt;</button>
+        ` : "";
+        // ========== 补丁结束 ==========
         div.innerHTML = `
             <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
                 ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-char-img-prev" data-char-id="${char.id}">&lt;</button>` : ""}
-                <img src="${currentImgSrc}" alt="${char.name}" decoding="async">
+                <img src="${currentImgSrc}" alt="${charDisplayName}" decoding="async">
                 ${hasMultiImg ? `<button class="char-switch-btn char-switch-next annual-char-img-next" data-char-id="${char.id}">&gt;</button>` : ""}
             </div>
-            <div class="char-card-name">${char.name}</div>
+            <div class="char-card-name ${charNameMultiCls}">
+                ${charNameSwitchBtns}
+                <span class="char-name-text">${charDisplayName}</span>
+            </div>
         `;
         // 切换按钮事件（阻止冒泡，避免触发角色选中）
         if (hasMultiImg) {
@@ -597,6 +665,26 @@ function renderCharModalCharList() {
                 imgEl.src = getWebImageUrl(allSrc[idx] || "");
             });
         }
+        // ========== ✅补丁新增：角色列表名字切换事件 ==========
+        if (charCanSwitchName) {
+            const nameTextEl = div.querySelector(".char-name-text");
+            const namePrevBtn = div.querySelector(".annual-char-name-prev");
+            const nameNextBtn = div.querySelector(".annual-char-name-next");
+            namePrevBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharNameIndex.get(imgKey) ?? 0;
+                idx = (idx - 1 + charTotalNames) % charTotalNames;
+                annualCharNameIndex.set(imgKey, idx);
+                nameTextEl.textContent = charNameList[idx] || char.name;
+            });
+            nameNextBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let idx = annualCharNameIndex.get(imgKey) ?? 0;
+                idx = (idx + 1) % charTotalNames;
+                annualCharNameIndex.set(imgKey, idx);
+                nameTextEl.textContent = charNameList[idx] || char.name;
+            });
+        }
         // ========== 补丁结束 ==========
         div.addEventListener("click",()=>{
             if(activeCharTopItemIndex === null) return;
@@ -608,7 +696,10 @@ function renderCharModalCharList() {
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = charModalCurrentGameId;
             targetItem.charId = char.id;
-            targetItem.charName = char.name;
+            // ✅补丁新增：保存用户当前选择的名字及索引
+            const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+            targetItem.nameIndex = finalNameIdx;
+            targetItem.charName = charNameList[finalNameIdx] || char.name;
             // ✅使用当前选中的立绘索引，而非固定第一张
             const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
             targetItem.coverSrc = allSrc[finalIdx] || "";
@@ -617,7 +708,7 @@ function renderCharModalCharList() {
             if(targetDom){
                 const nameEl = targetDom.querySelector(".annual-char-name-text");
                 const imgEl = targetDom.querySelector(".annual-char-cover");
-                nameEl.textContent = char.name;
+                nameEl.textContent = targetItem.charName;
                 imgEl.src = getWebImageUrl(targetItem.coverSrc);
                 refreshCharTopItemUi(targetDom, targetItem);
             }
@@ -668,6 +759,8 @@ function openAnnualGlobalCharModal(targetIndex){
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     // ✅补丁新增：每次打开弹窗清空立绘索引缓存，避免上次选择残留
     annualCharImgIndex.clear();
+    // ✅补丁新增：清空名字索引缓存
+    annualCharNameIndex.clear();
     switchCharModalView("gameList");
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
