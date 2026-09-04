@@ -3,7 +3,7 @@
 
 // =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
 
-import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList } from '/js/main.js';
+import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide } from '/js/main.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
@@ -359,8 +359,8 @@ function renderCharModalGameList(wrap, keyword) {
         if(!Array.isArray(game.charList)) continue;
         for(const char of game.charList) {
             const charNameLow = String(char.name).toLowerCase();
-            // ✅补丁新增：全局隐藏开关开启时，额外匹配隐藏名（兼容字符串/数组）
-            const showHideForSearch = charModalGlobal.hideChar;
+            // ✅补丁修改：隐藏开关或FD开关（角色isFD时）任一开启即可搜索隐藏名
+            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
             let hiddenNameMatch = false;
             if (showHideForSearch && char.hiddenName) {
                 if (Array.isArray(char.hiddenName)) {
@@ -414,8 +414,9 @@ function renderCharModalGameList(wrap, keyword) {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // ========== ✅补丁新增：搜索结果角色卡片名字切换 ==========
-        const searchNameList = getCharNameList(char, charModalGlobal.hideChar);
+        // ========== ✅补丁修改：搜索结果角色卡片名字切换（隐藏或FD开关任一开启） ==========
+        const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
+        const searchNameList = getCharNameList(char, searchShowHide);
         const searchTotalNames = searchNameList.length;
         const searchCanSwitchName = searchTotalNames > 1;
         if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
@@ -617,8 +618,8 @@ function renderCharModalCharList() {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // ========== ✅补丁新增：角色列表卡片名字切换（全局||局部隐藏开关） ==========
-        const charListShowHide = charModalGlobal.hideChar || charModalLocal.hideChar;
+        // ========== ✅补丁修改：角色列表卡片名字切换（隐藏或FD开关任一开启） ==========
+        const charListShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
         const charNameList = getCharNameList(char, charListShowHide);
         const charTotalNames = charNameList.length;
         const charCanSwitchName = charTotalNames > 1;
