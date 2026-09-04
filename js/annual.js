@@ -167,6 +167,25 @@ function getAnnualCharAvailImages(char) {
 }
 
 /**
+ * ✅补丁新增：重置角色弹窗局部开关（逻辑状态 + DOM勾选状态同步）
+ * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
+ * 防止上一个游戏的开关DOM勾选残留到下一个游戏造成显示与逻辑相反
+ */
+function resetCharModalLocalSwitches() {
+    charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    const modal = document.getElementById("annual-global-char-modal");
+    if (!modal) return;
+    const subEl = modal.querySelector("#annual-modal-game-sub-char");
+    const hideEl = modal.querySelector("#annual-modal-game-hide-char");
+    const fdEl = modal.querySelector("#annual-modal-game-fd-game");
+    const fdSubEl = modal.querySelector("#annual-modal-game-fd-sub-char");
+    if (subEl) subEl.checked = false;
+    if (hideEl) hideEl.checked = false;
+    if (fdEl) fdEl.checked = false;
+    if (fdSubEl) fdSubEl.checked = false;
+}
+
+/**
  * 更新单个TOP条目UI显隐状态（游戏）
  * @param {HTMLElement} itemDom annual-top-item
  * @param {Object} dataItem topList单条数据
@@ -338,7 +357,8 @@ function renderCharModalGameList(wrap, keyword) {
             div.innerHTML = renderGameSelectItem(game);
             div.addEventListener("click", () => {
                 charModalCurrentGameId = game.id;
-                charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+                // ✅补丁修改：统一重置局部开关（逻辑+DOM同步），防止跨游戏开关状态残留
+                resetCharModalLocalSwitches();
                 switchCharModalView("charList");
                 renderCharModalCharList();
             });
@@ -534,7 +554,8 @@ function renderCharModalGameList(wrap, keyword) {
         div.innerHTML = renderGameSelectItem(game);
         div.addEventListener("click", () => {
             charModalCurrentGameId = game.id;
-            charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+            // ✅补丁修改：统一重置局部开关（逻辑+DOM同步），防止跨游戏开关状态残留
+            resetCharModalLocalSwitches();
             switchCharModalView("charList");
             renderCharModalCharList();
         });
