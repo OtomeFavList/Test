@@ -88,9 +88,10 @@ let _annualDocClickBound = false;
 let _annualSortDocClickHandler = null;
 
 /**
- * 获取游戏模板状态，双重来源：优先window.Core，兜底window.__gameTemplateXXX（main.js挂载全局）
+ * 获取基础游戏模板（仅普通游戏，不含FD续作）
+ * 供：角色弹窗使用，角色弹窗禁止读取FD游戏
  */
-function getGameTemplateState() {
+function getGameTemplateState_BaseOnly() {
     const core = window.Core;
     let baseList = null;
     let baseReady = false;
@@ -98,7 +99,6 @@ function getGameTemplateState() {
         baseList = core.gameTemplateList;
         baseReady = true;
     }else{
-        // 兜底读取main导出挂载window的全局变量
         const winList = window.__gameTemplateList;
         const winReady = window.__gameTemplateReady;
         if(Array.isArray(winList) && winList.length>0 && winReady === true){
@@ -112,10 +112,26 @@ function getGameTemplateState() {
             ready: false
         };
     }
-    // =========【补丁新增：annual内部把普通游戏列表 + FD续作列表合并；FavList完全不受影响】==========
+    return {
+        list: [...baseList],
+        ready: true
+    };
+}
+
+/**
+ * 获取游戏模板【包含FD续作】，仅年度报告【游戏TOP弹窗】使用
+ * 普通FavList不会读取；角色弹窗不调用此函数
+ */
+function getGameTemplateState_WithFD() {
+    const baseState = getGameTemplateState_BaseOnly();
+    if(!baseState.ready){
+        return {
+            list: null,
+            ready: false
+        };
+    }
     const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
-    // 内存层面合并，不修改任何原始数组引用
-    const combinedList = [...baseList, ...fdList];
+    const combinedList = [...baseState.list, ...fdList];
     return {
         list: combinedList,
         ready: true
@@ -195,7 +211,7 @@ function bindStatInputs() {
 }
 
 function isGameTemplateReady() {
-    const state = getGameTemplateState();
+    const state = getGameTemplateState_BaseOnly();
     return state.ready;
 }
 
@@ -206,7 +222,7 @@ function isGameTemplateReady() {
  */
 function renderGameList(wrap, keyword) {
     wrap.innerHTML = "";
-    const state = getGameTemplateState();
+    const state = getGameTemplateState_WithFD();
     const gameTemplateList = state.list;
     const gameTemplateReady = state.ready;
     console.log("[annual.js renderGameList] gameTemplateReady=", gameTemplateReady, "listLength=", gameTemplateList?.length);
@@ -268,7 +284,7 @@ function renderGameList(wrap, keyword) {
  */
 function renderCharModalGameList(wrap, keyword) {
     wrap.innerHTML = "";
-    const state = getGameTemplateState();
+    const state = getGameTemplateState_BaseOnly();
     const gameTemplateList = state.list;
     if (!gameTemplateList || !isGameTemplateReady()) {
         wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
@@ -442,7 +458,7 @@ function renderCharModalCharList() {
     const modal = document.getElementById("annual-global-char-modal");
     const charWrap = modal.querySelector(".annual-global-char-char-list");
     charWrap.innerHTML = "";
-    const state = getGameTemplateState();
+    const state = getGameTemplateState_BaseOnly();
     const gameInfo = state.list.find(g=>g.id === charModalCurrentGameId);
     if(!gameInfo){
         charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
