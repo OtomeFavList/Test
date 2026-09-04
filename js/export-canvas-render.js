@@ -1464,29 +1464,15 @@ export async function renderExportCanvas(
       for (const cid of gameItem.selectChars) {
         const char = gameInfo.charList?.find(c => c.id === cid);
         if (!char) continue;
-        // ========== ✅补丁新增：FD次要角色独立过滤（在sub判断之前） ==========
-        const isFdSub = !!char.isFdSub;
-        if (isFdSub && !showFdSub) {
-            continue;
-        }
-        // ========== 修改：sub复合条件过滤（开始） ==========
+        // ========== ✅改为OR逻辑：统一过滤，角色有多个状态true时任一对应开关开启即显示 ==========
         const isSub = char.isSub ?? false;
         const isHidden = !!char.isHidden;
         const isFD = !!char.isFD;
-        if(isSub){
-            let subPass = false;
-            if(isHidden && isFD){
-                subPass = showSub && globalHide && globalFD;
-            }else if(isHidden && !isFD){
-                subPass = showSub && globalHide;
-            }else if(!isHidden && isFD){
-                subPass = showSub && globalFD;
-            }else{
-                subPass = showSub;
-            }
-            if(!subPass){
-                continue;
-            }
+        const isFdSub = !!char.isFdSub;
+        // 普通角色（无任何特殊标记）直接保留
+        if (isSub || isHidden || isFD || isFdSub) {
+            const pass = (isSub && showSub) || (isHidden && globalHide) || (isFD && globalFD) || (isFdSub && showFdSub);
+            if (!pass) continue;
         }
         // ========== 修改结束 ==========
         const avail = getAvailableCharImages(char, globalHide, globalFD, localHide, localFD);
@@ -1544,29 +1530,15 @@ export async function renderExportCanvas(
           for (const mi of cp.maleItems) {
             const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
             if (!mChar) continue;
-            // ========== ✅补丁新增：FD次要角色独立过滤（在sub判断之前） ==========
-            const isFdSub = !!mChar.isFdSub;
-            if (isFdSub && !showFdSub) {
-                continue;
-            }
-            // ========== 修改：sub复合条件过滤（开始） ==========
+            // ========== ✅改为OR逻辑：统一过滤，角色有多个状态true时任一对应开关开启即显示 ==========
             const isSub = mChar.isSub ?? false;
             const isHidden = !!mChar.isHidden;
             const isFD = !!mChar.isFD;
-            if(isSub){
-                let subPass = false;
-                if(isHidden && isFD){
-                    subPass = showSub && globalHide && globalFD;
-                }else if(isHidden && !isFD){
-                    subPass = showSub && globalHide;
-                }else if(!isHidden && isFD){
-                    subPass = showSub && globalFD;
-                }else{
-                    subPass = showSub;
-                }
-                if(!subPass){
-                    continue;
-                }
+            const isFdSub = !!mChar.isFdSub;
+            // 普通角色（无任何特殊标记）直接保留
+            if (isSub || isHidden || isFD || isFdSub) {
+                const pass = (isSub && showSub) || (isHidden && globalHide) || (isFD && globalFD) || (isFdSub && showFdSub);
+                if (!pass) continue;
             }
             // ========== 修改结束 ==========
             const mAvail = getAvailableCharImages(mChar, globalHide, globalFD, localHide, localFD);
