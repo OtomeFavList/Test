@@ -17,6 +17,7 @@ import {
   renderCP,
   getAllGameChar,
   getAvailableCharImages,
+  getCharDisplayName,  // ✅补丁新增
   isTodayConfirmed,
   saveConfirmDate,
   renderGameSelectItem,
@@ -126,14 +127,33 @@ export function initPage(Core = {}) {
             // ✅重点：selected 来自临时草稿，不再读取 gameItem.selectChars
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
+            // ✅补丁新增：待选角色名字切换
+            const showHideChar = appData.globalHideChar || gameItem.localHideChar;
+            const hasHiddenNm = !!char.hiddenName;
+            const canSwitchNm = hasHiddenNm && showHideChar;
+            const nameSaveKey = `char-name-${gameId}-${char.id}`;
+            if (!appData.charNameSelect) appData.charNameSelect = {};
+            let nmIdx = Number(appData.charNameSelect[nameSaveKey] ?? 0);
+            if (nmIdx !== 0 && nmIdx !== 1) nmIdx = 0;
+            const dispNm = getCharDisplayName(char, nmIdx, showHideChar);
+            const nmMultiCls = canSwitchNm ? "char-name-multi" : "";
+            const nmSwitchBtns = canSwitchNm ? `
+                <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&lt;</button>
+                <button class="char-name-switch-btn char-name-switch-next" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&gt;</button>
+            ` : "";
+            // ✅补丁结束
+
             femHtml += `
             <div class="char-item ${selected}" data-cid="${char.id}" data-char-id="${char.id}" data-game-id="${gameId}" data-total-img="${allSrc.length}" data-panel-mode="char">
               <div class="char-card-img-box ${allSrc.length>1?'char-multi-img':''}">
                 ${allSrc.length>1?`<button class="char-switch-btn char-switch-prev" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&lt;</button>`: ""}
-                <img src="${getWebImageUrl(showSrc)}" alt="${char.name}" decoding="async">
+                <img src="${getWebImageUrl(showSrc)}" alt="${dispNm}" decoding="async">
                 ${allSrc.length>1?`<button class="char-switch-btn char-switch-next" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&gt;</button>`: ""}
               </div>
-              <div class="char-card-name">${char.name}</div>
+              <div class="char-card-name ${nmMultiCls}">
+                ${nmSwitchBtns}
+                <span class="char-name-text">${dispNm}</span>
+              </div>
             </div>`;
         });
         heroineBox.innerHTML = femHtml;
@@ -176,14 +196,33 @@ export function initPage(Core = {}) {
             // ✅重点：selected 来自临时草稿
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
+            // ✅补丁新增：待选角色名字切换
+            const showHideChar = appData.globalHideChar || gameItem.localHideChar;
+            const hasHiddenNm = !!char.hiddenName;
+            const canSwitchNm = hasHiddenNm && showHideChar;
+            const nameSaveKey = `char-name-${gameId}-${char.id}`;
+            if (!appData.charNameSelect) appData.charNameSelect = {};
+            let nmIdx = Number(appData.charNameSelect[nameSaveKey] ?? 0);
+            if (nmIdx !== 0 && nmIdx !== 1) nmIdx = 0;
+            const dispNm = getCharDisplayName(char, nmIdx, showHideChar);
+            const nmMultiCls = canSwitchNm ? "char-name-multi" : "";
+            const nmSwitchBtns = canSwitchNm ? `
+                <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&lt;</button>
+                <button class="char-name-switch-btn char-name-switch-next" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&gt;</button>
+            ` : "";
+            // ✅补丁结束
+
             maleHtml += `
             <div class="char-item ${selected}" data-cid="${char.id}" data-char-id="${char.id}" data-game-id="${gameId}" data-total-img="${allSrc.length}" data-panel-mode="char">
               <div class="char-card-img-box ${allSrc.length>1?'char-multi-img':''}">
                 ${allSrc.length>1?`<button class="char-switch-btn char-switch-prev" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&lt;</button>`: ""}
-                <img src="${getWebImageUrl(showSrc)}" alt="${char.name}" decoding="async">
+                <img src="${getWebImageUrl(showSrc)}" alt="${dispNm}" decoding="async">
                 ${allSrc.length>1?`<button class="char-switch-btn char-switch-next" data-char-id="${char.id}" data-game-id="${gameId}" data-panel-mode="char">&gt;</button>`: ""}
               </div>
-              <div class="char-card-name">${char.name}</div>
+              <div class="char-card-name ${nmMultiCls}">
+                ${nmSwitchBtns}
+                <span class="char-name-text">${dispNm}</span>
+              </div>
             </div>`;
         });
         heroListBox.innerHTML = maleHtml;
@@ -207,7 +246,8 @@ export function initPage(Core = {}) {
                 openMalePanel: false,
                 maleIds: [],
                 maleItems: [],
-                femaleImgIndex: 0
+                femaleImgIndex: 0,
+                femaleNameIndex: 0  // ✅补丁新增
             }));
         }
 
@@ -261,6 +301,20 @@ export function initPage(Core = {}) {
             if(imgIndex >= allSrc.length) imgIndex = 0;
             const showSrc = allSrc[imgIndex];
 
+            // ✅补丁新增：CP女主待选名字切换
+            const fShowHideNm = appData.globalHideChar || gameItem.localHideChar;
+            const fHasHiddenNm = !!fChar.hiddenName;
+            const fCanSwitchNm = fHasHiddenNm && fShowHideNm;
+            let fNmIdx = Number(state.femaleNameIndex ?? 0);
+            if (fNmIdx !== 0 && fNmIdx !== 1) fNmIdx = 0;
+            const fDispNm = getCharDisplayName(fChar, fNmIdx, fShowHideNm);
+            const fNmMultiCls = fCanSwitchNm ? "char-name-multi" : "";
+            const fNmSwitchBtns = fCanSwitchNm ? `
+                <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${fChar.id}" data-game-id="${gameId}" data-panel-mode="cp" data-cp-female="1">&lt;</button>
+                <button class="char-name-switch-btn char-name-switch-next" data-char-id="${fChar.id}" data-game-id="${gameId}" data-panel-mode="cp" data-cp-female="1">&gt;</button>
+            ` : "";
+            // ✅补丁结束
+
             // 女主卡片：增加data-char-id，多立绘渲染切换按钮，标记panel-mode="cp"
             // ★★★ 修复点：为 cp-female-card-btn 添加 data-game-id 属性 ★★★
             cpPanelHtml += `
@@ -274,10 +328,13 @@ export function initPage(Core = {}) {
                     data-panel-mode="cp">
                     <div class="char-card-img-box ${allSrc.length>1?'char-multi-img':''}">
                         ${allSrc.length>1?`<button class="char-switch-btn char-switch-prev" data-char-id="${fChar.id}" data-game-id="${gameId}" data-total-img="${allSrc.length}" data-panel-mode="cp">&lt;</button>`:""}
-                        <img src="${getWebImageUrl(showSrc)}" alt="${fChar.name}" decoding="async">
+                        <img src="${getWebImageUrl(showSrc)}" alt="${fDispNm}" decoding="async">
                         ${allSrc.length>1?`<button class="char-switch-btn char-switch-next" data-char-id="${fChar.id}" data-game-id="${gameId}" data-total-img="${allSrc.length}" data-panel-mode="cp">&gt;</button>`:""}
                     </div>
-                    <div class="cp-female-name">${fChar.name}</div>
+                    <div class="cp-female-name ${fNmMultiCls}">
+                        ${fNmSwitchBtns}
+                        <span class="char-name-text">${fDispNm}</span>
+                    </div>
                 </div>
                 <!-- 如果openMalePanel=true，渲染该女主对应的男主候选列表 -->
                 ${state.openMalePanel ? `
@@ -316,6 +373,22 @@ export function initPage(Core = {}) {
                             const mShowSrc = mSrcArr[mImgIndex];
                             const mSel = draftMap.has(mChar.id) ? "selected" : "";
 
+                            // ✅补丁新增：CP男主待选名字切换
+                            const mShowHideNm = appData.globalHideChar || gameItem.localHideChar;
+                            const mHasHiddenNm = !!mChar.hiddenName;
+                            const mCanSwitchNm = mHasHiddenNm && mShowHideNm;
+                            const mNameSaveKey = `char-name-${gameId}-${mChar.id}`;
+                            if (!appData.charNameSelect) appData.charNameSelect = {};
+                            let mNmIdx = Number(appData.charNameSelect[mNameSaveKey] ?? 0);
+                            if (mNmIdx !== 0 && mNmIdx !== 1) mNmIdx = 0;
+                            const mDispNm = getCharDisplayName(mChar, mNmIdx, mShowHideNm);
+                            const mNmMultiCls = mCanSwitchNm ? "char-name-multi" : "";
+                            const mNmSwitchBtns = mCanSwitchNm ? `
+                                <button class="char-name-switch-btn char-name-switch-prev" data-char-id="${mChar.id}" data-game-id="${gameId}" data-panel-mode="cp">&lt;</button>
+                                <button class="char-name-switch-btn char-name-switch-next" data-char-id="${mChar.id}" data-game-id="${gameId}" data-panel-mode="cp">&gt;</button>
+                            ` : "";
+                            // ✅补丁结束
+
                             return `
                             <div class="cp-male-item ${mSel}" 
                                 data-fid="${fChar.id}" 
@@ -326,10 +399,13 @@ export function initPage(Core = {}) {
                                 data-panel-mode="cp">
                                 <div class="char-card-img-box ${mSrcArr.length>1?'char-multi-img':''}">
                                     ${mSrcArr.length>1?`<button class="char-switch-btn char-switch-prev" data-char-id="${mChar.id}" data-game-id="${gameId}" data-total-img="${mSrcArr.length}" data-panel-mode="cp">&lt;</button>`:""}
-                                    <img src="${getWebImageUrl(mShowSrc)}" alt="${mChar.name}" decoding="async">
+                                    <img src="${getWebImageUrl(mShowSrc)}" alt="${mDispNm}" decoding="async">
                                     ${mSrcArr.length>1?`<button class="char-switch-btn char-switch-next" data-char-id="${mChar.id}" data-game-id="${gameId}" data-total-img="${mSrcArr.length}" data-panel-mode="cp">&gt;</button>`:""}
                                 </div>
-                                <div class="char-card-name">${mChar.name}</div>
+                                <div class="char-card-name ${mNmMultiCls}">
+                                    ${mNmSwitchBtns}
+                                    <span class="char-name-text">${mDispNm}</span>
+                                </div>
                             </div>`;
                         }).join("")}
                     </div>
@@ -354,6 +430,7 @@ export function initPage(Core = {}) {
             .map(st=>({
                 femaleId: st.femaleId,
                 femaleImgIndex: st.femaleImgIndex ?? 0,
+                femaleNameIndex: st.femaleNameIndex ?? 0,  // ✅补丁新增
                 maleItems: st.maleItems.map(x=>({...x}))
             }));
 
@@ -511,7 +588,8 @@ export function initPage(Core = {}) {
                 openMalePanel: false,
                 maleIds: [],
                 maleItems: [],
-                femaleImgIndex: 0
+                femaleImgIndex: 0,
+                femaleNameIndex: 0  // ✅补丁新增
             }));
         }
         // 预生成cpList，保证renderCP拿到最新数据【修改点5带上femaleImgIndex】
@@ -520,6 +598,7 @@ export function initPage(Core = {}) {
             .map(st=>({
                 femaleId: st.femaleId,
                 femaleImgIndex: st.femaleImgIndex ?? 0,
+                femaleNameIndex: st.femaleNameIndex ?? 0,  // ✅补丁新增
                 maleItems: st.maleItems.map(x=>({...x}))
             }));
       });
@@ -542,7 +621,7 @@ export function initPage(Core = {}) {
         const hasLocalHideChar = gameInfo.charList.some(c => c.isHidden === true);
         const hasLocalFDChar = gameInfo.charList.some(c => c.isFD === true);
         const hasLocalSubChar = gameInfo.charList.some(c => c.isSub === true);
-        const hasLocalFdSubChar = gameInfo.charList.some(c => c.isFdSub === true); // ✅补丁新增
+        const hasLocalFdSubChar = gameInfo.charList.some(c => c.isFdSub === true); // ✅补丁新增：检测是否存在续作/FD次要角色
         let switchRowInnerHtml = "";
 
         // 新增【单独显示本游戏次要角色】
@@ -556,7 +635,8 @@ export function initPage(Core = {}) {
                 <span>单独显示本游戏次要角色</span>
             </div>`;
         }
-        // ✅补丁新增：单独显示本游戏续作/FD次要角色开关
+
+        // ✅补丁新增：单独显示本游戏续作/FD次要角色
         if(hasLocalFdSubChar){
             switchRowInnerHtml += `
             <div>
@@ -787,6 +867,53 @@ export function initPage(Core = {}) {
         return; //处理完图片切换直接return，不再往下执行cp逻辑
       }
 
+      // ========== ✅补丁新增：待选面板 角色名切换按钮 ==========
+      const nameSwitchBtn = e.target.closest(".char-name-switch-btn");
+      if (nameSwitchBtn) {
+        e.stopPropagation();
+        const charCard = nameSwitchBtn.closest(".char-item, .cp-female-card-btn, .cp-male-item");
+        if (!charCard) return;
+        const charId = charCard.dataset.charId;
+        const gameId = charCard.dataset.gameId;
+        const panelMode = nameSwitchBtn.dataset.panelMode || charCard.dataset.panelMode;
+        const isCpFemale = !!nameSwitchBtn.dataset.cpFemale;
+        const gameItem = appData.gameList?.find(g => g.gameId === gameId);
+        if (!gameItem) return;
+        if (panelMode === "cp" && isCpFemale) {
+          // CP女主：写入 cpEditState.femaleNameIndex
+          const st = gameItem.cpEditState?.find(s => s.femaleId === charId);
+          if (st) {
+            st.femaleNameIndex = Number(st.femaleNameIndex ?? 0) === 1 ? 0 : 1;
+          }
+        } else {
+          // Character / CP男主：写入全局 charNameSelect
+          const saveKey = `char-name-${gameId}-${charId}`;
+          if (!appData.charNameSelect) appData.charNameSelect = {};
+          const newIdx = Number(appData.charNameSelect[saveKey] ?? 0) === 1 ? 0 : 1;
+          appData.charNameSelect[saveKey] = newIdx;
+        }
+        saveData();
+        // 直接更新DOM文字，不整卡重渲染（避免面板状态丢失）
+        const nameBox = charCard.querySelector(".char-card-name, .cp-female-name");
+        const nameTextEl = nameBox?.querySelector(".char-name-text");
+        if (nameTextEl && gameId) {
+          const gameInfo = gameTemplateList.find(g => g.id === gameId);
+          const char = gameInfo?.charList?.find(c => c.id === charId);
+          if (char) {
+            const showHide = appData.globalHideChar || gameItem.localHideChar;
+            let curIdx;
+            if (panelMode === "cp" && isCpFemale) {
+              curIdx = Number(gameItem.cpEditState?.find(s => s.femaleId === charId)?.femaleNameIndex ?? 0);
+            } else {
+              curIdx = Number(appData.charNameSelect[`char-name-${gameId}-${charId}`] ?? 0);
+            }
+            nameTextEl.textContent = getCharDisplayName(char, curIdx, showHide);
+          }
+        }
+        return;
+      }
+      // ========== 补丁结束 ==========
+
       // ============下面全部是原来CP事件逻辑（移到此处）============
       const cpFemaleBtn = e.target.closest(".cp-female-card-btn");
       if(cpFemaleBtn){
@@ -858,7 +985,10 @@ export function initPage(Core = {}) {
           selectedMidSet.forEach(cid=>{
               const mSaveKey = `cp-img-${gid}-${cid}`;
               const latestImgIndex = Number(appData.charImageSelect?.[mSaveKey] ?? 0);
-              st.maleItems.push({charId:cid, imgIndex: latestImgIndex});
+              // ✅补丁新增：读取男主名字索引
+              const mNameKey = `char-name-${gid}-${cid}`;
+              const latestNameIndex = Number(appData.charNameSelect?.[mNameKey] ?? 0);
+              st.maleItems.push({charId:cid, imgIndex: latestImgIndex, nameIndex: latestNameIndex});
           });
           // 旧字段兼容保留，不再业务读取
           st.maleIds = Array.from(selectedMidSet.keys());
@@ -948,11 +1078,13 @@ export function initPage(Core = {}) {
           // 2.遍历草稿集合写入真实数据
           draftSet.forEach(charId=>{
               gameItem.selectChars.push(charId);
-              // 读取当前面板内该角色的立绘下标（使用与切换一致的key）
               const imgIndex = Number(appData.charImageSelect[`char-img-${gid}-${charId}`] ?? 0);
+              // ✅补丁新增：读取名字索引并写入
+              const nameIndex = Number(appData.charNameSelect?.[`char-name-${gid}-${charId}`] ?? 0);
               gameItem.selectCharItems.push({
                   charId: charId,
-                  imgIndex: imgIndex
+                  imgIndex: imgIndex,
+                  nameIndex: nameIndex
               });
           });
 
