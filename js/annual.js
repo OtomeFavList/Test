@@ -72,12 +72,14 @@ let charModalCurrentGameId = null;
 let charModalGlobal = {
     subChar: false,
     hideChar: false,
-    fdChar: false
+    fdChar: false,
+    fdSubChar: false  // ✅补丁新增：全局显示续作/FD次要角色
 };
 let charModalLocal = {
     subChar: false,
     hideChar: false,
-    fdChar: false
+    fdChar: false,
+    fdSubChar: false  // ✅补丁新增：单游戏显示续作/FD次要角色
 };
 
 // 模块内部状态标记
@@ -310,7 +312,7 @@ function renderCharModalGameList(wrap, keyword) {
             div.innerHTML = renderGameSelectItem(game);
             div.addEventListener("click", () => {
                 charModalCurrentGameId = game.id;
-                charModalLocal = { subChar:false, hideChar:false, fdChar:false };
+                charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
                 switchCharModalView("charList");
                 renderCharModalCharList();
             });
@@ -333,26 +335,20 @@ function renderCharModalGameList(wrap, keyword) {
             const charNameLow = String(char.name).toLowerCase();
             if(!charNameLow.includes(kw)) continue;
 
-            // 【开关过滤：仅使用全局开关charModalGlobal，不使用游戏局部charModalLocal】
+            // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
             const isSub = char.isSub ?? false;
             const isHidden = !!char.isHidden;
             const isFD = !!char.isFD;
+            const isFdSub = !!char.isFdSub;
             const showHide = charModalGlobal.hideChar;
             const showFD = charModalGlobal.fdChar;
             const showSub = charModalGlobal.subChar;
-
+            const showFdSub = charModalGlobal.fdSubChar;
             let pass = false;
-            if(isSub){
-                if(isHidden && isFD) pass = showSub && showHide && showFD;
-                else if(isHidden && !isFD) pass = showSub && showHide;
-                else if(!isHidden && isFD) pass = showSub && showFD;
-                else pass = showSub;
-            }else{
-                if(!isHidden && !isFD) pass = true;
-                else if(isHidden && !isFD) pass = showHide;
-                else if(!isHidden && isFD) pass = showFD;
-                else if(isHidden && isFD) pass = showHide || showFD;
-                else pass = true;
+            if (!isSub && !isHidden && !isFD && !isFdSub) {
+                pass = true;
+            } else {
+                pass = (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
             }
 
             if(pass){
@@ -429,7 +425,7 @@ function renderCharModalGameList(wrap, keyword) {
         div.innerHTML = renderGameSelectItem(game);
         div.addEventListener("click", () => {
             charModalCurrentGameId = game.id;
-            charModalLocal = { subChar:false, hideChar:false, fdChar:false };
+            charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
             switchCharModalView("charList");
             renderCharModalCharList();
         });
@@ -470,21 +466,15 @@ function renderCharModalCharList() {
         const isSub = c.isSub ?? false;
         const isHidden = !!c.isHidden;
         const isFD = !!c.isFD;
+        const isFdSub = !!c.isFdSub;
         const showHide = charModalGlobal.hideChar || charModalLocal.hideChar;
         const showFD = charModalGlobal.fdChar || charModalLocal.fdChar;
         const showSub = charModalGlobal.subChar || charModalLocal.subChar;
-
-        if(isSub){
-            if(isHidden && isFD) return showSub && showHide && showFD;
-            if(isHidden && !isFD) return showSub && showHide;
-            if(!isHidden && isFD) return showSub && showFD;
-            return showSub;
-        }
-        if(!isHidden && !isFD) return true;
-        if(isHidden && !isFD) return showHide;
-        if(!isHidden && isFD) return showFD;
-        if(isHidden && isFD) return showHide || showFD;
-        return true;
+        const showFdSub = charModalGlobal.fdSubChar || charModalLocal.fdSubChar;
+        // 普通角色（无任何特殊标记）：始终显示
+        if (!isSub && !isHidden && !isFD && !isFdSub) return true;
+        // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
+        return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
     });
     // ✅角色名排序复用sortFilterOptionList
     const { sortFilterOptionList } = window.Core || {};
@@ -574,8 +564,8 @@ function openAnnualGlobalCharModal(targetIndex){
     // 初始化弹窗状态
     charModalViewMode = "gameList";
     charModalCurrentGameId = null;
-    charModalGlobal = { subChar:false, hideChar:false, fdChar:false };
-    charModalLocal = { subChar:false, hideChar:false, fdChar:false };
+    charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     switchCharModalView("gameList");
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
@@ -585,9 +575,13 @@ function openAnnualGlobalCharModal(targetIndex){
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
     modal.querySelector("#annual-modal-global-hide-char").checked = false;
     modal.querySelector("#annual-modal-global-fd-game").checked = false;
+    const globalFdSubEl = modal.querySelector("#annual-modal-global-fd-sub-char");
+    if (globalFdSubEl) globalFdSubEl.checked = false;
     modal.querySelector("#annual-modal-game-sub-char").checked = false;
     modal.querySelector("#annual-modal-game-hide-char").checked = false;
     modal.querySelector("#annual-modal-game-fd-game").checked = false;
+    const localFdSubEl = modal.querySelector("#annual-modal-game-fd-sub-char");
+    if (localFdSubEl) localFdSubEl.checked = false;
 
     renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), "");
 }
@@ -1367,6 +1361,12 @@ export function initAnnualModule(){
                 if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
+            // ✅补丁新增：全局续作/FD次要角色开关
+            if(e.target.closest("#annual-modal-global-fd-sub-char")){
+                charModalGlobal.fdSubChar = !charModalGlobal.fdSubChar;
+                if(charModalViewMode === "charList") renderCharModalCharList();
+                return;
+            }
             // 本游戏局部开关
             if(e.target.closest("#annual-modal-game-sub-char")){
                 charModalLocal.subChar = !charModalLocal.subChar;
@@ -1380,6 +1380,12 @@ export function initAnnualModule(){
             }
             if(e.target.closest("#annual-modal-game-fd-game")){
                 charModalLocal.fdChar = !charModalLocal.fdChar;
+                renderCharModalCharList();
+                return;
+            }
+            // ✅补丁新增：单游戏续作/FD次要角色开关
+            if(e.target.closest("#annual-modal-game-fd-sub-char")){
+                charModalLocal.fdSubChar = !charModalLocal.fdSubChar;
                 renderCharModalCharList();
                 return;
             }
