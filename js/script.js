@@ -541,7 +541,8 @@ export function initPage(Core = {}) {
         // =========【新增：条件渲染本游戏局部开关】=========
         const hasLocalHideChar = gameInfo.charList.some(c => c.isHidden === true);
         const hasLocalFDChar = gameInfo.charList.some(c => c.isFD === true);
-        const hasLocalSubChar = gameInfo.charList.some(c => c.isSub === true); // ✅判断该游戏是否存在次要角色
+        const hasLocalSubChar = gameInfo.charList.some(c => c.isSub === true);
+        const hasLocalFdSubChar = gameInfo.charList.some(c => c.isFdSub === true); // ✅补丁新增
         let switchRowInnerHtml = "";
 
         // 新增【单独显示本游戏次要角色】
@@ -553,6 +554,17 @@ export function initPage(Core = {}) {
                     <span class="slider"></span>
                 </label>
                 <span>单独显示本游戏次要角色</span>
+            </div>`;
+        }
+        // ✅补丁新增：单独显示本游戏续作/FD次要角色开关
+        if(hasLocalFdSubChar){
+            switchRowInnerHtml += `
+            <div>
+                <label class="switch">
+                    <input type="checkbox" class="game-fd-sub-switch" data-gameidx="${index}" ${(gameItem.localFdSubChar ?? false) ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span>单独显示本游戏续作/FD次要角色</span>
             </div>`;
         }
 
@@ -1313,6 +1325,7 @@ export function initPage(Core = {}) {
             localHideChar: false,
             localFD: false,
             localSubChar: false, // ✅新增，新建游戏默认关闭次要角色开关
+            localFdSubChar: false, // ✅补丁新增，新建游戏默认关闭续作/FD次要角色开关
             loveRate: 0,
             selectChars: [],
             cpSelectIds: [],
