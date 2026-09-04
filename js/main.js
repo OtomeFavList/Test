@@ -877,8 +877,8 @@ export function preloadAdjacentImages(srcList, index) {
 export async function loadAllGameTemplates() {
     // ==========【补丁新增：独立加载FD/续作游戏，不混入主gameDataList】==========
     try {
-        // 动态导入fd‑games模块，执行FD游戏加载
-        const fdModule = await import("./fd‑games.js");
+        // 动态导入fd-games模块，执行FD游戏加载
+        const fdModule = await import("./fd-games.js");
         if(typeof fdModule.loadAllFDGames === "function"){
             await fdModule.loadAllFDGames();
         }
