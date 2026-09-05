@@ -4,6 +4,7 @@
 // =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
 
 import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide } from '/js/main.js';
+import { renderAllAnnualModules } from './annual-canvas-render.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
@@ -1433,6 +1434,25 @@ function updateSliderProgress(sliderEl) {
 }
 
 /**
+ * 从DOM读取年度报告各模块标题（去掉序号前缀）
+ */
+function getAnnualModuleTitles() {
+    const cards = document.querySelectorAll('.mode-wrap[data-mode="annual"] .big-card');
+    const titles = { stats: '', gameTop: '', charTop: '', cpTop: '' };
+    const keys = ['stats', 'gameTop', 'charTop', 'cpTop'];
+    cards.forEach((card, i) => {
+        if (i >= keys.length) return;
+        const h2 = card.querySelector('h2');
+        if (!h2) return;
+        // 去掉"数字+顿号"前缀，如"二、TOP" → "TOP"
+        const raw = h2.textContent.trim();
+        const cleaned = raw.replace(/^[一二三四五六七八九十\d]+[、.]\s*/, '');
+        titles[keys[i]] = cleaned;
+    });
+    return titles;
+}
+
+/**
  * 年度报告导出面板绑定
  */
 function bindAnnualExportPanel() {
@@ -1522,31 +1542,31 @@ function bindAnnualExportPanel() {
 
     btnExportImage.removeEventListener("click", btnExportImage._handler);
     btnExportImage._handler = async () => {
-        const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
-        if (!annualWrap || !snapshotBox) return;
-        snapshotBox.innerHTML = annualWrap.innerHTML;
-        snapshotBox.classList.add("export-snapshot", "annual-mode");
-        snapshotBox.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-        snapshotBox.style.setProperty("--annual-export-title", annualExportConfig.title);
-        snapshotBox.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-        snapshotBox.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-        snapshotBox.style.setProperty("--annual-export-border", annualExportConfig.border);
-        snapshotBox.dataset.annualFontSize = String(annualExportConfig.customTextFontSize);
+        // 读取用户选择的导出宽度（640/810/1080，需在HTML中加select或radio）
+        const widthSelect = document.getElementById("annual-export-width-select");
+        const selectedExportWidth = Number(widthSelect?.value ?? 640);
+        const DPR = 2;
+        const designW = selectedExportWidth / DPR;
+        const titleMap = getAnnualModuleTitles();
+
         try {
-            const canvas = await html2canvas(snapshotBox, {
-                useCORS:true,
-                scale:2,
-                backgroundColor: annualExportConfig.bg
+            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
+
+            // 复用已有预览弹窗：将每个blob转为URL，填入预览弹窗
+            // （此处调用你已有的预览弹窗展示逻辑，将results数组传入）
+            // results: [{moduleType, moduleTitle, blob}, ...]
+
+            // 示例：逐个下载
+            results.forEach((r, i) => {
+                const url = URL.createObjectURL(r.blob);
+                const a = document.createElement('a');
+                a.download = `Annual_${r.moduleType || 'stats'}_${selectedExportWidth}.png`;
+                a.href = url;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
             });
-            const link = document.createElement("a");
-            link.download = "Otome-Annual-Report.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        } catch(err) {
+        } catch (err) {
             console.error("年度报告导出失败", err);
-        } finally {
-            snapshotBox.innerHTML = "";
-            snapshotBox.classList.remove("export-snapshot", "annual-mode");
         }
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
