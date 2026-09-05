@@ -1469,6 +1469,18 @@
     -webkit-user-select: none;
 }
 
+/* ✅关键修复：文本框/输入框恢复文字选择和输入能力，不被父级 user-select:none 连带禁止 */
+.annual-top-item textarea,
+.annual-char-top-item textarea,
+.annual-cp-top-item textarea,
+.annual-top-item input,
+.annual-char-top-item input,
+.annual-cp-top-item input {
+    user-select: text;
+    -webkit-user-select: text;
+    pointer-events: auto;
+}
+
 /* ========== ✅新增：CP弹窗游戏列表（样式对齐角色弹窗） ========== */
 .annual-global-cp-game-list {
     min-height:260px;
