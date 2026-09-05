@@ -1,4 +1,3 @@
-```javascript
 // ===================== 年度报告模块 annual.js =====================
 // 存储key: "annual-report-data"，与喜好表数据隔离
 
@@ -2413,4 +2412,3 @@ export function initAnnualModule(){
 if(typeof window !== "undefined"){
     window.initAnnualModule = initAnnualModule;
 }
-```
