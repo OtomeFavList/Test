@@ -528,11 +528,13 @@
         overflow-y:auto !important; /* ✅新增移动端独立滚动 */
     }
     .annual-global-char-game-list .game-option-item img,
-    .annual-global-cp-game-list .game-option-item img {
+    .annual-global-cp-game-list .game-option-item img,
+    .annual-global-cp-game-list .annual-cp-game-option-item img {
         width: 80px !important;
     }
     .annual-global-char-game-list .game-option-item,
-    .annual-global-cp-game-list .game-option-item {
+    .annual-global-cp-game-list .game-option-item,
+    .annual-global-cp-game-list .annual-cp-game-option-item {
         display: flex !important;
         gap: 10px !important;
         padding: 10px !important;
@@ -691,11 +693,13 @@
         overflow-y:auto !important; /* ✅平板端独立滚动 */
     }
     .annual-global-char-game-list .game-option-item img,
-    .annual-global-cp-game-list .game-option-item img {
+    .annual-global-cp-game-list .game-option-item img,
+    .annual-global-cp-game-list .annual-cp-game-option-item img {
         width: 80px !important;
     }
     .annual-global-char-game-list .game-option-item,
-    .annual-global-cp-game-list .game-option-item {
+    .annual-global-cp-game-list .game-option-item,
+    .annual-global-cp-game-list .annual-cp-game-option-item {
         display: flex !important;
         gap: 10px !important;
         padding: 10px !important;
@@ -1516,4 +1520,136 @@
 }
 .annual-add-cp-btn:hover {
     background-color: #992e2e;
+}
+
+/* ================================================================ */
+/* ========== CP弹窗独立class样式（与script.js彻底隔离） ========== */
+/* ================================================================ */
+
+/* 独立返回按钮：复用.annual-modal-back-btn的视觉 */
+.annual-cp-modal-back-btn {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.annual-cp-modal-back-btn:hover {
+    background: #992e2e !important;
+    color: #b33a3a !important;
+}
+
+/* 游戏列表卡片：复用.annual-global-cp-game-list .game-option-item的视觉 */
+.annual-global-cp-game-list .annual-cp-game-option-item {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #fff;
+    width: 100%;
+    box-sizing: border-box;
+}
+.annual-global-cp-game-list .annual-cp-game-option-item:hover {
+    background: #fff0f3;
+    border-color: #e895a8;
+}
+.annual-global-cp-game-list .annual-cp-game-option-item img {
+    width: 120px;
+    height: auto;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* 女主block容器 */
+.annual-cp-female-block {
+    margin-bottom: 16px;
+}
+
+/* 女主可点击卡片 */
+.annual-cp-female-card-btn {
+    cursor: pointer;
+    display: inline-block;
+    transition: all 0.15s ease;
+}
+.annual-cp-female-card-btn:hover {
+    opacity: 0.85;
+}
+
+/* 女主名字容器 */
+.annual-cp-female-name {
+    text-align: center;
+    margin-top: 6px;
+    font-weight: bold;
+    color: var(--annual-export-gamename, #000);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* 男主选择区 */
+.annual-cp-male-select-wrap {
+    margin-top: 12px;
+    padding: 12px;
+    background: #faf7f8;
+    border-radius: 8px;
+    border: 1px solid #f0e0e4;
+}
+.annual-cp-male-title {
+    font-size: 14px;
+    color: #b33a3a;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+.annual-cp-male-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+/* 男主可点击卡片 */
+.annual-cp-male-item-btn {
+    cursor: pointer;
+    text-align: center;
+    padding: 6px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+.annual-cp-male-item-btn:hover {
+    background: #fff0f3;
+}
+.annual-cp-male-item-btn.selected {
+    border-color: #e895a8;
+    background: #fff0f3;
+}
+
+/* 男主名字容器 */
+.annual-cp-char-card-name {
+    text-align: center;
+    margin-top: 6px;
+    font-weight: bold;
+    color: var(--annual-export-gamename, #000);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
