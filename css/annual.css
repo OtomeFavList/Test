@@ -619,8 +619,8 @@
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
     }
-    .annual-global-cp-female-list .annual-cp-female-card-btn,
-    .annual-cp-male-list .annual-cp-male-item-btn {
+    .annual-global-cp-female-list .char-item,
+    .annual-cp-male-list .char-item {
         width: 100% !important;
         min-height: 132px !important;
         padding: 10px !important;  /* 6px → 10px，对齐移动端.char-item */
@@ -632,10 +632,6 @@
         justify-content: start !important;                           /* 新增 */
         gap: 10px !important;
     }
-    .annual-cp-female-name,
-    .annual-cp-char-card-name {
-        font-size: 14px !important;
-    }
     .annual-cp-modal-back-btn {
         left: 12px;
         width: 26px;
@@ -643,7 +639,7 @@
         font-size: 18px;
     }
     /* ✅移动端选中女主后不再放大 */
-    .annual-cp-female-block-expanded .annual-cp-female-card-btn {
+    .annual-cp-female-block-expanded .char-item {
         max-width: 90px !important;
     }
     /* 搜索结果角色卡片移动端复刻待选角色样式 */
@@ -786,8 +782,8 @@
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
     }
-    .annual-global-cp-female-list .annual-cp-female-card-btn,
-    .annual-cp-male-list .annual-cp-male-item-btn {
+    .annual-global-cp-female-list .char-item,
+    .annual-cp-male-list .char-item {
         width: 100% !important;
         min-height: 148px !important;
     }
@@ -798,7 +794,7 @@
         gap: 12px !important;
     }
     /* ✅平板端选中女主后不再放大 */
-    .annual-cp-female-block-expanded .annual-cp-female-card-btn {
+    .annual-cp-female-block-expanded .char-item {
         max-width: 110px !important;
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
@@ -1666,164 +1662,6 @@
     grid-column: 1 / -1;
 }
 /* ✅选中女主后不再放大：用max-width锁定与grid列宽一致，卡片保持原尺寸 */
-.annual-cp-female-block-expanded .annual-cp-female-card-btn {
+.annual-cp-female-block-expanded .char-item {
     max-width: 130px;
-}
-
-/* ---------- 女主卡片：1:1复刻角色弹窗.char-item ---------- */
-.annual-cp-female-card-btn {
-    border: 1px solid #eee;
-    border-radius: 10px;
-    padding: 12px;
-    cursor: pointer;
-    background: #fff;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;  /* 新增：图片贴顶、名字贴底，中间撑开，名字区域更高 */
-    gap: 8px;
-    min-height: 148px;
-    transition: background-color 0.15s, border-color 0.15s;
-}
-.annual-cp-female-card-btn:hover {
-    background: #fff0f3;
-    border-color: #e895a8;
-}
-/* 女主选中态：对齐角色卡片视觉高亮 */
-.annual-cp-female-card-btn.selected,
-.annual-cp-female-card.selected {
-    border-color: #e895a8;
-    background: #fff0f3;
-}
-
-/* ---------- 图片容器：1:1复刻.char-card-img-box ---------- */
-.annual-cp-char-card-img-box {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    border-radius: 6px;
-    border: 1px solid #eee;  /* 新增：内图片框，与外卡片框形成"两个框"效果，对齐角色弹窗 */
-    box-sizing: border-box;  /* 新增：边框不撑大容器 */
-    flex-shrink: 0;
-}
-.annual-cp-char-card-img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-/* ---------- 图片切换按钮：1:1复刻.char-switch-btn ---------- */
-.annual-cp-char-switch-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: rgba(0, 0, 0, 0.4);
-    color: #fff;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    padding: 0;
-}
-.annual-cp-char-switch-btn:hover {
-    background: rgba(0, 0, 0, 0.6);
-}
-.annual-cp-char-switch-prev { left: 4px; }
-.annual-cp-char-switch-next { right: 4px; }
-
-/* ---------- 名字容器：1:1复刻.char-card-name（女主/男主共用） ---------- */
-.annual-cp-female-name,
-.annual-cp-char-card-name {
-    font-weight: normal;    /* bold → normal，对齐搜索角色弹窗.char-card-name */
-    font-size: 15px;
-    color: var(--annual-export-gamename, #000);
-    text-align: center;
-    word-break: break-word;
-    line-height: 1.4;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    min-height: 21px;
-    margin: 0;
-    padding: 0;
-}
-.annual-cp-char-name-text {
-    flex: 1;
-    text-align: center;
-    min-width: 0;
-}
-
-/* ---------- 名字切换按钮：1:1复刻.char-name-switch-btn ---------- */
-.annual-cp-char-name-switch-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #b33a3a;
-    font-size: 12px;
-    line-height: 1;
-    padding: 0 2px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.annual-cp-char-name-switch-btn:hover {
-    color: #992e2e;
-}
-
-/* ---------- 男主选择展开区 ---------- */
-/* 修改点2：去除背景和边框 */
-.annual-cp-male-select-wrap {
-    margin-top: 12px;
-    padding: 0;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-}
-.annual-cp-male-title {
-    font-size: 14px;
-    color: #b33a3a;
-    margin-bottom: 10px;
-    font-weight: bold;
-    text-align: left;
-}
-/* 修改点3：男主列表grid列数调整 */
-.annual-cp-male-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 130px);  /* minmax→固定130px */
-    justify-content: start;                           /* 新增：左对齐 */
-    gap: 14px;
-}
-
-/* ---------- 男主卡片：1:1复刻角色弹窗.char-item ---------- */
-.annual-cp-male-item-btn {
-    border: 1px solid #eee;
-    border-radius: 10px;
-    padding: 12px;
-    cursor: pointer;
-    background: #fff;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;  /* 新增：同上 */
-    gap: 8px;
-    min-height: 148px;
-    transition: background-color 0.15s, border-color 0.15s;
-}
-.annual-cp-male-item-btn:hover {
-    background: #fff0f3;
-    border-color: #e895a8;
 }
