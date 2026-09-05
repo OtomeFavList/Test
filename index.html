@@ -405,6 +405,13 @@
         <div id="annual-custom-text-font-value" class="font-size-value-display">16px</div>
         <input id="annual-slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
     </div>
+    <!-- 导出尺寸：仅长图三选一，name独立避免与FavList的export-size冲突 -->
+    <div class="size-select">
+        <label class="text-light-pink">导出尺寸：</label>
+        <label><input type="radio" name="annual-export-size" value="long-640">640长图</label>
+        <label><input type="radio" name="annual-export-size" value="long-810" checked>810长图</label>
+        <label><input type="radio" name="annual-export-size" value="long-1080">1080长图</label>
+    </div>
     <div class="center-btn-block export-btn-wrap">
         <button id="annual-btn-export-image">生成并导出图片</button>
         <p class="switch-desc">图片源文件存储于海外节点，使用🔮可显著提高生成效率</p>
