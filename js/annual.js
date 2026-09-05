@@ -1389,6 +1389,25 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
+        // ✅关键修复：点击文本框/输入框/拖拽手柄/删除按钮时，直接放行，不阻止默认行为，不触发长按排序
+        if (e.target.closest("textarea, input, .resize-handle, .annual-item-delete-btn")) {
+            return;
+        }
+        // ✅只在 NO标签 / 名称文本 / 封面图片 上才阻止默认并进入长按排序（与移动端 touchstart 的 hitDragTrigger 完全对齐）
+        const hitDragTrigger = !!e.target.closest(`
+            .annual-top-label,
+            .annual-game-name-text,
+            .annual-char-name-text,
+            .annual-cp-name-text,
+            .annual-top-cover,
+            .annual-char-cover,
+            .annual-cp-female-cover,
+            .annual-cp-male-cover
+        `);
+        if (!hitDragTrigger) {
+            // 点击 content-row 空白区域（非封面非文本框），也不阻止，不触发排序
+            return;
+        }
         e.preventDefault();
         e.stopPropagation();
         mouseStartY = e.clientY;
