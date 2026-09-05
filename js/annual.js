@@ -1,3 +1,4 @@
+```javascript
 // ===================== 年度报告模块 annual.js =====================
 // 存储key: "annual-report-data"，与喜好表数据隔离
 
@@ -865,6 +866,17 @@ function openAnnualGlobalCharModal(targetIndex){
  * 关闭角色弹窗
  */
 function closeAnnualGlobalCharModal(){
+    // 用户取消选择时，清理残留的空条目
+    if (activeCharTopItemIndex !== null) {
+        const item = annualData.charTopList[activeCharTopItemIndex];
+        if (item && !item.charId) {
+            annualData.charTopList.splice(activeCharTopItemIndex, 1);
+            rebuildCharTopDomAll();
+            bindCharTop3Items();
+            rerenderCharTopNoLabel();
+            saveAnnualData();
+        }
+    }
     activeCharTopItemIndex = null;
     charModalViewMode = "gameList";
     charModalCurrentGameId = null;
@@ -897,6 +909,17 @@ function openAnnualGlobalGameModal(targetIndex){
  * 关闭年度全局游戏选择弹窗
  */
 function closeAnnualGlobalGameModal(){
+    // 用户取消选择时，清理残留的空条目（防止NO跳号、排序横线异常）
+    if (activeTopItemIndex !== null) {
+        const item = annualData.topList[activeTopItemIndex];
+        if (item && !item.gameId) {
+            annualData.topList.splice(activeTopItemIndex, 1);
+            rebuildGameTopDomAll();
+            bindTop3Items();
+            rerenderGameTopNoLabel();
+            saveAnnualData();
+        }
+    }
     activeTopItemIndex = null;
     const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
@@ -1542,32 +1565,50 @@ function bindAnnualExportPanel() {
 
     btnExportImage.removeEventListener("click", btnExportImage._handler);
     btnExportImage._handler = async () => {
-        // 读取用户选择的导出尺寸（640长图/810长图/1080长图）
+        // 防止重复点击
+        if (btnExportImage.disabled) return;
+        const originalText = btnExportImage.textContent;
+        btnExportImage.disabled = true;
+        btnExportImage.textContent = "生成中…";
+
+        // 读取用户选择的导出尺寸
         const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
         const sizeVal = sizeRadio?.value || 'long-810';
-        const selectedExportWidth = Number(sizeVal.replace('long-', '')); // 640 / 810 / 1080
+        const selectedExportWidth = Number(sizeVal.replace('long-', ''));
         const DPR = 2;
-        const designW = selectedExportWidth / DPR; // 设计宽度=实际像素/2
+        const designW = selectedExportWidth / DPR;
         const titleMap = getAnnualModuleTitles();
 
         try {
             const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
 
-            // 复用已有预览弹窗：将每个blob转为URL，填入预览弹窗
-            // （此处调用你已有的预览弹窗展示逻辑，将results数组传入）
-            // results: [{moduleType, moduleTitle, blob}, ...]
+            if (!results || results.length === 0) {
+                alert("没有可导出的内容，请先在各模块中添加数据。");
+                return;
+            }
 
-            // 示例：逐个下载
-            results.forEach((r, i) => {
+            // 逐个触发下载
+            for (let i = 0; i < results.length; i++) {
+                const r = results[i];
                 const url = URL.createObjectURL(r.blob);
                 const a = document.createElement('a');
                 a.download = `Annual_${r.moduleType || 'stats'}_${selectedExportWidth}.png`;
                 a.href = url;
+                document.body.appendChild(a);
                 a.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            });
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                // 多张图片之间加间隔，避免浏览器拦截连续下载
+                if (i < results.length - 1) {
+                    await new Promise(r => setTimeout(r, 300));
+                }
+            }
         } catch (err) {
             console.error("年度报告导出失败", err);
+            alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情，或刷新页面重试。");
+        } finally {
+            btnExportImage.disabled = false;
+            btnExportImage.textContent = originalText;
         }
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
@@ -2015,6 +2056,17 @@ function openAnnualGlobalCpModal(targetIndex){
 }
 
 function closeAnnualGlobalCpModal(){
+    // 用户取消选择时，清理残留的空条目
+    if (activeCpTopItemIndex !== null) {
+        const item = annualData.cpTopList[activeCpTopItemIndex];
+        if (item && (!item.femaleId || !item.maleId)) {
+            annualData.cpTopList.splice(activeCpTopItemIndex, 1);
+            rebuildCpTopDomAll();
+            bindCpTop3Items();
+            rerenderCpTopNoLabel();
+            saveAnnualData();
+        }
+    }
     activeCpTopItemIndex = null;
     cpModalViewMode = "gameList";
     cpModalCurrentGameId = null;
@@ -2032,6 +2084,11 @@ function realInitAnnualModule(){
     _annualRealInitialized = true;
     console.log("✅[annual.js] realInitAnnualModule 游戏模板就绪，执行业务初始化");
     loadAnnualData();
+    // 清理历史残留的空条目（修复旧数据导致的NO跳号、排序横线异常）
+    annualData.topList = (annualData.topList || []).filter(item => item && item.gameId);
+    annualData.charTopList = (annualData.charTopList || []).filter(item => item && item.charId);
+    annualData.cpTopList = (annualData.cpTopList || []).filter(item => item && item.femaleId && item.maleId);
+    saveAnnualData();
     bindStatInputs();
     // 从localStorage读取数据后，完全重建DOM，保证DOM数量与数组长度完全一致
     rebuildGameTopDomAll();
@@ -2356,3 +2413,4 @@ export function initAnnualModule(){
 if(typeof window !== "undefined"){
     window.initAnnualModule = initAnnualModule;
 }
+```
