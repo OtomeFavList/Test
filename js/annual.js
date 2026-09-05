@@ -1542,11 +1542,12 @@ function bindAnnualExportPanel() {
 
     btnExportImage.removeEventListener("click", btnExportImage._handler);
     btnExportImage._handler = async () => {
-        // 读取用户选择的导出宽度（640/810/1080，需在HTML中加select或radio）
-        const widthSelect = document.getElementById("annual-export-width-select");
-        const selectedExportWidth = Number(widthSelect?.value ?? 640);
+        // 读取用户选择的导出尺寸（640长图/810长图/1080长图）
+        const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
+        const sizeVal = sizeRadio?.value || 'long-810';
+        const selectedExportWidth = Number(sizeVal.replace('long-', '')); // 640 / 810 / 1080
         const DPR = 2;
-        const designW = selectedExportWidth / DPR;
+        const designW = selectedExportWidth / DPR; // 设计宽度=实际像素/2
         const titleMap = getAnnualModuleTitles();
 
         try {
