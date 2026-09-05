@@ -1691,9 +1691,11 @@ function renderCpModalGameList(wrap, keyword) {
     sorted.forEach((game) => {
         if (!game) return;
         const div = document.createElement("div");
-        div.className = "game-option-item";
+        div.className = "annual-cp-game-option-item";
         div.innerHTML = renderGameSelectItem(game);
-        div.addEventListener("click", () => {
+        div.addEventListener("click", (e) => {
+            // ✅阻止同一元素上script.js设置的onclick，以及冒泡到document的事件委托
+            e.stopImmediatePropagation();
             cpModalCurrentGameId = game.id;
             cpModalCurrentFemaleId = null;
             resetCpModalLocalSwitches();
@@ -1764,19 +1766,19 @@ function renderCpModalFemaleList() {
                                  imgPrevCls, imgNextCls, namePrevCls, nameNextCls, cardClass) {
         const hasMultiImg = allSrc.length > 1;
         const canSwitchName = totalNames > 1;
-        const nameMultiCls = canSwitchName ? "char-name-multi" : "";
+        const nameMultiCls = canSwitchName ? "annual-cp-char-name-multi" : "";
         const nameSwitchBtns = canSwitchName ? `
-            <button class="char-name-switch-btn char-name-switch-prev ${namePrevCls}" data-char-id="${char.id}">&lt;</button>
-            <button class="char-name-switch-btn char-name-switch-next ${nameNextCls}" data-char-id="${char.id}">&gt;</button>` : "";
+            <button class="annual-cp-char-name-switch-btn annual-cp-char-name-switch-prev ${namePrevCls}" data-char-id="${char.id}">&lt;</button>
+            <button class="annual-cp-char-name-switch-btn annual-cp-char-name-switch-next ${nameNextCls}" data-char-id="${char.id}">&gt;</button>` : "";
         return `
-            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev ${imgPrevCls}" data-char-id="${char.id}">&lt;</button>` : ""}
+            <div class="annual-cp-char-card-img-box ${hasMultiImg ? 'annual-cp-char-multi-img' : ''}">
+                ${hasMultiImg ? `<button class="annual-cp-char-switch-btn annual-cp-char-switch-prev ${imgPrevCls}" data-char-id="${char.id}">&lt;</button>` : ""}
                 <img src="${getWebImageUrl(allSrc[annualCpImgIndex.get(imgKey)] || "")}" alt="${displayName}" decoding="async">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next ${imgNextCls}" data-char-id="${char.id}">&gt;</button>` : ""}
+                ${hasMultiImg ? `<button class="annual-cp-char-switch-btn annual-cp-char-switch-next ${imgNextCls}" data-char-id="${char.id}">&gt;</button>` : ""}
             </div>
-            <div class="${cardClass === 'female' ? 'cp-female-name' : 'char-card-name'} ${nameMultiCls}">
+            <div class="${cardClass === 'female' ? 'annual-cp-female-name' : 'annual-cp-char-card-name'} ${nameMultiCls}">
                 ${nameSwitchBtns}
-                <span class="char-name-text">${displayName}</span>
+                <span class="annual-cp-char-name-text">${displayName}</span>
             </div>`;
     }
 
@@ -1801,7 +1803,7 @@ function renderCpModalFemaleList() {
 
     // 工具：绑定名字切换
     function bindNameSwitch(cardEl, imgKey, nameList, totalNames, prevSel, nextSel) {
-        const nameEl = cardEl.querySelector(".char-name-text");
+        const nameEl = cardEl.querySelector(".annual-cp-char-name-text");
         cardEl.querySelector(prevSel)?.addEventListener("click", (e)=>{
             e.stopPropagation();
             let idx = annualCpNameIndex.get(imgKey) ?? 0;
@@ -1836,11 +1838,11 @@ function renderCpModalFemaleList() {
         const isFemaleSelected = cpModalCurrentFemaleId === fChar.id;
 
         const blockDiv = document.createElement("div");
-        blockDiv.className = "cp-female-block annual-cp-female-block";
+        blockDiv.className = "annual-cp-female-block";
         blockDiv.dataset.fid = fChar.id;
 
         const femaleCard = document.createElement("div");
-        femaleCard.className = `cp-female-card-btn annual-cp-female-card ${isFemaleSelected ? 'selected' : ''}`;
+        femaleCard.className = `annual-cp-female-card-btn annual-cp-female-card ${isFemaleSelected ? 'selected' : ''}`;
         femaleCard.dataset.fid = fChar.id;
         femaleCard.dataset.charId = fChar.id;
         femaleCard.dataset.gameId = cpModalCurrentGameId;
@@ -1852,7 +1854,9 @@ function renderCpModalFemaleList() {
 
         // 女主点击：展开/收起男主列表
         femaleCard.addEventListener("click", (e)=>{
-            if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
+            // ✅阻止冒泡到script.js的全局事件委托
+            e.stopPropagation();
+            if(e.target.closest(".annual-cp-char-switch-btn, .annual-cp-char-name-switch-btn")) return;
             cpModalCurrentFemaleId = isFemaleSelected ? null : fChar.id;
             renderCpModalFemaleList();
         });
@@ -1862,9 +1866,9 @@ function renderCpModalFemaleList() {
         // 选中女主时渲染男主列表
         if(isFemaleSelected){
             const maleWrap = document.createElement("div");
-            maleWrap.className = "cp-male-select-wrap annual-cp-male-select-wrap";
+            maleWrap.className = "annual-cp-male-select-wrap";
             maleWrap.dataset.fid = fChar.id;
-            let maleListHtml = `<div class="cp-male-title">为【${fChar.name}】选择角色</div><div class="cp-male-list annual-cp-male-list">`;
+            let maleListHtml = `<div class="annual-cp-male-title">为【${fChar.name}】选择角色</div><div class="annual-cp-male-list">`;
             sortedMales.forEach(mChar=>{
                 if(!mChar) return;
                 const mImgKey = `${cpModalCurrentGameId}-${mChar.id}`;
@@ -1880,7 +1884,7 @@ function renderCpModalFemaleList() {
                 if (mNameIdx >= mTotalNames) mNameIdx = 0;
                 const mDisplayName = mNameList[mNameIdx] || mChar.name;
                 maleListHtml += `
-                <div class="cp-male-item annual-cp-male-item" data-fid="${fChar.id}" data-mid="${mChar.id}"
+                <div class="annual-cp-male-item-btn annual-cp-male-item" data-fid="${fChar.id}" data-mid="${mChar.id}"
                      data-char-id="${mChar.id}" data-game-id="${cpModalCurrentGameId}" data-total-img="${mAllSrc.length}">
                     ${renderCharCardHtml(mChar, mImgKey, mAllSrc, mNameList, mTotalNames, mNameIdx, mDisplayName,
                         "annual-cp-male-img-prev", "annual-cp-male-img-next",
@@ -1892,7 +1896,7 @@ function renderCpModalFemaleList() {
             blockDiv.appendChild(maleWrap);
 
             // 绑定男主立绘/名字切换 + 点击保存
-            maleWrap.querySelectorAll(".annual-cp-male-item").forEach(maleItem=>{
+            maleWrap.querySelectorAll(".annual-cp-male-item-btn").forEach(maleItem=>{
                 const mCharId = maleItem.dataset.mid;
                 const mChar = sortedMales.find(c=>c.id === mCharId);
                 if(!mChar) return;
@@ -1906,7 +1910,9 @@ function renderCpModalFemaleList() {
 
                 // 男主点击：保存CP，关闭弹窗
                 maleItem.addEventListener("click", (e)=>{
-                    if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
+                    // ✅阻止冒泡到script.js的全局事件委托
+                    e.stopPropagation();
+                    if(e.target.closest(".annual-cp-char-switch-btn, .annual-cp-char-name-switch-btn")) return;
                     if(activeCpTopItemIndex === null) return;
                     const isDup = annualData.cpTopList.some((item,i)=>
                         i !== activeCpTopItemIndex &&
@@ -1948,7 +1954,7 @@ function switchCpModalView(mode){
     cpModalViewMode = mode;
     const modal = document.getElementById("annual-global-cp-modal");
     const inner = modal.querySelector(".annual-global-modal-inner");
-    const backBtn = modal.querySelector(".annual-cp-back-btn");
+    const backBtn = modal.querySelector(".annual-cp-modal-back-btn");
     inner.classList.remove("cp-modal-gamelist-view", "cp-modal-femalelist-view");
     if(mode === "gameList"){
         inner.classList.add("cp-modal-gamelist-view");
@@ -2137,8 +2143,8 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== ✅新增：CP弹窗返回按钮 ==========
-            const cpModalBackBtn = e.target.closest("#annual-global-cp-modal .annual-cp-back-btn");
+            // ========== ✅新增：CP弹窗返回按钮（独立class，不与角色弹窗.annual-modal-back-btn冲突） ==========
+            const cpModalBackBtn = e.target.closest("#annual-global-cp-modal .annual-cp-modal-back-btn");
             if(cpModalBackBtn){
                 cpModalCurrentGameId = null;
                 cpModalCurrentFemaleId = null;
