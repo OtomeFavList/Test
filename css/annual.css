@@ -1660,8 +1660,37 @@
 /* 修改点1：选中女主时block跨全列 */
 .annual-cp-female-block-expanded {
     grid-column: 1 / -1;
+    width: 100%;
 }
 /* ✅选中女主后不再放大：用max-width锁定与grid列宽一致，卡片保持原尺寸 */
 .annual-cp-female-block-expanded .char-item {
     max-width: 130px;
+}
+
+/* ---------- 女主block内部男主选择面板 ---------- */
+.annual-cp-male-select-wrap {
+    margin-top: 16px;
+    margin-bottom: 4px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+.annual-cp-male-title {
+    font-size: 14px;
+    color: #b33a3a;
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-weight: bold;
+    text-align: left;
+}
+.annual-cp-male-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 130px);
+    justify-content: start;
+    gap: 14px;
+    width: 100%;
+    box-sizing: border-box;
 }
