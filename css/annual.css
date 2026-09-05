@@ -639,6 +639,10 @@
         height: 26px;
         font-size: 18px;
     }
+    /* 修改点2：移动端选中女主后卡片锁定90px */
+    .annual-cp-female-block-expanded .annual-cp-female-card-btn {
+        width: 90px !important;
+    }
     /* 搜索结果角色卡片移动端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
         padding: 10px !important;
@@ -787,6 +791,10 @@
     .annual-cp-male-list {
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
         gap: 12px !important;
+    }
+    /* 修改点3：平板端选中女主后卡片锁定110px */
+    .annual-cp-female-block-expanded .annual-cp-female-card-btn {
+        width: 110px !important;
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
@@ -1638,6 +1646,12 @@
 /* 修改点1：选中女主时block跨全列 */
 .annual-cp-female-block-expanded {
     grid-column: 1 / -1;
+}
+/* 修改点1：跨列后女主卡片锁定固定宽度，防止图片被拉伸变大 */
+.annual-cp-female-block-expanded .annual-cp-female-card-btn {
+    width: 140px;
+    flex-shrink: 0;
+    align-self: flex-start;
 }
 
 /* ---------- 女主卡片：1:1复刻角色弹窗.char-item ---------- */
