@@ -1562,55 +1562,157 @@ function bindAnnualExportPanel() {
         saveAnnualExportConfig();
     };
 
+    // ========== 修改点3：导出按钮改为预览弹窗 ==========
     btnExportImage.removeEventListener("click", btnExportImage._handler);
     btnExportImage._handler = async () => {
-        // 防止重复点击
         if (btnExportImage.disabled) return;
         const originalText = btnExportImage.textContent;
         btnExportImage.disabled = true;
         btnExportImage.textContent = "生成中…";
 
-        // 读取用户选择的导出尺寸
         const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
         const sizeVal = sizeRadio?.value || 'long-810';
         const selectedExportWidth = Number(sizeVal.replace('long-', ''));
-        const DPR = 2;
-        const designW = selectedExportWidth / DPR;
+        // 修改点2：修复 designW 计算，不再除以 DPR
+        const designW = selectedExportWidth;
         const titleMap = getAnnualModuleTitles();
+
+        // 打开预览弹窗，先显示loading
+        const modal = document.getElementById("export-preview-modal");
+        const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+        const downloadBtn = document.getElementById("preview-download-btn");
+        scrollWrap.innerHTML = `
+            <div class="preview-inner-loading">
+                <div class="loading-spinner"></div>
+                <p>正在生成预览，请稍候…</p>
+            </div>`;
+        modal.classList.add("active");
+        document.body.classList.add("modal-lock");
+        downloadBtn.disabled = true;
 
         try {
             const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
-
             if (!results || results.length === 0) {
                 alert("没有可导出的内容，请先在各模块中添加数据。");
+                modal.classList.remove("active");
+                document.body.classList.remove("modal-lock");
                 return;
             }
-
-            // 逐个触发下载
-            for (let i = 0; i < results.length; i++) {
-                const r = results[i];
-                const url = URL.createObjectURL(r.blob);
-                const a = document.createElement('a');
-                a.download = `Annual_${r.moduleType || 'stats'}_${selectedExportWidth}.png`;
-                a.href = url;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 2000);
-                // 多张图片之间加间隔，避免浏览器拦截连续下载
-                if (i < results.length - 1) {
-                    await new Promise(r => setTimeout(r, 300));
-                }
-            }
+            // 填充预览图 + 绑定按钮
+            showAnnualPreviewModal(results, selectedExportWidth);
         } catch (err) {
             console.error("年度报告导出失败", err);
-            alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情，或刷新页面重试。");
+            alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情。");
+            modal.classList.remove("active");
+            document.body.classList.remove("modal-lock");
         } finally {
             btnExportImage.disabled = false;
             btnExportImage.textContent = originalText;
         }
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
+}
+
+// ===================== 年度报告预览弹窗管理（复用 #export-preview-modal） =====================
+let _annualPreviewResults = [];
+let _annualPreviewUrls = [];
+let _annualPreviewWidth = 810;
+let _annualPreviewBound = false;
+
+function showAnnualPreviewModal(results, exportWidth) {
+    _annualPreviewResults = results;
+    _annualPreviewWidth = exportWidth;
+    const modal = document.getElementById("export-preview-modal");
+    const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+    const downloadBtn = document.getElementById("preview-download-btn");
+
+    // 清理旧URL
+    _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+    _annualPreviewUrls = [];
+
+    // 填充预览图片
+    scrollWrap.innerHTML = "";
+    results.forEach((r, i) => {
+        const url = URL.createObjectURL(r.blob);
+        _annualPreviewUrls.push(url);
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%";
+        img.style.display = "block";
+        img.style.margin = "0 auto 16px auto";
+        img.style.borderRadius = "8px";
+        img.style.boxShadow = "0 2px 12px rgba(0,0,0,0.08)";
+        scrollWrap.appendChild(img);
+    });
+    downloadBtn.disabled = false;
+
+    // 绑定弹窗按钮（只绑定一次）
+    if (!_annualPreviewBound) {
+        bindAnnualPreviewButtons();
+        _annualPreviewBound = true;
+    }
+}
+
+function bindAnnualPreviewButtons() {
+    const closeBtn = document.getElementById("preview-close-btn");
+    const regenBtn = document.getElementById("preview-regen-btn");
+    const downloadBtn = document.getElementById("preview-download-btn");
+    const modal = document.getElementById("export-preview-modal");
+
+    // 关闭
+    closeBtn.addEventListener("click", () => {
+        modal.classList.remove("active");
+        document.body.classList.remove("modal-lock");
+        _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+        _annualPreviewUrls = [];
+        _annualPreviewResults = [];
+    });
+
+    // 遮罩点击关闭
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeBtn.click();
+    });
+
+    // 重新生成
+    regenBtn.addEventListener("click", async () => {
+        const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+        scrollWrap.innerHTML = `
+            <div class="preview-inner-loading">
+                <div class="loading-spinner"></div>
+                <p>正在生成预览，请稍候…</p>
+            </div>`;
+        downloadBtn.disabled = true;
+        try {
+            const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
+            const sizeVal = sizeRadio?.value || 'long-810';
+            const selectedExportWidth = Number(sizeVal.replace('long-', ''));
+            const designW = selectedExportWidth;
+            const titleMap = getAnnualModuleTitles();
+            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
+            if (!results || results.length === 0) {
+                alert("没有可导出的内容。");
+                return;
+            }
+            showAnnualPreviewModal(results, selectedExportWidth);
+        } catch (err) {
+            console.error("重新生成失败", err);
+            alert("重新生成失败：" + (err?.message || "未知错误"));
+        }
+    });
+
+    // 导出图片（下载所有模块）
+    downloadBtn.addEventListener("click", () => {
+        _annualPreviewResults.forEach((r, i) => {
+            const url = URL.createObjectURL(r.blob);
+            const a = document.createElement("a");
+            a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        });
+    });
 }
 
 function bindAnnualExport() {
