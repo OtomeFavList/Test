@@ -1078,12 +1078,15 @@
     display:none !important;
 }
 /* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
-#annual-global-char-modal .annual-global-modal-inner {
+/* ✅修改：inner高度与header防压缩规则同时覆盖CP弹窗，确保双滚动条结构一致 */
+#annual-global-char-modal .annual-global-modal-inner,
+#annual-global-cp-modal .annual-global-modal-inner {
     display: flex;
     flex-direction: column;
     height: 85vh;
 }
-#annual-global-char-modal .annual-modal-header {
+#annual-global-char-modal .annual-modal-header,
+#annual-global-cp-modal .annual-modal-header {
     flex-shrink: 0;
 }
 #annual-global-char-modal .annual-modal-scroll-wrap,
