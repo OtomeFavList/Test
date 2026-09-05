@@ -1209,13 +1209,12 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if(!selectedItem) return;
         const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
         if(items.length === 0) return;
-        // 循环：在每一个item前面插入指示线
-        items.forEach((beforeItemDom, beforeIndex)=>{
+        // 统一创建横线的工厂函数（避免前后两处重复写onclick逻辑）
+        function createIndicator(beforeIndex) {
             const indicatorDom = document.createElement("div");
             indicatorDom.className = "sort-insert-indicator";
             indicatorDom.dataset.beforeIndex = String(beforeIndex);
             indicatorDom.dataset.firstClick = "false";
-
             indicatorDom.onclick = function(){
                 if(selectedIndex === null) return;
                 const bIndex = Number(indicatorDom.dataset.beforeIndex);
@@ -1239,8 +1238,16 @@ function setupTouchSort(containerSel, dataArr, afterSort){
                 // 插入完成自动退出排序模式
                 clearSelectState();
             };
+            return indicatorDom;
+        }
+        // 循环：在每一个item前面插入指示线（beforeIndex = 0 ~ items.length-1）
+        items.forEach((beforeItemDom, beforeIndex)=>{
+            const indicatorDom = createIndicator(beforeIndex);
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         });
+        // ✅新增：在最后一个item后面追加一条横线（beforeIndex = items.length），支持插入到最后一位
+        const lastIndicator = createIndicator(items.length);
+        container.appendChild(lastIndicator);
     }
 
     // 长按1000ms进入锁定选中模式
