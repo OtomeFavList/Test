@@ -451,6 +451,12 @@
         height:26px;
         font-size:18px;
     }
+    /* ✅新增：折叠按钮移动端同步缩小 */
+    .annual-card-fold-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 18px;
+    }
     .annual-global-modal-inner {
         width: 100%;
         max-height: 85vh;
@@ -1171,6 +1177,44 @@
 .annual-item-delete-btn:hover {
     background: #992e2e !important;
     color: #ffffff !important;
+}
+
+/* ========== ✅新增：模块折叠头部与按钮 ========== */
+.annual-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+/* 覆盖.big-card h2原有的margin-bottom:20px，由header统一控制间距 */
+.annual-card-header h2 {
+    margin-bottom: 0;
+}
+/* 折叠按钮：1:1复用.annual-item-delete-btn全部样式 */
+.annual-card-fold-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.annual-card-fold-btn:hover {
+    background: #992e2e !important;
+    color: #ffffff !important;
+}
+/* 折叠状态：隐藏内容区，仅保留header */
+.big-card.annual-folded .annual-card-body {
+    display: none;
 }
 
 /* ③ 年度报告自定义文本框（含拖拽手柄） */
