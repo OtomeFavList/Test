@@ -1574,6 +1574,93 @@ function bindAnnualExport() {
 }
 
 /**
+ * ✅新增：annual模式悬浮滚动按钮逻辑
+ * ▲：模块中间→滚到当前模块顶部；已在顶部→滚到上一个模块顶部
+ * ▼：模块中间→滚到当前模块底部；已在底部→滚到下一个模块底部
+ */
+function bindAnnualFloatScrollButtons() {
+    const upBtn = document.getElementById("annual-back-to-top-btn");
+    const downBtn = document.getElementById("annual-scroll-to-bottom-btn");
+    if(!upBtn || !downBtn) return;
+
+    const TOLERANCE = 30; // 容差像素，小于此值视为"已到达"
+
+    // 获取annual模式所有big-card模块（按DOM顺序）
+    function getAnnualModules() {
+        const wrap = document.querySelector('.mode-wrap[data-mode="annual"]');
+        if(!wrap) return [];
+        return Array.from(wrap.querySelectorAll('.big-card'));
+    }
+
+    // 根据视口垂直中心判断当前在哪个模块
+    function getCurrentModuleIndex() {
+        const modules = getAnnualModules();
+        if(modules.length === 0) return -1;
+        const viewCenter = window.scrollY + window.innerHeight / 2;
+        // 优先：视口中心落在某个模块范围内
+        for(let i = 0; i < modules.length; i++) {
+            const rect = modules[i].getBoundingClientRect();
+            const top = rect.top + window.scrollY;
+            const bottom = rect.bottom + window.scrollY;
+            if(viewCenter >= top && viewCenter <= bottom) return i;
+        }
+        // 兜底：视口中心在模块间隙中，找距离最近的模块
+        let closest = 0;
+        let minDist = Infinity;
+        for(let i = 0; i < modules.length; i++) {
+            const rect = modules[i].getBoundingClientRect();
+            const top = rect.top + window.scrollY;
+            const dist = Math.abs(viewCenter - top);
+            if(dist < minDist) { minDist = dist; closest = i; }
+        }
+        return closest;
+    }
+
+    // ▲按钮
+    upBtn.addEventListener("click", () => {
+        const modules = getAnnualModules();
+        if(modules.length === 0) return;
+        const idx = getCurrentModuleIndex();
+        if(idx < 0) return;
+        const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
+
+        if(window.scrollY > currentTop + TOLERANCE) {
+            // 在模块中间：滚动到当前模块顶部
+            modules[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+            // 已在当前模块顶部：滚动到上一个模块顶部
+            if(idx > 0) {
+                modules[idx - 1].scrollIntoView({ behavior: "smooth", block: "start" });
+            } else {
+                // 已是第一个模块：滚动到页面最顶
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        }
+    });
+
+    // ▼按钮
+    downBtn.addEventListener("click", () => {
+        const modules = getAnnualModules();
+        if(modules.length === 0) return;
+        const idx = getCurrentModuleIndex();
+        if(idx < 0) return;
+        const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
+        const viewBottom = window.scrollY + window.innerHeight;
+
+        if(viewBottom < currentBottom - TOLERANCE) {
+            // 在模块中间：滚动到当前模块底部（元素底部对齐视口底部）
+            modules[idx].scrollIntoView({ behavior: "smooth", block: "end" });
+        } else {
+            // 已在当前模块底部：滚动到下一个模块底部
+            if(idx < modules.length - 1) {
+                modules[idx + 1].scrollIntoView({ behavior: "smooth", block: "end" });
+            }
+            // 已是最后一个模块：不动作
+        }
+    });
+}
+
+/**
  * ✅新增：CP弹窗游戏列表（只搜索游戏名，不搜索角色名）
  */
 function renderCpModalGameList(wrap, keyword) {
@@ -1920,6 +2007,7 @@ function realInitAnnualModule(){
     bindTouchDrag();
     bindAnnualExport();
     bindAnnualExportPanel();
+    bindAnnualFloatScrollButtons();  // ✅新增：悬浮滚动按钮
     // 如果游戏弹窗打开刷新列表
     const modalGame = document.getElementById("annual-global-game-modal");
     if(modalGame && modalGame.classList.contains("active")){
