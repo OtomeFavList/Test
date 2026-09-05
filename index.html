@@ -336,6 +336,15 @@
             <!-- 全部条目由JS动态生成，页面不预置任何annual-char-top-item -->
         </div>
     </div>
+
+    <!-- 独立卡片4：四、カップルTOP -->
+    <div class="big-card annual-card-cp-top3">
+        <h2>四、カップルTOP</h2>
+        <div class="annual-global-add-cp-btn-wrap center-btn-block">
+            <button id="annual-global-add-cp-btn" class="annual-add-cp-btn">+ 添加CP</button>
+        </div>
+        <div id="annual-cp-top-drag-container"></div>
+    </div>
     
 <!-- ========== 导出 ========== -->
 <div class="big-card" id="annual-card-export">
@@ -924,6 +933,66 @@ z-index: -999;
                 <div class="annual-global-char-game-list"></div>
                 <!-- 视图B：当前游戏待选角色列表 -->
                 <div class="annual-global-char-char-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 年度报告全局CP选择弹窗 ========== -->
+<div id="annual-global-cp-modal">
+    <div class="annual-global-modal-inner">
+        <div class="annual-modal-header">
+            <button class="annual-modal-back-btn annual-cp-back-btn">←</button>
+            <div class="annual-modal-header-title">搜索CP</div>
+            <button class="annual-modal-close-btn annual-cp-close-btn">×</button>
+        </div>
+        <div class="annual-modal-scroll-wrap">
+            <!-- 全局开关组 -->
+            <div class="annual-modal-global-switch-group annual-cp-global-switch-group">
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-sub-char"><span class="slider"></span></label>
+                    <div><span class="text-light-pink">全局显示次要角色</span></div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-fd-sub-char"><span class="slider"></span></label>
+                    <div><span class="text-light-pink">全局显示续作/FD次要角色</span></div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-hide-char"><span class="slider"></span></label>
+                    <div><span class="text-light-pink">全局显示隐藏图片、角色</span></div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-fd-game"><span class="slider"></span></label>
+                    <div><span class="text-light-pink">全局显示续作/FD图片、角色</span></div>
+                </div>
+            </div>
+            <!-- 搜索框（只搜游戏名） -->
+            <input class="annual-global-cp-search-input" placeholder="搜索游戏名称">
+            <!-- 视图容器 -->
+            <div class="annual-modal-view-container annual-cp-view-container">
+                <!-- 单游戏开关组 -->
+                <div class="annual-modal-game-switch-group annual-cp-game-switch-group">
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-sub-char"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏次要角色</span></div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-fd-sub-char"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏续作/FD次要角色</span></div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-hide-char"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏隐藏角色</span></div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-fd-game"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏续作/FD角色</span></div>
+                    </div>
+                </div>
+                <!-- 游戏列表视图 -->
+                <div class="annual-global-cp-game-list"></div>
+                <!-- 女主+男主列表视图 -->
+                <div class="annual-global-cp-female-list"></div>
             </div>
         </div>
     </div>
