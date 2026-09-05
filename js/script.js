@@ -688,11 +688,11 @@ export function initPage(Core = {}) {
           <div class="game-card-head">
             <div class="game-card-head-title-wrap">
               <h3>${gameInfo.name}</h3>
-              ${gameItem.fold ? `<button class="game-fold-icon-expand" data-gid="${gameItem.gameId}">▼</button>` : ''}
             </div>
             <div class="heart-rate" data-gid="${gameItem.gameId}">
               ${heartHtml}
             </div>
+            ${gameItem.fold ? `<button class="game-fold-icon-expand" data-gid="${gameItem.gameId}">▼</button>` : ''}
             ${switchRowHtml}
             ${headTextHtml}
           </div>
@@ -1585,7 +1585,7 @@ export function initPage(Core = {}) {
                 previewModal.classList.add("active");
 
                 // ==========【新增：渲染耗时预估计算】==========
-                // 1. 判断是否IOS WebKit（与export‑canvas‑render.js保持完全一致检测逻辑）
+                // 1. 判断是否IOS WebKit（与export‑canvas-render.js保持完全一致检测逻辑）
                 const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const isAndroid = /Android/.test(navigator.userAgent);
 
