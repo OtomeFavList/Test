@@ -622,7 +622,8 @@
     .annual-cp-male-list .annual-cp-male-item-btn {
         width: 100% !important;
         min-height: 132px !important;
-        padding: 6px !important;
+        padding: 10px !important;  /* 6px → 10px，对齐移动端.char-item */
+        gap: 6px !important;       /* 新增，对齐移动端.char-item */
     }
     /* 修改点6：CP男主列表grid移动端对齐角色列表 */
     .annual-cp-male-list {
@@ -639,9 +640,9 @@
         height: 26px;
         font-size: 18px;
     }
-    /* 修改点2：移动端选中女主后卡片锁定90px */
+    /* ✅移动端选中女主后不再放大 */
     .annual-cp-female-block-expanded .annual-cp-female-card-btn {
-        width: 90px !important;
+        max-width: 90px !important;
     }
     /* 搜索结果角色卡片移动端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
@@ -792,9 +793,9 @@
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
         gap: 12px !important;
     }
-    /* 修改点3：平板端选中女主后卡片锁定110px */
+    /* ✅平板端选中女主后不再放大 */
     .annual-cp-female-block-expanded .annual-cp-female-card-btn {
-        width: 110px !important;
+        max-width: 110px !important;
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
@@ -1659,25 +1660,24 @@
 .annual-cp-female-block-expanded {
     grid-column: 1 / -1;
 }
-/* 修改点1：跨列后女主卡片锁定固定宽度，防止图片被拉伸变大 */
+/* ✅选中女主后不再放大：用max-width锁定与grid列宽一致，卡片保持原尺寸 */
 .annual-cp-female-block-expanded .annual-cp-female-card-btn {
-    width: 140px;
-    flex-shrink: 0;
-    align-self: flex-start;
+    max-width: 130px;
 }
 
 /* ---------- 女主卡片：1:1复刻角色弹窗.char-item ---------- */
 .annual-cp-female-card-btn {
     border: 1px solid #eee;
     border-radius: 10px;
-    padding: 8px;
+    padding: 12px;          /* 8px → 12px，对齐.char-item */
     cursor: pointer;
     background: #fff;
     width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;               /* 6px → 8px，对齐.char-item */
+    min-height: 148px;      /* 新增，对齐.char-item PC端最小高度 */
     transition: background-color 0.15s, border-color 0.15s;
 }
 .annual-cp-female-card-btn:hover {
@@ -1736,7 +1736,7 @@
 /* ---------- 名字容器：1:1复刻.char-card-name（女主/男主共用） ---------- */
 .annual-cp-female-name,
 .annual-cp-char-card-name {
-    font-weight: bold;
+    font-weight: normal;    /* bold → normal，对齐搜索角色弹窗.char-card-name */
     font-size: 15px;
     color: var(--annual-export-gamename, #000);
     text-align: center;
@@ -1802,14 +1802,15 @@
 .annual-cp-male-item-btn {
     border: 1px solid #eee;
     border-radius: 10px;
-    padding: 8px;
+    padding: 12px;          /* 8px → 12px，对齐.char-item */
     cursor: pointer;
     background: #fff;
     width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;               /* 6px → 8px，对齐.char-item */
+    min-height: 148px;      /* 新增，对齐.char-item PC端最小高度 */
     transition: background-color 0.15s, border-color 0.15s;
 }
 .annual-cp-male-item-btn:hover {
