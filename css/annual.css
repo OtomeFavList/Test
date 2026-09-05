@@ -624,9 +624,10 @@
         min-height: 132px !important;
         padding: 6px !important;
     }
+    /* 修改点6：CP男主列表grid移动端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important;
-        gap: 8px !important;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 10px !important;
     }
     .annual-cp-female-name,
     .annual-cp-char-card-name {
@@ -660,11 +661,12 @@
         grid-template-columns:1fr !important;
         gap:10px !important;
     }
-    /* CP TOP移动端封面尺寸 */
+    /* CP TOP移动端封面尺寸（修改点6） */
     .annual-cp-female-cover,
     .annual-cp-male-cover {
-        width:70px !important;
-        height:70px !important;
+        width:90px !important;
+        height:90px !important;
+        border-radius:6px !important;
     }
     .annual-cp-name-text {
         font-size:18px;
@@ -781,9 +783,10 @@
         width: 100% !important;
         min-height: 148px !important;
     }
+    /* 修改点7：CP男主列表grid平板端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-        gap: 10px !important;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+        gap: 12px !important;
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
@@ -1190,8 +1193,10 @@
     user-select: none;
     -webkit-user-select: none;
 }
+/* 修改点5：追加 .annual-cp-name-text 到选择器 */
 .annual-top-label-row .annual-game-name-text,
-.annual-top-label-row .annual-char-name-text {
+.annual-top-label-row .annual-char-name-text,
+.annual-top-label-row .annual-cp-name-text {
     flex: 1;
     min-width: 0;
     margin: 0;
@@ -1524,13 +1529,14 @@
     display:flex;
     gap:10px;
 }
+/* 修改点4：PC端CP封面尺寸140px */
 .annual-cp-female-cover,
 .annual-cp-male-cover {
-    width:90px;
-    height:90px;
+    width:140px;
+    height:140px;
     aspect-ratio: 1 / 1;
     object-fit:cover;
-    border-radius:6px;
+    border-radius:8px;
     border:1px solid #eee;
 }
 .annual-cp-text-wrap {
@@ -1628,6 +1634,10 @@
     display: flex;
     flex-direction: column;
     gap: 0;
+}
+/* 修改点1：选中女主时block跨全列 */
+.annual-cp-female-block-expanded {
+    grid-column: 1 / -1;
 }
 
 /* ---------- 女主卡片：1:1复刻角色弹窗.char-item ---------- */
@@ -1740,12 +1750,13 @@
 }
 
 /* ---------- 男主选择展开区 ---------- */
+/* 修改点2：去除背景和边框 */
 .annual-cp-male-select-wrap {
-    margin-top: 8px;
-    padding: 10px;
-    background: #faf7f8;
-    border-radius: 8px;
-    border: 1px solid #f0e0e4;
+    margin-top: 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
 }
 .annual-cp-male-title {
     font-size: 14px;
@@ -1754,11 +1765,11 @@
     font-weight: bold;
     text-align: left;
 }
-/* 男主列表grid：对齐.annual-global-char-char-list */
+/* 修改点3：男主列表grid列数调整 */
 .annual-cp-male-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px;
 }
 
 /* ---------- 男主卡片：1:1复刻角色弹窗.char-item ---------- */
