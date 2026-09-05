@@ -2059,7 +2059,15 @@ export function initAnnualModule(){
                 openAnnualGlobalCpModal(newIndex);
                 return;
             }
-
+            // ========== ✅新增：模块折叠/展开按钮 ==========
+            const foldBtn = e.target.closest(".annual-card-fold-btn");
+            if(foldBtn){
+                const card = foldBtn.closest(".big-card");
+                if(!card) return;
+                const isFolded = card.classList.toggle("annual-folded");
+                foldBtn.textContent = isFolded ? "▼" : "▲";
+                return;
+            }
             // ========== 年度TOP条目删除按钮（游戏/角色） ==========
             const delBtn = e.target.closest(".annual-item-delete-btn");
             if(delBtn){
