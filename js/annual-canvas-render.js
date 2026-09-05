@@ -392,8 +392,10 @@ function calcModuleHeight(ctx, designW, moduleType, moduleTitle, annualData, con
     : annualData.cpTopList;
   const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
   if (list && list.length > 0) {
+    let validIdx = 0;
     list.forEach((item, i) => {
-      item._no = i;
+      if (!item) return;  // 跳过空条目
+      item._no = validIdx++;
       h += calcTopItemHeight(ctx, designW, item, itemType, config);
       if (i < list.length - 1) h += m.itemGap;
     });
@@ -494,18 +496,24 @@ function drawTopItem(painter, designW, item, itemType, imageCache, config) {
 // ===================== 收集模块图片URL =====================
 function collectModuleImages(moduleType, annualData) {
   const urls = [];
+  const safeForEach = (list, cb) => {
+    (list || []).forEach(item => {
+      if (!item) return;  // 防御空条目
+      cb(item);
+    });
+  };
   if (moduleType === 'gameTop') {
-    (annualData.topList || []).forEach(item => {
+    safeForEach(annualData.topList, item => {
       const u = toCanvasUrl(item.coverSrc);
       if (u) urls.push(u);
     });
   } else if (moduleType === 'charTop') {
-    (annualData.charTopList || []).forEach(item => {
+    safeForEach(annualData.charTopList, item => {
       const u = toCanvasUrl(item.coverSrc);
       if (u) urls.push(u);
     });
   } else if (moduleType === 'cpTop') {
-    (annualData.cpTopList || []).forEach(item => {
+    safeForEach(annualData.cpTopList, item => {
       const fu = toCanvasUrl(item.femaleCoverSrc);
       const mu = toCanvasUrl(item.maleCoverSrc);
       if (fu) urls.push(fu);
@@ -592,8 +600,10 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
     const items = list;
     const m = getMetrics(designW);
+    let validDrawIdx = 0;
     items.forEach((item, i) => {
-      item._no = i;
+      if (!item) return;  // 跳过空条目
+      item._no = validDrawIdx++;
       drawTopItem(painter, designW, item, itemType, imageCache, config);
       if (i < items.length - 1) painter.shiftY(m.itemGap);
       emitRenderProgress(65 + ((i + 1) / items.length) * 30);
