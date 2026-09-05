@@ -285,7 +285,11 @@
 
     <!-- 独立卡片1：一、数据统计 -->
     <div class="big-card annual-card-stats">
-        <h2>一、数据统计</h2>
+        <div class="annual-card-header">
+            <h2>一、数据统计</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
         <div class="annual-stat-line">
             <span></span>
             <input class="annual-input" data-key="reportYear" type="text">
@@ -309,11 +313,16 @@
             <input class="annual-input" data-key="notStart" type="text">
             <span>部还未开始</span>
         </div>
+        </div><!-- /.annual-card-body -->
     </div>
-
     <!-- 独立卡片2：二、ゲームTOP -->
+
     <div class="big-card annual-card-top3">
-        <h2>二、ゲームTOP</h2>
+        <div class="annual-card-header">
+            <h2>二、ゲームTOP</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
         <!-- ✅全局唯一添加游戏按钮，板块顶部，移除每个item内部按钮 -->
         <div class="annual-global-add-game-btn-wrap center-btn-block">
             <button id="annual-global-add-game-btn" class="annual-add-game-btn">+ 添加游戏</button>
@@ -322,11 +331,16 @@
         <div id="annual-game-top-drag-container">
             <!-- 全部条目由JS动态生成，页面不预置任何annual-top-item -->
         </div>
+        </div><!-- /.annual-card-body -->
     </div>
-
     <!-- 独立卡片3：三、キャラTOP -->
+
     <div class="big-card annual-card-char-top3">
-        <h2>三、キャラTOP</h2>
+        <div class="annual-card-header">
+            <h2>三、キャラTOP</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
         <!-- ✅全局唯一添加角色按钮，板块顶部，移除每个item内部按钮 -->
         <div class="annual-global-add-char-btn-wrap center-btn-block">
             <button id="annual-global-add-char-btn" class="annual-add-char-btn">+ 添加角色</button>
@@ -335,20 +349,30 @@
         <div id="annual-char-top-drag-container">
             <!-- 全部条目由JS动态生成，页面不预置任何annual-char-top-item -->
         </div>
+        </div><!-- /.annual-card-body -->
     </div>
-
     <!-- 独立卡片4：四、カップルTOP -->
+
     <div class="big-card annual-card-cp-top3">
-        <h2>四、カップルTOP</h2>
+        <div class="annual-card-header">
+            <h2>四、カップルTOP</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
         <div class="annual-global-add-cp-btn-wrap center-btn-block">
-            <button id="annual-global-add-cp-btn" class="annual-add-cp-btn">+ 添加CP</button>
+            <button id="annual-global-add-cp-btn" class="annual-add-cp-btn">+ 添加Couple</button>
         </div>
         <div id="annual-cp-top-drag-container"></div>
+        </div><!-- /.annual-card-body -->
     </div>
     
 <!-- ========== 导出 ========== -->
 <div class="big-card" id="annual-card-export">
-    <h2>九、导出</h2>
+    <div class="annual-card-header">
+        <h2>九、导出</h2>
+        <button class="annual-card-fold-btn">▲</button>
+    </div>
+    <div class="annual-card-body">
     <!-- 恢复默认设置按钮 -->
     <div class="center-btn-block left-align-btn">
         <button id="annual-btn-reset-color">恢复默认设置</button>
@@ -386,6 +410,7 @@
         <p class="switch-desc">图片源文件存储于海外节点，使用🔮可显著提高生成效率</p>
     </div>
     <canvas id="annual-export-canvas" style="display:none;"></canvas>
+    </div><!-- /.annual-card-body -->
 </div>
 
 <!-- ✅新增：annual模式悬浮滚动按钮（复用.float-scroll-btn样式，逻辑独立） -->
@@ -947,7 +972,7 @@ z-index: -999;
     <div class="annual-global-modal-inner">
         <div class="annual-modal-header">
             <button class="annual-modal-back-btn annual-cp-back-btn">←</button>
-            <div class="annual-modal-header-title">搜索CP</div>
+            <div class="annual-modal-header-title">搜索Couple</div>
             <button class="annual-modal-close-btn annual-cp-close-btn">×</button>
         </div>
         <div class="annual-modal-scroll-wrap">
