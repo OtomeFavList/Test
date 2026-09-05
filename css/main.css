@@ -1398,12 +1398,10 @@ h2{
     100%{transform:rotate(360deg);}
 }
 
-/* ==========【新增】折叠状态游戏名旁图标展开按钮 ========== */
+/* ==========【修改】折叠展开按钮移至爱心右边，改为普通flex子元素 ========== */
 .game-fold-icon-expand {
-    position: absolute;
-    left: -34px;
-    top: 50%;
-    transform: translateY(-50%);
+    flex-shrink: 0;
+    align-self: center;
     display: none;
     border: 1px solid #b33a3a;
     border-radius: 8px;
@@ -1414,7 +1412,7 @@ h2{
     padding: 0 !important;        /* 清除全局button默认padding */
     line-height: 1;
     width: 28px;
-    height:28px;
+    height: 28px;
 }
 /* 提高权重，覆盖全局button:hover */
 .game-fold-icon-expand:hover{
@@ -1422,13 +1420,10 @@ h2{
     color: #b33a3a !important;
 }
 
-/* 标题容器开启相对定位，给左侧绝对定位按钮做参照 */
+/* 标题容器：展开按钮已移至爱心右边，不再需要相对定位做参照 */
 .game-card-head-title-wrap {
-    position: relative;
     display: flex;
     align-items: center;
-    /* ✅修改：移除padding‑left，让游戏名称文字直接贴左边对齐，和下方按钮对齐 */
-    /* padding-left: 36px; */
     gap: 8px;
 }
 
