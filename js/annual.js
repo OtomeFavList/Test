@@ -50,9 +50,9 @@ const getDefaultAnnualData = () => ({
     finished: "",
     ongoing: "",
     notStart: "",
-    // 修复：不再预置3条空数据，初始为空数组
     topList: [],
-    charTopList: []
+    charTopList: [],
+    cpTopList: []  // ✅新增：カップルTOP数据
 });
 
 let annualData = getDefaultAnnualData();
@@ -64,6 +64,17 @@ let activeTopItemIndex = null;
 
 // ========= キャラTOP3弹窗状态 =========
 let activeCharTopItemIndex = null;
+
+// ========= ✅新增：カップルTOP弹窗状态 =========
+let activeCpTopItemIndex = null;
+let cpModalViewMode = "gameList";       // gameList / femaleList
+let cpModalCurrentGameId = null;
+let cpModalCurrentFemaleId = null;      // 展开男主列表时记录当前女主
+let cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+let cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+const annualCpImgIndex = new Map();     // key="${gameId}-${charId}"
+const annualCpNameIndex = new Map();
+
 // 弹窗内部视图状态：gameList / charList
 let charModalViewMode = "gameList";
 // 当前弹窗选中的游戏ID（进入角色列表时赋值）
@@ -186,6 +197,32 @@ function resetCharModalLocalSwitches() {
 }
 
 /**
+ * ✅新增：重置CP弹窗局部开关（逻辑+DOM同步）
+ */
+function resetCpModalLocalSwitches() {
+    cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    const modal = document.getElementById("annual-global-cp-modal");
+    if (!modal) return;
+    const ids = ["#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
+                 "#annual-modal-cp-game-fd-game","#annual-modal-cp-game-fd-sub-char"];
+    ids.forEach(sel=>{ const el = modal.querySelector(sel); if(el) el.checked = false; });
+}
+
+/**
+ * ✅新增：CP弹窗角色可用立绘列表
+ */
+function getAnnualCpAvailImages(char) {
+    if (!char) return [];
+    const availUnits = getAvailableCharImages(
+        char, cpModalGlobal.hideChar, cpModalGlobal.fdChar,
+        cpModalLocal.hideChar, cpModalLocal.fdChar
+    );
+    const allSrc = [];
+    availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
+    return allSrc;
+}
+
+/**
  * 更新单个TOP条目UI显隐状态（游戏）
  * @param {HTMLElement} itemDom annual-top-item
  * @param {Object} dataItem topList单条数据
@@ -217,6 +254,26 @@ function refreshCharTopItemUi(itemDom, dataItem) {
     const contentRow = itemDom.querySelector(".annual-char-top-content-row");
     const hasChar = !!dataItem.charId;
     if (hasChar) {
+        labelRow.classList.remove("hidden-when-empty");
+        contentRow.classList.remove("hidden-when-empty");
+        labelRow.classList.add("render-visible");
+        contentRow.classList.add("render-visible");
+    } else {
+        labelRow.classList.add("hidden-when-empty");
+        contentRow.classList.add("hidden-when-empty");
+        labelRow.classList.remove("render-visible");
+        contentRow.classList.remove("render-visible");
+    }
+}
+
+/**
+ * ✅新增：更新カップルTOP单条UI显隐
+ */
+function refreshCpTopItemUi(itemDom, dataItem) {
+    const labelRow = itemDom.querySelector(".annual-top-label-row");
+    const contentRow = itemDom.querySelector(".annual-cp-top-content-row");
+    const hasCp = !!(dataItem.femaleId && dataItem.maleId);
+    if (hasCp) {
         labelRow.classList.remove("hidden-when-empty");
         contentRow.classList.remove("hidden-when-empty");
         labelRow.classList.add("render-visible");
@@ -895,6 +952,32 @@ function bindCharTop3Items() {
 }
 
 /**
+ * ✅新增：绑定カップルTOP全部条目（名称、双封面、感想框）
+ */
+function bindCpTop3Items() {
+    const cpItems = document.querySelectorAll(".annual-cp-top-item");
+    cpItems.forEach((item, domIndex)=>{
+        const dataItem = annualData.cpTopList[domIndex];
+        if(!dataItem) return;
+        const nameTextEl = item.querySelector(".annual-cp-name-text");
+        const textarea = item.querySelector(".annual-cp-textarea");
+        const femaleImg = item.querySelector(".annual-cp-female-cover");
+        const maleImg = item.querySelector(".annual-cp-male-cover");
+        nameTextEl.textContent = dataItem.gameName ?? "";
+        textarea.value = dataItem.text ?? "";
+        if(dataItem.femaleCoverSrc) femaleImg.src = getWebImageUrl(dataItem.femaleCoverSrc);
+        if(dataItem.maleCoverSrc) maleImg.src = getWebImageUrl(dataItem.maleCoverSrc);
+        refreshCpTopItemUi(item, dataItem);
+        textarea.removeEventListener("input", textarea._cpInputHandler);
+        textarea._cpInputHandler = ()=>{
+            annualData.cpTopList[domIndex].text = textarea.value;
+            saveAnnualData();
+        };
+        textarea.addEventListener("input", textarea._cpInputHandler);
+    });
+}
+
+/**
  * ✅新增：拖拽后，刷新游戏TOP全部NO.N标签文本（根据数组真实下标，不依赖data-rank）
  */
 function rerenderGameTopNoLabel(){
@@ -914,6 +997,15 @@ function rerenderCharTopNoLabel(){
         const labelEl = dom.querySelector(".annual-top-label");
         labelEl.textContent = `NO.${arrIdx+1}`;
         dom.dataset.rank = String(arrIdx + 1); //同步更新属性
+    });
+}
+
+function rerenderCpTopNoLabel(){
+    const items = Array.from(document.querySelectorAll(".annual-cp-top-item"));
+    items.forEach((dom, arrIdx)=>{
+        const labelEl = dom.querySelector(".annual-top-label");
+        labelEl.textContent = `NO.${arrIdx+1}`;
+        dom.dataset.rank = String(arrIdx + 1);
     });
 }
 
@@ -981,6 +1073,38 @@ function appendNewCharTopDom(){
 }
 
 /**
+ * ✅新增：动态追加カップルTOP DOM条目
+ */
+function appendNewCpTopDom(){
+    const container = document.getElementById("annual-cp-top-drag-container");
+    const itemDom = document.createElement("div");
+    itemDom.className = "annual-cp-top-item";
+    itemDom.dataset.dragType = "cp-top";
+    itemDom.innerHTML = `
+        <div class="annual-top-label-row hidden-when-empty">
+            <div class="annual-top-label"></div>
+            <div class="annual-cp-name-text"></div>
+            <button class="annual-item-delete-btn" data-type="cp">×</button>
+        </div>
+        <div class="annual-cp-top-content-row hidden-when-empty">
+            <div class="annual-cp-cover-wrap">
+                <img class="annual-cp-female-cover" alt="">
+                <img class="annual-cp-male-cover" alt="">
+            </div>
+            <div class="annual-cp-text-wrap">
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-cp-textarea" placeholder="填写感想"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(itemDom);
+    bindCpTop3Items();
+    rerenderCpTopNoLabel();
+}
+
+/**
  * 根据 topList 数组完整重建游戏TOP DOM，初始化使用
  */
 function rebuildGameTopDomAll(){
@@ -1002,6 +1126,15 @@ function rebuildCharTopDomAll(){
     });
 }
 
+function rebuildCpTopDomAll(){
+    const container = document.getElementById("annual-cp-top-drag-container");
+    if(!container) return;
+    container.innerHTML = "";
+    annualData.cpTopList.forEach(()=>{
+        appendNewCpTopDom();
+    });
+}
+
 // ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
 function bindTouchDrag(){
     // 游戏TOP触摸拖拽
@@ -1014,6 +1147,12 @@ function bindTouchDrag(){
     setupTouchSort("#annual-char-top-drag-container", annualData.charTopList, ()=>{
         bindCharTop3Items();
         rerenderCharTopNoLabel();
+        saveAnnualData();
+    });
+    // ✅新增：CP TOP触摸拖拽
+    setupTouchSort("#annual-cp-top-drag-container", annualData.cpTopList, ()=>{
+        bindCpTop3Items();
+        rerenderCpTopNoLabel();
         saveAnnualData();
     });
 }
@@ -1068,7 +1207,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
      */
     function renderAllInsertIndicators() {
         if(!selectedItem) return;
-        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
         if(items.length === 0) return;
         // 循环：在每一个item前面插入指示线
         items.forEach((beforeItemDom, beforeIndex)=>{
@@ -1136,11 +1275,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
         }
         // 触发源：NO+名称行 / 内容封面区域
-        const targetRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
+        const targetRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row, .annual-cp-top-content-row");
         if (!targetRow) {
             return;
         }
-        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item");
+        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item,.annual-cp-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -1152,8 +1291,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             .annual-top-label,
             .annual-game-name-text,
             .annual-char-name-text,
+            .annual-cp-name-text,
             .annual-top-cover,
-            .annual-char-cover
+            .annual-char-cover,
+            .annual-cp-female-cover,
+            .annual-cp-male-cover
         `);
         // textarea、空白区域一律不阻止默认
         if(hitDragTrigger){
@@ -1163,7 +1305,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         const touch = e.touches[0];
         touchStartY = touch.clientY;
         touchStartX = touch.clientX;
-        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(() => {
             enterSelectMode(itemDom, idx);
@@ -1204,13 +1346,13 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // ============ PC鼠标 mousedown 长按1000ms逻辑 ============
     container.addEventListener("mousedown", (e)=>{
-        const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row");
+        const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row, .annual-cp-top-content-row");
         if (!labelRow) {
             clearTimeout(pressTimer);
             pressTimer = null;
             return;
         }
-        const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item");
+        const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item,.annual-cp-top-item");
         if (!itemDom) {
             clearTimeout(pressTimer);
             pressTimer = null;
@@ -1220,7 +1362,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         e.stopPropagation();
         mouseStartY = e.clientY;
         mouseStartX = e.clientX;
-        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item"));
+        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
         const idx = allItems.indexOf(itemDom);
         pressTimer = setTimeout(()=>{
             enterSelectMode(itemDom, idx);
@@ -1258,7 +1400,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         if(clickIndicator){
             return;
         }
-        const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item");
+        const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item,.annual-cp-top-item");
         if(selectedFirstClickAfterEnter){
             selectedFirstClickAfterEnter = false;
             return;
@@ -1432,6 +1574,334 @@ function bindAnnualExport() {
 }
 
 /**
+ * ✅新增：CP弹窗游戏列表（只搜索游戏名，不搜索角色名）
+ */
+function renderCpModalGameList(wrap, keyword) {
+    wrap.innerHTML = "";
+    const state = getGameTemplateState_BaseOnly();
+    const gameTemplateList = state.list;
+    if (!gameTemplateList || !isGameTemplateReady()) {
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
+        return;
+    }
+    const kw = (keyword ?? "").toLowerCase().trim();
+    const filtered = gameTemplateList.filter(g=> !kw || String(g.name).toLowerCase().includes(kw));
+    const { sortFilterOptionList } = window.Core || {};
+    let sorted;
+    if (typeof sortFilterOptionList === 'function') {
+        const sortedNames = sortFilterOptionList(filtered.map(g=>g.name));
+        sorted = sortedNames.map(name=>filtered.find(g=>g.name===name)).filter(Boolean);
+    } else {
+        sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+    sorted.forEach((game) => {
+        if (!game) return;
+        const div = document.createElement("div");
+        div.className = "game-option-item";
+        div.innerHTML = renderGameSelectItem(game);
+        div.addEventListener("click", () => {
+            cpModalCurrentGameId = game.id;
+            cpModalCurrentFemaleId = null;
+            resetCpModalLocalSwitches();
+            switchCpModalView("femaleList");
+            renderCpModalFemaleList();
+        });
+        wrap.appendChild(div);
+    });
+    if(sorted.length === 0){
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏</div>`;
+    }
+}
+
+/**
+ * ✅新增：CP弹窗女主列表（点击女主展开男主列表，点击男主保存并关闭弹窗）
+ */
+function renderCpModalFemaleList() {
+    const modal = document.getElementById("annual-global-cp-modal");
+    const charWrap = modal.querySelector(".annual-global-cp-female-list");
+    charWrap.innerHTML = "";
+    const state = getGameTemplateState_BaseOnly();
+    const gameInfo = state.list.find(g=>g.id === cpModalCurrentGameId);
+    if(!gameInfo){
+        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
+        return;
+    }
+    const rawCharList = gameInfo.charList || [];
+
+    // 局部开关显隐控制
+    const visMap = {
+        "#annual-modal-cp-game-sub-char":   rawCharList.some(c => c.isSub === true),
+        "#annual-modal-cp-game-hide-char":  rawCharList.some(c => c.isHidden === true),
+        "#annual-modal-cp-game-fd-game":    rawCharList.some(c => c.isFD === true),
+        "#annual-modal-cp-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
+    };
+    Object.entries(visMap).forEach(([sel, visible]) => {
+        const inputEl = modal.querySelector(sel);
+        if (!inputEl) return;
+        const sw = inputEl.closest("label")?.parentElement;
+        if (sw) sw.style.display = visible ? "" : "none";
+    });
+
+    // 过滤角色（同角色弹窗逻辑）
+    let chars = [...rawCharList].filter(c=>{
+        const isSub = c.isSub ?? false, isHidden = !!c.isHidden, isFD = !!c.isFD, isFdSub = !!c.isFdSub;
+        const showHide = cpModalGlobal.hideChar || cpModalLocal.hideChar;
+        const showFD = cpModalGlobal.fdChar || cpModalLocal.fdChar;
+        const showSub = cpModalGlobal.subChar || cpModalLocal.subChar;
+        const showFdSub = cpModalGlobal.fdSubChar || cpModalLocal.fdSubChar;
+        if (!isSub && !isHidden && !isFD && !isFdSub) return true;
+        return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
+    });
+    const femaleChars = chars.filter(c => c.gender === "female");
+    const maleChars = chars.filter(c => c.gender === "male");
+    const { sortFilterOptionList } = window.Core || {};
+    const sortByName = (arr) => {
+        if (typeof sortFilterOptionList === 'function') {
+            const sn = sortFilterOptionList(arr.map(c=>c.name));
+            return sn.map(name=>arr.find(c=>c.name===name)).filter(Boolean);
+        }
+        return [...arr].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    };
+    const sortedFemales = sortByName(femaleChars);
+    const sortedMales = sortByName(maleChars);
+
+    // 工具：渲染单个角色卡片HTML（女主/男主共用）
+    function renderCharCardHtml(char, imgKey, allSrc, nameList, totalNames, nameIdx, displayName,
+                                 imgPrevCls, imgNextCls, namePrevCls, nameNextCls, cardClass) {
+        const hasMultiImg = allSrc.length > 1;
+        const canSwitchName = totalNames > 1;
+        const nameMultiCls = canSwitchName ? "char-name-multi" : "";
+        const nameSwitchBtns = canSwitchName ? `
+            <button class="char-name-switch-btn char-name-switch-prev ${namePrevCls}" data-char-id="${char.id}">&lt;</button>
+            <button class="char-name-switch-btn char-name-switch-next ${nameNextCls}" data-char-id="${char.id}">&gt;</button>` : "";
+        return `
+            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
+                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev ${imgPrevCls}" data-char-id="${char.id}">&lt;</button>` : ""}
+                <img src="${getWebImageUrl(allSrc[annualCpImgIndex.get(imgKey)] || "")}" alt="${displayName}" decoding="async">
+                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next ${imgNextCls}" data-char-id="${char.id}">&gt;</button>` : ""}
+            </div>
+            <div class="${cardClass === 'female' ? 'cp-female-name' : 'char-card-name'} ${nameMultiCls}">
+                ${nameSwitchBtns}
+                <span class="char-name-text">${displayName}</span>
+            </div>`;
+    }
+
+    // 工具：绑定立绘切换
+    function bindImgSwitch(cardEl, imgKey, allSrc, prevSel, nextSel) {
+        const imgEl = cardEl.querySelector("img");
+        cardEl.querySelector(prevSel)?.addEventListener("click", (e)=>{
+            e.stopPropagation();
+            let idx = annualCpImgIndex.get(imgKey) ?? 0;
+            idx = idx <= 0 ? allSrc.length - 1 : idx - 1;
+            annualCpImgIndex.set(imgKey, idx);
+            imgEl.src = getWebImageUrl(allSrc[idx] || "");
+        });
+        cardEl.querySelector(nextSel)?.addEventListener("click", (e)=>{
+            e.stopPropagation();
+            let idx = annualCpImgIndex.get(imgKey) ?? 0;
+            idx = idx >= allSrc.length - 1 ? 0 : idx + 1;
+            annualCpImgIndex.set(imgKey, idx);
+            imgEl.src = getWebImageUrl(allSrc[idx] || "");
+        });
+    }
+
+    // 工具：绑定名字切换
+    function bindNameSwitch(cardEl, imgKey, nameList, totalNames, prevSel, nextSel) {
+        const nameEl = cardEl.querySelector(".char-name-text");
+        cardEl.querySelector(prevSel)?.addEventListener("click", (e)=>{
+            e.stopPropagation();
+            let idx = annualCpNameIndex.get(imgKey) ?? 0;
+            idx = (idx - 1 + totalNames) % totalNames;
+            annualCpNameIndex.set(imgKey, idx);
+            nameEl.textContent = nameList[idx] || "";
+        });
+        cardEl.querySelector(nextSel)?.addEventListener("click", (e)=>{
+            e.stopPropagation();
+            let idx = annualCpNameIndex.get(imgKey) ?? 0;
+            idx = (idx + 1) % totalNames;
+            annualCpNameIndex.set(imgKey, idx);
+            nameEl.textContent = nameList[idx] || "";
+        });
+    }
+
+    // 渲染每个女主
+    sortedFemales.forEach(fChar=>{
+        if(!fChar) return;
+        const fImgKey = `${cpModalCurrentGameId}-${fChar.id}`;
+        if (!annualCpImgIndex.has(fImgKey)) annualCpImgIndex.set(fImgKey, 0);
+        if (!annualCpNameIndex.has(fImgKey)) annualCpNameIndex.set(fImgKey, 0);
+        const fAllSrc = getAnnualCpAvailImages(fChar);
+        let fImgIdx = annualCpImgIndex.get(fImgKey);
+        if (fImgIdx >= fAllSrc.length) fImgIdx = 0;
+        const fShowHide = getCharShowHide(fChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
+        const fNameList = getCharNameList(fChar, fShowHide);
+        const fTotalNames = fNameList.length;
+        let fNameIdx = annualCpNameIndex.get(fImgKey);
+        if (fNameIdx >= fTotalNames) fNameIdx = 0;
+        const fDisplayName = fNameList[fNameIdx] || fChar.name;
+        const isFemaleSelected = cpModalCurrentFemaleId === fChar.id;
+
+        const blockDiv = document.createElement("div");
+        blockDiv.className = "cp-female-block annual-cp-female-block";
+        blockDiv.dataset.fid = fChar.id;
+
+        const femaleCard = document.createElement("div");
+        femaleCard.className = `cp-female-card-btn annual-cp-female-card ${isFemaleSelected ? 'selected' : ''}`;
+        femaleCard.dataset.fid = fChar.id;
+        femaleCard.dataset.charId = fChar.id;
+        femaleCard.dataset.gameId = cpModalCurrentGameId;
+        femaleCard.dataset.totalImg = fAllSrc.length;
+        femaleCard.innerHTML = renderCharCardHtml(fChar, fImgKey, fAllSrc, fNameList, fTotalNames, fNameIdx, fDisplayName,
+            "annual-cp-female-img-prev", "annual-cp-female-img-next",
+            "annual-cp-name-prev", "annual-cp-name-next", "female");
+        blockDiv.appendChild(femaleCard);
+
+        // 女主点击：展开/收起男主列表
+        femaleCard.addEventListener("click", (e)=>{
+            if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
+            cpModalCurrentFemaleId = isFemaleSelected ? null : fChar.id;
+            renderCpModalFemaleList();
+        });
+        if(fAllSrc.length > 1) bindImgSwitch(femaleCard, fImgKey, fAllSrc, ".annual-cp-female-img-prev", ".annual-cp-female-img-next");
+        if(fTotalNames > 1) bindNameSwitch(femaleCard, fImgKey, fNameList, fTotalNames, ".annual-cp-name-prev", ".annual-cp-name-next");
+
+        // 选中女主时渲染男主列表
+        if(isFemaleSelected){
+            const maleWrap = document.createElement("div");
+            maleWrap.className = "cp-male-select-wrap annual-cp-male-select-wrap";
+            maleWrap.dataset.fid = fChar.id;
+            let maleListHtml = `<div class="cp-male-title">为【${fChar.name}】选择角色</div><div class="cp-male-list annual-cp-male-list">`;
+            sortedMales.forEach(mChar=>{
+                if(!mChar) return;
+                const mImgKey = `${cpModalCurrentGameId}-${mChar.id}`;
+                if (!annualCpImgIndex.has(mImgKey)) annualCpImgIndex.set(mImgKey, 0);
+                if (!annualCpNameIndex.has(mImgKey)) annualCpNameIndex.set(mImgKey, 0);
+                const mAllSrc = getAnnualCpAvailImages(mChar);
+                let mImgIdx = annualCpImgIndex.get(mImgKey);
+                if (mImgIdx >= mAllSrc.length) mImgIdx = 0;
+                const mShowHide = getCharShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
+                const mNameList = getCharNameList(mChar, mShowHide);
+                const mTotalNames = mNameList.length;
+                let mNameIdx = annualCpNameIndex.get(mImgKey);
+                if (mNameIdx >= mTotalNames) mNameIdx = 0;
+                const mDisplayName = mNameList[mNameIdx] || mChar.name;
+                maleListHtml += `
+                <div class="cp-male-item annual-cp-male-item" data-fid="${fChar.id}" data-mid="${mChar.id}"
+                     data-char-id="${mChar.id}" data-game-id="${cpModalCurrentGameId}" data-total-img="${mAllSrc.length}">
+                    ${renderCharCardHtml(mChar, mImgKey, mAllSrc, mNameList, mTotalNames, mNameIdx, mDisplayName,
+                        "annual-cp-male-img-prev", "annual-cp-male-img-next",
+                        "annual-cp-name-prev", "annual-cp-name-next", "male")}
+                </div>`;
+            });
+            maleListHtml += `</div>`;
+            maleWrap.innerHTML = maleListHtml;
+            blockDiv.appendChild(maleWrap);
+
+            // 绑定男主立绘/名字切换 + 点击保存
+            maleWrap.querySelectorAll(".annual-cp-male-item").forEach(maleItem=>{
+                const mCharId = maleItem.dataset.mid;
+                const mChar = sortedMales.find(c=>c.id === mCharId);
+                if(!mChar) return;
+                const mImgKey = `${cpModalCurrentGameId}-${mCharId}`;
+                const mAllSrc = getAnnualCpAvailImages(mChar);
+                const mShowHide = getCharShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
+                const mNameList = getCharNameList(mChar, mShowHide);
+                const mTotalNames = mNameList.length;
+                if(mAllSrc.length > 1) bindImgSwitch(maleItem, mImgKey, mAllSrc, ".annual-cp-male-img-prev", ".annual-cp-male-img-next");
+                if(mTotalNames > 1) bindNameSwitch(maleItem, mImgKey, mNameList, mTotalNames, ".annual-cp-name-prev", ".annual-cp-name-next");
+
+                // 男主点击：保存CP，关闭弹窗
+                maleItem.addEventListener("click", (e)=>{
+                    if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
+                    if(activeCpTopItemIndex === null) return;
+                    const isDup = annualData.cpTopList.some((item,i)=>
+                        i !== activeCpTopItemIndex &&
+                        item.gameId === cpModalCurrentGameId &&
+                        item.femaleId === fChar.id &&
+                        item.maleId === mCharId);
+                    if(isDup){ alert("该CP已经添加，不可重复添加"); return; }
+                    const targetItem = annualData.cpTopList[activeCpTopItemIndex];
+                    targetItem.gameId = cpModalCurrentGameId;
+                    targetItem.gameName = gameInfo.name;
+                    targetItem.femaleId = fChar.id;
+                    targetItem.femaleName = fNameList[annualCpNameIndex.get(fImgKey) ?? 0] || fChar.name;
+                    targetItem.femaleCoverSrc = fAllSrc[annualCpImgIndex.get(fImgKey) ?? 0] || "";
+                    targetItem.maleId = mCharId;
+                    targetItem.maleName = mNameList[annualCpNameIndex.get(mImgKey) ?? 0] || mChar.name;
+                    targetItem.maleCoverSrc = mAllSrc[annualCpImgIndex.get(mImgKey) ?? 0] || "";
+                    const doms = Array.from(document.querySelectorAll(".annual-cp-top-item"));
+                    const targetDom = doms[activeCpTopItemIndex];
+                    if(targetDom){
+                        targetDom.querySelector(".annual-cp-name-text").textContent = targetItem.gameName;
+                        targetDom.querySelector(".annual-cp-female-cover").src = getWebImageUrl(targetItem.femaleCoverSrc);
+                        targetDom.querySelector(".annual-cp-male-cover").src = getWebImageUrl(targetItem.maleCoverSrc);
+                        refreshCpTopItemUi(targetDom, targetItem);
+                    }
+                    saveAnnualData();
+                    closeAnnualGlobalCpModal();
+                });
+            });
+        }
+        charWrap.appendChild(blockDiv);
+    });
+
+    if(sortedFemales.length === 0){
+        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">该游戏暂无可用女主角</div>`;
+    }
+}
+
+function switchCpModalView(mode){
+    cpModalViewMode = mode;
+    const modal = document.getElementById("annual-global-cp-modal");
+    const inner = modal.querySelector(".annual-global-modal-inner");
+    const backBtn = modal.querySelector(".annual-cp-back-btn");
+    inner.classList.remove("cp-modal-gamelist-view", "cp-modal-femalelist-view");
+    if(mode === "gameList"){
+        inner.classList.add("cp-modal-gamelist-view");
+        backBtn.style.display = "none";
+    }else{
+        inner.classList.add("cp-modal-femalelist-view");
+        backBtn.style.display = "flex";
+    }
+}
+
+function openAnnualGlobalCpModal(targetIndex){
+    if(!_annualRealInitialized && isGameTemplateReady()) realInitAnnualModule();
+    activeCpTopItemIndex = targetIndex;
+    const modal = document.getElementById("annual-global-cp-modal");
+    if(!modal) return;
+    modal.classList.add("active");
+    cpModalViewMode = "gameList";
+    cpModalCurrentGameId = null;
+    cpModalCurrentFemaleId = null;
+    cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    annualCpImgIndex.clear();
+    annualCpNameIndex.clear();
+    switchCpModalView("gameList");
+    const searchInput = modal.querySelector(".annual-global-cp-search-input");
+    searchInput.value = "";
+    searchInput.focus();
+    ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
+     "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
+     "#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
+     "#annual-modal-cp-game-fd-game","#annual-modal-cp-game-fd-sub-char"].forEach(sel=>{
+        const el = modal.querySelector(sel); if(el) el.checked = false;
+    });
+    renderCpModalGameList(modal.querySelector(".annual-global-cp-game-list"), "");
+}
+
+function closeAnnualGlobalCpModal(){
+    activeCpTopItemIndex = null;
+    cpModalViewMode = "gameList";
+    cpModalCurrentGameId = null;
+    cpModalCurrentFemaleId = null;
+    const modal = document.getElementById("annual-global-cp-modal");
+    if(!modal) return;
+    modal.classList.remove("active");
+}
+
+/**
  * 真正执行年度模块业务初始化（必须等gameTemplateReady=true）
  */
 function realInitAnnualModule(){
@@ -1443,8 +1913,10 @@ function realInitAnnualModule(){
     // 从localStorage读取数据后，完全重建DOM，保证DOM数量与数组长度完全一致
     rebuildGameTopDomAll();
     rebuildCharTopDomAll();
+    rebuildCpTopDomAll();  // ✅新增
     bindTop3Items();
     bindCharTop3Items();
+    bindCpTop3Items();  // ✅新增
     bindTouchDrag();
     bindAnnualExport();
     bindAnnualExportPanel();
@@ -1489,11 +1961,21 @@ export function initAnnualModule(){
                 openAnnualGlobalCharModal(newIndex);
                 return;
             }
+            // ========== ✅新增：全局板块添加CP按钮 ==========
+            const globalAddCpBtn = e.target.closest("#annual-global-add-cp-btn");
+            if(globalAddCpBtn){
+                const newIndex = annualData.cpTopList.length;
+                annualData.cpTopList.push({ gameId:"", gameName:"", femaleId:"", femaleName:"", femaleCoverSrc:"", maleId:"", maleName:"", maleCoverSrc:"", text:"" });
+                saveAnnualData();
+                appendNewCpTopDom();
+                openAnnualGlobalCpModal(newIndex);
+                return;
+            }
 
             // ========== 年度TOP条目删除按钮（游戏/角色） ==========
             const delBtn = e.target.closest(".annual-item-delete-btn");
             if(delBtn){
-                const itemDom = delBtn.closest(".annual-top-item, .annual-char-top-item");
+                const itemDom = delBtn.closest(".annual-top-item, .annual-char-top-item, .annual-cp-top-item");
                 if(!itemDom) return;
                 const type = delBtn.dataset.type;
                 let dataIdx;
@@ -1511,6 +1993,13 @@ export function initAnnualModule(){
                     itemDom.remove();
                     bindCharTop3Items();
                     rerenderCharTopNoLabel();
+                }else if(type === "cp"){  // ✅新增
+                    const all = Array.from(document.querySelectorAll(".annual-cp-top-item"));
+                    dataIdx = all.indexOf(itemDom);
+                    annualData.cpTopList.splice(dataIdx,1);
+                    itemDom.remove();
+                    bindCpTop3Items();
+                    rerenderCpTopNoLabel();
                 }
                 saveAnnualData();
                 return;
@@ -1530,6 +2019,10 @@ export function initAnnualModule(){
                 return;
             }
 
+            // ========== ✅新增：CP弹窗关闭按钮 ==========
+            const cpModalCloseBtn = e.target.closest("#annual-global-cp-modal .annual-modal-close-btn");
+            if(cpModalCloseBtn){ closeAnnualGlobalCpModal(); return; }
+
             // ========== 角色弹窗返回按钮 ==========
             const charModalBackBtn = e.target.closest(".annual-modal-back-btn");
             if(charModalBackBtn){
@@ -1538,6 +2031,18 @@ export function initAnnualModule(){
                 const modal = document.getElementById("annual-global-char-modal");
                 const searchInput = modal.querySelector(".annual-global-char-search-input");
                 renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), searchInput.value);
+                return;
+            }
+
+            // ========== ✅新增：CP弹窗返回按钮 ==========
+            const cpModalBackBtn = e.target.closest("#annual-global-cp-modal .annual-cp-back-btn");
+            if(cpModalBackBtn){
+                cpModalCurrentGameId = null;
+                cpModalCurrentFemaleId = null;
+                switchCpModalView("gameList");
+                const modal = document.getElementById("annual-global-cp-modal");
+                const searchInput = modal.querySelector(".annual-global-cp-search-input");
+                renderCpModalGameList(modal.querySelector(".annual-global-cp-game-list"), searchInput.value);
                 return;
             }
 
@@ -1559,6 +2064,13 @@ export function initAnnualModule(){
                     closeAnnualGlobalCharModal();
                     return;
                 }
+            }
+
+            // ========== ✅新增：CP弹窗遮罩点击关闭 ==========
+            const modalCpEl = document.getElementById("annual-global-cp-modal");
+            if(modalCpEl && modalCpEl.classList.contains("active")){
+                const insideCpModal = e.target.closest("#annual-global-cp-modal .annual-global-modal-inner");
+                if(!insideCpModal){ closeAnnualGlobalCpModal(); return; }
             }
 
             // -------- 弹窗开关点击事件委托（角色弹窗） --------
@@ -1606,6 +2118,49 @@ export function initAnnualModule(){
                 renderCharModalCharList();
                 return;
             }
+
+            // ========== ✅新增：CP弹窗全局开关 ==========
+            if(e.target.closest("#annual-modal-cp-global-sub-char")){
+                cpModalGlobal.subChar = !cpModalGlobal.subChar;
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                return;
+            }
+            if(e.target.closest("#annual-modal-cp-global-hide-char")){
+                cpModalGlobal.hideChar = !cpModalGlobal.hideChar;
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                return;
+            }
+            if(e.target.closest("#annual-modal-cp-global-fd-game")){
+                cpModalGlobal.fdChar = !cpModalGlobal.fdChar;
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                return;
+            }
+            if(e.target.closest("#annual-modal-cp-global-fd-sub-char")){
+                cpModalGlobal.fdSubChar = !cpModalGlobal.fdSubChar;
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                return;
+            }
+            // ========== ✅新增：CP弹窗局部开关 ==========
+            if(e.target.closest("#annual-modal-cp-game-sub-char")){
+                cpModalLocal.subChar = !cpModalLocal.subChar;
+                renderCpModalFemaleList();
+                return;
+            }
+            if(e.target.closest("#annual-modal-cp-game-hide-char")){
+                cpModalLocal.hideChar = !cpModalLocal.hideChar;
+                renderCpModalFemaleList();
+                return;
+            }
+            if(e.target.closest("#annual-modal-cp-game-fd-game")){
+                cpModalLocal.fdChar = !cpModalLocal.fdChar;
+                renderCpModalFemaleList();
+                return;
+            }
+            if(e.target.closest("#annual-modal-cp-game-fd-sub-char")){
+                cpModalLocal.fdSubChar = !cpModalLocal.fdSubChar;
+                renderCpModalFemaleList();
+                return;
+            }
         });
 
         // ========== 全局弹窗搜索input事件委托 ==========
@@ -1628,6 +2183,14 @@ export function initAnnualModule(){
                 if(wrap){
                     renderCharModalGameList(wrap, charSearchInput.value);
                 }
+                return;
+            }
+            // ✅新增：CP弹窗搜索（只搜游戏名）
+            const cpSearchInput = e.target.closest(".annual-global-cp-search-input");
+            if(cpSearchInput){
+                const modal = document.getElementById("annual-global-cp-modal");
+                const wrap = modal?.querySelector(".annual-global-cp-game-list");
+                if(wrap){ renderCpModalGameList(wrap, cpSearchInput.value); }
                 return;
             }
         });
