@@ -613,7 +613,8 @@
     }
     /* CP弹窗二级页面对齐角色弹窗移动端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fill, 90px) !important;  /* minmax→固定90px */
+        justify-content: start !important;                           /* 新增 */
         gap: 10px !important;
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
@@ -627,7 +628,8 @@
     }
     /* 修改点6：CP男主列表grid移动端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fill, 90px) !important;  /* minmax→固定90px */
+        justify-content: start !important;                           /* 新增 */
         gap: 10px !important;
     }
     .annual-cp-female-name,
@@ -778,7 +780,8 @@
     }
     /* CP弹窗二级页面对齐角色弹窗平板端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fill, 110px) !important;  /* minmax→固定110px */
+        justify-content: start !important;                            /* 新增 */
         gap: 12px !important;
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
@@ -790,7 +793,8 @@
     }
     /* 修改点7：CP男主列表grid平板端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fill, 110px) !important;  /* minmax→固定110px */
+        justify-content: start !important;                            /* 新增 */
         gap: 12px !important;
     }
     /* ✅平板端选中女主后不再放大 */
@@ -1519,7 +1523,8 @@
 /* CP弹窗女主列表容器：1:1对齐.annual-global-char-char-list */
 .annual-global-cp-female-list {
     display:none;
-    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+    grid-template-columns: repeat(auto-fill, 130px);  /* minmax→固定130px，与角色弹窗实际列宽一致 */
+    justify-content: start;                           /* 新增：左对齐，不拉伸 */
     gap:14px;
     padding:10px;
     align-items:start;
@@ -1669,15 +1674,16 @@
 .annual-cp-female-card-btn {
     border: 1px solid #eee;
     border-radius: 10px;
-    padding: 12px;          /* 8px → 12px，对齐.char-item */
+    padding: 12px;
     cursor: pointer;
     background: #fff;
     width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 8px;               /* 6px → 8px，对齐.char-item */
-    min-height: 148px;      /* 新增，对齐.char-item PC端最小高度 */
+    justify-content: space-between;  /* 新增：图片贴顶、名字贴底，中间撑开，名字区域更高 */
+    gap: 8px;
+    min-height: 148px;
     transition: background-color 0.15s, border-color 0.15s;
 }
 .annual-cp-female-card-btn:hover {
@@ -1698,6 +1704,8 @@
     aspect-ratio: 1 / 1;
     overflow: hidden;
     border-radius: 6px;
+    border: 1px solid #eee;  /* 新增：内图片框，与外卡片框形成"两个框"效果，对齐角色弹窗 */
+    box-sizing: border-box;  /* 新增：边框不撑大容器 */
     flex-shrink: 0;
 }
 .annual-cp-char-card-img-box img {
@@ -1794,7 +1802,8 @@
 /* 修改点3：男主列表grid列数调整 */
 .annual-cp-male-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, 130px);  /* minmax→固定130px */
+    justify-content: start;                           /* 新增：左对齐 */
     gap: 14px;
 }
 
@@ -1802,15 +1811,16 @@
 .annual-cp-male-item-btn {
     border: 1px solid #eee;
     border-radius: 10px;
-    padding: 12px;          /* 8px → 12px，对齐.char-item */
+    padding: 12px;
     cursor: pointer;
     background: #fff;
     width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 8px;               /* 6px → 8px，对齐.char-item */
-    min-height: 148px;      /* 新增，对齐.char-item PC端最小高度 */
+    justify-content: space-between;  /* 新增：同上 */
+    gap: 8px;
+    min-height: 148px;
     transition: background-color 0.15s, border-color 0.15s;
 }
 .annual-cp-male-item-btn:hover {
