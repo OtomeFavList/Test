@@ -27,7 +27,8 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
 const STAT_SIZE = 16;                  // 统计文字
-const SUBTITLE_COLOR = '#f6a5b8';      // 模块小标题颜色（用户指定）
+const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
+const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
 const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
 const LABEL_ROW_MB = 12;               // NO+名称行底部间距
 const ITEM_GAP = 24;                   // TOP条目间间距
@@ -338,14 +339,13 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
     coverAreaW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
   } else { // cp
     coverH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
-    coverAreaW = CP_COVER_SIZE * 2 + CP_GAP + COVER_CARD_PAD * 2;
+    coverAreaW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：两张卡片各含左右内边距
   }
-
   // 感想框（仅当有文字时计算）
   let textBoxH = 0;
   const text = (item.text || '').trim();
   if (text) {
-    const textAreaW = innerW - coverAreaW - 16;
+    const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;  // ✅统一间距常量
     const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     textBoxH = textH + TEXT_BOX_PAD * 2;
@@ -431,20 +431,23 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
 
-  // ---- NO + 名称行 ----
+  // ---- NO + 名称行（先测量再绘制，NO垂直居中，名称加粗）----
   const noText = `NO.${(item._no ?? 0) + 1}`;
   ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
   const noW = ctx.measureText(noText).width;
-  ctx.fillStyle = NO_COLOR;
-  ctx.fillText(noText, contentX, painter.y);
-
   const nameText = itemType === 'cp'
     ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
     : (item.gameName || item.charName || '');
   const nameX = contentX + noW + 12;
   const nameMaxW = innerW - noW - 12;
-  const nameH = wrapText(ctx, nameText, nameX, painter.y, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', true);
+  // ✅先测量名称高度（bold=true，与绘制完全一致）
+  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
   const rowH = Math.max(NO_SIZE, nameH);
+  // ✅NO垂直居中在行高内
+  ctx.fillStyle = NO_COLOR;
+  ctx.fillText(noText, contentX, painter.y + (rowH - NO_SIZE) / 2);
+  // ✅名称加粗：补全 FONT_SIYUAN 参数，使第10位 bold=true 生效（原代码漏传font导致bold失效）
+  wrapText(ctx, nameText, nameX, painter.y, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
   painter.shiftY(rowH + LABEL_ROW_MB);
 
   // ---- 封面 + 感想行 ----
@@ -469,7 +472,7 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     const mSrc = toCanvasUrl(item.maleCoverSrc);
     const fImg = fSrc ? imageCache.get(fSrc) : null;
     const mImg = mSrc ? imageCache.get(mSrc) : null;
-    coverCardW = CP_COVER_SIZE * 2 + CP_GAP + COVER_CARD_PAD * 2;
+    coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：与calcTopItemHeight一致
     coverCardH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
     // 女主卡片
     drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 6);
@@ -477,18 +480,18 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 6);
   }
 
-  // 感想框（仅当有文字时绘制）
+  // 感想框（仅当有文字时绘制）✅统一使用 COVER_TEXT_GAP 间距
   const text = (item.text || '').trim();
+  let finalTextBoxH = 0;
   if (text) {
-    const textX = contentX + coverCardW + 16;
-    const textW = innerW - coverCardW - 16;
+    const textX = contentX + coverCardW + COVER_TEXT_GAP;
+    const textW = innerW - coverCardW - COVER_TEXT_GAP;
     const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-    const textBoxH = textH + TEXT_BOX_PAD * 2;
-    drawTextBox(painter, textX, contentY, textW, textBoxH, text, config);
+    finalTextBoxH = textH + TEXT_BOX_PAD * 2;
+    drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
   }
-
-  painter.shiftY(Math.max(coverCardH, text ? (measureWrappedHeight(ctx, text, innerW - coverCardW - 16 - TEXT_BOX_PAD * 2, (config.customTextFontSize || 16) * 1.55, config.customTextFontSize || 16) + TEXT_BOX_PAD * 2) : 0));
+  painter.shiftY(Math.max(coverCardH, finalTextBoxH));
 }
 
 // ===================== 主入口：单模块导出 =====================
@@ -581,6 +584,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   // 绘制内容
   if (moduleType === 'stats') {
     drawStatsContent(painter, wrapX + CARD_INNER_PAD, contentY, cardInnerW, annualData, config);
+    painter.y = cardTop + cardH;  // ✅stats模块drawStatsContent不移动painter.y，手动设置到卡片底部
   } else {
     const items = getValidItems(moduleType, annualData);
     const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
@@ -591,6 +595,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
       if (i < items.length - 1) painter.shiftY(ITEM_GAP);
       emitRenderProgress(65 + ((i + 1) / items.length) * 30);
     });
+    painter.shiftY(CARD_INNER_PAD);  // ✅补卡片底部内边距，使painter.y到达卡片真实底部，与calcModuleHeight的cardH一致
   }
 
   emitRenderProgress(100);
