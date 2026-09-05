@@ -963,7 +963,8 @@ function bindCpTop3Items() {
         const textarea = item.querySelector(".annual-cp-textarea");
         const femaleImg = item.querySelector(".annual-cp-female-cover");
         const maleImg = item.querySelector(".annual-cp-male-cover");
-        nameTextEl.textContent = dataItem.gameName ?? "";
+        // ✅修改点9a：名称显示为"女角色×男角色"
+        nameTextEl.textContent = `${dataItem.femaleName ?? ''}×${dataItem.maleName ?? ''}`;
         textarea.value = dataItem.text ?? "";
         if(dataItem.femaleCoverSrc) femaleImg.src = getWebImageUrl(dataItem.femaleCoverSrc);
         if(dataItem.maleCoverSrc) maleImg.src = getWebImageUrl(dataItem.maleCoverSrc);
@@ -1837,8 +1838,9 @@ function renderCpModalFemaleList() {
         const fDisplayName = fNameList[fNameIdx] || fChar.name;
         const isFemaleSelected = cpModalCurrentFemaleId === fChar.id;
 
+        // ✅修改点8：blockDiv添加条件类，展开时使用annual-cp-female-block-expanded
         const blockDiv = document.createElement("div");
-        blockDiv.className = "annual-cp-female-block";
+        blockDiv.className = `annual-cp-female-block ${isFemaleSelected ? 'annual-cp-female-block-expanded' : ''}`;
         blockDiv.dataset.fid = fChar.id;
 
         const femaleCard = document.createElement("div");
@@ -1932,7 +1934,7 @@ function renderCpModalFemaleList() {
                     const doms = Array.from(document.querySelectorAll(".annual-cp-top-item"));
                     const targetDom = doms[activeCpTopItemIndex];
                     if(targetDom){
-                        targetDom.querySelector(".annual-cp-name-text").textContent = targetItem.gameName;
+                        targetDom.querySelector(".annual-cp-name-text").textContent = `${targetItem.femaleName}×${targetItem.maleName}`; // ✅修改点9b
                         targetDom.querySelector(".annual-cp-female-cover").src = getWebImageUrl(targetItem.femaleCoverSrc);
                         targetDom.querySelector(".annual-cp-male-cover").src = getWebImageUrl(targetItem.maleCoverSrc);
                         refreshCpTopItemUi(targetDom, targetItem);
