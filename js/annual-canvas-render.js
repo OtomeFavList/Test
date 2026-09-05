@@ -126,8 +126,10 @@ function createRoundImageCanvas(img, srcUrl, radius) {
   offCanvas.height = sourceH * DPR;
   const offCtx = offCanvas.getContext('2d');
   if (!offCtx) return null;
+  offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);  // ✅补：清空离屏画布
   offCtx.imageSmoothingEnabled = true;
   offCtx.imageSmoothingQuality = "high";
+  offCtx.webkitImageSmoothingEnabled = true;  // ✅补：IOS Safari前缀兼容
   try {
     offCtx.save();
     offCtx.scale(DPR, DPR);
@@ -146,6 +148,7 @@ function createRoundImageCanvas(img, srcUrl, radius) {
     offCtx.drawImage(img, 0, 0, sourceW, sourceH);
     offCtx.restore();
   } catch (e) {
+    console.warn("annual离屏画布绘制异常", srcUrl, e);  // ✅补：可追踪警告
     offCanvas.width = 0; offCanvas.height = 0;
     return null;
   }
@@ -228,7 +231,15 @@ async function loadImagesWithLimit(urlList, limit) {
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => setTimeout(r, 30));
-  return resultMap;
+  // ✅收集失败列表（对齐export容错模式）
+  const failList = [];
+  for (const [u, val] of resultMap.entries()) {
+    if (!val) failList.push(u);
+  }
+  if (failList.length > 0) {
+    console.warn("⚠️ annual部分图片加载失败，继续渲染（空白占位）：", failList);
+  }
+  return { resultMap, failList };
 }
 
 // ===================== 统计文本 =====================
@@ -392,12 +403,45 @@ function drawModuleTitle(painter, x, y, title) {
 
 // 绘制封面卡片（白色底+#eee边框+圆角，内含圆角图片）
 function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
-  // 卡片背景+边框
   painter.drawRoundRect(x, y, cardW, cardH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
   if (img) {
-    const roundC = createRoundImageCanvas(img, srcUrl, radius);
+    const imgX = x + COVER_CARD_PAD;
+    const imgY = y + COVER_CARD_PAD;
+    const imgW = cardW - COVER_CARD_PAD * 2;
+    const imgH = cardH - COVER_CARD_PAD * 2;
+    let roundC = createRoundImageCanvas(img, srcUrl, radius);
     if (roundC) {
-      painter.drawImageRound(roundC, x + COVER_CARD_PAD, y + COVER_CARD_PAD, cardW - COVER_CARD_PAD * 2, cardH - COVER_CARD_PAD * 2);
+      try {
+        painter.drawImageRound(roundC, imgX, imgY, imgW, imgH);
+      } catch (e) {
+        if (IS_IOS_WEBKIT) console.warn("annual圆角离屏绘制异常，回退clip", srcUrl, e);
+        roundC = null;
+      }
+    }
+    // ✅降级：离屏画布失败时，实时clip绘制（对齐export补丁4）
+    if (!roundC) {
+      const ctx = painter.ctx;
+      ctx.save();
+      try {
+        ctx.beginPath();
+        ctx.moveTo(imgX + radius, imgY);
+        ctx.lineTo(imgX + imgW - radius, imgY);
+        ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + radius);
+        ctx.lineTo(imgX + imgW, imgY + imgH - radius);
+        ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - radius, imgY + imgH);
+        ctx.lineTo(imgX + radius, imgY + imgH);
+        ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - radius);
+        ctx.lineTo(imgX, imgY + radius);
+        ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
+        ctx.closePath();
+        ctx.clip();
+        // 优先用rawImageResourceCache中降级的HTMLImageElement（IOS bitmap绘制bug时更稳）
+        const resInfo = rawImageResourceCache.get(srcUrl);
+        const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
+        ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
+      } finally {
+        ctx.restore();
+      }
     }
   }
 }
@@ -518,8 +562,21 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   emitRenderProgress(5);
 
   // 第一步：加载图片（游戏封面高度依赖图片尺寸，必须先加载）
-  const imageUrls = collectModuleImages(moduleType, annualData);
-  const imageCache = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
+  let imageUrls = collectModuleImages(moduleType, annualData);
+  // ✅兜底防火墙：再次清洗，剔除null/空/R2 pub/github raw（对齐export补丁8）
+  const SAFE_URL_PATTERN = /^(http|https):\/\//;
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
+  imageUrls = [...new Set(imageUrls)];
+  const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
+  const imageCache = loadRet.resultMap;
 
   // 预生成圆角画布
   const roundTasks = imageUrls.map(src => ({ src, radius: 6 }));
@@ -538,6 +595,13 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   vCanvas.width = 0; vCanvas.height = 0;
 
   // 第三步：创建正式画布并绘制
+  // ✅IOS画布总像素预警（对齐export补丁5）
+  if (IS_IOS_WEBKIT) {
+    const totalPixel = (designW * DPR) * (totalH * DPR);
+    if (totalPixel > 32 * 1024 * 1024) {
+      console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
+    }
+  }
   const canvas = document.createElement('canvas');
   const painter = new CanvasLayoutPainter(canvas, designW, totalH, config.bg || '#fff7f9');
 
