@@ -18,7 +18,7 @@ const annualExportDefault = {
     stattext: "#b85878",          // ✅新增：数据统计标签文字色
     statdata: "#b33a3a",          // ✅新增：数据统计数据色
     customtext: "#c98fac",
-    customborder: "#f6a5b8",      // ✅新增：自定义文本边框色
+    customborder: "#eee",         // ✅自定义文本边框色，默认#eee（与封面卡片边框一致）
     border: "#f6a5b8",
     customTextFontSize: 16
 };
