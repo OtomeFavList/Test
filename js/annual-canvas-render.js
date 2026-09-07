@@ -397,8 +397,11 @@ function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, con
 
 // ===================== 绘制函数 =====================
 function drawBigTitle(painter, targetW, config) {
-  painter.drawTextCenter('Otome Annual Report', targetW / 2, painter.y, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
-  painter.shiftY(TITLE_SIZE + getTitleMb());
+  // ✅大标题在"画布上沿→第一个框上沿"区域内垂直居中，与export逻辑一致
+  const titleAreaH = getBodyPad() + TITLE_SIZE + getTitleMb();
+  const titleY = (titleAreaH - TITLE_SIZE) / 2;
+  painter.drawTextCenter('Otome Annual Report', targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
+  painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
 }
 
 function drawModuleTitle(painter, x, y, title) {
