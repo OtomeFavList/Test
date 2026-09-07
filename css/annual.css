@@ -611,16 +611,15 @@
         width: 100% !important;
         min-height: 132px !important;
     }
-    /* CP弹窗二级页面：女主列表用固定90px列宽（对齐PC端固定130px的思路），
-       确保选中跨列前后卡片大小完全一致；男主列表仍用minmax弹性列宽不受影响 */
+    /* CP弹窗二级页面对齐角色弹窗移动端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, 90px) !important;  /* ✅minmax→固定90px，选中前后一致 */
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定90px→弹性minmax，与角色列表完全一致 */
         justify-content: start !important;
         gap: 10px !important;
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+        width: 100% !important;       /* ✅新增：确保容器撑满 */
+        box-sizing: border-box !important;  /* ✅新增 */
     }
     .annual-global-cp-female-list .char-item,
     .annual-cp-male-list .char-item {
@@ -806,10 +805,9 @@
         width: 100% !important;
         min-height: 148px !important;
     }
-    /* CP弹窗二级页面：女主列表用固定110px列宽（对齐PC端固定130px），
-       确保选中跨列前后卡片大小完全一致 */
+    /* CP弹窗二级页面对齐角色弹窗平板端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, 110px) !important;  /* ✅minmax→固定110px */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
         justify-content: start !important;
         gap: 12px !important;
         padding: 10px 0 10px 0 !important;
