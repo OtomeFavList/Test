@@ -68,7 +68,11 @@
     font-size: 16px;
     line-height: 2.2;
     text-align: center;
-    color: var(--annual-export-customtext, #c98fac);
+    /* ✅移除统一color，改为span和input分别控制 */
+}
+/* ✅新增：统计标签文字（"年度/游玩总数/小时"等）用数据统计文字色 */
+.annual-stat-line span {
+    color: var(--annual-export-stattext, #b85878);
 }
 .annual-input {
     width: 80px;
@@ -78,7 +82,7 @@
     font-size: 16px;
     background: #fcfcfc;
     margin: 0 4px;
-    color:#000000;
+    color: var(--annual-export-statdata, #b33a3a);  /* ✅用户填写的数字用数据统计数据色 */
 }
 /* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
 .annual-top-label {
@@ -287,7 +291,7 @@
     min-height: 120px;
     box-sizing: border-box;
     padding: 8px 10px;
-    border: 1px solid var(--annual-export-border, #f6a5b8);
+    border: 1px solid var(--annual-export-customborder, #f6a5b8);
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 15px;
@@ -326,8 +330,12 @@
 .snapshot-container.export-snapshot.annual-mode {
     --annual-export-bg: #fff7f9;
     --annual-export-title: #b33a3a;
+    --annual-export-subtitle: #b85878;        /* ✅新增 */
     --annual-export-gamename: #000000;
+    --annual-export-stattext: #b85878;        /* ✅新增 */
+    --annual-export-statdata: #b33a3a;        /* ✅新增 */
     --annual-export-customtext: #c98fac;
+    --annual-export-customborder: #f6a5b8;     /* ✅新增 */
     --annual-export-border: #f6a5b8;
 }
 /* ==========年度报告字号滑块轨道【修复滑块百分比轨道不变化】========== */
@@ -389,11 +397,18 @@
 .mode-wrap[data-mode="annual"] {
     --annual-export-bg:#fff7f9;
     --annual-export-title:#b33a3a;
-    --annual-export-gamename:#000000;
-    --annual-export-customtext:#c98fac;
-    --annual-export-border:#f6a5b8;
     --annual-export-subtitle:#b85878;
+    --annual-export-gamename:#000000;
+    --annual-export-stattext:#b85878;       /* ✅新增：数据统计标签文字色 */
+    --annual-export-statdata:#b33a3a;       /* ✅新增：数据统计数据色 */
+    --annual-export-customtext:#c98fac;
+    --annual-export-customborder:#f6a5b8;    /* ✅新增：自定义文本边框色 */
+    --annual-export-border:#f6a5b8;
     background-color: var(--annual-export-bg, #fff7f9);
+}
+/* ✅新增：年度报告模块标题（一、数据统计/二、ゲームTOP等）受小标题文字色控制 */
+.mode-wrap[data-mode="annual"] .big-card h2 {
+    color: var(--annual-export-subtitle, #b85878);
 }
 /* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
 /* ① 普通手机（≤ 768px）：强制单列 */
@@ -922,7 +937,7 @@
     min-height: 120px;
     box-sizing: border-box;
     padding: 8px 10px;
-    border: 1px solid var(--annual-export-border, #f6a5b8);
+    border: 1px solid var(--annual-export-customborder, #f6a5b8);
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 15px;
@@ -1340,7 +1355,7 @@
     min-height: 120px;
     box-sizing: border-box;
     padding: 8px 10px 26px 10px;
-    border: 1px solid var(--annual-export-border, #f6a5b8);
+    border: 1px solid var(--annual-export-customborder, #f6a5b8);
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 15px;
@@ -1617,7 +1632,7 @@
     min-height: 120px;
     box-sizing: border-box;
     padding: 8px 10px;
-    border: 1px solid var(--annual-export-border, #f6a5b8);
+    border: 1px solid var(--annual-export-customborder, #f6a5b8);
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 15px;
