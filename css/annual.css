@@ -53,7 +53,7 @@
 /* ========== site-title 年度报告覆盖样式 ========== */
 .site-title.annual-active h1 {
     font-size: 42px;
-    color: #b33a3a;
+    color: var(--annual-export-title, #b33a3a);
 }
 .site-title.annual-active .title-sub-cn,
 .site-title.annual-active .sub-desc {
@@ -409,6 +409,10 @@
 /* ✅新增：年度报告模块标题（一、数据统计/二、ゲームTOP等）受小标题文字色控制 */
 .mode-wrap[data-mode="annual"] .big-card h2 {
     color: var(--annual-export-subtitle, #b85878);
+}
+/* ✅新增：卡片边框色受"卡片边框色"控制，覆盖main.css中的硬编码 */
+.mode-wrap[data-mode="annual"] .big-card {
+    border-color: var(--annual-export-border, #f6a5b8);
 }
 /* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
 /* ① 普通手机（≤ 768px）：强制单列 */
