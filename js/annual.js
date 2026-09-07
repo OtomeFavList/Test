@@ -1561,6 +1561,9 @@ function bindAnnualTextareaResize() {
  * 年度报告导出面板绑定
  */
 function bindAnnualExportPanel() {
+    // ✅关键修复：CSS变量设在mode-wrap元素自身（内联样式覆盖CSS规则中的硬编码值），
+    // 不能设在body上——.mode-wrap[data-mode="annual"]规则中硬编码的变量会遮蔽body继承值
+    const annualWrap = document.querySelector('.mode-wrap[data-mode="annual"]') || document.body;
     const btnResetColor = document.getElementById("annual-btn-reset-color");
     const colorBg = document.getElementById("annual-color-bg");
     const colorTitle = document.getElementById("annual-color-title");
@@ -1596,15 +1599,15 @@ function bindAnnualExportPanel() {
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
 
-    document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-    document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
-    document.body.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
-    document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-    document.body.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
-    document.body.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
-    document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-    document.body.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
-    document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
+    annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
+    annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
+    annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
+    annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+    annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
+    annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
+    annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+    annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
+    annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
 
     btnResetColor.removeEventListener("click", btnResetColor._handler);
     btnResetColor._handler = () => {
@@ -1622,66 +1625,66 @@ function bindAnnualExportPanel() {
         colorCustomborder.value = annualExportConfig.customborder;
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
-        document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-        document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
-        document.body.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
-        document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-        document.body.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
-        document.body.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
-        document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-        document.body.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
-        document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
+        annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
+        annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
+        annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
+        annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+        annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
+        annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
+        annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+        annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
+        annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
         updateSliderProgress(sliderFont);
     };
     btnResetColor.addEventListener("click", btnResetColor._handler);
 
     colorBg.oninput = () => {
         annualExportConfig.bg = colorBg.value;
-        document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
+        annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         saveAnnualExportConfig();
     };
     colorTitle.oninput = () => {
         annualExportConfig.title = colorTitle.value;
-        document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
+        annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
         saveAnnualExportConfig();
     };
     colorGamename.oninput = () => {
         annualExportConfig.gamename = colorGamename.value;
-        document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+        annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
         saveAnnualExportConfig();
     };
     colorCustomtext.oninput = () => {
         annualExportConfig.customtext = colorCustomtext.value;
-        document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+        annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         saveAnnualExportConfig();
     };
     colorBorder.oninput = () => {
         annualExportConfig.border = colorBorder.value;
-        document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
+        annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
         saveAnnualExportConfig();
     };
     // ✅新增：小标题文字色（即时反应：模块标题+NO标签）
     colorSubtitle.oninput = () => {
         annualExportConfig.subtitle = colorSubtitle.value;
-        document.body.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);
+        annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);
         saveAnnualExportConfig();
     };
     // ✅新增：数据统计文字色（即时反应：统计标签文字）
     colorStattext.oninput = () => {
         annualExportConfig.stattext = colorStattext.value;
-        document.body.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);
+        annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);
         saveAnnualExportConfig();
     };
     // ✅新增：数据统计数据色（即时反应：用户填写的数字）
     colorStatdata.oninput = () => {
         annualExportConfig.statdata = colorStatdata.value;
-        document.body.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);
+        annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);
         saveAnnualExportConfig();
     };
     // ✅新增：自定义文本边框色（即时反应：所有文本框边框）
     colorCustomborder.oninput = () => {
         annualExportConfig.customborder = colorCustomborder.value;
-        document.body.style.setProperty("--annual-export-customborder", annualExportConfig.customborder);
+        annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder);
         saveAnnualExportConfig();
     };
     sliderFont.oninput = () => {
