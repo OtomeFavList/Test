@@ -1,3 +1,4 @@
+```javascript
 // ================================================================
 // annual-canvas-render.js
 // 年度报告模式 纯Canvas绘制导出（对齐 export-canvas-render.js 视觉风格）
@@ -30,11 +31,11 @@ const STAT_SIZE = 16;                  // 统计文字
 const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
 const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
 const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
-const LABEL_ROW_MB = 12;               // NO+名称行底部间距
+const LABEL_ROW_MB = 8;                // ✅NO+名称行底部间距（12→8，缩减与下方图片距离）
 const ITEM_GAP = 24;                   // TOP条目间间距
 const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
 const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐BIG_CARD_PADDING）
-const COVER_CARD_PAD = 8;              // 封面卡片内边距（对齐CHAR_CARD_INNER_PADDING）
+const COVER_CARD_PAD = 0;              // ✅封面卡片内边距（8→0，图片贴外框，删除图片与外框间内边距）
 const TEXT_BOX_PAD = 10;               // 感想文字框内边距
 const GAME_COVER_W = 140;              // 游戏封面固定宽度
 const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
@@ -336,7 +337,9 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
   const noW = ctx.measureText(noText).width;
   const nameMaxW = innerW - noW - 12;
   const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
-  h += Math.max(NO_SIZE, nameH) + LABEL_ROW_MB;
+  // ✅NO行高使用 NO_SIZE*1.3（与名称行高一致），不再用裸NO_SIZE=22
+  const noLineH = NO_SIZE * 1.3;
+  h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
 
   // ---- 封面 + 感想行 ----
   let coverH; // 封面卡片总高度（含内边距）
@@ -409,46 +412,37 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
     const imgY = y + COVER_CARD_PAD;
     const imgW = cardW - COVER_CARD_PAD * 2;
     const imgH = cardH - COVER_CARD_PAD * 2;
-    let roundC = createRoundImageCanvas(img, srcUrl, radius);
-    if (roundC) {
-      try {
-        painter.drawImageRound(roundC, imgX, imgY, imgW, imgH);
-      } catch (e) {
-        if (IS_IOS_WEBKIT) console.warn("annual圆角离屏绘制异常，回退clip", srcUrl, e);
-        roundC = null;
-      }
-    }
-    // ✅降级：离屏画布失败时，实时clip绘制（对齐export补丁4）
-    if (!roundC) {
-      const ctx = painter.ctx;
-      ctx.save();
-      try {
-        ctx.beginPath();
-        ctx.moveTo(imgX + radius, imgY);
-        ctx.lineTo(imgX + imgW - radius, imgY);
-        ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + radius);
-        ctx.lineTo(imgX + imgW, imgY + imgH - radius);
-        ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - radius, imgY + imgH);
-        ctx.lineTo(imgX + radius, imgY + imgH);
-        ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - radius);
-        ctx.lineTo(imgX, imgY + radius);
-        ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
-        ctx.closePath();
-        ctx.clip();
-        // 优先用rawImageResourceCache中降级的HTMLImageElement（IOS bitmap绘制bug时更稳）
-        const resInfo = rawImageResourceCache.get(srcUrl);
-        const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
-        ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
-      } finally {
-        ctx.restore();
-      }
+    const ctx = painter.ctx;
+    ctx.save();
+    try {
+      // 圆角裁剪路径
+      ctx.beginPath();
+      ctx.moveTo(imgX + radius, imgY);
+      ctx.lineTo(imgX + imgW - radius, imgY);
+      ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + radius);
+      ctx.lineTo(imgX + imgW, imgY + imgH - radius);
+      ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - radius, imgY + imgH);
+      ctx.lineTo(imgX + radius, imgY + imgH);
+      ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - radius);
+      ctx.lineTo(imgX, imgY + radius);
+      ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
+      ctx.closePath();
+      ctx.clip();
+      // ✅直接完整缩放绘制（不再使用drawImageRound的cover裁剪模式），
+      // 确保图片底部不被裁剪，完整显示在目标区域内
+      const resInfo = rawImageResourceCache.get(srcUrl);
+      const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
+      ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
+    } finally {
+      ctx.restore();
     }
   }
 }
 
-// 绘制感想文字框（白色底+#f6a5b8边框+圆角）
+// 绘制感想文字框（白色底+#eee边框+圆角）
 function drawTextBox(painter, x, y, boxW, boxH, text, config) {
-  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', 1);
+  // ✅边框色改为与图片框一致（SUB_CARD_BORDER=#eee），不再使用粉色config.border
+  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
   if (text) {
     const textSize = config.customTextFontSize || 16;
     wrapText(
@@ -475,7 +469,7 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
 
-  // ---- NO + 名称行（先测量再绘制，NO垂直居中，名称加粗）----
+  // ---- NO + 名称行（统一用wrapText绘制，确保基线完全一致；整体垂直居中）----
   const noText = `NO.${(item._no ?? 0) + 1}`;
   ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
   const noW = ctx.measureText(noText).width;
@@ -484,14 +478,16 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     : (item.gameName || item.charName || '');
   const nameX = contentX + noW + 12;
   const nameMaxW = innerW - noW - 12;
-  // ✅先测量名称高度（bold=true，与绘制完全一致）
+  // 先测量名称高度
   const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
-  const rowH = Math.max(NO_SIZE, nameH);
-  // ✅NO垂直居中在行高内
-  ctx.fillStyle = NO_COLOR;
-  ctx.fillText(noText, contentX, painter.y + (rowH - NO_SIZE) / 2);
-  // ✅名称加粗：补全 FONT_SIYUAN 参数，使第10位 bold=true 生效（原代码漏传font导致bold失效）
-  wrapText(ctx, nameText, nameX, painter.y, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
+  // ✅NO行高与名称统一使用 NO_SIZE*1.3
+  const noLineH = NO_SIZE * 1.3;
+  const rowH = Math.max(noLineH, nameH);
+  // ✅NO和名称从同一顶部坐标nameTopY开始绘制，两者字号相同(22px)、行高相同，自然上下对齐
+  const nameTopY = painter.y + (rowH - nameH) / 2;
+  // ✅NO也用wrapText绘制（单行），与名称使用完全相同的基线逻辑，彻底消除fillText与wrapText基线不一致问题
+  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, NO_COLOR, FONT_SIYUAN, true);
+  wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
   painter.shiftY(rowH + LABEL_ROW_MB);
 
   // ---- 封面 + 感想行 ----
@@ -578,12 +574,9 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
   const imageCache = loadRet.resultMap;
 
-  // 预生成圆角画布
-  const roundTasks = imageUrls.map(src => ({ src, radius: 6 }));
-  await preGenerateAllRoundCanvas(imageCache, roundTasks);
-  await new Promise(r => setTimeout(r, 50));
+  // ✅离屏圆角画布方案已弃用（改为实时clip绘制），跳过预生成，直接进入绘制阶段
+  await new Promise(r => setTimeout(r, 30));
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
   emitRenderProgress(65);
 
   // 第二步：基于加载后的图片计算高度
@@ -709,3 +702,4 @@ if (typeof window !== 'undefined') {
   window.renderAnnualModuleCanvas = renderAnnualModuleCanvas;
   window.renderAllAnnualModules = renderAllAnnualModules;
 }
+```
