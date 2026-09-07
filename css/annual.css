@@ -613,24 +613,31 @@
     }
     /* CP弹窗二级页面对齐角色弹窗移动端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, 90px) !important;  /* minmax→固定90px */
-        justify-content: start !important;                           /* 新增 */
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定90px→弹性minmax，与角色列表完全一致 */
+        justify-content: start !important;
         gap: 10px !important;
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
+        width: 100% !important;       /* ✅新增：确保容器撑满 */
+        box-sizing: border-box !important;  /* ✅新增 */
     }
     .annual-global-cp-female-list .char-item,
     .annual-cp-male-list .char-item {
         width: 100% !important;
         min-height: 132px !important;
-        padding: 10px !important;  /* 6px → 10px，对齐移动端.char-item */
-        gap: 6px !important;       /* 新增，对齐移动端.char-item */
+        /* ✅移除 padding:10px 和 gap:6px 的 !important 覆盖，
+           让卡片完全继承 main.css .char-item 的默认内边距和间距，
+           与角色弹窗 .annual-global-char-char-list .char-item 保持100%一致 */
     }
     /* 修改点6：CP男主列表grid移动端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, 90px) !important;  /* minmax→固定90px */
-        justify-content: start !important;                           /* 新增 */
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定→弹性，与角色列表一致 */
+        justify-content: start !important;
         gap: 10px !important;
+        width: 100% !important;              /* ✅新增：撑满父容器 */
+        box-sizing: border-box !important;   /* ✅新增 */
+        padding: 10px 0 10px 0 !important;   /* ✅新增：与角色列表padding一致 */
+        margin: 0 !important;                /* ✅新增：清除默认margin */
     }
     .annual-cp-modal-back-btn {
         left: 12px;
@@ -673,6 +680,28 @@
     }
     .annual-cp-name-text {
         font-size:18px;
+    }
+    /* ✅新增：CP男主选择面板外层撑满 + 间距与角色弹窗一致 */
+    .annual-cp-male-select-wrap {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-top: 14px !important;   /* PC端16px，手机端收紧到14px */
+        margin-bottom: 4px !important;
+        padding: 0 !important;
+    }
+    /* ✅新增：CP男主标题间距与角色弹窗局部开关组一致 */
+    .annual-cp-male-title {
+        margin-top: 0 !important;
+        margin-bottom: 12px !important;  /* PC端14px，手机端12px */
+        font-size: 14px !important;
+    }
+    /* ✅新增：选中女主展开后，block跨全列且不压缩卡片尺寸 */
+    .annual-cp-female-block-expanded {
+        width: 100% !important;
+        grid-column: 1 / -1 !important;
+    }
+    .annual-cp-female-block-expanded .char-item {
+        max-width: none !important;  /* ✅移除PC端的max-width:90px限制，弹性列宽下由grid控制 */
     }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
@@ -776,26 +805,37 @@
     }
     /* CP弹窗二级页面对齐角色弹窗平板端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, 110px) !important;  /* minmax→固定110px */
-        justify-content: start !important;                            /* 新增 */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
+        justify-content: start !important;
         gap: 12px !important;
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     .annual-global-cp-female-list .char-item,
     .annual-cp-male-list .char-item {
         width: 100% !important;
         min-height: 148px !important;
+        /* ✅不覆盖padding/gap，继承main.css默认值 */
     }
     /* 修改点7：CP男主列表grid平板端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, 110px) !important;  /* minmax→固定110px */
-        justify-content: start !important;                            /* 新增 */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
+        justify-content: start !important;
         gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 10px 0 10px 0 !important;
+        margin: 0 !important;
     }
-    /* ✅平板端选中女主后不再放大 */
+    /* ✅平板端选中女主展开后block跨全列 */
+    .annual-cp-female-block-expanded {
+        width: 100% !important;
+        grid-column: 1 / -1 !important;
+    }
     .annual-cp-female-block-expanded .char-item {
-        max-width: 110px !important;
+        max-width: none !important;  /* ✅弹性列宽下移除固定max-width */
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
