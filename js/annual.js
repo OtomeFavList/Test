@@ -1566,6 +1566,8 @@ function applyAnnualPageColors() {
     if (!wrapEl) return;
     wrapEl.style.backgroundColor = annualExportConfig.bg;
     wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
+    // ✅同步设置body背景色，让视口两侧（.wrap最大宽度之外的区域）也跟着变色
+    document.body.style.backgroundColor = annualExportConfig.bg;
 }
 
 /**
@@ -1656,9 +1658,10 @@ function bindAnnualExportPanel() {
     colorBg.oninput = () => {
         annualExportConfig.bg = colorBg.value;
         annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-        // ✅同步整个页面背景
+        // ✅同步整个页面背景（.wrap内部 + body视口两侧）
         const wrapEl = document.querySelector('.wrap');
         if (wrapEl) wrapEl.style.backgroundColor = annualExportConfig.bg;
+        document.body.style.backgroundColor = annualExportConfig.bg;
         saveAnnualExportConfig();
     };
     colorTitle.oninput = () => {
@@ -2764,8 +2767,10 @@ export function initAnnualModule(){
                 if (btn.dataset.mode === 'annual') {
                     applyAnnualPageColors();
                 } else {
+                    // ✅切回FavList时重置.wrap和body的背景色，恢复原页面样式
                     wrapEl.style.backgroundColor = '';
                     wrapEl.style.removeProperty('--annual-export-title');
+                    document.body.style.backgroundColor = '';
                 }
             });
         });
