@@ -1,4 +1,3 @@
-```javascript
 // ================================================================
 // annual-canvas-render.js
 // 年度报告模式 纯Canvas绘制导出（对齐 export-canvas-render.js 视觉风格）
@@ -702,4 +701,3 @@ if (typeof window !== 'undefined') {
   window.renderAnnualModuleCanvas = renderAnnualModuleCanvas;
   window.renderAllAnnualModules = renderAllAnnualModules;
 }
-```
