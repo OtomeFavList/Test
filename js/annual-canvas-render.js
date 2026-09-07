@@ -596,8 +596,10 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
       console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
     }
   }
+  // ✅修复：画布高度预留底部getBodyPad()，否则卡片下边框外侧1px超出画布被裁，下边框比其余三边细
+  const canvasHeight = totalH + getBodyPad();
   const canvas = document.createElement('canvas');
-  const painter = new CanvasLayoutPainter(canvas, designW, totalH, config.bg || '#fff7f9');
+  const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
 
   // 大标题
   drawBigTitle(painter, designW, config);
