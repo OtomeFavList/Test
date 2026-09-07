@@ -13,8 +13,12 @@ const ANNUAL_STORE_KEY = "annual-report-data";
 const annualExportDefault = {
     bg: "#fff7f9",
     title: "#b33a3a",
+    subtitle: "#b85878",          // ✅新增：小标题文字色（TOP模块标题+NO）
     gamename: "#000000",
+    stattext: "#b85878",          // ✅新增：数据统计标签文字色
+    statdata: "#b33a3a",          // ✅新增：数据统计数据色
     customtext: "#c98fac",
+    customborder: "#f6a5b8",      // ✅新增：自定义文本边框色
     border: "#f6a5b8",
     customTextFontSize: 16
 };
@@ -1075,7 +1079,7 @@ function appendNewGameTopDom(){
             </div>
             <div class="annual-top-text-wrap">
                 <div class="annual-custom-text-wrap">
-                    <textarea class="annual-top-textarea" placeholder="填写感想"></textarea>
+                    <textarea class="annual-top-textarea" placeholder="自定义文本"></textarea>
                     <div class="resize-handle"></div>
                 </div>
             </div>
@@ -1106,7 +1110,7 @@ function appendNewCharTopDom(){
             </div>
             <div class="annual-char-text-wrap">
                 <div class="annual-custom-text-wrap">
-                    <textarea class="annual-char-textarea" placeholder="填写感想"></textarea>
+                    <textarea class="annual-char-textarea" placeholder="自定义文本"></textarea>
                     <div class="resize-handle"></div>
                 </div>
             </div>
@@ -1138,7 +1142,7 @@ function appendNewCpTopDom(){
             </div>
             <div class="annual-cp-text-wrap">
                 <div class="annual-custom-text-wrap">
-                    <textarea class="annual-cp-textarea" placeholder="填写感想"></textarea>
+                    <textarea class="annual-cp-textarea" placeholder="自定义文本"></textarea>
                     <div class="resize-handle"></div>
                 </div>
             </div>
@@ -1563,6 +1567,11 @@ function bindAnnualExportPanel() {
     const colorGamename = document.getElementById("annual-color-gamename");
     const colorCustomtext = document.getElementById("annual-color-customtext");
     const colorBorder = document.getElementById("annual-color-border");
+    // ✅新增4个颜色选择器元素
+    const colorSubtitle = document.getElementById("annual-color-subtitle");
+    const colorStattext = document.getElementById("annual-color-stattext");
+    const colorStatdata = document.getElementById("annual-color-statdata");
+    const colorCustomborder = document.getElementById("annual-color-customborder");
     const sliderFont = document.getElementById("annual-slider-custom-text-font");
     const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
     const btnExportImage = document.getElementById("annual-btn-export-image");
@@ -1578,14 +1587,23 @@ function bindAnnualExportPanel() {
     colorGamename.value = annualExportConfig.gamename;
     colorCustomtext.value = annualExportConfig.customtext;
     colorBorder.value = annualExportConfig.border;
+    // ✅新增4个颜色初始化
+    colorSubtitle.value = annualExportConfig.subtitle;
+    colorStattext.value = annualExportConfig.stattext;
+    colorStatdata.value = annualExportConfig.statdata;
+    colorCustomborder.value = annualExportConfig.customborder;
     sliderFont.value = annualExportConfig.customTextFontSize;
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
 
     document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
     document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
+    document.body.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
     document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+    document.body.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
+    document.body.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
     document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+    document.body.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
     document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
 
     btnResetColor.removeEventListener("click", btnResetColor._handler);
@@ -1597,12 +1615,21 @@ function bindAnnualExportPanel() {
         colorGamename.value = annualExportConfig.gamename;
         colorCustomtext.value = annualExportConfig.customtext;
         colorBorder.value = annualExportConfig.border;
+        // ✅新增4个颜色重置
+        colorSubtitle.value = annualExportConfig.subtitle;
+        colorStattext.value = annualExportConfig.stattext;
+        colorStatdata.value = annualExportConfig.statdata;
+        colorCustomborder.value = annualExportConfig.customborder;
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
         document.body.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         document.body.style.setProperty("--annual-export-title", annualExportConfig.title);
+        document.body.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
         document.body.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
+        document.body.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
+        document.body.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
         document.body.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
+        document.body.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
         document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
         updateSliderProgress(sliderFont);
     };
@@ -1631,6 +1658,30 @@ function bindAnnualExportPanel() {
     colorBorder.oninput = () => {
         annualExportConfig.border = colorBorder.value;
         document.body.style.setProperty("--annual-export-border", annualExportConfig.border);
+        saveAnnualExportConfig();
+    };
+    // ✅新增：小标题文字色（即时反应：模块标题+NO标签）
+    colorSubtitle.oninput = () => {
+        annualExportConfig.subtitle = colorSubtitle.value;
+        document.body.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);
+        saveAnnualExportConfig();
+    };
+    // ✅新增：数据统计文字色（即时反应：统计标签文字）
+    colorStattext.oninput = () => {
+        annualExportConfig.stattext = colorStattext.value;
+        document.body.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);
+        saveAnnualExportConfig();
+    };
+    // ✅新增：数据统计数据色（即时反应：用户填写的数字）
+    colorStatdata.oninput = () => {
+        annualExportConfig.statdata = colorStatdata.value;
+        document.body.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);
+        saveAnnualExportConfig();
+    };
+    // ✅新增：自定义文本边框色（即时反应：所有文本框边框）
+    colorCustomborder.oninput = () => {
+        annualExportConfig.customborder = colorCustomborder.value;
+        document.body.style.setProperty("--annual-export-customborder", annualExportConfig.customborder);
         saveAnnualExportConfig();
     };
     sliderFont.oninput = () => {
