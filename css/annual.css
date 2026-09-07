@@ -645,8 +645,8 @@
         height: 26px;
         font-size: 18px;
     }
-    /* ✅移动端选中女主后不再放大 */
-    .annual-cp-female-block-expanded .char-item {
+    /* ✅移动端选中女主后不再放大（只锁女主卡片，不影响男主） */
+    .annual-cp-female-block-expanded .annual-cp-female-card {
         max-width: 90px !important;
     }
     /* 搜索结果角色卡片移动端复刻待选角色样式 */
@@ -700,8 +700,10 @@
         width: 100% !important;
         grid-column: 1 / -1 !important;
     }
-    .annual-cp-female-block-expanded .char-item {
-        max-width: none !important;  /* ✅移除PC端的max-width:90px限制，弹性列宽下由grid控制 */
+    /* ✅关键：只锁女主卡片宽度为90px（与未选中时一致），
+       选择器精确到 .annual-cp-female-card，不影响男主 .annual-cp-male-item */
+    .annual-cp-female-block-expanded .annual-cp-female-card {
+        max-width: 90px !important;
     }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
@@ -834,8 +836,9 @@
         width: 100% !important;
         grid-column: 1 / -1 !important;
     }
-    .annual-cp-female-block-expanded .char-item {
-        max-width: none !important;  /* ✅弹性列宽下移除固定max-width */
+    /* ✅只锁女主卡片宽度为110px（与未选中时一致），不影响男主 */
+    .annual-cp-female-block-expanded .annual-cp-female-card {
+        max-width: 110px !important;
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
