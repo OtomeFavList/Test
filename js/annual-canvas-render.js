@@ -404,8 +404,9 @@ function drawBigTitle(painter, targetW, config) {
   painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
 }
 
-function drawModuleTitle(painter, x, y, title) {
-  painter.drawText(title, x, y, MODULE_TITLE_SIZE, SUBTITLE_COLOR, FONT_SIYUAN, true);
+function drawModuleTitle(painter, x, y, title, config) {
+  // ✅模块小标题颜色由"小标题文字色"控制，不再硬编码
+  painter.drawText(title, x, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
 }
 
 // 绘制封面卡片（白色底+#eee边框+圆角，内含圆角图片）
@@ -445,8 +446,8 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
 
 // 绘制感想文字框（白色底+#eee边框+圆角）
 function drawTextBox(painter, x, y, boxW, boxH, text, config) {
-  // ✅边框色改为与图片框一致（SUB_CARD_BORDER=#eee），不再使用粉色config.border
-  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
+  // ✅文本框边框色由"自定义文本边框色"控制，默认#eee
+  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff', config.customborder || '#eee', 1);
   if (text) {
     const textSize = config.customTextFontSize || 16;
     wrapText(
@@ -459,10 +460,55 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config) {
   }
 }
 
+// ✅新增：返回结构化的标签+数据对，供Canvas分别着色
+function buildStatsParts(annualData) {
+  const parts = [];
+  for (const [key, label] of STAT_LABELS) {
+    const val = annualData[key];
+    if (val !== undefined && val !== null && String(val).trim() !== '') {
+      parts.push({ label: `${label}：`, value: String(val).trim() });
+    }
+  }
+  return parts;
+}
+
 function drawStatsContent(painter, x, y, innerW, annualData, config) {
-  const statsText = buildStatsText(annualData);
-  if (statsText) {
-    wrapText(painter.ctx, statsText, x, y, innerW, STAT_SIZE * 1.8, STAT_SIZE, config.customtext || '#c98fac');
+  const parts = buildStatsParts(annualData);
+  if (parts.length === 0) return;
+  const ctx = painter.ctx;
+  const fontSize = STAT_SIZE;
+  const lineHeight = STAT_SIZE * 1.8;
+  const labelColor = config.stattext || '#b85878';   // ✅数据统计文字色（标签）
+  const dataColor = config.statdata || '#b33a3a';     // ✅数据统计数据色（用户填写内容）
+  ctx.font = `${fontSize}px ${FONT_SIYUAN}`;
+  let curX = x;
+  let curY = y;
+  const gap = '  ';
+  const gapW = ctx.measureText(gap).width;
+  // 逐字符绘制，标签用labelColor，数据用dataColor，超宽自动换行
+  for (let i = 0; i < parts.length; i++) {
+    const { label, value } = parts[i];
+    // 绘制标签
+    ctx.fillStyle = labelColor;
+    for (const ch of Array.from(label)) {
+      const chW = ctx.measureText(ch).width;
+      if (curX + chW > x + innerW) { curX = x; curY += lineHeight; }
+      ctx.fillText(ch, curX, curY);
+      curX += chW;
+    }
+    // 绘制数据
+    ctx.fillStyle = dataColor;
+    for (const ch of Array.from(value)) {
+      const chW = ctx.measureText(ch).width;
+      if (curX + chW > x + innerW) { curX = x; curY += lineHeight; }
+      ctx.fillText(ch, curX, curY);
+      curX += chW;
+    }
+    // 段间空格
+    if (i < parts.length - 1) {
+      if (curX + gapW > x + innerW) { curX = x; curY += lineHeight; }
+      else { curX += gapW; }
+    }
   }
 }
 
@@ -490,7 +536,8 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
   // ✅NO和名称从同一顶部坐标nameTopY开始绘制，两者字号相同(22px)、行高相同，自然上下对齐
   const nameTopY = painter.y + (rowH - nameH) / 2;
   // ✅NO也用wrapText绘制（单行），与名称使用完全相同的基线逻辑，彻底消除fillText与wrapText基线不一致问题
-  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, NO_COLOR, FONT_SIYUAN, true);
+  // ✅NO标签颜色由"小标题文字色"控制，不再硬编码NO_COLOR
+  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
   wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
   painter.shiftY(rowH + LABEL_ROW_MB);
 
@@ -640,7 +687,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   // 绘制模块标题
   let contentY = cardTop + CARD_INNER_PAD;
   if (moduleTitle) {
-    drawModuleTitle(painter, wrapX + CARD_INNER_PAD, contentY, moduleTitle);
+    drawModuleTitle(painter, wrapX + CARD_INNER_PAD, contentY, moduleTitle, config);
     contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   }
 
