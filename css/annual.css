@@ -406,9 +406,10 @@
     --annual-export-border:#f6a5b8;
     background-color: var(--annual-export-bg, #fff7f9);
 }
-/* ✅新增：年度报告模块标题（一、数据统计/二、ゲームTOP等）受小标题文字色控制 */
+/* ✅新增：年度报告模块标题（一、数据统计/二、ゲームTOP等）受小标题文字色控制，含左侧竖线 */
 .mode-wrap[data-mode="annual"] .big-card h2 {
     color: var(--annual-export-subtitle, #b85878);
+    border-left-color: var(--annual-export-subtitle, #b85878);
 }
 /* ✅新增：卡片边框色受"卡片边框色"控制，覆盖main.css中的硬编码 */
 .mode-wrap[data-mode="annual"] .big-card {
