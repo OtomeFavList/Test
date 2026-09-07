@@ -695,15 +695,13 @@
         margin-bottom: 12px !important;  /* PC端14px，手机端12px */
         font-size: 14px !important;
     }
-    /* ✅选中女主展开后：block跨全列（用于放下男主列表），但女主卡片本身保持90px不放大 */
+    /* ✅新增：选中女主展开后，block跨全列且不压缩卡片尺寸 */
     .annual-cp-female-block-expanded {
         width: 100% !important;
         grid-column: 1 / -1 !important;
     }
     .annual-cp-female-block-expanded .char-item {
-        max-width: 90px !important;   /* ✅锁定卡片最大宽度，与未选中时一致 */
-        width: 90px !important;       /* ✅显式固定宽度，双保险防止被拉伸 */
-        flex-shrink: 0 !important;    /* ✅禁止flex收缩 */
+        max-width: none !important;  /* ✅移除PC端的max-width:90px限制，弹性列宽下由grid控制 */
     }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
@@ -837,9 +835,7 @@
         grid-column: 1 / -1 !important;
     }
     .annual-cp-female-block-expanded .char-item {
-        max-width: 110px !important;  /* ✅平板端锁定110px，与未选中卡片一致 */
-        width: 110px !important;
-        flex-shrink: 0 !important;
+        max-width: none !important;  /* ✅弹性列宽下移除固定max-width */
     }
     /* 搜索结果角色卡片平板端复刻待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
