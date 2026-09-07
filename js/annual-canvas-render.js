@@ -311,7 +311,8 @@ function getValidItems(moduleType, annualData) {
 function calcStatsHeight(ctx, targetW, annualData, config) {
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = TITLE_SIZE + getTitleMb(); // 大标题
+  // ✅修复：CanvasLayoutPainter从y=BODY_PADDING开始绘制，画布高度必须包含顶部边距，否则底部内容超出画布被裁
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
   // 模块卡片
   let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   const statsText = buildStatsText(annualData);
@@ -371,7 +372,8 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
 function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, config, imageCache) {
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = TITLE_SIZE + getTitleMb(); // 大标题
+  // ✅修复：CanvasLayoutPainter从y=BODY_PADDING开始绘制，画布高度必须包含顶部边距，否则底部内容超出画布被裁
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
 
   // 模块卡片
   let contentH = 0;
@@ -656,7 +658,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
 
   emitRenderProgress(100);
 
-  // 裁剪到实际高度
+  // 裁剪到实际高度（对齐export-canvas-render.js的cropCanvas：先填背景色，再9参数1:1复制，不拉伸变形）
   const finalH = painter.getY() + getBodyPad();
   const outputCanvas = document.createElement('canvas');
   outputCanvas.width = designW * DPR;
@@ -664,7 +666,11 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   const oCtx = outputCanvas.getContext('2d');
   oCtx.imageSmoothingEnabled = true;
   oCtx.imageSmoothingQuality = "high";
-  oCtx.drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+  // ✅先填充背景色，覆盖输出画布底部多出的边距区域
+  oCtx.fillStyle = config.bg || '#fff7f9';
+  oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+  // ✅9参数1:1复制源画布内容，不再用5参数整体拉伸导致图片变形
+  oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
 
   let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
   if (IS_IOS_WEBKIT && !blob) {
