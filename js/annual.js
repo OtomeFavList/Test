@@ -18,21 +18,30 @@ const annualExportDefault = {
     stattext: "#b85878",          // ✅新增：数据统计标签文字色
     statdata: "#b33a3a",          // ✅新增：数据统计数据色
     customtext: "#c98fac",
-    customborder: "#eee",         // ✅自定义文本边框色，默认#eee（与封面卡片边框一致）
+    customborder: "#eeeeee",      // ✅自定义文本边框色，默认#eeeeee（input[type=color]只接受六位#rrggbb，三位#eee会回退黑色）
     border: "#f6a5b8",
     customTextFontSize: 16
 };
 
 function loadAnnualExportConfig() {
     const raw = localStorage.getItem("annual-export-config");
+    let config;
     if(raw) {
         try {
-            return Object.assign({}, annualExportDefault, JSON.parse(raw));
+            config = Object.assign({}, annualExportDefault, JSON.parse(raw));
         } catch(e) {
-            return {...annualExportDefault};
+            config = {...annualExportDefault};
         }
+    } else {
+        config = {...annualExportDefault};
     }
-    return {...annualExportDefault};
+    // ✅归一化：input[type=color]只接受#rrggbb六位格式，旧数据中存的#eee三位简写会被移动端浏览器回退为黑色#000000
+    if (config.customborder && /^#[0-9a-fA-F]{3}$/.test(config.customborder)) {
+        config.customborder = "#" + config.customborder[1].repeat(2)
+                             + config.customborder[2].repeat(2)
+                             + config.customborder[3].repeat(2);
+    }
+    return config;
 }
 
 function saveAnnualExportConfig() {
