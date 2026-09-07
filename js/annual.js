@@ -1558,6 +1558,17 @@ function bindAnnualTextareaResize() {
 }
 
 /**
+ * ✅新增：将需要影响 mode-wrap 外部元素（整个页面背景、site-title大标题）的颜色同步到 .wrap
+ * 因为 .site-title 和 .mode-switch-wrap 在 .mode-wrap 外面，继承不到 mode-wrap 上的变量
+ */
+function applyAnnualPageColors() {
+    const wrapEl = document.querySelector('.wrap');
+    if (!wrapEl) return;
+    wrapEl.style.backgroundColor = annualExportConfig.bg;
+    wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
+}
+
+/**
  * 年度报告导出面板绑定
  */
 function bindAnnualExportPanel() {
@@ -1608,6 +1619,8 @@ function bindAnnualExportPanel() {
     annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
     annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
     annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
+    // ✅同步到 .wrap（控制整个页面背景 + site-title大标题颜色）
+    applyAnnualPageColors();
 
     btnResetColor.removeEventListener("click", btnResetColor._handler);
     btnResetColor._handler = () => {
@@ -1634,6 +1647,8 @@ function bindAnnualExportPanel() {
         annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
         annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
+        // ✅同步到 .wrap
+        applyAnnualPageColors();
         updateSliderProgress(sliderFont);
     };
     btnResetColor.addEventListener("click", btnResetColor._handler);
@@ -1641,11 +1656,17 @@ function bindAnnualExportPanel() {
     colorBg.oninput = () => {
         annualExportConfig.bg = colorBg.value;
         annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
+        // ✅同步整个页面背景
+        const wrapEl = document.querySelector('.wrap');
+        if (wrapEl) wrapEl.style.backgroundColor = annualExportConfig.bg;
         saveAnnualExportConfig();
     };
     colorTitle.oninput = () => {
         annualExportConfig.title = colorTitle.value;
         annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
+        // ✅同步到 .wrap，让 mode-wrap 外面的 site-title 大标题也能继承到
+        const wrapEl = document.querySelector('.wrap');
+        if (wrapEl) wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
         saveAnnualExportConfig();
     };
     colorGamename.oninput = () => {
@@ -2735,6 +2756,19 @@ export function initAnnualModule(){
             }
         });
 
+        // ✅新增：模式切换监听——切回FavList时重置.wrap背景和标题变量，切回Annual时重新应用
+        document.querySelectorAll('.mode-switch-wrap .mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const wrapEl = document.querySelector('.wrap');
+                if (!wrapEl) return;
+                if (btn.dataset.mode === 'annual') {
+                    applyAnnualPageColors();
+                } else {
+                    wrapEl.style.backgroundColor = '';
+                    wrapEl.style.removeProperty('--annual-export-title');
+                }
+            });
+        });
         window._annualPanelClickBound = true;
     }
 
