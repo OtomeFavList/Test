@@ -24,9 +24,9 @@
         .site-title.annual-active .sub-desc {
             display: none;
         }
-        /* NO.1/NO.2/NO.3 固定颜色 #b85878 */
+        /* NO.1/NO.2/NO.3 颜色由小标题文字色CSS变量控制，移除!important否则无法实时变色 */
         .annual-top-label {
-            color: #b85878 !important;
+            color: var(--annual-export-subtitle, #b85878);
         }
         /* 移动端标题字号调整（保留原样） */
         @media (max-width: 768px) {
@@ -413,7 +413,7 @@
         <!-- ✅新增：自定义文本边框色（控制感想/文本框边框） -->
         <div class="color-item">
             <label class="text-light-pink">自定义文本边框色</label>
-            <input type="color" id="annual-color-customborder" value="#f6a5b8">
+            <input type="color" id="annual-color-customborder" value="#eee">
         </div>
         <div class="color-item">
             <label class="text-light-pink">卡片边框色</label>
