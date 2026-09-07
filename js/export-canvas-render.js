@@ -832,8 +832,11 @@ async function drawHeaderBlock(painter, targetWidth, appData) {
   const wrapW = Math.min(WRAP_MAX_W, targetWidth - BODY_PAD * 2);
   const wrapX = Math.max(BODY_PAD, (targetWidth - wrapW) / 2);
 
-  painter.drawTextCenter('Otome FavList', targetWidth / 2, painter.y, 42, exportColor.title, 'sans-serif', true);
-  painter.shiftY(42 + LAYOUT_SPACE.SITE_TITLE_MT + LAYOUT_SPACE.SITE_TITLE_MB);
+  // ✅大标题在"画布上沿→第一个框上沿"区域内垂直居中
+  const titleAreaH = LAYOUT_SPACE.BODY_PADDING + 42 + (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
+  const titleY = (titleAreaH - 42) / 2;
+  painter.drawTextCenter('Otome FavList', targetWidth / 2, titleY, 42, exportColor.title, 'sans-serif', true);
+  painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
 
   const baseLines = [];
   if (baseInfo.nick?.trim()) baseLines.push(`昵称：${baseInfo.nick.trim()}`);
@@ -954,7 +957,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     LAYOUT_STYLE.GAME_CARD_RADIUS,
     '#ffffff',
     exportColor.border,
-    1
+    2  // ✅大边框1px→2px，与annual模块大边框一致
   );
 
   let drawY = cardTop + cardInnerPad;
