@@ -1848,7 +1848,7 @@
 }
 .annual-other-also-title {
     text-align: center;
-    font-size: 15px;
+    font-size: 16px;  /* 修改点4：字号从15px改为16px */
     font-weight: bold;
     color: var(--annual-export-subtitle, #b85878);
     margin-bottom: 12px;
@@ -2048,6 +2048,7 @@
     justify-content: center;
     box-sizing: border-box;
     overflow: visible;
+    position: relative;  /* 修改点3：增加 position:relative */
 }
 /* 游戏宫格封面：竖版比例，高度高于宽度 */
 #annual-game-grid-container .annual-grid-cover-box {
@@ -2099,6 +2100,7 @@
 }
 .annual-grid-footer-text .annual-other-card-title {
     margin-bottom: 10px;
+    font-size: 16px;  /* 修改点5：增加 font-size:16px */
 }
 
 /* ---------- 移动端适配 ---------- */
