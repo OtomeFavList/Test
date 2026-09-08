@@ -732,9 +732,9 @@
     #annual-game-grid-container .annual-grid-cover-box {
         height: 120px !important;
     }
-    /* 模块五自定义卡片移动端缩小 */
+    /* 模块五自定义卡片移动端字号统一15px */
     .annual-other-custom-label {
-        font-size: 13px;
+        font-size: 15px;
         padding: 3px 6px;
     }
     /* 宫格删除按钮移动端缩小 */
@@ -742,7 +742,8 @@
         width: 20px;
         height: 20px;
         font-size: 12px;
-        line-height: 18px;
+        line-height: 1;
+        padding: 0 0 2px 0;
         top: -6px;
         right: -6px;
     }
@@ -1817,15 +1818,15 @@
     border-radius: 50%;
     background: #fff;
     color: #b33a3a;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    padding: 0;
-    line-height: 20px;
-    text-align: center;
+    padding: 0 0 2px 0;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    box-sizing: border-box;
+    z-index: 10;
 }
 .annual-grid-remove-btn:hover {
     background: #992e2e;
@@ -1847,7 +1848,7 @@
 }
 .annual-other-also-title {
     text-align: center;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     color: var(--annual-export-subtitle, #b85878);
     margin-bottom: 12px;
@@ -1885,14 +1886,14 @@
     border-radius: 50%;
     background: #fff;
     color: #b33a3a;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    padding: 0;
-    line-height: 20px;
-    text-align: center;
+    padding: 0 0 2px 0;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
 }
 .annual-other-also-remove:hover { background: #992e2e; color: #fff; }
 
@@ -1971,14 +1972,14 @@
     border-radius: 50%;
     background: #fff;
     color: #b33a3a;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    padding: 0;
-    line-height: 20px;
-    text-align: center;
+    padding: 0 0 2px 0;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
 }
 .annual-other-mini-remove:hover { background: #992e2e; color: #fff; }
 .annual-other-textarea {
@@ -1989,12 +1990,41 @@
     border: 1px solid var(--annual-export-customborder, #eee);
     border-radius: 8px;
     background: #fcfcfc;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--annual-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
 }
 .annual-other-textarea:focus { outline: none; border-color: #f6a5b8; }
+
+/* 模块五自定义卡片右上角删除按钮 */
+.annual-other-custom-card {
+    position: relative;
+}
+.annual-other-custom-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #b33a3a;
+    border-radius: 50%;
+    background: #fff;
+    color: #b33a3a;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0 0 2px 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    z-index: 10;
+}
+.annual-other-custom-remove:hover {
+    background: #992e2e;
+    color: #fff;
+}
 
 /* ---------- 六、七：宫格通用 ---------- */
 .annual-grid-container {
@@ -2017,7 +2047,7 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
 }
 /* 游戏宫格封面：竖版比例，高度高于宽度 */
 #annual-game-grid-container .annual-grid-cover-box {
@@ -2034,11 +2064,11 @@
 .annual-grid-cover-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
 }
 .annual-grid-label {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: bold;
     text-align: center;
     color: #b85878;
@@ -2048,7 +2078,7 @@
 }
 .annual-grid-custom-label {
     width: 100%;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: bold;
     text-align: center;
     border: 1px dashed #ddd;
@@ -2091,7 +2121,7 @@
     }
     .annual-grid-label,
     .annual-grid-custom-label {
-        font-size: 11px;
+        font-size: 15px;
     }
     .annual-other-cp-preview img {
         width: 60px;
@@ -2105,9 +2135,9 @@
     #annual-game-grid-container .annual-grid-cover-box {
         height: 120px !important;
     }
-    /* 模块五自定义卡片移动端缩小 */
+    /* 模块五自定义卡片移动端字号统一15px */
     .annual-other-custom-label {
-        font-size: 13px;
+        font-size: 15px;
         padding: 3px 6px;
     }
     /* 宫格删除按钮移动端缩小 */
@@ -2115,7 +2145,8 @@
         width: 20px;
         height: 20px;
         font-size: 12px;
-        line-height: 18px;
+        line-height: 1;
+        padding: 0 0 2px 0;
         top: -6px;
         right: -6px;
     }
