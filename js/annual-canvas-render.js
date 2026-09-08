@@ -42,14 +42,14 @@ const CP_COVER_SIZE = 100;             // CP封面固定正方形
 const CP_GAP = 10;                     // CP双图间距
 // ========== 五、其他模块 ==========
 const OTHER_SECTION_TITLE_SIZE = 18;   // "还玩了"/卡片标题/底部标题统一18px
-const OTHER_CARD_W = 200;              // 其他模块卡片宽度
+const OTHER_CARD_W = 250;              // 其他模块卡片宽度（容纳CP双图100+10+100=210）
 const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
 const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
 const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
 const OTHER_ALSO_COVER_W = GAME_COVER_W;      // "还玩了"封面宽度=模块二140
 const OTHER_ALSO_COVER_GAP = 16;       // "还玩了"封面间距
 const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的CP封面=模块四100
-const OTHER_SUPPORT_COVER_SIZE = CHAR_COVER_SIZE; // 最喜欢的配角=模块三120
+const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角=与CP图一致100
 const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
 const OTHER_SECTION_GAP = 20;          // "还玩了"区域与卡片区间距
 // ========== 六、七宫格模块 ==========
@@ -516,7 +516,7 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
     }
     contentH += OTHER_SECTION_GAP;
   }
-  // ---- 卡片区域（每行居中，CP图100+间距10，配角120）----
+  // ---- 卡片区域（每行居中，CP图100+间距10，配角100）----
   const cards = getOtherCards(annualData);
   if (cards.length > 0) {
     const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
@@ -527,7 +527,7 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
       if (card.type === 'cp') {
         ch += OTHER_CP_COVER_SIZE; // 100，与模块四一致
       } else if (card.type === 'support') {
-        ch += OTHER_SUPPORT_COVER_SIZE; // 120，与模块三一致
+        ch += OTHER_SUPPORT_COVER_SIZE; // 100，与CP图一致
       } else {
         const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
         const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
@@ -612,9 +612,10 @@ function drawBigTitle(painter, targetW, config, annualData) {
   painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
 }
 
-function drawModuleTitle(painter, x, y, title, config) {
-  // ✅模块小标题颜色由"小标题文字色"控制，不再硬编码
-  painter.drawText(title, x, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
+// 修改点2：模块小标题居中绘制
+function drawModuleTitle(painter, centerX, y, title, config) {
+  // ✅模块小标题居中绘制，颜色由"小标题文字色"控制
+  painter.drawTextCenter(title, centerX, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
 }
 
 // 绘制封面卡片（白色底+#eee边框+圆角，内含圆角图片）
@@ -652,10 +653,12 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
   }
 }
 
-// 绘制感想文字框（白色底+#eee边框+圆角）
-function drawTextBox(painter, x, y, boxW, boxH, text, config) {
-  // ✅文本框边框色由"自定义文本边框色"控制，默认#eee
-  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff', config.customborder || '#eee', 1);
+// 绘制感想文字框（白色底+可选边框）
+// 修改点4：增加 noBorder 参数，为 true 时不绘制边框
+function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder) {
+  // ✅noBorder=true时不绘制边框（五模块自定义文本、六七底部文本）；模块二三四感想框仍保留边框
+  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
+    noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
     const textSize = config.customTextFontSize || 16;
     wrapText(
@@ -843,6 +846,7 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     finalTextBoxH = textH + TEXT_BOX_PAD * 2;
+    // 模块二三四感想框保留边框，不传 noBorder
     drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
   }
   painter.shiftY(Math.max(coverCardH, finalTextBoxH));
@@ -895,7 +899,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
     }
     painter.shiftY(OTHER_SECTION_GAP);
   }
-  // ---- 卡片区域（每行居中，卡片标题居中18px，CP图100+gap10，配角120）----
+  // ---- 卡片区域（每行居中，卡片标题居中18px，CP图100+gap10，配角100）----
   const cards = getOtherCards(annualData);
   if (cards.length > 0) {
     const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
@@ -951,17 +955,17 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
           drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
           drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
         } else if (card.type === 'support') {
-          // 配角图：120px正方形，居中（与模块三一致）
+          // 配角图：100px正方形，居中（与CP图一致）
           const src = toCanvasUrl(card.data.coverSrc);
           const img = src ? imageCache.get(src) : null;
           const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
           drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
         } else {
-          // text / custom
+          // text / custom（白底框无边框）
           const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
           const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config);
+          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true);
         }
       }
       painter.shiftY(rowH);
@@ -1036,9 +1040,9 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
     const titleY = painter.y + FOOTER_PAD;
     drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
       OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
-    // 文本框（标题下方）
+    // 文本框（标题下方，白底无边框）
     const boxY = titleY + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP;
-    drawTextBox(painter, contentX + FOOTER_PAD, boxY, boxInnerW, textBoxH, footerText, config);
+    drawTextBox(painter, contentX + FOOTER_PAD, boxY, boxInnerW, textBoxH, footerText, config, true);
     painter.shiftY(outerBoxH);
   }
 }
@@ -1162,10 +1166,10 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   // 绘制卡片背景+边框
   painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
 
-  // 绘制模块标题
+  // 绘制模块标题（修改点3：传入居中X坐标）
   let contentY = cardTop + CARD_INNER_PAD;
   if (moduleTitle && moduleType !== 'other') {
-    drawModuleTitle(painter, wrapX + CARD_INNER_PAD, contentY, moduleTitle, config);
+    drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
     contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   }
 
