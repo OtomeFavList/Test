@@ -365,6 +365,102 @@
         <div id="annual-cp-top-drag-container"></div>
         </div><!-- /.annual-card-body -->
     </div>
+
+    <!-- 独立卡片5：五、其他 -->
+    <div class="big-card annual-card-other">
+        <div class="annual-card-header">
+            <h2>五、其他</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <!-- 还玩了：圆角长框 -->
+            <div class="annual-other-also-box" id="annual-other-also-box">
+                <div class="annual-other-also-title">还玩了</div>
+                <div class="annual-other-also-content" id="annual-other-also-content">
+                    <!-- 空状态＋按钮 / 已添加封面列表 由JS动态渲染 -->
+                </div>
+            </div>
+            <!-- 六个圆角框 -->
+            <div class="annual-other-cards-row">
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的CP</div>
+                    <div class="annual-other-card-body" id="annual-other-favcp-body">
+                        <button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的配角</div>
+                    <div class="annual-other-card-body" id="annual-other-favsupport-body">
+                        <button class="annual-grid-add-btn" data-other-action="addFavSupport">+</button>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的台词</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favLine"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的OP/ED/BGM</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favMusic"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的HE</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favHe"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的BE</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favBe"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 独立卡片6：六、ゲーム宫格 -->
+    <div class="big-card annual-card-game-grid">
+        <div class="annual-card-header">
+            <h2>六、ゲーム宫格</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <div class="annual-grid-container" id="annual-game-grid-container"></div>
+            <div class="annual-grid-footer-text">
+                <div class="annual-other-card-title">明年最期待</div>
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-other-textarea" placeholder="自定义文本" id="annual-game-grid-footer-text"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 独立卡片7：七、キャラ宫格 -->
+    <div class="big-card annual-card-char-grid">
+        <div class="annual-card-header">
+            <h2>七、キャラ宫格</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <div class="annual-grid-container" id="annual-char-grid-container"></div>
+            <div class="annual-grid-footer-text">
+                <div class="annual-other-card-title">还有什么想说的</div>
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-other-textarea" placeholder="自定义文本" id="annual-char-grid-footer-text"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     
 <!-- ========== 导出 ========== -->
 <div class="big-card" id="annual-card-export">
