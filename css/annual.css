@@ -728,6 +728,24 @@
         width: 100% !important;
         grid-column: 1 / -1 !important;
     }
+    /* 游戏宫格移动端封面高度同步改高 */
+    #annual-game-grid-container .annual-grid-cover-box {
+        height: 120px !important;
+    }
+    /* 模块五自定义卡片移动端缩小 */
+    .annual-other-custom-label {
+        font-size: 13px;
+        padding: 3px 6px;
+    }
+    /* 宫格删除按钮移动端缩小 */
+    .annual-grid-remove-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        line-height: 18px;
+        top: -6px;
+        right: -6px;
+    }
 }
 /* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
@@ -1788,6 +1806,36 @@
     color: #ffffff !important;
 }
 
+/* 宫格封面右上角圆形删除按钮 */
+.annual-grid-remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #b33a3a;
+    border-radius: 50%;
+    background: #fff;
+    color: #b33a3a;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 20px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.annual-grid-remove-btn:hover {
+    background: #992e2e;
+    color: #fff;
+}
+/* 封面框设为相对定位，供删除按钮定位 */
+.annual-grid-cover-box.filled {
+    position: relative;
+}
+
 /* ---------- 五、其他：还玩了 圆角长框 ---------- */
 .annual-other-also-box {
     border: 1px solid #eee;
@@ -1840,7 +1888,8 @@
     font-size: 14px;
     cursor: pointer;
     padding: 0;
-    line-height: 1;
+    line-height: 20px;
+    text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1867,6 +1916,23 @@
     font-size: 15px;
     font-weight: bold;
     color: var(--annual-export-subtitle, #b85878);
+}
+/* 模块五自定义卡片标签（可编辑输入框） */
+.annual-other-custom-label {
+    width: 100%;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    border: 1px dashed #ddd;
+    border-radius: 6px;
+    padding: 4px 8px;
+    box-sizing: border-box;
+    background: #fff;
+    color: #b85878;
+}
+.annual-other-custom-label:focus {
+    outline: none;
+    border-color: #f6a5b8;
 }
 .annual-other-card-body {
     flex: 1;
@@ -1908,7 +1974,8 @@
     font-size: 14px;
     cursor: pointer;
     padding: 0;
-    line-height: 1;
+    line-height: 20px;
+    text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1952,6 +2019,10 @@
     box-sizing: border-box;
     overflow: hidden;
 }
+/* 游戏宫格封面：竖版比例，高度高于宽度 */
+#annual-game-grid-container .annual-grid-cover-box {
+    height: 186px;
+}
 .annual-grid-cover-box.empty {
     border: 1px solid #f6a5b8;
     background: #fff;
@@ -1968,8 +2039,9 @@
 }
 .annual-grid-label {
     font-size: 13px;
+    font-weight: bold;
     text-align: center;
-    color: var(--annual-export-gamename, #000000);
+    color: #b85878;
     word-break: break-word;
     line-height: 1.4;
     width: 100%;
@@ -1977,13 +2049,14 @@
 .annual-grid-custom-label {
     width: 100%;
     font-size: 13px;
+    font-weight: bold;
     text-align: center;
     border: 1px dashed #ddd;
     border-radius: 6px;
     padding: 4px 6px;
     box-sizing: border-box;
     background: #fcfcfc;
-    color: var(--annual-export-gamename, #000000);
+    color: #b85878;
 }
 .annual-grid-custom-label:focus { outline: none; border-color: #f6a5b8; }
 
@@ -2027,5 +2100,23 @@
     .annual-other-support-preview img {
         width: 70px;
         height: 70px;
+    }
+    /* 游戏宫格移动端封面高度同步改高 */
+    #annual-game-grid-container .annual-grid-cover-box {
+        height: 120px !important;
+    }
+    /* 模块五自定义卡片移动端缩小 */
+    .annual-other-custom-label {
+        font-size: 13px;
+        padding: 3px 6px;
+    }
+    /* 宫格删除按钮移动端缩小 */
+    .annual-grid-remove-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        line-height: 18px;
+        top: -6px;
+        right: -6px;
     }
 }
