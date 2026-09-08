@@ -91,7 +91,8 @@ const getDefaultAnnualData = () => ({
         favLine: "",
         favMusic: "",
         favHe: "",
-        favBe: ""
+        favBe: "",
+        customCards: []                                    // [{label, text}] 模块五末尾自定义框
     },
     // ===== 新增：六、ゲーム宫格 =====
     gameGrid: {
@@ -1376,10 +1377,61 @@ function bindOtherTextareas() {
     }
 }
 
+// ===== 新增：模块五末尾自定义卡片 =====
+function renderOtherCustomCards() {
+    const row = document.getElementById("annual-other-cards-row");
+    if (!row) return;
+    // 清理旧的自定义卡片（保留前6个静态框）
+    row.querySelectorAll('.annual-other-custom-card').forEach(el => el.remove());
+    // 至少保留一个空白自定义卡片
+    if (!annualData.other.customCards || annualData.other.customCards.length === 0) {
+        annualData.other.customCards = [{label: "", text: ""}];
+    }
+    annualData.other.customCards.forEach((card, idx) => {
+        const div = document.createElement("div");
+        div.className = "annual-other-card annual-other-custom-card";
+        div.innerHTML = `
+            <input class="annual-other-custom-label" data-other-custom-label="${idx}" placeholder="自定义标签" value="${card.label ?? ''}">
+            <div class="annual-custom-text-wrap">
+                <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-custom-text="${idx}">${card.text ?? ''}</textarea>
+                <div class="resize-handle"></div>
+            </div>`;
+        row.appendChild(div);
+    });
+    // 绑定标签输入：填写后自动追加新空白卡片
+    row.querySelectorAll('.annual-other-custom-label').forEach(input => {
+        input.removeEventListener("input", input._handler);
+        input._handler = () => {
+            const idx = Number(input.dataset.otherCustomLabel);
+            annualData.other.customCards[idx].label = input.value;
+            // 如果是最后一个且标签非空，追加新空白卡片
+            if (idx === annualData.other.customCards.length - 1 && input.value.trim() !== "") {
+                annualData.other.customCards.push({label: "", text: ""});
+                saveAnnualData();
+                renderOtherCustomCards();
+                return;
+            }
+            saveAnnualData();
+        };
+        input.addEventListener("input", input._handler);
+    });
+    // 绑定文本输入
+    row.querySelectorAll('.annual-other-textarea[data-other-custom-text]').forEach(ta => {
+        ta.removeEventListener("input", ta._handler);
+        ta._handler = () => {
+            const idx = Number(ta.dataset.otherCustomText);
+            annualData.other.customCards[idx].text = ta.value;
+            saveAnnualData();
+        };
+        ta.addEventListener("input", ta._handler);
+    });
+}
+
 function rebuildOtherModule() {
     renderOtherAlsoPlayed();
     renderOtherFavCp();
     renderOtherFavSupport();
+    renderOtherCustomCards();
     bindOtherTextareas();
 }
 
@@ -1415,7 +1467,8 @@ function renderGameGrid() {
 function renderGameGridItem(item, type, idx) {
     const hasGame = !!(item && item.gameId);
     const coverBox = hasGame
-        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">`
+        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">
+           <button class="annual-grid-remove-btn" data-grid-remove="game" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
         : `<button class="annual-grid-add-btn" data-grid-action="addGame" data-grid-type="${type}" data-grid-index="${idx}">+</button>`;
     const labelEl = (type === "custom")
         ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
@@ -1458,7 +1511,8 @@ function renderCharGrid() {
 function renderCharGridItem(item, type, idx) {
     const hasChar = !!(item && item.charId);
     const coverBox = hasChar
-        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">`
+        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">
+           <button class="annual-grid-remove-btn" data-grid-remove="char" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
         : `<button class="annual-grid-add-btn" data-grid-action="addChar" data-grid-type="${type}" data-grid-index="${idx}">+</button>`;
     const labelEl = (type === "custom")
         ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
@@ -1471,7 +1525,6 @@ function renderCharGridItem(item, type, idx) {
             ${labelEl}
         </div>`;
 }
-
 // ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
 function bindTouchDrag(){
     // 游戏TOP触摸拖拽
@@ -2845,6 +2898,26 @@ export function initAnnualModule(){
             if (gridCharBtn) {
                 _activeGridTarget = {type: gridCharBtn.dataset.gridType, index: Number(gridCharBtn.dataset.gridIndex)};
                 openAnnualGlobalCharModal(null, "charGrid");
+                return;
+            }
+
+            // ========== 新增：宫格删除按钮 ==========
+            const gridRemoveBtn = e.target.closest('[data-grid-remove]');
+            if (gridRemoveBtn) {
+                const kind = gridRemoveBtn.dataset.gridRemove; // "game" | "char"
+                const gType = gridRemoveBtn.dataset.gridType;   // "fixed" | "custom"
+                const gIdx = Number(gridRemoveBtn.dataset.gridIndex);
+                if (kind === "game") {
+                    const target = (gType === "fixed") ? annualData.gameGrid.fixed[gIdx] : annualData.gameGrid.custom[gIdx];
+                    if (target) { target.gameId = ""; target.gameName = ""; target.coverSrc = ""; }
+                    saveAnnualData();
+                    renderGameGrid();
+                } else {
+                    const target = (gType === "fixed") ? annualData.charGrid.fixed[gIdx] : annualData.charGrid.custom[gIdx];
+                    if (target) { target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = ""; }
+                    saveAnnualData();
+                    renderCharGrid();
+                }
                 return;
             }
 
