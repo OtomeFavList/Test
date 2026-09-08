@@ -20,7 +20,8 @@ const annualExportDefault = {
     customtext: "#c98fac",
     customborder: "#eeeeee",      // ✅自定义文本边框色，默认#eeeeee（input[type=color]只接受六位#rrggbb，三位#eee会回退黑色）
     border: "#f6a5b8",
-    customTextFontSize: 16
+    customTextFontSize: 16,
+    useSummaryTitle: false
 };
 
 function loadAnnualExportConfig() {
@@ -1391,6 +1392,7 @@ function renderOtherCustomCards() {
         const div = document.createElement("div");
         div.className = "annual-other-card annual-other-custom-card";
         div.innerHTML = `
+            <button class="annual-other-custom-remove" data-other-custom-remove="${idx}">×</button>
             <input class="annual-other-custom-label" data-other-custom-label="${idx}" placeholder="自定义标签" value="${card.label ?? ''}">
             <div class="annual-custom-text-wrap">
                 <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-custom-text="${idx}">${card.text ?? ''}</textarea>
@@ -1932,6 +1934,7 @@ function bindAnnualExportPanel() {
     const sliderFont = document.getElementById("annual-slider-custom-text-font");
     const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
     const btnExportImage = document.getElementById("annual-btn-export-image");
+    const useSummaryTitleEl = document.getElementById("annual-use-summary-title");
     const canvasEl = document.getElementById("annual-export-canvas");
     const snapshotBox = document.getElementById("snapshot-container");
 
@@ -1952,6 +1955,7 @@ function bindAnnualExportPanel() {
     sliderFont.value = annualExportConfig.customTextFontSize;
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
+    if (useSummaryTitleEl) useSummaryTitleEl.checked = !!annualExportConfig.useSummaryTitle;
 
     annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
     annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
@@ -1981,6 +1985,7 @@ function bindAnnualExportPanel() {
         colorCustomborder.value = annualExportConfig.customborder;
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
+        if (useSummaryTitleEl) useSummaryTitleEl.checked = false;
         annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
         annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
@@ -2059,6 +2064,14 @@ function bindAnnualExportPanel() {
         updateSliderProgress(sliderFont);
         saveAnnualExportConfig();
     };
+
+    // 导出标题开关
+    if (useSummaryTitleEl) {
+        useSummaryTitleEl.onchange = () => {
+            annualExportConfig.useSummaryTitle = useSummaryTitleEl.checked;
+            saveAnnualExportConfig();
+        };
+    }
 
     // ========== 修改点3：导出按钮改为预览弹窗 ==========
     btnExportImage.removeEventListener("click", btnExportImage._handler);
@@ -2885,6 +2898,21 @@ export function initAnnualModule(){
                 return;
             }
 
+            // ========== 新增：模块五自定义卡片删除 ==========
+            const otherCustomRemove = e.target.closest('[data-other-custom-remove]');
+            if (otherCustomRemove) {
+                const idx = Number(otherCustomRemove.dataset.otherCustomRemove);
+                annualData.other.customCards.splice(idx, 1);
+                // 确保至少保留一个完全空白的可操作自定义框
+                const hasEmpty = annualData.other.customCards.some(c => !c.label.trim() && !c.text.trim());
+                if (!hasEmpty) {
+                    annualData.other.customCards.push({label: "", text: ""});
+                }
+                saveAnnualData();
+                renderOtherCustomCards();
+                return;
+            }
+
             // ========== 新增：六、ゲーム宫格 按钮 ==========
             const gridGameBtn = e.target.closest('[data-grid-action="addGame"]');
             if (gridGameBtn) {
@@ -2908,13 +2936,42 @@ export function initAnnualModule(){
                 const gType = gridRemoveBtn.dataset.gridType;   // "fixed" | "custom"
                 const gIdx = Number(gridRemoveBtn.dataset.gridIndex);
                 if (kind === "game") {
-                    const target = (gType === "fixed") ? annualData.gameGrid.fixed[gIdx] : annualData.gameGrid.custom[gIdx];
-                    if (target) { target.gameId = ""; target.gameName = ""; target.coverSrc = ""; }
+                    if (gType === "fixed") {
+                        // 固定项：只清空图片
+                        const target = annualData.gameGrid.fixed[gIdx];
+                        if (target) { target.gameId = ""; target.gameName = ""; target.coverSrc = ""; }
+                    } else {
+                        const target = annualData.gameGrid.custom[gIdx];
+                        if (target && target.gameId) {
+                            // 有图片：只清空图片
+                            target.gameId = ""; target.gameName = ""; target.coverSrc = "";
+                        } else {
+                            // 无图片：删除整个自定义框
+                            annualData.gameGrid.custom.splice(gIdx, 1);
+                            const hasEmpty = annualData.gameGrid.custom.some(c => !c.gameId && !c.label.trim());
+                            if (!hasEmpty) {
+                                annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
+                            }
+                        }
+                    }
                     saveAnnualData();
                     renderGameGrid();
                 } else {
-                    const target = (gType === "fixed") ? annualData.charGrid.fixed[gIdx] : annualData.charGrid.custom[gIdx];
-                    if (target) { target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = ""; }
+                    if (gType === "fixed") {
+                        const target = annualData.charGrid.fixed[gIdx];
+                        if (target) { target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = ""; }
+                    } else {
+                        const target = annualData.charGrid.custom[gIdx];
+                        if (target && target.charId) {
+                            target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = "";
+                        } else {
+                            annualData.charGrid.custom.splice(gIdx, 1);
+                            const hasEmpty = annualData.charGrid.custom.some(c => !c.charId && !c.label.trim());
+                            if (!hasEmpty) {
+                                annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                            }
+                        }
+                    }
                     saveAnnualData();
                     renderCharGrid();
                 }
