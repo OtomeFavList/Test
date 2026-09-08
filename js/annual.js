@@ -1468,10 +1468,14 @@ function renderGameGrid() {
 
 function renderGameGridItem(item, type, idx) {
     const hasGame = !!(item && item.gameId);
+    // 有图时显示×（删图）；自定义框无图时也显示×（删整个框）；固定框无图时不显示×
+    const showRemoveBtn = hasGame || type === "custom";
+    const removeBtn = showRemoveBtn
+        ? `<button class="annual-grid-remove-btn" data-grid-remove="game" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
+        : "";
     const coverBox = hasGame
-        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">
-           <button class="annual-grid-remove-btn" data-grid-remove="game" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
-        : `<button class="annual-grid-add-btn" data-grid-action="addGame" data-grid-type="${type}" data-grid-index="${idx}">+</button>`;
+        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">${removeBtn}`
+        : `<button class="annual-grid-add-btn" data-grid-action="addGame" data-grid-type="${type}" data-grid-index="${idx}">+</button>${removeBtn}`;
     const labelEl = (type === "custom")
         ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
         : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
@@ -1512,10 +1516,13 @@ function renderCharGrid() {
 
 function renderCharGridItem(item, type, idx) {
     const hasChar = !!(item && item.charId);
+    const showRemoveBtn = hasChar || type === "custom";
+    const removeBtn = showRemoveBtn
+        ? `<button class="annual-grid-remove-btn" data-grid-remove="char" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
+        : "";
     const coverBox = hasChar
-        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">
-           <button class="annual-grid-remove-btn" data-grid-remove="char" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
-        : `<button class="annual-grid-add-btn" data-grid-action="addChar" data-grid-type="${type}" data-grid-index="${idx}">+</button>`;
+        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">${removeBtn}`
+        : `<button class="annual-grid-add-btn" data-grid-action="addChar" data-grid-type="${type}" data-grid-index="${idx}">+</button>${removeBtn}`;
     const labelEl = (type === "custom")
         ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
         : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
