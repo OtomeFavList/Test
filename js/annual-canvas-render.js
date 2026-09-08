@@ -980,3 +980,218 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
     painter.shiftY(boxH + OTHER_CARD_PAD * 2);
   }
 }
+
+// ===================== 主入口：单模块导出 =====================
+export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config) {
+  // IOS内存清理
+  if (IS_IOS_WEBKIT) {
+    for (const [, res] of rawImageResourceCache.entries()) {
+      if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
+        try { res.data.close(); } catch (e) {}
+      }
+    }
+    roundImageCache.clear();
+    rawImageResourceCache.clear();
+  }
+
+  // 空模块判断
+  if (moduleType === 'stats') {
+    if (!buildStatsText(annualData)) return null;
+  } else if (moduleType === 'other') {
+    if (!hasOtherContent(annualData)) return null;
+  } else if (moduleType === 'gameGrid') {
+    if (!hasGridContent(annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect)) return null;
+  } else if (moduleType === 'charGrid') {
+    if (!hasGridContent(annualData.charGrid, 'char', annualData.charGrid?.extraThoughts)) return null;
+  } else {
+    const validItems = getValidItems(moduleType, annualData);
+    if (validItems.length === 0) return null;
+  }
+
+  emitRenderProgress(5);
+
+  // 第一步：加载图片（游戏封面高度依赖图片尺寸，必须先加载）
+  let imageUrls = collectModuleImages(moduleType, annualData);
+  // ✅兜底防火墙：再次清洗，剔除null/空/R2 pub/github raw（对齐export补丁8）
+  const SAFE_URL_PATTERN = /^(http|https):\/\//;
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
+  imageUrls = [...new Set(imageUrls)];
+  const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
+  const imageCache = loadRet.resultMap;
+
+  // ✅离屏圆角画布方案已弃用（改为实时clip绘制），跳过预生成，直接进入绘制阶段
+  await new Promise(r => setTimeout(r, 30));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  emitRenderProgress(65);
+
+  // 第二步：基于加载后的图片计算高度
+  const vCanvas = document.createElement('canvas');
+  const vCtx = vCanvas.getContext('2d');
+  const totalH = moduleType === 'stats'
+    ? calcStatsHeight(vCtx, designW, annualData, config)
+    : calcModuleHeight(vCtx, designW, moduleType, moduleTitle, annualData, config, imageCache);
+  vCanvas.width = 0; vCanvas.height = 0;
+
+  // 第三步：创建正式画布并绘制
+  // ✅IOS画布总像素预警（对齐export补丁5）
+  if (IS_IOS_WEBKIT) {
+    const totalPixel = (designW * DPR) * (totalH * DPR);
+    if (totalPixel > 32 * 1024 * 1024) {
+      console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
+    }
+  }
+  // ✅修复：画布高度预留底部getBodyPad()，否则卡片下边框外侧1px超出画布被裁，下边框比其余三边细
+  const canvasHeight = totalH + getBodyPad();
+  const canvas = document.createElement('canvas');
+  const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
+
+  // 大标题（传入annualData用于年份标题）
+  drawBigTitle(painter, designW, config, annualData);
+
+  // 模块卡片
+  const wrapW = getWrapW(designW);
+  const wrapX = getWrapX(designW, wrapW);
+  const cardTop = painter.y;
+  const cardInnerW = wrapW - CARD_INNER_PAD * 2;
+
+  // 计算卡片内容高度
+  let cardContentH = 0;
+  if (moduleType === 'other') {
+    // 五模块无模块标题，内容由drawOtherContent独立计算
+    // 用calcOtherHeight反推contentH
+    const totalH = calcOtherHeight(painter.ctx, designW, annualData, config, imageCache);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
+    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
+    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
+    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
+    const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else {
+    if (moduleTitle) {
+      cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+    }
+    if (moduleType === 'stats') {
+      const statsText = buildStatsText(annualData);
+      if (statsText) {
+        cardContentH += measureWrappedHeight(painter.ctx, statsText, cardInnerW, STAT_SIZE * 1.8, STAT_SIZE);
+      }
+    } else {
+      const items = getValidItems(moduleType, annualData);
+      const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+      items.forEach((item, i) => {
+        item._no = i;
+        cardContentH += calcTopItemHeight(painter.ctx, designW, item, itemType, config, imageCache);
+        if (i < items.length - 1) cardContentH += ITEM_GAP;
+      });
+    }
+  }
+
+  const cardH = CARD_INNER_PAD * 2 + cardContentH;
+
+  // 绘制卡片背景+边框
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+
+  // 绘制模块标题
+  let contentY = cardTop + CARD_INNER_PAD;
+  if (moduleTitle && moduleType !== 'other' && moduleType !== 'gameGrid' && moduleType !== 'charGrid') {
+    drawModuleTitle(painter, wrapX + CARD_INNER_PAD, contentY, moduleTitle, config);
+    contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  }
+
+  // 绘制内容
+  if (moduleType === 'stats') {
+    drawStatsContent(painter, wrapX + CARD_INNER_PAD, contentY, cardInnerW, annualData, config);
+    painter.y = cardTop + cardH;
+  } else if (moduleType === 'other') {
+    // 五模块：无模块标题，从卡片顶部+内边距开始绘制
+    painter.y = cardTop + CARD_INNER_PAD;
+    drawOtherContent(painter, designW, annualData, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
+  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
+    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
+    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
+    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
+    const footerLabel = moduleType === 'gameGrid' ? '明年最期待' : '还想说';
+    const items = getValidGridItems(gridData, gridKind);
+    painter.y = contentY;
+    drawGridContent(painter, designW, items, gridKind, footerLabel, footer, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
+  } else {
+    const items = getValidItems(moduleType, annualData);
+    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+    painter.y = contentY;
+    items.forEach((item, i) => {
+      item._no = i;
+      drawTopItem(painter, designW, item, itemType, imageCache, config);
+      if (i < items.length - 1) painter.shiftY(ITEM_GAP);
+      emitRenderProgress(65 + ((i + 1) / items.length) * 30);
+    });
+    painter.shiftY(CARD_INNER_PAD);
+  }
+
+  emitRenderProgress(100);
+
+  // 裁剪到实际高度（对齐export-canvas-render.js的cropCanvas：先填背景色，再9参数1:1复制，不拉伸变形）
+  const finalH = painter.getY() + getBodyPad();
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = designW * DPR;
+  outputCanvas.height = Math.max(finalH, designW * 0.4) * DPR;
+  const oCtx = outputCanvas.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = "high";
+  // ✅先填充背景色，覆盖输出画布底部多出的边距区域
+  oCtx.fillStyle = config.bg || '#fff7f9';
+  oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+  // ✅9参数1:1复制源画布内容，不再用5参数整体拉伸导致图片变形
+  oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+
+  let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  if (IS_IOS_WEBKIT && !blob) {
+    await new Promise(r => setTimeout(r, 100));
+    blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  }
+
+  if (IS_IOS_WEBKIT) {
+    canvas.width = 0; canvas.height = 0;
+    outputCanvas.width = 0; outputCanvas.height = 0;
+  }
+  return blob;
+}
+
+// ===================== 批量导出所有模块 =====================
+export async function renderAllAnnualModules(designW, annualData, config, titleMap) {
+  const modules = [
+    { type: 'stats', title: titleMap?.stats || '' },
+    { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
+    { type: 'charTop', title: titleMap?.charTop || 'キャラTOP' },
+    { type: 'cpTop', title: titleMap?.cpTop || 'カップルTOP' },
+    // ✅新增：五、其他（title传空，不导出"五、其他"标题）
+    { type: 'other', title: '' },
+    // ✅新增：六、ゲーム宫格
+    { type: 'gameGrid', title: titleMap?.gameGrid || 'ゲーム宫格' },
+    // ✅新增：七、キャラ宫格
+    { type: 'charGrid', title: titleMap?.charGrid || 'キャラ宫格' },
+  ];
+  const results = [];
+  for (const mod of modules) {
+    const blob = await renderAnnualModuleCanvas(designW, mod.type, mod.title, annualData, config);
+    if (blob) {
+      results.push({ moduleType: mod.type, moduleTitle: mod.title, blob });
+    }
+  }
+  return results;
+}
+
+if (typeof window !== 'undefined') {
+  window.renderAnnualModuleCanvas = renderAnnualModuleCanvas;
+  window.renderAllAnnualModules = renderAllAnnualModules;
+}
