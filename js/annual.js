@@ -53,6 +53,22 @@ function saveAnnualExportConfig() {
 
 let annualExportConfig = loadAnnualExportConfig();
 
+// 游戏宫格固定标签（19项）
+const GAME_GRID_FIXED_LABELS = [
+    "年度最佳", "时长最长", "剧情最爱", "画风最爱", "音乐最爱",
+    "过程最开心", "过程最幸福", "过程最心痛", "过程最坐牢",
+    "流过最多眼泪", "获得最多欢笑", "最意外惊艳", "最不对电波",
+    "最想安利", "最想避雷", "最被低估偏冷门", "最需要续作/FD",
+    "没期待但打完真香", "评价两极但我喜欢"
+];
+// 角色宫格固定标签（13项）
+const CHAR_GRID_FIXED_LABELS = [
+    "TA最可爱", "TA最蛊惑", "TA最符合XP", "TA最让人心疼",
+    "为TA流过最多眼泪", "TA的线最甜", "TA的线最虐",
+    "TA的线年度最佳", "TA的线就能值回票价", "打完TA的线就想封盘",
+    "对TA一见钟情", "TA外表与内在差别最大", "感觉会喜欢TA很久"
+];
+
 const getDefaultAnnualData = () => ({
     reportYear: "",
     playCount: "",
@@ -66,7 +82,29 @@ const getDefaultAnnualData = () => ({
     notStart: "",
     topList: [],
     charTopList: [],
-    cpTopList: []  // ✅新增：カップルTOP数据
+    cpTopList: [],
+    // ===== 新增：五、其他 =====
+    other: {
+        alsoPlayed: [],                                    // [{gameId, gameName, coverSrc}]
+        favCp: null,                                       // {gameId, femaleId, maleId, femaleName, maleName, femaleCoverSrc, maleCoverSrc}
+        favSupport: null,                                  // {gameId, charId, charName, coverSrc}
+        favLine: "",
+        favMusic: "",
+        favHe: "",
+        favBe: ""
+    },
+    // ===== 新增：六、ゲーム宫格 =====
+    gameGrid: {
+        fixed: GAME_GRID_FIXED_LABELS.map(label => ({label, gameId: "", gameName: "", coverSrc: ""})),
+        custom: [],                                        // [{label, gameId, gameName, coverSrc}]
+        nextYearExpect: ""
+    },
+    // ===== 新增：七、キャラ宫格 =====
+    charGrid: {
+        fixed: CHAR_GRID_FIXED_LABELS.map(label => ({label, gameId: "", charId: "", charName: "", coverSrc: ""})),
+        custom: [],                                        // [{label, gameId, charId, charName, coverSrc}]
+        extraThoughts: ""
+    }
 });
 
 let annualData = getDefaultAnnualData();
@@ -82,6 +120,9 @@ let activeCharTopItemIndex = null;
 
 // ========= ✅新增：カップルTOP弹窗状态 =========
 let activeCpTopItemIndex = null;
+// ===== 新增：弹窗上下文标记，区分当前弹窗服务于哪个模块 =====
+let _activeModalContext = null;   // "gameTop"|"charTop"|"cpTop"|"otherAlso"|"otherFavCp"|"otherFavSupport"|"gameGrid"|"charGrid"
+let _activeGridTarget = null;     // {type:"fixed"|"custom", index:number}  宫格模块当前操作目标
 let cpModalViewMode = "gameList";       // gameList / femaleList
 let cpModalCurrentGameId = null;
 let cpModalCurrentFemaleId = null;      // 展开男主列表时记录当前女主
@@ -366,6 +407,32 @@ function renderGameList(wrap, keyword) {
         div.className = "game-option-item";
         div.innerHTML = renderGameSelectItem(game, listIndex);
         div.addEventListener("click", ()=>{
+            // ===== 新增：还玩了模块 =====
+            if (_activeModalContext === "otherAlso") {
+                annualData.other.alsoPlayed.push({gameId: game.id, gameName: game.name, coverSrc: game.cover ?? ""});
+                saveAnnualData();
+                renderOtherAlsoPlayed();
+                closeAnnualGlobalGameModal();
+                return;
+            }
+            // ===== 新增：游戏宫格模块 =====
+            if (_activeModalContext === "gameGrid" && _activeGridTarget) {
+                const t = _activeGridTarget;
+                const targetItem = (t.type === "fixed") ? annualData.gameGrid.fixed[t.index] : annualData.gameGrid.custom[t.index];
+                if (targetItem) {
+                    targetItem.gameId = game.id;
+                    targetItem.gameName = game.name;
+                    targetItem.coverSrc = game.cover ?? "";
+                }
+                // 自定义项添加后，在末尾追加一个新空白自定义项
+                if (t.type === "custom") {
+                    annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
+                }
+                saveAnnualData();
+                renderGameGrid();
+                closeAnnualGlobalGameModal();
+                return;
+            }
             if (activeTopItemIndex === null) return;
             //【问题③】重复游戏校验：排除当前正在编辑这一条，其余不能重复
             const isDuplicate = annualData.topList.some((item,i)=> i !== activeTopItemIndex && item.gameId === game.id);
@@ -801,6 +868,39 @@ function renderCharModalCharList() {
         }
         // ========== 补丁结束 ==========
         div.addEventListener("click",()=>{
+            // ===== 新增：其他-最喜欢的配角 =====
+            if (_activeModalContext === "otherFavSupport") {
+                const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+                annualData.other.favSupport = {
+                    gameId: charModalCurrentGameId,
+                    charId: char.id,
+                    charName: charNameList[finalNameIdx] || char.name,
+                    coverSrc: allSrc[annualCharImgIndex.get(imgKey) ?? 0] || ""
+                };
+                saveAnnualData();
+                renderOtherFavSupport();
+                closeAnnualGlobalCharModal();
+                return;
+            }
+            // ===== 新增：角色宫格模块 =====
+            if (_activeModalContext === "charGrid" && _activeGridTarget) {
+                const t = _activeGridTarget;
+                const targetItem = (t.type === "fixed") ? annualData.charGrid.fixed[t.index] : annualData.charGrid.custom[t.index];
+                if (targetItem) {
+                    const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+                    targetItem.gameId = charModalCurrentGameId;
+                    targetItem.charId = char.id;
+                    targetItem.charName = charNameList[finalNameIdx] || char.name;
+                    targetItem.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
+                }
+                if (t.type === "custom") {
+                    annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                }
+                saveAnnualData();
+                renderCharGrid();
+                closeAnnualGlobalCharModal();
+                return;
+            }
             if(activeCharTopItemIndex === null) return;
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
             if(isDuplicate){
@@ -858,11 +958,12 @@ function switchCharModalView(mode){
  * 打开角色选择弹窗
  * @param {number} targetIndex charTopList下标 0/1/2
  */
-function openAnnualGlobalCharModal(targetIndex){
+function openAnnualGlobalCharModal(targetIndex, context){
     if(!_annualRealInitialized && isGameTemplateReady()){
         realInitAnnualModule();
     }
-    activeCharTopItemIndex = targetIndex;
+    _activeModalContext = context || "charTop";
+    activeCharTopItemIndex = (_activeModalContext === "charTop") ? targetIndex : null;
     const modal = document.getElementById("annual-global-char-modal");
     if(!modal) return;
     modal.classList.add("active");
@@ -899,8 +1000,8 @@ function openAnnualGlobalCharModal(targetIndex){
  * 关闭角色弹窗
  */
 function closeAnnualGlobalCharModal(){
-    // 用户取消选择时，清理残留的空条目
-    if (activeCharTopItemIndex !== null) {
+    // 仅 charTop 模块需要清理空条目
+    if (_activeModalContext === "charTop" && activeCharTopItemIndex !== null) {
         const item = annualData.charTopList[activeCharTopItemIndex];
         if (item && !item.charId) {
             annualData.charTopList.splice(activeCharTopItemIndex, 1);
@@ -911,6 +1012,8 @@ function closeAnnualGlobalCharModal(){
         }
     }
     activeCharTopItemIndex = null;
+    _activeModalContext = null;
+    _activeGridTarget = null;
     charModalViewMode = "gameList";
     charModalCurrentGameId = null;
     const modal = document.getElementById("annual-global-char-modal");
@@ -921,12 +1024,13 @@ function closeAnnualGlobalCharModal(){
 /**
  * 打开年度全局游戏选择弹窗（游戏TOP3）
  */
-function openAnnualGlobalGameModal(targetIndex){
+function openAnnualGlobalGameModal(targetIndex, context){
     // 【修复】打开弹窗的时候再次尝试执行业务初始化，如果之前超时还没初始化完成
     if(!_annualRealInitialized && isGameTemplateReady()){
         realInitAnnualModule();
     }
-    activeTopItemIndex = targetIndex;
+    _activeModalContext = context || "gameTop";
+    activeTopItemIndex = (_activeModalContext === "gameTop") ? targetIndex : null;
     const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
     modal.classList.add("active");
@@ -942,8 +1046,8 @@ function openAnnualGlobalGameModal(targetIndex){
  * 关闭年度全局游戏选择弹窗
  */
 function closeAnnualGlobalGameModal(){
-    // 用户取消选择时，清理残留的空条目（防止NO跳号、排序横线异常）
-    if (activeTopItemIndex !== null) {
+    // 仅 gameTop 模块需要清理空条目
+    if (_activeModalContext === "gameTop" && activeTopItemIndex !== null) {
         const item = annualData.topList[activeTopItemIndex];
         if (item && !item.gameId) {
             annualData.topList.splice(activeTopItemIndex, 1);
@@ -954,6 +1058,8 @@ function closeAnnualGlobalGameModal(){
         }
     }
     activeTopItemIndex = null;
+    _activeModalContext = null;
+    _activeGridTarget = null;
     const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
     modal.classList.remove("active");
@@ -1191,6 +1297,179 @@ function rebuildCpTopDomAll(){
     annualData.cpTopList.forEach(()=>{
         appendNewCpTopDom();
     });
+}
+
+// ===================== 五、其他 模块 =====================
+function renderOtherAlsoPlayed() {
+    const content = document.getElementById("annual-other-also-content");
+    if (!content) return;
+    const list = annualData.other.alsoPlayed || [];
+    if (list.length === 0) {
+        content.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addAlso">+</button>`;
+        return;
+    }
+    let html = `<div class="annual-other-also-list">`;
+    list.forEach((item, idx) => {
+        html += `
+            <div class="annual-other-also-item">
+                <img class="annual-other-also-cover" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}" data-other-also-index="${idx}">
+                <button class="annual-other-also-remove" data-other-also-remove="${idx}">×</button>
+            </div>`;
+    });
+    html += `</div><button class="annual-grid-add-btn annual-other-also-add-more" data-other-action="addAlso">+</button>`;
+    content.innerHTML = html;
+}
+
+function renderOtherFavCp() {
+    const body = document.getElementById("annual-other-favcp-body");
+    if (!body) return;
+    const cp = annualData.other.favCp;
+    if (!cp || !cp.femaleId || !cp.maleId) {
+        body.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>`;
+        return;
+    }
+    body.innerHTML = `
+        <div class="annual-other-cp-preview">
+            <img src="${getWebImageUrl(cp.femaleCoverSrc)}" alt="${cp.femaleName}">
+            <img src="${getWebImageUrl(cp.maleCoverSrc)}" alt="${cp.maleName}">
+        </div>
+        <button class="annual-other-mini-remove" data-other-action="removeFavCp">×</button>`;
+}
+
+function renderOtherFavSupport() {
+    const body = document.getElementById("annual-other-favsupport-body");
+    if (!body) return;
+    const sup = annualData.other.favSupport;
+    if (!sup || !sup.charId) {
+        body.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addFavSupport">+</button>`;
+        return;
+    }
+    body.innerHTML = `
+        <div class="annual-other-support-preview">
+            <img src="${getWebImageUrl(sup.coverSrc)}" alt="${sup.charName}">
+        </div>
+        <button class="annual-other-mini-remove" data-other-action="removeFavSupport">×</button>`;
+}
+
+function bindOtherTextareas() {
+    document.querySelectorAll('.annual-other-textarea[data-other-key]').forEach(ta => {
+        const key = ta.dataset.otherKey;
+        ta.value = annualData.other[key] ?? "";
+        ta.removeEventListener("input", ta._handler);
+        ta._handler = () => { annualData.other[key] = ta.value; saveAnnualData(); };
+        ta.addEventListener("input", ta._handler);
+    });
+    // 宫格底部文本框
+    const gameFooter = document.getElementById("annual-game-grid-footer-text");
+    if (gameFooter) {
+        gameFooter.value = annualData.gameGrid.nextYearExpect ?? "";
+        gameFooter.removeEventListener("input", gameFooter._handler);
+        gameFooter._handler = () => { annualData.gameGrid.nextYearExpect = gameFooter.value; saveAnnualData(); };
+        gameFooter.addEventListener("input", gameFooter._handler);
+    }
+    const charFooter = document.getElementById("annual-char-grid-footer-text");
+    if (charFooter) {
+        charFooter.value = annualData.charGrid.extraThoughts ?? "";
+        charFooter.removeEventListener("input", charFooter._handler);
+        charFooter._handler = () => { annualData.charGrid.extraThoughts = charFooter.value; saveAnnualData(); };
+        charFooter.addEventListener("input", charFooter._handler);
+    }
+}
+
+function rebuildOtherModule() {
+    renderOtherAlsoPlayed();
+    renderOtherFavCp();
+    renderOtherFavSupport();
+    bindOtherTextareas();
+}
+
+// ===================== 六、ゲーム宫格 模块 =====================
+function renderGameGrid() {
+    const container = document.getElementById("annual-game-grid-container");
+    if (!container) return;
+    let html = "";
+    // 固定项
+    annualData.gameGrid.fixed.forEach((item, idx) => {
+        html += renderGameGridItem(item, "fixed", idx);
+    });
+    // 自定义项（至少保留一个空白）
+    if (!annualData.gameGrid.custom || annualData.gameGrid.custom.length === 0) {
+        annualData.gameGrid.custom = [{label: "", gameId: "", gameName: "", coverSrc: ""}];
+    }
+    annualData.gameGrid.custom.forEach((item, idx) => {
+        html += renderGameGridItem(item, "custom", idx);
+    });
+    container.innerHTML = html;
+    // 绑定自定义标签输入
+    container.querySelectorAll('.annual-grid-custom-label').forEach(input => {
+        const type = input.dataset.gridType;
+        const idx = Number(input.dataset.gridIndex);
+        const item = (type === "fixed") ? annualData.gameGrid.fixed[idx] : annualData.gameGrid.custom[idx];
+        input.value = item?.label ?? "";
+        input.removeEventListener("input", input._handler);
+        input._handler = () => { if(item) { item.label = input.value; saveAnnualData(); } };
+        input.addEventListener("input", input._handler);
+    });
+}
+
+function renderGameGridItem(item, type, idx) {
+    const hasGame = !!(item && item.gameId);
+    const coverBox = hasGame
+        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">`
+        : `<button class="annual-grid-add-btn" data-grid-action="addGame" data-grid-type="${type}" data-grid-index="${idx}">+</button>`;
+    const labelEl = (type === "custom")
+        ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
+        : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
+    return `
+        <div class="annual-grid-item ${hasGame ? 'has-cover' : ''}">
+            <div class="annual-grid-cover-box ${hasGame ? 'filled' : 'empty'}">
+                ${coverBox}
+            </div>
+            ${labelEl}
+        </div>`;
+}
+
+// ===================== 七、キャラ宫格 模块 =====================
+function renderCharGrid() {
+    const container = document.getElementById("annual-char-grid-container");
+    if (!container) return;
+    let html = "";
+    annualData.charGrid.fixed.forEach((item, idx) => {
+        html += renderCharGridItem(item, "fixed", idx);
+    });
+    if (!annualData.charGrid.custom || annualData.charGrid.custom.length === 0) {
+        annualData.charGrid.custom = [{label: "", gameId: "", charId: "", charName: "", coverSrc: ""}];
+    }
+    annualData.charGrid.custom.forEach((item, idx) => {
+        html += renderCharGridItem(item, "custom", idx);
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.annual-grid-custom-label').forEach(input => {
+        const type = input.dataset.gridType;
+        const idx = Number(input.dataset.gridIndex);
+        const item = (type === "fixed") ? annualData.charGrid.fixed[idx] : annualData.charGrid.custom[idx];
+        input.value = item?.label ?? "";
+        input.removeEventListener("input", input._handler);
+        input._handler = () => { if(item) { item.label = input.value; saveAnnualData(); } };
+        input.addEventListener("input", input._handler);
+    });
+}
+
+function renderCharGridItem(item, type, idx) {
+    const hasChar = !!(item && item.charId);
+    const coverBox = hasChar
+        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">`
+        : `<button class="annual-grid-add-btn" data-grid-action="addChar" data-grid-type="${type}" data-grid-index="${idx}">+</button>`;
+    const labelEl = (type === "custom")
+        ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
+        : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
+    return `
+        <div class="annual-grid-item ${hasChar ? 'has-cover' : ''}">
+            <div class="annual-grid-cover-box ${hasChar ? 'filled' : 'empty'}">
+                ${coverBox}
+            </div>
+            ${labelEl}
+        </div>`;
 }
 
 // ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
@@ -2360,6 +2639,22 @@ function renderCpModalFemaleList() {
                     // ✅阻止冒泡到script.js的全局事件委托
                     e.stopPropagation();
                     if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
+                    // ===== 新增：其他-最喜欢的CP =====
+                    if (_activeModalContext === "otherFavCp") {
+                        annualData.other.favCp = {
+                            gameId: cpModalCurrentGameId,
+                            femaleId: fChar.id,
+                            maleId: mCharId,
+                            femaleName: fNameList[annualCpNameIndex.get(fImgKey) ?? 0] || fChar.name,
+                            maleName: mNameList[annualCpNameIndex.get(mImgKey) ?? 0] || mChar.name,
+                            femaleCoverSrc: fAllSrc[annualCpImgIndex.get(fImgKey) ?? 0] || "",
+                            maleCoverSrc: mAllSrc[annualCpImgIndex.get(mImgKey) ?? 0] || ""
+                        };
+                        saveAnnualData();
+                        renderOtherFavCp();
+                        closeAnnualGlobalCpModal();
+                        return;
+                    }
                     if(activeCpTopItemIndex === null) return;
                     const isDup = annualData.cpTopList.some((item,i)=>
                         i !== activeCpTopItemIndex &&
@@ -2412,9 +2707,10 @@ function switchCpModalView(mode){
     }
 }
 
-function openAnnualGlobalCpModal(targetIndex){
+function openAnnualGlobalCpModal(targetIndex, context){
     if(!_annualRealInitialized && isGameTemplateReady()) realInitAnnualModule();
-    activeCpTopItemIndex = targetIndex;
+    _activeModalContext = context || "cpTop";
+    activeCpTopItemIndex = (_activeModalContext === "cpTop") ? targetIndex : null;
     const modal = document.getElementById("annual-global-cp-modal");
     if(!modal) return;
     modal.classList.add("active");
@@ -2439,8 +2735,8 @@ function openAnnualGlobalCpModal(targetIndex){
 }
 
 function closeAnnualGlobalCpModal(){
-    // 用户取消选择时，清理残留的空条目
-    if (activeCpTopItemIndex !== null) {
+    // 仅 cpTop 模块需要清理空条目
+    if (_activeModalContext === "cpTop" && activeCpTopItemIndex !== null) {
         const item = annualData.cpTopList[activeCpTopItemIndex];
         if (item && (!item.femaleId || !item.maleId)) {
             annualData.cpTopList.splice(activeCpTopItemIndex, 1);
@@ -2451,6 +2747,8 @@ function closeAnnualGlobalCpModal(){
         }
     }
     activeCpTopItemIndex = null;
+    _activeModalContext = null;
+    _activeGridTarget = null;
     cpModalViewMode = "gameList";
     cpModalCurrentGameId = null;
     cpModalCurrentFemaleId = null;
@@ -2485,6 +2783,11 @@ function realInitAnnualModule(){
     bindAnnualExportPanel();
     bindAnnualFloatScrollButtons();  // ✅新增：悬浮滚动按钮
     bindAnnualTextareaResize();  // ✅感想框拖拽手柄
+    // ===== 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 =====
+    rebuildOtherModule();
+    renderGameGrid();
+    renderCharGrid();
+    bindOtherTextareas();
     // 如果游戏弹窗打开刷新列表
     const modalGame = document.getElementById("annual-global-game-modal");
     if(modalGame && modalGame.classList.contains("active")){
@@ -2504,6 +2807,47 @@ function realInitAnnualModule(){
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
+            // ========== 新增：五、其他 模块按钮 ==========
+            const alsoAddBtn = e.target.closest('[data-other-action="addAlso"]');
+            if (alsoAddBtn) { openAnnualGlobalGameModal(null, "otherAlso"); return; }
+
+            const favCpBtn = e.target.closest('[data-other-action="addFavCp"]');
+            if (favCpBtn) { openAnnualGlobalCpModal(null, "otherFavCp"); return; }
+
+            const favSupportBtn = e.target.closest('[data-other-action="addFavSupport"]');
+            if (favSupportBtn) { openAnnualGlobalCharModal(null, "otherFavSupport"); return; }
+
+            const removeFavCp = e.target.closest('[data-other-action="removeFavCp"]');
+            if (removeFavCp) { annualData.other.favCp = null; saveAnnualData(); renderOtherFavCp(); return; }
+
+            const removeFavSupport = e.target.closest('[data-other-action="removeFavSupport"]');
+            if (removeFavSupport) { annualData.other.favSupport = null; saveAnnualData(); renderOtherFavSupport(); return; }
+
+            const alsoRemoveBtn = e.target.closest('[data-other-also-remove]');
+            if (alsoRemoveBtn) {
+                const idx = Number(alsoRemoveBtn.dataset.otherAlsoRemove);
+                annualData.other.alsoPlayed.splice(idx, 1);
+                saveAnnualData();
+                renderOtherAlsoPlayed();
+                return;
+            }
+
+            // ========== 新增：六、ゲーム宫格 按钮 ==========
+            const gridGameBtn = e.target.closest('[data-grid-action="addGame"]');
+            if (gridGameBtn) {
+                _activeGridTarget = {type: gridGameBtn.dataset.gridType, index: Number(gridGameBtn.dataset.gridIndex)};
+                openAnnualGlobalGameModal(null, "gameGrid");
+                return;
+            }
+
+            // ========== 新增：七、キャラ宫格 按钮 ==========
+            const gridCharBtn = e.target.closest('[data-grid-action="addChar"]');
+            if (gridCharBtn) {
+                _activeGridTarget = {type: gridCharBtn.dataset.gridType, index: Number(gridCharBtn.dataset.gridIndex)};
+                openAnnualGlobalCharModal(null, "charGrid");
+                return;
+            }
+
             // ========== ✅修改：全局板块添加游戏按钮，不再使用item内部按钮 ==========
             const globalAddGameBtn = e.target.closest("#annual-global-add-game-btn");
             if(globalAddGameBtn){
