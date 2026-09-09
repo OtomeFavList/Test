@@ -27,9 +27,10 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-const STAT_VALUE_SIZE = 36;            // 用户输入值固定36px
-const STAT_LABEL_SIZE = 30;            // 标签文字固定30px
-const STAT_LINE_HEIGHT = 44;           // 混排行高
+// 修改点1：字号整体调大（常量）
+const STAT_VALUE_SIZE = 42;            // 用户输入值固定42px（整体调大，更适应文本框）
+const STAT_LABEL_SIZE = 36;            // 标签文字固定36px
+const STAT_LINE_HEIGHT = 52;           // 混排行高
 const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
 const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
 const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
@@ -278,57 +279,59 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
-// ========== 修改点1：数据统计底图配置（框比例重调） ==========
+// ========== 修改点2：STATS_BG_CONFIG 框比例重调（7张图） ==========
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    // 红框：文字偏上→框整体下移（t 0.16→0.22，b 0.82→0.78）
-    boxes: { A: { l: 0.10, r: 0.90, t: 0.22, b: 0.78 } }
+    // 只有A：偏上→框下移（t 0.22→0.26，b 0.78→0.74）
+    boxes: { A: { l: 0.10, r: 0.90, t: 0.26, b: 0.74 } }
   },
   B: {
     file: 'game/Stats2.png',
-    // 蓝框：文字偏右→框整体左移（l 0.35→0.40，r 0.86→0.82）
-    boxes: { B: { l: 0.40, r: 0.82, t: 0.14, b: 0.72 } }
+    // 只有B：偏右→框左移（l 0.40→0.44，r 0.82→0.78）
+    boxes: { B: { l: 0.44, r: 0.78, t: 0.14, b: 0.72 } }
   },
   C: {
     file: 'game/Stats3.png',
-    // 粉框：用户确认无问题，保持不变
-    boxes: { C: { l: 0.14, r: 0.74, t: 0.16, b: 0.88 } }
+    // 只有C：稍微偏下→框上移（t 0.16→0.14，b 0.88→0.90）
+    boxes: { C: { l: 0.14, r: 0.74, t: 0.14, b: 0.90 } }
   },
   AB: {
     file: 'game/Stats4.png',
     boxes: {
-      // A偏上→下移（t 0.10→0.14，b 0.39→0.42）
-      A: { l: 0.10, r: 0.90, t: 0.14, b: 0.42 },
-      // B偏右→左移（l 0.35→0.40，r 0.86→0.82；t 0.55→0.57，b 0.87→0.85）
-      B: { l: 0.40, r: 0.82, t: 0.57, b: 0.85 }
+      // A偏上→下移（t 0.14→0.18，b 0.42→0.44）
+      A: { l: 0.10, r: 0.90, t: 0.18, b: 0.44 },
+      // B偏右→左移（l 0.40→0.44，r 0.82→0.78）
+      B: { l: 0.44, r: 0.78, t: 0.57, b: 0.85 }
     }
   },
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      // A特别偏上（与红框上沿重叠）→大幅下移（t 0.09→0.16，b 0.35→0.40）
-      A: { l: 0.10, r: 0.90, t: 0.16, b: 0.40 },
-      // C偏上→下移（t 0.50→0.54，b 0.92→0.88）
-      C: { l: 0.14, r: 0.74, t: 0.54, b: 0.88 }
+      // A特别偏上→大幅下移（t 0.16→0.22，b 0.40→0.42）
+      A: { l: 0.10, r: 0.90, t: 0.22, b: 0.42 },
+      // C偏上→下移（t 0.54→0.57，b 0.88→0.86）
+      C: { l: 0.14, r: 0.74, t: 0.57, b: 0.86 }
     }
   },
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      // B偏右→左移（l 0.35→0.40，r 0.86→0.82；t 0.10→0.12，b 0.44→0.42）
-      B: { l: 0.40, r: 0.82, t: 0.12, b: 0.42 },
-      // C偏下→上移（t 0.59→0.55，b 0.92→0.90）
+      // B偏右→左移（l 0.40→0.44，r 0.82→0.78）
+      B: { l: 0.44, r: 0.78, t: 0.12, b: 0.42 },
+      // C用户确认无问题，保持不变
       C: { l: 0.14, r: 0.74, t: 0.55, b: 0.90 }
     }
   },
   ABC: {
     file: 'game/Stats7.png',
     boxes: {
-      // 全部偏下→整体上移
+      // A位置OK，保持不变
       A: { l: 0.10, r: 0.90, t: 0.08, b: 0.36 },
-      B: { l: 0.40, r: 0.82, t: 0.46, b: 0.66 },
-      C: { l: 0.14, r: 0.74, t: 0.76, b: 0.92 }
+      // B偏下→上移（t 0.46→0.44，b 0.66→0.64）；偏右→左移（l 0.40→0.44，r 0.82→0.78）
+      B: { l: 0.44, r: 0.78, t: 0.44, b: 0.64 },
+      // C偏下→上移（t 0.76→0.74，b 0.92→0.90）
+      C: { l: 0.14, r: 0.74, t: 0.74, b: 0.90 }
     }
   }
 };
@@ -344,6 +347,7 @@ function getStatsParts(annualData) {
 }
 
 // ========== 修改点2：buildStatPartSegments 重写（空行跳过） ==========
+// 修改点3：C部分第1行 finished 加 noStyle: true
 function buildStatPartSegments(part, annualData) {
   const v = (key) => String(annualData[key] ?? '').trim();
   const BR = { text: '', isBreak: true };
@@ -404,10 +408,11 @@ function buildStatPartSegments(part, annualData) {
   }
   if (part === 'C') {
     // 第1行：其中，{数}部已封盘 — finished非空则保留（含前缀"其中，"）
+    // 注意："其中，"后的数值不加粗、不加间距（noStyle:true）
     if (v('finished')) {
       lines.push([
         { text: '其中，', isValue: false },
-        { text: v('finished'), isValue: true },
+        { text: v('finished'), isValue: true, noStyle: true },
         { text: '部已封盘', isValue: false }
       ]);
     }
@@ -435,7 +440,7 @@ function buildStatPartSegments(part, annualData) {
   return segments;
 }
 
-// ========== 修改点3：wrapStatSegments 重写（值段加粗测量 + 2px间距 + 段边界标记） ==========
+// ========== 修改点4：wrapStatSegments 重写（间距2px→4px，noStyle值不加粗不加间距） ==========
 function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   const lines = [[]];
   let curWidth = 0;
@@ -446,16 +451,17 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
       continue;
     }
     const size = seg.isValue ? valueSize : labelSize;
-    // 值段加粗测量
-    ctx.font = (seg.isValue ? 'bold ' : '') + size + 'px ' + FONT_SIYUAN;
+    // noStyle的值段不加粗；其余值段加粗
+    const useBold = seg.isValue && !seg.noStyle;
+    ctx.font = (useBold ? 'bold ' : '') + size + 'px ' + FONT_SIYUAN;
     const chars = Array.from(seg.text);
     chars.forEach((ch, ci) => {
       const chW = ctx.measureText(ch).width;
-      // 值段：第一个字符前留2px，最后一个字符后留2px
+      // 值段（非noStyle）：第一个字符前留4px，最后一个字符后留4px
       let extraBefore = 0, extraAfter = 0;
-      if (seg.isValue) {
-        if (ci === 0) extraBefore = 2;
-        if (ci === chars.length - 1) extraAfter = 2;
+      if (seg.isValue && !seg.noStyle) {
+        if (ci === 0) extraBefore = 4;
+        if (ci === chars.length - 1) extraAfter = 4;
       }
       if (curWidth + chW + extraBefore > maxWidth && lines[lines.length - 1].length > 0) {
         lines.push([]);
@@ -465,8 +471,9 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
         ch: ch,
         size: size,
         isValue: seg.isValue,
-        isValueStart: seg.isValue && ci === 0,
-        isValueEnd: seg.isValue && ci === chars.length - 1
+        noStyle: !!seg.noStyle,
+        isValueStart: seg.isValue && !seg.noStyle && ci === 0,
+        isValueEnd: seg.isValue && !seg.noStyle && ci === chars.length - 1
       });
       curWidth += chW + extraBefore + extraAfter;
     });
@@ -474,39 +481,40 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   return lines;
 }
 
-// ========== 修改点4：drawStatPartCentered 重写（底端对齐 + 值加粗 + 2px间距） ==========
+// ========== 修改点5：drawStatPartCentered 重写（底端对齐 + 4px间距 + noStyle处理） ==========
 function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
                               valueSize, labelSize, lineHeight, valueColor, labelColor) {
   const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
   const totalH = lines.length * lineHeight;
   let y = boxY + (boxH - totalH) / 2;
-  ctx.textBaseline = 'top';
+  // 使用 bottom 基线实现真正的底端对齐：所有文字底部落在同一基线上
+  ctx.textBaseline = 'bottom';
   for (const line of lines) {
-    // 计算行宽（含值段前后2px间距）
+    // 计算行宽（含值段前后4px间距，noStyle值不加间距）
     let lineW = 0;
     for (const item of line) {
-      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
+      ctx.font = (item.isValue && !item.noStyle ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       lineW += ctx.measureText(item.ch).width;
-      if (item.isValueStart) lineW += 2;
-      if (item.isValueEnd) lineW += 2;
+      if (item.isValueStart) lineW += 4;
+      if (item.isValueEnd) lineW += 4;
     }
-    // 本行最大字号（用于底端对齐偏移）
+    // 本行最大字号：底部基线 = 行顶部 + 最大字号
     let maxSize = 0;
     for (const item of line) {
       if (item.size > maxSize) maxSize = item.size;
     }
     let x = boxX + (boxW - lineW) / 2;
+    const baselineY = y + maxSize;  // 所有字符共享同一底部基线
     for (const item of line) {
-      // 值段左侧2px间距
-      if (item.isValueStart) x += 2;
-      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
+      // 值段左侧4px间距（noStyle值不加）
+      if (item.isValueStart) x += 4;
+      ctx.font = (item.isValue && !item.noStyle ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       ctx.fillStyle = item.isValue ? valueColor : labelColor;
-      // 底端对齐：小字号向下偏移 (maxSize - item.size)，使文字底部与最大字号齐平
-      const charY = y + (maxSize - item.size);
-      ctx.fillText(item.ch, x, charY);
+      // bottom基线：42px值与36px标签底部严格齐平，消除数值偏上感
+      ctx.fillText(item.ch, x, baselineY);
       x += ctx.measureText(item.ch).width;
-      // 值段右侧2px间距
-      if (item.isValueEnd) x += 2;
+      // 值段右侧4px间距（noStyle值不加）
+      if (item.isValueEnd) x += 4;
     }
     y += lineHeight;
   }
