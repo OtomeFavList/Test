@@ -278,59 +278,59 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
-// ========== 修改点1：STATS_BG_CONFIG 框范围重新精确标定 ==========
+// ========== 修改点2：STATS_BG_CONFIG 框范围按1620px像素范围精确换算 ==========
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    // 红框对话气泡：左0.08右0.92，上避开挂钩0.24，下避开波浪0.80
-    boxes: { A: { l: 0.08, r: 0.92, t: 0.24, b: 0.80 } }
+    // 只有A：高范围505-890px → t=0.37 b=0.79；左右以底图全宽居中
+    boxes: { A: { l: 0.00, r: 1.00, t: 0.37, b: 0.79 } }
   },
   B: {
     file: 'game/Stats2.png',
-    // 蓝框对话气泡：左避开礼物0.40，右避开甜筒0.80，上0.16下0.74
-    boxes: { B: { l: 0.40, r: 0.80, t: 0.16, b: 0.74 } }
+    // 只有B：宽范围405-1405px → l=0.24 r=0.89；高范围蓝框可写区 t=0.16 b=0.74
+    boxes: { B: { l: 0.24, r: 0.89, t: 0.16, b: 0.74 } }
   },
   C: {
     file: 'game/Stats3.png',
-    // 粉框对话气泡：左避开咖啡杯0.12，右避开云朵0.72，上0.18下0.86
-    boxes: { C: { l: 0.12, r: 0.72, t: 0.18, b: 0.86 } }
+    // 只有C：宽范围175-1270px → l=0.09 r=0.80；高范围280-880px → t=0.15 b=0.91
+    boxes: { C: { l: 0.09, r: 0.80, t: 0.15, b: 0.91 } }
   },
   AB: {
     file: 'game/Stats4.png',
     boxes: {
-      // 上红框：左0.08右0.92，上0.16下0.44
-      A: { l: 0.08, r: 0.92, t: 0.16, b: 0.44 },
-      // 下蓝框：左0.40右0.80，上0.56下0.86
-      B: { l: 0.40, r: 0.80, t: 0.56, b: 0.86 }
+      // A高范围505-890px → t=0.21 b=0.45；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.21, b: 0.45 },
+      // B宽范围405-1405px → l=0.24 r=0.89；高范围下半蓝框 t=0.56 b=0.87
+      B: { l: 0.24, r: 0.89, t: 0.56, b: 0.87 }
     }
   },
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      // 上红框：左0.08右0.92，上0.18下0.42
-      A: { l: 0.08, r: 0.92, t: 0.18, b: 0.42 },
-      // 下粉框：左0.12右0.72，上0.54下0.88
-      C: { l: 0.12, r: 0.72, t: 0.54, b: 0.88 }
+      // A高范围505-890px → t=0.21 b=0.45；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.21, b: 0.45 },
+      // C高范围1100-1705px → t=0.58 b=0.96；宽范围175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.58, b: 0.96 }
     }
   },
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      // 上蓝框：左0.40右0.80，上0.14下0.44
-      B: { l: 0.40, r: 0.80, t: 0.14, b: 0.44 },
-      // 下粉框：左0.12右0.72，上0.56下0.90
-      C: { l: 0.12, r: 0.72, t: 0.56, b: 0.90 }
+      // B高范围275-830px → t=0.08 b=0.47；宽范围405-1405px → l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.08, b: 0.47 },
+      // C高范围915-1515px → t=0.53 b=0.95；宽范围175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.53, b: 0.95 }
     }
   },
   ABC: {
     file: 'game/Stats7.png',
     boxes: {
-      // 上红框：左0.08右0.92，上0.10下0.36
-      A: { l: 0.08, r: 0.92, t: 0.10, b: 0.36 },
-      // 中蓝框：左0.40右0.80，上0.46下0.66
-      B: { l: 0.40, r: 0.80, t: 0.46, b: 0.66 },
-      // 下粉框：左0.12右0.72，上0.76下0.92
-      C: { l: 0.12, r: 0.72, t: 0.76, b: 0.92 }
+      // A高范围505-890px → t=0.15 b=0.33；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.15, b: 0.33 },
+      // B高范围1070-1625px → t=0.41 b=0.66；宽范围405-1405px → l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.41, b: 0.66 },
+      // C高范围1710-2310px → t=0.70 b=0.97；宽范围175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.70, b: 0.97 }
     }
   }
 };
@@ -831,9 +831,8 @@ function drawBigTitle(painter, targetW, config, annualData) {
   if (config.useSummaryTitle) {
     titleText = 'Otome Summary Report';
   } else {
-    const year = (annualData && annualData.reportYear && String(annualData.reportYear).trim())
-      ? String(annualData.reportYear).trim()
-      : String(new Date().getFullYear());
+    // 修改点1：标题年份固定取当前系统年份，不受数据统计中 reportYear 输入框影响
+    const year = String(new Date().getFullYear());
     titleText = `${year} Otome Annual Report`;
   }
   painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
