@@ -26,7 +26,11 @@ const TITLE_SIZE = 42;                 // 大标题（对齐FavList）
 const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础信息"24px）
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
-const STAT_SIZE = 16;                  // 统计文字
+const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
+// 修改点1：新增统计模块文字字号常量
+const STAT_VALUE_SIZE = 24;            // 用户输入值固定24px
+const STAT_LABEL_SIZE = 20;            // 标签文字固定20px
+const STAT_LINE_HEIGHT = 34;           // 混排行高（24×1.4≈34）
 const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
 const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
 const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
@@ -275,6 +279,145 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
+// ========== 修改点2：数据统计底图配置 ==========
+const STATS_BG_CONFIG = {
+  A: {
+    file: 'game/Stats1.png',
+    boxes: { A: { l: 0.06, r: 0.93, t: 0.15, b: 0.76 } }
+  },
+  B: {
+    file: 'game/Stats2.png',
+    boxes: { B: { l: 0.25, r: 0.83, t: 0.16, b: 0.68 } }
+  },
+  C: {
+    file: 'game/Stats3.png',
+    boxes: { C: { l: 0.10, r: 0.74, t: 0.16, b: 0.72 } }
+  },
+  AB: {
+    file: 'game/Stats4.png',
+    boxes: {
+      A: { l: 0.06, r: 0.93, t: 0.08, b: 0.38 },
+      B: { l: 0.25, r: 0.83, t: 0.54, b: 0.88 }
+    }
+  },
+  AC: {
+    file: 'game/Stats5.png',
+    boxes: {
+      A: { l: 0.06, r: 0.93, t: 0.08, b: 0.37 },
+      C: { l: 0.10, r: 0.74, t: 0.58, b: 0.92 }
+    }
+  },
+  BC: {
+    file: 'game/Stats6.png',
+    boxes: {
+      B: { l: 0.25, r: 0.83, t: 0.07, b: 0.40 },
+      C: { l: 0.10, r: 0.74, t: 0.57, b: 0.91 }
+    }
+  },
+  ABC: {
+    file: 'game/Stats7.png',
+    boxes: {
+      A: { l: 0.06, r: 0.93, t: 0.06, b: 0.27 },
+      B: { l: 0.25, r: 0.83, t: 0.38, b: 0.62 },
+      C: { l: 0.10, r: 0.74, t: 0.73, b: 0.93 }
+    }
+  }
+};
+
+// ========== 修改点3：判断A/B/C哪些部分有数据 ==========
+function getStatsParts(annualData) {
+  const has = (key) => String(annualData[key] ?? '').trim() !== '';
+  const parts = [];
+  if (has('reportYear') || has('playCount') || has('totalHours')) parts.push('A');
+  if (has('likeCharCount') || has('cpCount') || has('buyCount') || has('costMoney')) parts.push('B');
+  if (has('finished') || has('ongoing') || has('notStart')) parts.push('C');
+  return parts;
+}
+
+// ========== 修改点4：构建各部分的文字片段 ==========
+function buildStatPartSegments(part, annualData) {
+  const v = (key) => String(annualData[key] ?? '').trim();
+  if (part === 'A') {
+    return [
+      { text: v('reportYear'), isValue: true },
+      { text: '年游玩了', isValue: false },
+      { text: v('playCount'), isValue: true },
+      { text: '部日乙总时数', isValue: false },
+      { text: v('totalHours'), isValue: true },
+      { text: '小时', isValue: false },
+    ];
+  }
+  if (part === 'B') {
+    return [
+      { text: '喜欢', isValue: false },
+      { text: v('likeCharCount'), isValue: true },
+      { text: '个人嗑', isValue: false },
+      { text: v('cpCount'), isValue: true },
+      { text: '对CP一共买了', isValue: false },
+      { text: v('buyCount'), isValue: true },
+      { text: '部游戏花费', isValue: false },
+      { text: v('costMoney'), isValue: true },
+      { text: '元', isValue: false },
+    ];
+  }
+  if (part === 'C') {
+    return [
+      { text: '其中，', isValue: false },
+      { text: v('finished'), isValue: true },
+      { text: '部已封盘', isValue: false },
+      { text: v('ongoing'), isValue: true },
+      { text: '部正在进行', isValue: false },
+      { text: v('notStart'), isValue: true },
+      { text: '部还未开始', isValue: false },
+    ];
+  }
+  return [];
+}
+
+// ========== 修改点5：混合字号逐字符换行 ==========
+function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
+  const lines = [[]];
+  let curWidth = 0;
+  for (const seg of segments) {
+    const size = seg.isValue ? valueSize : labelSize;
+    ctx.font = size + 'px ' + FONT_SIYUAN;
+    for (const ch of Array.from(seg.text)) {
+      const chW = ctx.measureText(ch).width;
+      if (curWidth + chW > maxWidth && lines[lines.length - 1].length > 0) {
+        lines.push([]);
+        curWidth = 0;
+      }
+      lines[lines.length - 1].push({ ch: ch, size: size, isValue: seg.isValue });
+      curWidth += chW;
+    }
+  }
+  return lines;
+}
+
+// ========== 修改点6：在指定框内绘制混合字号文字 ==========
+function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
+                              valueSize, labelSize, lineHeight, valueColor, labelColor) {
+  const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
+  const totalH = lines.length * lineHeight;
+  let y = boxY + (boxH - totalH) / 2;
+  ctx.textBaseline = 'top';
+  for (const line of lines) {
+    let lineW = 0;
+    for (const item of line) {
+      ctx.font = item.size + 'px ' + FONT_SIYUAN;
+      lineW += ctx.measureText(item.ch).width;
+    }
+    let x = boxX + (boxW - lineW) / 2;
+    for (const item of line) {
+      ctx.font = item.size + 'px ' + FONT_SIYUAN;
+      ctx.fillStyle = item.isValue ? valueColor : labelColor;
+      ctx.fillText(item.ch, x, y);
+      x += ctx.measureText(item.ch).width;
+    }
+    y += lineHeight;
+  }
+}
+
 function buildStatsText(annualData) {
   const parts = [];
   for (const [key, label] of STAT_LABELS) {
@@ -291,6 +434,15 @@ function collectModuleImages(moduleType, annualData) {
   const urls = [];
   const safeEach = (list, cb) => { (list || []).forEach(item => { if (item) cb(item); }); };
   const pushUrl = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
+  // 修改点7：stats模块底图收集
+  if (moduleType === 'stats') {
+    const parts = getStatsParts(annualData);
+    if (parts.length > 0) {
+      const bgInfo = STATS_BG_CONFIG[parts.join('')];
+      if (bgInfo) pushUrl(bgInfo.file);
+    }
+    return [...new Set(urls)];
+  }
   if (moduleType === 'gameTop') {
     safeEach(annualData.topList, item => { if (!item.gameId) return; pushUrl(item.coverSrc); });
   } else if (moduleType === 'charTop') {
@@ -394,16 +546,26 @@ function hasGridContent(gridData, gridKind, footerText) {
 }
 
 // ===================== 高度计算（需在图片加载后调用） =====================
-function calcStatsHeight(ctx, targetW, annualData, config) {
+// 修改点8：calcStatsHeight 重写——基于底图比例计算
+function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
-  // ✅修复：CanvasLayoutPainter从y=BODY_PADDING开始绘制，画布高度必须包含顶部边距，否则底部内容超出画布被裁
   let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
-  // 模块卡片
-  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
-  const statsText = buildStatsText(annualData);
-  if (statsText) {
-    contentH += measureWrappedHeight(ctx, statsText, innerW, STAT_SIZE * 1.8, STAT_SIZE);
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16); // 模块标题
+  const parts = getStatsParts(annualData);
+  if (parts.length > 0) {
+    const bgInfo = STATS_BG_CONFIG[parts.join('')];
+    if (bgInfo) {
+      const bgUrl = toCanvasUrl(bgInfo.file);
+      const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
+      const dims = getImgSize(bgImg);
+      if (dims.w > 0 && dims.h > 0) {
+        // 底图按卡片内容宽度等比缩放
+        contentH += Math.round(innerW * dims.h / dims.w);
+      } else {
+        contentH += 300; // 图片未加载时的兜底高度
+      }
+    }
   }
   h += CARD_INNER_PAD * 2 + contentH;
   return h;
@@ -757,43 +919,39 @@ function buildStatsParts(annualData) {
   return parts;
 }
 
-function drawStatsContent(painter, x, y, innerW, annualData, config) {
-  const parts = buildStatsParts(annualData);
+// 修改点9：drawStatsContent 重写——绘制底图+各框内居中文字
+function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache) {
+  const parts = getStatsParts(annualData);
   if (parts.length === 0) return;
+  const bgInfo = STATS_BG_CONFIG[parts.join('')];
+  if (!bgInfo) return;
   const ctx = painter.ctx;
-  const fontSize = STAT_SIZE;
-  const lineHeight = STAT_SIZE * 1.8;
-  const labelColor = config.stattext || '#b85878';   // ✅数据统计文字色（标签）
-  const dataColor = config.statdata || '#b33a3a';     // ✅数据统计数据色（用户填写内容）
-  ctx.font = `${fontSize}px ${FONT_SIYUAN}`;
-  let curX = x;
-  let curY = y;
-  const gap = '  ';
-  const gapW = ctx.measureText(gap).width;
-  // 逐字符绘制，标签用labelColor，数据用dataColor，超宽自动换行
-  for (let i = 0; i < parts.length; i++) {
-    const { label, value } = parts[i];
-    // 绘制标签
-    ctx.fillStyle = labelColor;
-    for (const ch of Array.from(label)) {
-      const chW = ctx.measureText(ch).width;
-      if (curX + chW > x + innerW) { curX = x; curY += lineHeight; }
-      ctx.fillText(ch, curX, curY);
-      curX += chW;
-    }
-    // 绘制数据
-    ctx.fillStyle = dataColor;
-    for (const ch of Array.from(value)) {
-      const chW = ctx.measureText(ch).width;
-      if (curX + chW > x + innerW) { curX = x; curY += lineHeight; }
-      ctx.fillText(ch, curX, curY);
-      curX += chW;
-    }
-    // 段间空格
-    if (i < parts.length - 1) {
-      if (curX + gapW > x + innerW) { curX = x; curY += lineHeight; }
-      else { curX += gapW; }
-    }
+  // 加载底图
+  const bgUrl = toCanvasUrl(bgInfo.file);
+  const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
+  const dims = getImgSize(bgImg);
+  if (dims.w <= 0 || dims.h <= 0) return;
+  // 底图按内容宽度等比缩放绘制
+  const drawW = innerW;
+  const drawH = Math.round(innerW * dims.h / dims.w);
+  const resInfo = rawImageResourceCache.get(bgUrl);
+  const drawTarget = (resInfo && resInfo.data) ? resInfo.data : bgImg;
+  ctx.save();
+  ctx.drawImage(drawTarget, x, y, drawW, drawH);
+  ctx.restore();
+  // 在各彩色框内绘制文字（值24px，标签20px，上下左右居中）
+  const valueColor = config.statdata || '#b33a3a';
+  const labelColor = config.stattext || '#b85878';
+  for (const part of parts) {
+    const box = bgInfo.boxes[part];
+    if (!box) continue;
+    const boxX = x + drawW * box.l;
+    const boxY = y + drawH * box.t;
+    const boxW = drawW * (box.r - box.l);
+    const boxH = drawH * (box.b - box.t);
+    const segments = buildStatPartSegments(part, annualData);
+    drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
+      STAT_VALUE_SIZE, STAT_LABEL_SIZE, STAT_LINE_HEIGHT, valueColor, labelColor);
   }
 }
 
@@ -1081,9 +1239,9 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     rawImageResourceCache.clear();
   }
 
-  // 空模块判断
+  // 修改点10：空模块判断改用 getStatsParts
   if (moduleType === 'stats') {
-    if (!buildStatsText(annualData)) return null;
+    if (getStatsParts(annualData).length === 0) return null;
   } else if (moduleType === 'other') {
     if (!hasOtherContent(annualData)) return null;
   } else if (moduleType === 'gameGrid') {
@@ -1122,8 +1280,9 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   // 第二步：基于加载后的图片计算高度
   const vCanvas = document.createElement('canvas');
   const vCtx = vCanvas.getContext('2d');
+  // 修改点11：calcStatsHeight 调用传入 imageCache
   const totalH = moduleType === 'stats'
-    ? calcStatsHeight(vCtx, designW, annualData, config)
+    ? calcStatsHeight(vCtx, designW, annualData, config, imageCache)
     : calcModuleHeight(vCtx, designW, moduleType, moduleTitle, annualData, config, imageCache);
   vCanvas.width = 0; vCanvas.height = 0;
 
@@ -1166,10 +1325,21 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     if (moduleTitle) {
       cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
     }
+    // 修改点12：stats模块 cardContentH 改用底图高度
     if (moduleType === 'stats') {
-      const statsText = buildStatsText(annualData);
-      if (statsText) {
-        cardContentH += measureWrappedHeight(painter.ctx, statsText, cardInnerW, STAT_SIZE * 1.8, STAT_SIZE);
+      const parts = getStatsParts(annualData);
+      if (parts.length > 0) {
+        const bgInfo = STATS_BG_CONFIG[parts.join('')];
+        if (bgInfo) {
+          const bgUrl = toCanvasUrl(bgInfo.file);
+          const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
+          const dims = getImgSize(bgImg);
+          if (dims.w > 0 && dims.h > 0) {
+            cardContentH += Math.round(cardInnerW * dims.h / dims.w);
+          } else {
+            cardContentH += 300;
+          }
+        }
       }
     } else {
       const items = getValidItems(moduleType, annualData);
@@ -1195,8 +1365,9 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   }
 
   // 绘制内容
+  // 修改点13：drawStatsContent 调用传入 imageCache
   if (moduleType === 'stats') {
-    drawStatsContent(painter, wrapX + CARD_INNER_PAD, contentY, cardInnerW, annualData, config);
+    drawStatsContent(painter, wrapX + CARD_INNER_PAD, contentY, cardInnerW, annualData, config, imageCache);
     painter.y = cardTop + cardH;
   } else if (moduleType === 'other') {
     // 五模块：无模块标题，从卡片顶部+内边距开始绘制
