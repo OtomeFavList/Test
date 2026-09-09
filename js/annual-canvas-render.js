@@ -27,7 +27,6 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-// 修改点1：字号整体调大（常量）
 const STAT_VALUE_SIZE = 42;            // 用户输入值固定42px（整体调大，更适应文本框）
 const STAT_LABEL_SIZE = 36;            // 标签文字固定36px
 const STAT_LINE_HEIGHT = 52;           // 混排行高
@@ -279,59 +278,59 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
-// ========== 修改点2：STATS_BG_CONFIG 框比例重调（7张图） ==========
+// ========== 修改点1：STATS_BG_CONFIG 框范围重新精确标定 ==========
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    // 只有A：偏上→框下移（t 0.22→0.26，b 0.78→0.74）
-    boxes: { A: { l: 0.10, r: 0.90, t: 0.26, b: 0.74 } }
+    // 红框对话气泡：左0.08右0.92，上避开挂钩0.24，下避开波浪0.80
+    boxes: { A: { l: 0.08, r: 0.92, t: 0.24, b: 0.80 } }
   },
   B: {
     file: 'game/Stats2.png',
-    // 只有B：偏右→框左移（l 0.40→0.44，r 0.82→0.78）
-    boxes: { B: { l: 0.44, r: 0.78, t: 0.14, b: 0.72 } }
+    // 蓝框对话气泡：左避开礼物0.40，右避开甜筒0.80，上0.16下0.74
+    boxes: { B: { l: 0.40, r: 0.80, t: 0.16, b: 0.74 } }
   },
   C: {
     file: 'game/Stats3.png',
-    // 只有C：稍微偏下→框上移（t 0.16→0.14，b 0.88→0.90）
-    boxes: { C: { l: 0.14, r: 0.74, t: 0.14, b: 0.90 } }
+    // 粉框对话气泡：左避开咖啡杯0.12，右避开云朵0.72，上0.18下0.86
+    boxes: { C: { l: 0.12, r: 0.72, t: 0.18, b: 0.86 } }
   },
   AB: {
     file: 'game/Stats4.png',
     boxes: {
-      // A偏上→下移（t 0.14→0.18，b 0.42→0.44）
-      A: { l: 0.10, r: 0.90, t: 0.18, b: 0.44 },
-      // B偏右→左移（l 0.40→0.44，r 0.82→0.78）
-      B: { l: 0.44, r: 0.78, t: 0.57, b: 0.85 }
+      // 上红框：左0.08右0.92，上0.16下0.44
+      A: { l: 0.08, r: 0.92, t: 0.16, b: 0.44 },
+      // 下蓝框：左0.40右0.80，上0.56下0.86
+      B: { l: 0.40, r: 0.80, t: 0.56, b: 0.86 }
     }
   },
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      // A特别偏上→大幅下移（t 0.16→0.22，b 0.40→0.42）
-      A: { l: 0.10, r: 0.90, t: 0.22, b: 0.42 },
-      // C偏上→下移（t 0.54→0.57，b 0.88→0.86）
-      C: { l: 0.14, r: 0.74, t: 0.57, b: 0.86 }
+      // 上红框：左0.08右0.92，上0.18下0.42
+      A: { l: 0.08, r: 0.92, t: 0.18, b: 0.42 },
+      // 下粉框：左0.12右0.72，上0.54下0.88
+      C: { l: 0.12, r: 0.72, t: 0.54, b: 0.88 }
     }
   },
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      // B偏右→左移（l 0.40→0.44，r 0.82→0.78）
-      B: { l: 0.44, r: 0.78, t: 0.12, b: 0.42 },
-      // C用户确认无问题，保持不变
-      C: { l: 0.14, r: 0.74, t: 0.55, b: 0.90 }
+      // 上蓝框：左0.40右0.80，上0.14下0.44
+      B: { l: 0.40, r: 0.80, t: 0.14, b: 0.44 },
+      // 下粉框：左0.12右0.72，上0.56下0.90
+      C: { l: 0.12, r: 0.72, t: 0.56, b: 0.90 }
     }
   },
   ABC: {
     file: 'game/Stats7.png',
     boxes: {
-      // A位置OK，保持不变
-      A: { l: 0.10, r: 0.90, t: 0.08, b: 0.36 },
-      // B偏下→上移（t 0.46→0.44，b 0.66→0.64）；偏右→左移（l 0.40→0.44，r 0.82→0.78）
-      B: { l: 0.44, r: 0.78, t: 0.44, b: 0.64 },
-      // C偏下→上移（t 0.76→0.74，b 0.92→0.90）
-      C: { l: 0.14, r: 0.74, t: 0.74, b: 0.90 }
+      // 上红框：左0.08右0.92，上0.10下0.36
+      A: { l: 0.08, r: 0.92, t: 0.10, b: 0.36 },
+      // 中蓝框：左0.40右0.80，上0.46下0.66
+      B: { l: 0.40, r: 0.80, t: 0.46, b: 0.66 },
+      // 下粉框：左0.12右0.72，上0.76下0.92
+      C: { l: 0.12, r: 0.72, t: 0.76, b: 0.92 }
     }
   }
 };
@@ -346,8 +345,7 @@ function getStatsParts(annualData) {
   return parts;
 }
 
-// ========== 修改点2：buildStatPartSegments 重写（空行跳过） ==========
-// 修改点3：C部分第1行 finished 加 noStyle: true
+// ========== 修改点2：buildStatPartSegments — 去掉 finished 的 noStyle 标记 ==========
 function buildStatPartSegments(part, annualData) {
   const v = (key) => String(annualData[key] ?? '').trim();
   const BR = { text: '', isBreak: true };
@@ -408,11 +406,11 @@ function buildStatPartSegments(part, annualData) {
   }
   if (part === 'C') {
     // 第1行：其中，{数}部已封盘 — finished非空则保留（含前缀"其中，"）
-    // 注意："其中，"后的数值不加粗、不加间距（noStyle:true）
+    // 数值与其他值一样加粗+左右4px间距（已移除 noStyle）
     if (v('finished')) {
       lines.push([
         { text: '其中，', isValue: false },
-        { text: v('finished'), isValue: true, noStyle: true },
+        { text: v('finished'), isValue: true },
         { text: '部已封盘', isValue: false }
       ]);
     }
@@ -440,60 +438,44 @@ function buildStatPartSegments(part, annualData) {
   return segments;
 }
 
-// ========== 修改点4：wrapStatSegments 重写（间距2px→4px，noStyle值不加粗不加间距） ==========
+// ========== 修改点3：wrapStatSegments — 去掉自动换行，只按 BR 强制换行 ==========
 function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
+  // 不自动换行：只按 BR 标记强制换行，每行内容直接排列
   const lines = [[]];
-  let curWidth = 0;
   for (const seg of segments) {
     if (seg.isBreak) {
       lines.push([]);
-      curWidth = 0;
       continue;
     }
     const size = seg.isValue ? valueSize : labelSize;
-    // noStyle的值段不加粗；其余值段加粗
-    const useBold = seg.isValue && !seg.noStyle;
-    ctx.font = (useBold ? 'bold ' : '') + size + 'px ' + FONT_SIYUAN;
+    ctx.font = (seg.isValue ? 'bold ' : '') + size + 'px ' + FONT_SIYUAN;
     const chars = Array.from(seg.text);
     chars.forEach((ch, ci) => {
-      const chW = ctx.measureText(ch).width;
-      // 值段（非noStyle）：第一个字符前留4px，最后一个字符后留4px
-      let extraBefore = 0, extraAfter = 0;
-      if (seg.isValue && !seg.noStyle) {
-        if (ci === 0) extraBefore = 4;
-        if (ci === chars.length - 1) extraAfter = 4;
-      }
-      if (curWidth + chW + extraBefore > maxWidth && lines[lines.length - 1].length > 0) {
-        lines.push([]);
-        curWidth = 0;
-      }
       lines[lines.length - 1].push({
         ch: ch,
         size: size,
         isValue: seg.isValue,
-        noStyle: !!seg.noStyle,
-        isValueStart: seg.isValue && !seg.noStyle && ci === 0,
-        isValueEnd: seg.isValue && !seg.noStyle && ci === chars.length - 1
+        isValueStart: seg.isValue && ci === 0,
+        isValueEnd: seg.isValue && ci === chars.length - 1
       });
-      curWidth += chW + extraBefore + extraAfter;
     });
   }
   return lines;
 }
 
-// ========== 修改点5：drawStatPartCentered 重写（底端对齐 + 4px间距 + noStyle处理） ==========
+// ========== 修改点4：drawStatPartCentered — 清理 noStyle 代码，保持底端对齐+4px间距 ==========
 function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
                               valueSize, labelSize, lineHeight, valueColor, labelColor) {
   const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
   const totalH = lines.length * lineHeight;
   let y = boxY + (boxH - totalH) / 2;
-  // 使用 bottom 基线实现真正的底端对齐：所有文字底部落在同一基线上
+  // bottom 基线实现底端对齐：所有文字底部落在同一基线上
   ctx.textBaseline = 'bottom';
   for (const line of lines) {
-    // 计算行宽（含值段前后4px间距，noStyle值不加间距）
+    // 计算行宽（含值段前后4px间距）
     let lineW = 0;
     for (const item of line) {
-      ctx.font = (item.isValue && !item.noStyle ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
+      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       lineW += ctx.measureText(item.ch).width;
       if (item.isValueStart) lineW += 4;
       if (item.isValueEnd) lineW += 4;
@@ -504,16 +486,13 @@ function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
       if (item.size > maxSize) maxSize = item.size;
     }
     let x = boxX + (boxW - lineW) / 2;
-    const baselineY = y + maxSize;  // 所有字符共享同一底部基线
+    const baselineY = y + maxSize;
     for (const item of line) {
-      // 值段左侧4px间距（noStyle值不加）
       if (item.isValueStart) x += 4;
-      ctx.font = (item.isValue && !item.noStyle ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
+      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       ctx.fillStyle = item.isValue ? valueColor : labelColor;
-      // bottom基线：42px值与36px标签底部严格齐平，消除数值偏上感
       ctx.fillText(item.ch, x, baselineY);
       x += ctx.measureText(item.ch).width;
-      // 值段右侧4px间距（noStyle值不加）
       if (item.isValueEnd) x += 4;
     }
     y += lineHeight;
