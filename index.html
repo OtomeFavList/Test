@@ -469,6 +469,11 @@
         <button class="annual-card-fold-btn">▲</button>
     </div>
     <div class="annual-card-body">
+    <!-- 填表人 -->
+    <div class="annual-reporter-row">
+        <span class="text-light-pink">填表人：</span>
+        <input type="text" id="annual-reporter-name" placeholder="可选，导出时显示在标题右下方">
+    </div>
     <!-- 导出标题开关 -->
     <div class="switch-row">
         <label class="switch">
@@ -504,7 +509,7 @@
             <label class="text-light-pink">数据统计文字色</label>
             <input type="color" id="annual-color-stattext" value="#b85878">
         </div>
-        <!-- ✅新增：数据统计数据色（控制用户填写的数字） -->
+        <!-- 数据统计数据色 -->
         <div class="color-item">
             <label class="text-light-pink">数据统计数据色</label>
             <input type="color" id="annual-color-statdata" value="#b33a3a">
@@ -517,10 +522,22 @@
             <label class="text-light-pink">自定义文本色</label>
             <input type="color" id="annual-color-customtext" value="#c98fac">
         </div>
-        <!-- ✅新增：自定义文本边框色（控制感想/文本框边框） -->
+        <!-- 自定义文本边框色 -->
         <div class="color-item">
             <label class="text-light-pink">自定义文本边框色</label>
             <input type="color" id="annual-color-customborder" value="#eeeeee">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">内容框背景色</label>
+            <input type="color" id="annual-color-boxbg" value="#fff7f9">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">标签文字色</label>
+            <input type="color" id="annual-color-labelcolor" value="#b85878">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">填表人文字色</label>
+            <input type="color" id="annual-color-reportercolor" value="#b33a3a">
         </div>
         <div class="color-item">
             <label class="text-light-pink">卡片边框色</label>
