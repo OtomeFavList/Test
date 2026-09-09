@@ -27,9 +27,10 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-const STAT_VALUE_SIZE = 24;            // 用户输入值固定24px
-const STAT_LABEL_SIZE = 20;            // 标签文字固定20px
-const STAT_LINE_HEIGHT = 34;           // 混排行高（24×1.4≈34）
+// 修改点1：字号增大——值24→36，标签20→30，行高34→44
+const STAT_VALUE_SIZE = 36;            // 用户输入值固定36px（红/蓝/粉框较大，原24px偏小）
+const STAT_LABEL_SIZE = 30;            // 标签文字固定30px（原20px偏小）
+const STAT_LINE_HEIGHT = 44;           // 混排行高（多行紧凑排列，确保框内垂直居中）
 const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
 const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
 const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
@@ -278,47 +279,53 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
-// ========== 修改点2：数据统计底图配置 ==========
+// ========== 修改点2：数据统计底图配置（框比例重调） ==========
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    boxes: { A: { l: 0.06, r: 0.93, t: 0.15, b: 0.76 } }
+    // 红框：避开顶部挂钩和底部波浪，左右留边
+    boxes: { A: { l: 0.10, r: 0.90, t: 0.16, b: 0.82 } }
   },
   B: {
     file: 'game/Stats2.png',
-    boxes: { B: { l: 0.25, r: 0.83, t: 0.16, b: 0.68 } }
+    // 蓝框：左侧l=0.35避开礼物图标，右侧留边避开甜筒
+    boxes: { B: { l: 0.35, r: 0.86, t: 0.14, b: 0.72 } }
   },
   C: {
     file: 'game/Stats3.png',
-    boxes: { C: { l: 0.10, r: 0.74, t: 0.16, b: 0.72 } }
+    // 粉框：避开左侧咖啡杯和右侧蓝色云朵装饰
+    boxes: { C: { l: 0.14, r: 0.74, t: 0.16, b: 0.88 } }
   },
   AB: {
     file: 'game/Stats4.png',
     boxes: {
-      A: { l: 0.06, r: 0.93, t: 0.08, b: 0.38 },
-      B: { l: 0.25, r: 0.83, t: 0.54, b: 0.88 }
+      A: { l: 0.10, r: 0.90, t: 0.10, b: 0.39 },
+      B: { l: 0.35, r: 0.86, t: 0.55, b: 0.87 }
     }
   },
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      A: { l: 0.06, r: 0.93, t: 0.08, b: 0.37 },
-      C: { l: 0.10, r: 0.74, t: 0.58, b: 0.92 }
+      A: { l: 0.10, r: 0.90, t: 0.09, b: 0.35 },
+      C: { l: 0.14, r: 0.74, t: 0.50, b: 0.92 }
     }
   },
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      B: { l: 0.25, r: 0.83, t: 0.07, b: 0.40 },
-      C: { l: 0.10, r: 0.74, t: 0.57, b: 0.91 }
+      B: { l: 0.35, r: 0.86, t: 0.10, b: 0.44 },
+      C: { l: 0.14, r: 0.74, t: 0.59, b: 0.92 }
     }
   },
   ABC: {
     file: 'game/Stats7.png',
     boxes: {
-      A: { l: 0.06, r: 0.93, t: 0.06, b: 0.27 },
-      B: { l: 0.25, r: 0.83, t: 0.38, b: 0.62 },
-      C: { l: 0.10, r: 0.74, t: 0.73, b: 0.93 }
+      // A红框：原b=0.27严重偏小（红框实际延伸到0.39），导致文字偏上
+      A: { l: 0.10, r: 0.90, t: 0.11, b: 0.39 },
+      // B蓝框：原l=0.25与礼物图标重叠，改为0.38；t/b扩展到实际框范围
+      B: { l: 0.38, r: 0.86, t: 0.49, b: 0.69 },
+      // C粉框：微调t/b确保垂直居中
+      C: { l: 0.14, r: 0.74, t: 0.79, b: 0.95 }
     }
   }
 };
@@ -988,7 +995,7 @@ function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache)
   ctx.closePath();
   ctx.stroke();
   ctx.restore();
-  // 在各彩色框内绘制文字（值24px，标签20px，按网页换行结构，上下左右居中）
+  // 在各彩色框内绘制文字（值36px，标签30px，按网页换行结构，上下左右居中）
   const valueColor = config.statdata || '#b33a3a';
   const labelColor = config.stattext || '#b85878';
   for (const part of parts) {
