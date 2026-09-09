@@ -1,1514 +1,1341 @@
-// ================================================================
-// annual-canvas-render.js
-// 年度报告模式 纯Canvas绘制导出（对齐 export-canvas-render.js 视觉风格）
-// 每个模块单独生成一张图，固定尺寸 + DPR×2 高清输出
-// ================================================================
-import {
-  getWebImageUrl,
-  preloadImageBitmap,
-  preloadAndDecodeImage,
-  convertR2ToJsDelivr,
-  LAYOUT_SPACE,
-  LAYOUT_STYLE
-} from './main.js';
-// 复用FavList导出的文字换行工具和绘制器
-import { wrapText, measureWrappedHeight, CanvasLayoutPainter } from './export-canvas-render.js';
-
-// ===================== 常量 =====================
-const MAX_IMAGE_CONCURRENCY = 4;
-const FONT_SIYUAN = "Noto Sans SC, sans-serif";
-const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const DPR = 2;
-const WRAP_MAX_W = 1200;
-
-// ---- 固定尺寸（对齐FavList，不随宽度等比缩放）----
-const TITLE_SIZE = 42;                 // 大标题（对齐FavList）
-const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础信息"24px）
-const NO_SIZE = 22;                    // NO.标签
-const NAME_SIZE = 22;                  // 游戏/角色/CP名称
-const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-// 修改点1：字号增大——值24→36，标签20→30，行高34→44
-const STAT_VALUE_SIZE = 36;            // 用户输入值固定36px（红/蓝/粉框较大，原24px偏小）
-const STAT_LABEL_SIZE = 30;            // 标签文字固定30px（原20px偏小）
-const STAT_LINE_HEIGHT = 44;           // 混排行高（多行紧凑排列，确保框内垂直居中）
-const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
-const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
-const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
-const LABEL_ROW_MB = 8;                // ✅NO+名称行底部间距（12→8，缩减与下方图片距离）
-const ITEM_GAP = 24;                   // TOP条目间间距
-const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
-const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐BIG_CARD_PADDING）
-const COVER_CARD_PAD = 0;              // ✅封面卡片内边距（8→0，图片贴外框，删除图片与外框间内边距）
-const TEXT_BOX_PAD = 10;               // 感想文字框内边距
-const GAME_COVER_W = 140;              // 游戏封面固定宽度
-const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
-const CP_COVER_SIZE = 100;             // CP封面固定正方形
-const CP_GAP = 10;                     // CP双图间距
-// ========== 五、其他模块 ==========
-const OTHER_SECTION_TITLE_SIZE = 18;   // "还玩了"/卡片标题/底部标题统一18px
-const OTHER_CARD_W = 225;              // 其他模块卡片宽度（容纳CP双图100+10+100=210）
-const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
-const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
-const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
-const OTHER_ALSO_COVER_W = GAME_COVER_W;      // "还玩了"封面宽度=模块二140
-const OTHER_ALSO_COVER_GAP = 16;       // "还玩了"封面间距
-const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的CP封面=模块四100
-const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角=与CP图一致100
-const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
-const OTHER_SECTION_GAP = 20;          // "还玩了"区域与卡片区间距
-// ========== 六、七宫格模块 ==========
-const GRID_GAP = 16;                   // 宫格间距
-const GRID_LABEL_SIZE = 18;            // 宫格标签字号统一18px
-const GRID_LABEL_GAP = 8;              // 封面与标签间距
-const GRID_FOOTER_GAP = 20;            // 宫格与底部文本框间距
-const FOOTER_PAD = 14;                 // 底部文本框内边距
-const FOOTER_TITLE_GAP = 10;           // 底部标题与文本框间距
-const CARD_RADIUS = 16;                // 模块卡片圆角（对齐BIG_CARD_RADIUS）
-const CARD_BORDER_W = 2;               // 模块卡片边框宽度
-const SUB_CARD_RADIUS = 8;             // 封面/感想框圆角
-const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
-
-// ===================== 缓存 =====================
-const roundImageCache = new Map();
-const rawImageResourceCache = new Map();
-
-// ===================== 进度上报 =====================
-function emitRenderProgress(percent) {
-  window.dispatchEvent(new CustomEvent('annual-canvas-progress', {
-    detail: { percent: Math.min(100, Math.max(0, Number(percent))) }
-  }));
-}
-
-// ===================== URL安全过滤 =====================
-function isSafeUrl(url) {
-  if (!url) return false;
-  if (!/^https?:\/\//.test(url)) return false;
-  if (/^https:\/\/pub-/.test(url)) return false;
-  if (/raw\.githubusercontent\.com/.test(url)) return false;
-  return true;
-}
-
-function toCanvasUrl(relativeSrc) {
-  if (!relativeSrc) return '';
-  let url = getWebImageUrl(relativeSrc);
-  if (url && /^https:\/\/pub-/.test(url)) {
-    const converted = convertR2ToJsDelivr(relativeSrc);
-    if (converted && isSafeUrl(converted)) url = converted;
-  }
-  return isSafeUrl(url) ? url : '';
-}
-
-// ===================== 图片尺寸工具 =====================
-function getImgSize(img) {
-  if (!img) return { w: 0, h: 0 };
-  return {
-    w: img.naturalWidth ?? img.width ?? 0,
-    h: img.naturalHeight ?? img.height ?? 0
-  };
-}
-
-// 游戏封面高度：固定宽度，按原图比例自适应
-function calcGameCoverHeight(img) {
-  const { w, h } = getImgSize(img);
-  if (w <= 0 || h <= 0) return Math.round(GAME_COVER_W * 1.4); // 兜底竖版比例
-  return Math.round(GAME_COVER_W * h / w);
-}
-
-// ===================== 布局计算辅助 =====================
-function getBodyPad() {
-  return LAYOUT_SPACE.BODY_PADDING || 20;
-}
-
-function getWrapW(targetW) {
-  const pad = getBodyPad();
-  return Math.min(WRAP_MAX_W, targetW - pad * 2);
-}
-
-function getWrapX(targetW, wrapW) {
-  const pad = getBodyPad();
-  return Math.max(pad, (targetW - wrapW) / 2);
-}
-
-function getTitleMb() {
-  return (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
-}
-
-// ===================== 圆角离屏画布 =====================
-function createRoundImageCanvas(img, srcUrl, radius) {
-  if (!img) return null;
-  const { w: sourceW, h: sourceH } = getImgSize(img);
-  if (sourceW <= 0 || sourceH <= 0) return null;
-  if (IS_IOS_WEBKIT) {
-    const pxTotal = (sourceW * DPR) * (sourceH * DPR);
-    if (pxTotal > 4096 * 4096) return null;
-  }
-  const cacheKey = `${srcUrl}||${sourceW}x${sourceH}||${radius}||${DPR}`;
-  if (roundImageCache.has(cacheKey)) return roundImageCache.get(cacheKey);
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = sourceW * DPR;
-  offCanvas.height = sourceH * DPR;
-  const offCtx = offCanvas.getContext('2d');
-  if (!offCtx) return null;
-  offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);  // ✅补：清空离屏画布
-  offCtx.imageSmoothingEnabled = true;
-  offCtx.imageSmoothingQuality = "high";
-  offCtx.webkitImageSmoothingEnabled = true;  // ✅补：IOS Safari前缀兼容
-  try {
-    offCtx.save();
-    offCtx.scale(DPR, DPR);
-    offCtx.beginPath();
-    offCtx.moveTo(radius, 0);
-    offCtx.lineTo(sourceW - radius, 0);
-    offCtx.quadraticCurveTo(sourceW, 0, sourceW, radius);
-    offCtx.lineTo(sourceW, sourceH - radius);
-    offCtx.quadraticCurveTo(sourceW, sourceH, sourceW - radius, sourceH);
-    offCtx.lineTo(radius, sourceH);
-    offCtx.quadraticCurveTo(0, sourceH, 0, sourceH - radius);
-    offCtx.lineTo(0, radius);
-    offCtx.quadraticCurveTo(0, 0, radius, 0);
-    offCtx.closePath();
-    offCtx.clip();
-    offCtx.drawImage(img, 0, 0, sourceW, sourceH);
-    offCtx.restore();
-  } catch (e) {
-    console.warn("annual离屏画布绘制异常", srcUrl, e);  // ✅补：可追踪警告
-    offCanvas.width = 0; offCanvas.height = 0;
-    return null;
-  }
-  roundImageCache.set(cacheKey, offCanvas);
-  return offCanvas;
-}
-
-async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
-  const taskMap = new Map();
-  for (const task of roundTaskList) {
-    const img = imageCache.get(task.src);
-    if (!img) continue;
-    const { w, h } = getImgSize(img);
-    const key = `${task.src}||${w}x${h}||${task.radius}||${DPR}`;
-    if (!taskMap.has(key)) taskMap.set(key, task);
-  }
-  let idx = 0;
-  const total = taskMap.size;
-  for (const task of taskMap.values()) {
-    createRoundImageCanvas(imageCache.get(task.src), task.src, task.radius);
-    await new Promise(r => setTimeout(r, IS_IOS_WEBKIT ? 30 : 12));
-    idx++;
-    if (total > 0) emitRenderProgress(45 + (idx / total) * 15);
-  }
-  await new Promise(r => requestAnimationFrame(r));
-  await new Promise(r => setTimeout(r, 50));
-  if (IS_IOS_WEBKIT && roundImageCache.size > 80) {
-    const del = roundImageCache.size - 80;
-    let count = 0;
-    for (const [k, c] of roundImageCache) {
-      if (count >= del) break;
-      c.width = 0; c.height = 0;
-      roundImageCache.delete(k);
-      count++;
-    }
-  }
-}
-
-// ===================== 图片加载 =====================
-async function loadImagesWithLimit(urlList, limit) {
-  const uniqueUrls = [...new Set(urlList)];
-  const resultMap = new Map();
-  let index = 0;
-
-  async function loadSingleUrl(url, retryCount = 2) {
-    try {
-      const bitmap = await preloadImageBitmap(url);
-      if (!bitmap || bitmap.width === 0 || bitmap.height === 0) throw new Error("empty");
-      if (IS_IOS_WEBKIT) await new Promise(r => requestAnimationFrame(r));
-      rawImageResourceCache.set(url, { type: 'bitmap', data: bitmap });
-      return bitmap;
-    } catch (err) {
-      if (retryCount > 0) {
-        await new Promise(r => setTimeout(r, 600));
-        return loadSingleUrl(url, retryCount - 1);
-      }
-      try {
-        const img = await preloadAndDecodeImage(url);
-        await new Promise(r => requestAnimationFrame(r));
-        rawImageResourceCache.set(url, { type: 'image', data: img });
-        return img;
-      } catch (e2) {
-        rawImageResourceCache.set(url, { type: 'fail', data: null });
-        return null;
-      }
-    }
-  }
-
-  async function worker() {
-    while (index < uniqueUrls.length) {
-      const url = uniqueUrls[index++];
-      if (resultMap.has(url)) continue;
-      const bitmap = await loadSingleUrl(url);
-      resultMap.set(url, bitmap);
-      if (uniqueUrls.length > 0) emitRenderProgress((resultMap.size / uniqueUrls.length) * 45);
-    }
-  }
-
-  await Promise.all(Array.from({ length: limit }, worker));
-  await new Promise(r => requestAnimationFrame(r));
-  await new Promise(r => requestAnimationFrame(r));
-  await new Promise(r => setTimeout(r, 30));
-  // ✅收集失败列表（对齐export容错模式）
-  const failList = [];
-  for (const [u, val] of resultMap.entries()) {
-    if (!val) failList.push(u);
-  }
-  if (failList.length > 0) {
-    console.warn("⚠️ annual部分图片加载失败，继续渲染（空白占位）：", failList);
-  }
-  return { resultMap, failList };
-}
-
-// ===================== 统计文本 =====================
-const STAT_LABELS = [
-  ['reportYear', '年度'],
-  ['playCount', '游玩总数'],
-  ['totalHours', '总时长'],
-  ['likeCharCount', '喜欢角色'],
-  ['cpCount', 'CP'],
-  ['buyCount', '购买'],
-  ['costMoney', '花费'],
-  ['finished', '完结'],
-  ['ongoing', '途中'],
-  ['notStart', '未开'],
-];
-
-// ========== 修改点2：数据统计底图配置（框比例重调） ==========
-const STATS_BG_CONFIG = {
-  A: {
-    file: 'game/Stats1.png',
-    // 红框：避开顶部挂钩和底部波浪，左右留边
-    boxes: { A: { l: 0.10, r: 0.90, t: 0.16, b: 0.82 } }
-  },
-  B: {
-    file: 'game/Stats2.png',
-    // 蓝框：左侧l=0.35避开礼物图标，右侧留边避开甜筒
-    boxes: { B: { l: 0.35, r: 0.86, t: 0.14, b: 0.72 } }
-  },
-  C: {
-    file: 'game/Stats3.png',
-    // 粉框：避开左侧咖啡杯和右侧蓝色云朵装饰
-    boxes: { C: { l: 0.14, r: 0.74, t: 0.16, b: 0.88 } }
-  },
-  AB: {
-    file: 'game/Stats4.png',
-    boxes: {
-      A: { l: 0.10, r: 0.90, t: 0.10, b: 0.39 },
-      B: { l: 0.35, r: 0.86, t: 0.55, b: 0.87 }
-    }
-  },
-  AC: {
-    file: 'game/Stats5.png',
-    boxes: {
-      A: { l: 0.10, r: 0.90, t: 0.09, b: 0.35 },
-      C: { l: 0.14, r: 0.74, t: 0.50, b: 0.92 }
-    }
-  },
-  BC: {
-    file: 'game/Stats6.png',
-    boxes: {
-      B: { l: 0.35, r: 0.86, t: 0.10, b: 0.44 },
-      C: { l: 0.14, r: 0.74, t: 0.59, b: 0.92 }
-    }
-  },
-  ABC: {
-    file: 'game/Stats7.png',
-    boxes: {
-      // A红框：原b=0.27严重偏小（红框实际延伸到0.39），导致文字偏上
-      A: { l: 0.10, r: 0.90, t: 0.11, b: 0.39 },
-      // B蓝框：原l=0.25与礼物图标重叠，改为0.38；t/b扩展到实际框范围
-      B: { l: 0.38, r: 0.86, t: 0.49, b: 0.69 },
-      // C粉框：微调t/b确保垂直居中
-      C: { l: 0.14, r: 0.74, t: 0.79, b: 0.95 }
-    }
-  }
-};
-
-// ========== 修改点3：判断A/B/C哪些部分有数据 ==========
-function getStatsParts(annualData) {
-  const has = (key) => String(annualData[key] ?? '').trim() !== '';
-  const parts = [];
-  if (has('reportYear') || has('playCount') || has('totalHours')) parts.push('A');
-  if (has('likeCharCount') || has('cpCount') || has('buyCount') || has('costMoney')) parts.push('B');
-  if (has('finished') || has('ongoing') || has('notStart')) parts.push('C');
-  return parts;
-}
-
-// ========== 修改点1：buildStatPartSegments 加入换行标记 ==========
-function buildStatPartSegments(part, annualData) {
-  const v = (key) => String(annualData[key] ?? '').trim();
-  const BR = { text: '', isBreak: true }; // 强制换行标记
-  if (part === 'A') {
-    // 对齐网页：第1行"年游玩了部日乙"，第2行"总时数小时"
-    return [
-      { text: v('reportYear'), isValue: true },
-      { text: '年游玩了', isValue: false },
-      { text: v('playCount'), isValue: true },
-      { text: '部日乙', isValue: false },
-      BR,
-      { text: '总时数', isValue: false },
-      { text: v('totalHours'), isValue: true },
-      { text: '小时', isValue: false },
-    ];
-  }
-  if (part === 'B') {
-    // 对齐网页：4行——"喜欢个人"/"嗑对CP"/"一共买了部游戏"/"花费元"
-    return [
-      { text: '喜欢', isValue: false },
-      { text: v('likeCharCount'), isValue: true },
-      { text: '个人', isValue: false },
-      BR,
-      { text: '嗑', isValue: false },
-      { text: v('cpCount'), isValue: true },
-      { text: '对CP', isValue: false },
-      BR,
-      { text: '一共买了', isValue: false },
-      { text: v('buyCount'), isValue: true },
-      { text: '部游戏', isValue: false },
-      BR,
-      { text: '花费', isValue: false },
-      { text: v('costMoney'), isValue: true },
-      { text: '元', isValue: false },
-    ];
-  }
-  if (part === 'C') {
-    // 对齐网页：3行——"其中，部已封盘"/"部正在进行"/"部还未开始"
-    return [
-      { text: '其中，', isValue: false },
-      { text: v('finished'), isValue: true },
-      { text: '部已封盘', isValue: false },
-      BR,
-      { text: v('ongoing'), isValue: true },
-      { text: '部正在进行', isValue: false },
-      BR,
-      { text: v('notStart'), isValue: true },
-      { text: '部还未开始', isValue: false },
-    ];
-  }
-  return [];
-}
-
-// ========== 修改点2：wrapStatSegments 支持强制换行标记 ==========
-function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
-  const lines = [[]];
-  let curWidth = 0;
-  for (const seg of segments) {
-    if (seg.isBreak) {
-      lines.push([]);
-      curWidth = 0;
-      continue;
-    }
-    const size = seg.isValue ? valueSize : labelSize;
-    ctx.font = size + 'px ' + FONT_SIYUAN;
-    for (const ch of Array.from(seg.text)) {
-      const chW = ctx.measureText(ch).width;
-      if (curWidth + chW > maxWidth && lines[lines.length - 1].length > 0) {
-        lines.push([]);
-        curWidth = 0;
-      }
-      lines[lines.length - 1].push({ ch: ch, size: size, isValue: seg.isValue });
-      curWidth += chW;
-    }
-  }
-  return lines;
-}
-
-// ========== 修改点6：在指定框内绘制混合字号文字 ==========
-function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
-                              valueSize, labelSize, lineHeight, valueColor, labelColor) {
-  const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
-  const totalH = lines.length * lineHeight;
-  let y = boxY + (boxH - totalH) / 2;
-  ctx.textBaseline = 'top';
-  for (const line of lines) {
-    let lineW = 0;
-    for (const item of line) {
-      ctx.font = item.size + 'px ' + FONT_SIYUAN;
-      lineW += ctx.measureText(item.ch).width;
-    }
-    let x = boxX + (boxW - lineW) / 2;
-    for (const item of line) {
-      ctx.font = item.size + 'px ' + FONT_SIYUAN;
-      ctx.fillStyle = item.isValue ? valueColor : labelColor;
-      ctx.fillText(item.ch, x, y);
-      x += ctx.measureText(item.ch).width;
-    }
-    y += lineHeight;
-  }
-}
-
-function buildStatsText(annualData) {
-  const parts = [];
-  for (const [key, label] of STAT_LABELS) {
-    const val = annualData[key];
-    if (val !== undefined && val !== null && String(val).trim() !== '') {
-      parts.push(`${label}：${String(val).trim()}`);
-    }
-  }
-  return parts.join('  ');
-}
-
-// ===================== 收集图片URL =====================
-function collectModuleImages(moduleType, annualData) {
-  const urls = [];
-  const safeEach = (list, cb) => { (list || []).forEach(item => { if (item) cb(item); }); };
-  const pushUrl = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
-  // 修改点7：stats模块底图收集
-  if (moduleType === 'stats') {
-    const parts = getStatsParts(annualData);
-    if (parts.length > 0) {
-      const bgInfo = STATS_BG_CONFIG[parts.join('')];
-      if (bgInfo) pushUrl(bgInfo.file);
-    }
-    return [...new Set(urls)];
-  }
-  if (moduleType === 'gameTop') {
-    safeEach(annualData.topList, item => { if (!item.gameId) return; pushUrl(item.coverSrc); });
-  } else if (moduleType === 'charTop') {
-    safeEach(annualData.charTopList, item => { if (!item.charId) return; pushUrl(item.coverSrc); });
-  } else if (moduleType === 'cpTop') {
-    safeEach(annualData.cpTopList, item => {
-      if (!item.femaleId || !item.maleId) return;
-      pushUrl(item.femaleCoverSrc); pushUrl(item.maleCoverSrc);
-    });
-  } else if (moduleType === 'other') {
-    // 还玩了
-    safeEach(annualData.other?.alsoPlayed, item => pushUrl(item.coverSrc));
-    // 最喜欢的CP
-    const cp = annualData.other?.favCp;
-    if (cp && cp.femaleId && cp.maleId) { pushUrl(cp.femaleCoverSrc); pushUrl(cp.maleCoverSrc); }
-    // 最喜欢的配角
-    const sup = annualData.other?.favSupport;
-    if (sup && sup.charId) pushUrl(sup.coverSrc);
-  } else if (moduleType === 'gameGrid') {
-    const g = annualData.gameGrid;
-    safeEach(g?.fixed, item => { if (item.gameId) pushUrl(item.coverSrc); });
-    safeEach(g?.custom, item => { if (item.gameId) pushUrl(item.coverSrc); });
-  } else if (moduleType === 'charGrid') {
-    const g = annualData.charGrid;
-    safeEach(g?.fixed, item => { if (item.charId) pushUrl(item.coverSrc); });
-    safeEach(g?.custom, item => { if (item.charId) pushUrl(item.coverSrc); });
-  }
-  return [...new Set(urls)];
-}
-
-// ===================== 过滤有效条目 =====================
-function getValidItems(moduleType, annualData) {
-  if (moduleType === 'gameTop') {
-    return (annualData.topList || []).filter(item => item && item.gameId);
-  } else if (moduleType === 'charTop') {
-    return (annualData.charTopList || []).filter(item => item && item.charId);
-  } else if (moduleType === 'cpTop') {
-    return (annualData.cpTopList || []).filter(item => item && item.femaleId && item.maleId);
-  }
-  return [];
-}
-
-// ===================== 五、其他模块：判断是否有内容 =====================
-function hasOtherContent(annualData) {
-  const o = annualData.other || {};
-  if ((o.alsoPlayed || []).length > 0) return true;
-  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) return true;
-  if (o.favSupport && o.favSupport.charId) return true;
-  if ((o.favLine || '').trim()) return true;
-  if ((o.favMusic || '').trim()) return true;
-  if ((o.favHe || '').trim()) return true;
-  if ((o.favBe || '').trim()) return true;
-  const customValid = (o.customCards || []).some(c => c && ((c.label || '').trim() || (c.text || '').trim()));
-  if (customValid) return true;
-  return false;
-}
-
-// 收集五模块中有内容的卡片列表（不含"还玩了"区域）
-function getOtherCards(annualData) {
-  const o = annualData.other || {};
-  const cards = [];
-  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) {
-    cards.push({ type: 'cp', title: '最喜欢的CP', data: o.favCp });
-  }
-  if (o.favSupport && o.favSupport.charId) {
-    cards.push({ type: 'support', title: '最喜欢的配角', data: o.favSupport });
-  }
-  if ((o.favLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的台词', text: o.favLine });
-  if ((o.favMusic || '').trim()) cards.push({ type: 'text', title: '最喜欢的OP/ED/BGM', text: o.favMusic });
-  if ((o.favHe || '').trim()) cards.push({ type: 'text', title: '最喜欢的HE', text: o.favHe });
-  if ((o.favBe || '').trim()) cards.push({ type: 'text', title: '最喜欢的BE', text: o.favBe });
-  (o.customCards || []).forEach(c => {
-    if (c && ((c.label || '').trim() || (c.text || '').trim())) {
-      cards.push({ type: 'custom', title: c.label || '自定义', text: c.text || '' });
-    }
-  });
-  return cards;
-}
-
-// ===================== 六、七宫格：收集有效项 =====================
-function getValidGridItems(gridData, gridKind) {
-  // gridKind: 'game' | 'char'
-  const valid = [];
-  const hasId = (item) => gridKind === 'game' ? !!(item && item.gameId) : !!(item && item.charId);
-  // 固定项：有图才导出
-  (gridData?.fixed || []).forEach(item => {
-    if (hasId(item)) valid.push({ ...item, isCustom: false });
-  });
-  // 自定义项：有图或有标签才导出
-  (gridData?.custom || []).forEach(item => {
-    if (!item) return;
-    if (hasId(item) || (item.label && item.label.trim())) valid.push({ ...item, isCustom: true });
-  });
-  return valid;
-}
-
-function hasGridContent(gridData, gridKind, footerText) {
-  if (getValidGridItems(gridData, gridKind).length > 0) return true;
-  if ((footerText || '').trim()) return true;
-  return false;
-}
-
-// ===================== 高度计算（需在图片加载后调用） =====================
-// 修改点3：calcStatsHeight 重写——去掉小标题、去掉卡片内边距、图片宽度用wrapW
-function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
-  const wrapW = getWrapW(targetW);
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
-  // stats模块无小标题、无卡片内边距，底图直接贴满卡片边框
-  let contentH = 0;
-  const parts = getStatsParts(annualData);
-  if (parts.length > 0) {
-    const bgInfo = STATS_BG_CONFIG[parts.join('')];
-    if (bgInfo) {
-      const bgUrl = toCanvasUrl(bgInfo.file);
-      const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
-      const dims = getImgSize(bgImg);
-      if (dims.w > 0 && dims.h > 0) {
-        // 底图按卡片完整宽度(wrapW)等比缩放，贴满边框
-        contentH += Math.round(wrapW * dims.h / dims.w);
-      } else {
-        contentH += 300; // 图片未加载时的兜底高度
-      }
-    }
-  }
-  h += contentH; // 无CARD_INNER_PAD，图片即卡片高度
-  return h;
-}
-
-function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
-  const wrapW = getWrapW(targetW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = 0;
-
-  // ---- NO + 名称行 ----
-  const nameText = itemType === 'cp'
-    ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
-    : (item.gameName || item.charName || '');
-  const noText = `NO.${(item._no ?? 0) + 1}`;
-  ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
-  const noW = ctx.measureText(noText).width;
-  const nameMaxW = innerW - noW - 12;
-  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
-  // ✅NO行高使用 NO_SIZE*1.3（与名称行高一致），不再用裸NO_SIZE=22
-  const noLineH = NO_SIZE * 1.3;
-  h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
-
-  // ---- 封面 + 感想行 ----
-  let coverH; // 封面卡片总高度（含内边距）
-  let coverAreaW;
-  if (itemType === 'game') {
-    const img = imageCache.get(toCanvasUrl(item.coverSrc));
-    coverH = calcGameCoverHeight(img) + COVER_CARD_PAD * 2;
-    coverAreaW = GAME_COVER_W + COVER_CARD_PAD * 2;
-  } else if (itemType === 'char') {
-    coverH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
-    coverAreaW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
-  } else { // cp
-    coverH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
-    coverAreaW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：两张卡片各含左右内边距
-  }
-  // 感想框（仅当有文字时计算）
-  let textBoxH = 0;
-  const text = (item.text || '').trim();
-  if (text) {
-    const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;  // ✅统一间距常量
-    const textSize = config.customTextFontSize || 16;
-    const textH = measureWrappedHeight(ctx, text, textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-    textBoxH = textH + TEXT_BOX_PAD * 2;
-  }
-
-  h += Math.max(coverH, textBoxH);
-  return h;
-}
-
-function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, config, imageCache) {
-  // 五、其他模块独立计算（无模块标题）
-  if (moduleType === 'other') {
-    return calcOtherHeight(ctx, targetW, annualData, config, imageCache);
-  }
-  // 六、七宫格独立计算
-  if (moduleType === 'gameGrid') {
-    return calcGridHeight(ctx, targetW, annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect, config, imageCache);
-  }
-  if (moduleType === 'charGrid') {
-    return calcGridHeight(ctx, targetW, annualData.charGrid, 'char', annualData.charGrid?.extraThoughts, config, imageCache);
-  }
-  const wrapW = getWrapW(targetW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
-  let contentH = 0;
-  if (moduleTitle) {
-    contentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
-  }
-  const items = getValidItems(moduleType, annualData);
-  if (items.length > 0) {
-    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
-    items.forEach((item, i) => {
-      item._no = i;
-      contentH += calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache);
-      if (i < items.length - 1) contentH += ITEM_GAP;
-    });
-  }
-  h += CARD_INNER_PAD * 2 + contentH;
-  return h;
-}
-
-// ===================== 五、其他模块高度计算 =====================
-function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
-  const wrapW = getWrapW(targetW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题
-  let contentH = 0;
-  const o = annualData.other || {};
-  const labelColor = config.subtitle || '#b85878';
-  // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
-  const alsoList = o.alsoPlayed || [];
-  if (alsoList.length > 0) {
-    contentH += OTHER_SECTION_TITLE_SIZE + 12; // 标题+底部间距
-    const coverW = OTHER_ALSO_COVER_W;
-    const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
-    const rows = Math.ceil(alsoList.length / cols);
-    // 逐行计算最大封面高度
-    for (let r = 0; r < rows; r++) {
-      let rowMaxH = 0;
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        if (idx >= alsoList.length) break;
-        const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
-        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
-      }
-      contentH += rowMaxH;
-      if (r < rows - 1) contentH += OTHER_ALSO_COVER_GAP;
-    }
-    contentH += OTHER_SECTION_GAP;
-  }
-  // ---- 卡片区域（每行居中，CP图100+间距10，配角100）----
-  const cards = getOtherCards(annualData);
-  if (cards.length > 0) {
-    const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
-    const rows = Math.ceil(cards.length / cols);
-    const textSize = config.customTextFontSize || 16;
-    const cardHeights = cards.map(card => {
-      let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
-      if (card.type === 'cp') {
-        ch += OTHER_CP_COVER_SIZE; // 100，与模块四一致
-      } else if (card.type === 'support') {
-        ch += OTHER_SUPPORT_COVER_SIZE; // 100，与CP图一致
-      } else {
-        const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
-        const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
-        ch += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-      }
-      return ch;
-    });
-    let gridH = 0;
-    for (let r = 0; r < rows; r++) {
-      let rowMax = 0;
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        if (idx < cardHeights.length) rowMax = Math.max(rowMax, cardHeights[idx]);
-      }
-      gridH += rowMax;
-      if (r < rows - 1) gridH += OTHER_CARD_GAP;
-    }
-    contentH += gridH;
-  }
-  h += CARD_INNER_PAD * 2 + contentH;
-  return h;
-}
-
-// ===================== 六、七宫格高度计算 =====================
-function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, imageCache) {
-  const wrapW = getWrapW(targetW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题
-  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16); // 模块标题
-  const items = getValidGridItems(gridData, gridKind);
-  const coverW = getGridCoverW(gridKind);
-  const labelLineH = GRID_LABEL_SIZE * 1.4;
-  if (items.length > 0) {
-    const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
-    const rows = Math.ceil(items.length / cols);
-    for (let r = 0; r < rows; r++) {
-      let rowMaxH = 0;
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        if (idx >= items.length) break;
-        const item = items[idx];
-        const coverH = getGridCoverH(item, gridKind, imageCache);
-        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
-        const labelH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
-        const cellH = coverH + GRID_LABEL_GAP + Math.max(labelH, labelLineH);
-        rowMaxH = Math.max(rowMaxH, cellH);
-      }
-      contentH += rowMaxH;
-      if (r < rows - 1) contentH += GRID_GAP;
-    }
-  }
-  // 底部文本框（标题"明年最期待"/"还想说"在框内顶部居中）
-  if ((footerText || '').trim()) {
-    if (items.length > 0) contentH += GRID_FOOTER_GAP;
-    const textSize = config.customTextFontSize || 16;
-    const boxInnerW = innerW - FOOTER_PAD * 2;
-    const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-    const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-    // 外框高度 = 上下内边距 + 标题 + 标题间距 + 文本框
-    contentH += FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
-  }
-  h += CARD_INNER_PAD * 2 + contentH;
-  return h;
-}
-
-// ===================== 绘制函数 =====================
-function drawBigTitle(painter, targetW, config, annualData) {
-  // ✅大标题在"画布上沿→第一个框上沿"区域内垂直居中，与export逻辑一致
-  const titleAreaH = getBodyPad() + TITLE_SIZE + getTitleMb();
-  const titleY = (titleAreaH - TITLE_SIZE) / 2;
-  // ✅新增：根据 useSummaryTitle 开关决定标题文本
-  let titleText;
-  if (config.useSummaryTitle) {
-    titleText = 'Otome Summary Report';
-  } else {
-    const year = (annualData && annualData.reportYear && String(annualData.reportYear).trim())
-      ? String(annualData.reportYear).trim()
-      : String(new Date().getFullYear());
-    titleText = `${year} Otome Annual Report`;
-  }
-  painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
-  // 修改点11：填表人右对齐绘制
-  if (config.reporterName && String(config.reporterName).trim()) {
-    const reporterText = '填表人：' + String(config.reporterName).trim();
-    const reporterSize = 16;
-    const reporterY = titleY + TITLE_SIZE + 4;
-    const ctx = painter.ctx;
-    ctx.save();
-    ctx.font = 'bold ' + reporterSize + 'px ' + FONT_SIYUAN;
-    ctx.fillStyle = config.reporterColor || '#b33a3a';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'top';
-    ctx.fillText(reporterText, targetW - getBodyPad(), reporterY);
-    ctx.restore();
-  }
-  painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
-}
-
-// 修改点2：模块小标题居中绘制
-function drawModuleTitle(painter, centerX, y, title, config) {
-  // ✅模块小标题居中绘制，颜色由"小标题文字色"控制
-  painter.drawTextCenter(title, centerX, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
-}
-
-// 绘制封面卡片（白色底+#eee边框+圆角，内含圆角图片）
-function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
-  painter.drawRoundRect(x, y, cardW, cardH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
-  if (img) {
-    const imgX = x + COVER_CARD_PAD;
-    const imgY = y + COVER_CARD_PAD;
-    const imgW = cardW - COVER_CARD_PAD * 2;
-    const imgH = cardH - COVER_CARD_PAD * 2;
-    const ctx = painter.ctx;
-    ctx.save();
-    try {
-      // 圆角裁剪路径
-      ctx.beginPath();
-      ctx.moveTo(imgX + radius, imgY);
-      ctx.lineTo(imgX + imgW - radius, imgY);
-      ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + radius);
-      ctx.lineTo(imgX + imgW, imgY + imgH - radius);
-      ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - radius, imgY + imgH);
-      ctx.lineTo(imgX + radius, imgY + imgH);
-      ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - radius);
-      ctx.lineTo(imgX, imgY + radius);
-      ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
-      ctx.closePath();
-      ctx.clip();
-      // ✅直接完整缩放绘制（不再使用drawImageRound的cover裁剪模式），
-      // 确保图片底部不被裁剪，完整显示在目标区域内
-      const resInfo = rawImageResourceCache.get(srcUrl);
-      const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
-      ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
-    } finally {
-      ctx.restore();
-    }
-  }
-}
-
-// 绘制感想文字框（白色底+可选边框）
-// 修改点10：新增 centerText 参数（第8参数），支持文本居中
-function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText) {
-  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
-    noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
-  if (text) {
-    const textSize = config.customTextFontSize || 16;
-    if (centerText) {
-      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
-        boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
-        config.customtext || '#c98fac', false);
-    } else {
-      wrapText(
-        painter.ctx, text,
-        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
-        boxW - TEXT_BOX_PAD * 2,
-        textSize * 1.55, textSize,
-        config.customtext || '#c98fac'
-      );
-    }
-  }
-}
-
-// ===================== 新增辅助函数 =====================
-// 居中文本绘制（支持CJK自动换行，返回实际占用高度）
-function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize, color, bold) {
-  if (!text) return 0;
-  ctx.font = `${bold ? 'bold ' : ''}${fontSize}px ${FONT_SIYUAN}`;
-  ctx.fillStyle = color;
-  const chars = Array.from(text);
-  let line = '';
-  const lines = [];
-  for (const ch of chars) {
-    if (line && ctx.measureText(line + ch).width > maxWidth) {
-      lines.push(line);
-      line = ch;
-    } else {
-      line += ch;
-    }
-  }
-  if (line) lines.push(line);
-  lines.forEach((l, i) => {
-    const w = ctx.measureText(l).width;
-    ctx.fillText(l, centerX - w / 2, y + i * lineHeight);
-  });
-  return lines.length * lineHeight;
-}
-// 测量居中文本的实际高度（与drawCenteredText换行逻辑一致）
-function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
-  if (!text) return 0;
-  ctx.font = `bold ${fontSize}px ${FONT_SIYUAN}`;
-  const chars = Array.from(text);
-  let line = '';
-  let lines = 1;
-  for (const ch of chars) {
-    if (line && ctx.measureText(line + ch).width > maxWidth) {
-      lines++;
-      line = ch;
-    } else {
-      line += ch;
-    }
-  }
-  return lines * lineHeight;
-}
-// 宫格封面宽度：游戏=140（模块二），角色=120（模块三）
-function getGridCoverW(gridKind) {
-  return gridKind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
-}
-// 宫格封面高度：游戏按原图比例自适应（模块二），角色固定120（模块三）
-function getGridCoverH(item, gridKind, imageCache) {
-  if (gridKind === 'game') {
-    const src = toCanvasUrl(item.coverSrc);
-    const img = src ? imageCache.get(src) : null;
-    return calcGameCoverHeight(img);
-  }
-  return CHAR_COVER_SIZE;
-}
-
-// ✅新增：返回结构化的标签+数据对，供Canvas分别着色
-function buildStatsParts(annualData) {
-  const parts = [];
-  for (const [key, label] of STAT_LABELS) {
-    const val = annualData[key];
-    if (val !== undefined && val !== null && String(val).trim() !== '') {
-      parts.push({ label: `${label}：`, value: String(val).trim() });
-    }
-  }
-  return parts;
-}
-
-// ========== 修改点8：drawStatsContent 重写——圆角裁剪贴满边框+重绘边框 ==========
-function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache) {
-  const parts = getStatsParts(annualData);
-  if (parts.length === 0) return;
-  const bgInfo = STATS_BG_CONFIG[parts.join('')];
-  if (!bgInfo) return;
-  const ctx = painter.ctx;
-  // 加载底图
-  const bgUrl = toCanvasUrl(bgInfo.file);
-  const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
-  const dims = getImgSize(bgImg);
-  if (dims.w <= 0 || dims.h <= 0) return;
-  // 底图按卡片完整宽度等比缩放，贴满边框
-  const drawW = innerW;
-  const drawH = Math.round(innerW * dims.h / dims.w);
-  const resInfo = rawImageResourceCache.get(bgUrl);
-  const drawTarget = (resInfo && resInfo.data) ? resInfo.data : bgImg;
-  // 圆角裁剪：底图被裁剪成与卡片一致的圆角，确保四角不溢出
-  ctx.save();
-  ctx.beginPath();
-  const r = CARD_RADIUS;
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + drawW - r, y);
-  ctx.quadraticCurveTo(x + drawW, y, x + drawW, y + r);
-  ctx.lineTo(x + drawW, y + drawH - r);
-  ctx.quadraticCurveTo(x + drawW, y + drawH, x + drawW - r, y + drawH);
-  ctx.lineTo(x + r, y + drawH);
-  ctx.quadraticCurveTo(x, y + drawH, x, y + drawH - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-  ctx.clip();
-  ctx.drawImage(drawTarget, x, y, drawW, drawH);
-  ctx.restore();
-  // 重绘卡片边框（确保边框在底图之上，不被覆盖）
-  ctx.save();
-  ctx.lineWidth = CARD_BORDER_W;
-  ctx.strokeStyle = config.border || '#f6a5b8';
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + drawW - r, y);
-  ctx.quadraticCurveTo(x + drawW, y, x + drawW, y + r);
-  ctx.lineTo(x + drawW, y + drawH - r);
-  ctx.quadraticCurveTo(x + drawW, y + drawH, x + drawW - r, y + drawH);
-  ctx.lineTo(x + r, y + drawH);
-  ctx.quadraticCurveTo(x, y + drawH, x, y + drawH - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-  ctx.stroke();
-  ctx.restore();
-  // 在各彩色框内绘制文字（值36px，标签30px，按网页换行结构，上下左右居中）
-  const valueColor = config.statdata || '#b33a3a';
-  const labelColor = config.stattext || '#b85878';
-  for (const part of parts) {
-    const box = bgInfo.boxes[part];
-    if (!box) continue;
-    const boxX = x + drawW * box.l;
-    const boxY = y + drawH * box.t;
-    const boxW = drawW * (box.r - box.l);
-    const boxH = drawH * (box.b - box.t);
-    const segments = buildStatPartSegments(part, annualData);
-    drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
-      STAT_VALUE_SIZE, STAT_LABEL_SIZE, STAT_LINE_HEIGHT, valueColor, labelColor);
-  }
-}
-
-function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
-  const wrapW = getWrapW(targetW);
-  const wrapX = getWrapX(targetW, wrapW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  const contentX = wrapX + CARD_INNER_PAD;
-  const ctx = painter.ctx;
-
-  // ---- NO + 名称行（统一用wrapText绘制，确保基线完全一致；整体垂直居中）----
-  const noText = `NO.${(item._no ?? 0) + 1}`;
-  ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
-  const noW = ctx.measureText(noText).width;
-  const nameText = itemType === 'cp'
-    ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
-    : (item.gameName || item.charName || '');
-  const nameX = contentX + noW + 12;
-  const nameMaxW = innerW - noW - 12;
-  // 先测量名称高度
-  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
-  // ✅NO行高与名称统一使用 NO_SIZE*1.3
-  const noLineH = NO_SIZE * 1.3;
-  const rowH = Math.max(noLineH, nameH);
-  // ✅NO和名称从同一顶部坐标nameTopY开始绘制，两者字号相同(22px)、行高相同，自然上下对齐
-  const nameTopY = painter.y + (rowH - nameH) / 2;
-  // ✅NO也用wrapText绘制（单行），与名称使用完全相同的基线逻辑，彻底消除fillText与wrapText基线不一致问题
-  // ✅NO标签颜色由"小标题文字色"控制，不再硬编码NO_COLOR
-  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
-  wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
-  painter.shiftY(rowH + LABEL_ROW_MB);
-
-  // ---- 封面 + 感想行 ----
-  const contentY = painter.y;
-  let coverCardW, coverCardH, coverImg, coverSrc;
-
-  if (itemType === 'game') {
-    coverSrc = toCanvasUrl(item.coverSrc);
-    coverImg = coverSrc ? imageCache.get(coverSrc) : null;
-    const imgH = calcGameCoverHeight(coverImg);
-    coverCardW = GAME_COVER_W + COVER_CARD_PAD * 2;
-    coverCardH = imgH + COVER_CARD_PAD * 2;
-    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
-  } else if (itemType === 'char') {
-    coverSrc = toCanvasUrl(item.coverSrc);
-    coverImg = coverSrc ? imageCache.get(coverSrc) : null;
-    coverCardW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
-    coverCardH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
-    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
-  } else { // cp
-    const fSrc = toCanvasUrl(item.femaleCoverSrc);
-    const mSrc = toCanvasUrl(item.maleCoverSrc);
-    const fImg = fSrc ? imageCache.get(fSrc) : null;
-    const mImg = mSrc ? imageCache.get(mSrc) : null;
-    coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：与calcTopItemHeight一致
-    coverCardH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
-    // 女主卡片
-    drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 6);
-    // 男主卡片
-    drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 6);
-  }
-
-  // 感想框（仅当有文字时绘制）✅统一使用 COVER_TEXT_GAP 间距
-  const text = (item.text || '').trim();
-  let finalTextBoxH = 0;
-  if (text) {
-    const textX = contentX + coverCardW + COVER_TEXT_GAP;
-    const textW = innerW - coverCardW - COVER_TEXT_GAP;
-    const textSize = config.customTextFontSize || 16;
-    const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-    finalTextBoxH = textH + TEXT_BOX_PAD * 2;
-    // 模块二三四感想框保留边框，不传 noBorder，不居中
-    drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
-  }
-  painter.shiftY(Math.max(coverCardH, finalTextBoxH));
-}
-
-// ===================== 五、其他模块绘制 =====================
-function drawOtherContent(painter, targetW, annualData, config, imageCache) {
-  const wrapW = getWrapW(targetW);
-  const wrapX = getWrapX(targetW, wrapW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  const contentX = wrapX + CARD_INNER_PAD;
-  const ctx = painter.ctx;
-  const o = annualData.other || {};
-  // 修改点12：标签色用 labelColor
-  const labelColor = config.labelColor || config.subtitle || '#b85878';
-  // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
-  const alsoList = o.alsoPlayed || [];
-  if (alsoList.length > 0) {
-    // 标题居中
-    drawCenteredText(ctx, '还玩了', contentX + innerW / 2, painter.y, innerW,
-      OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
-    painter.shiftY(OTHER_SECTION_TITLE_SIZE + 12);
-    // 封面横向排列，每行居中
-    const coverW = OTHER_ALSO_COVER_W;
-    const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
-    const rows = Math.ceil(alsoList.length / cols);
-    for (let r = 0; r < rows; r++) {
-      // 计算本行实际元素数和居中偏移
-      const rowStart = r * cols;
-      const rowCount = Math.min(cols, alsoList.length - rowStart);
-      const rowTotalW = rowCount * coverW + (rowCount - 1) * OTHER_ALSO_COVER_GAP;
-      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
-      // 本行最大封面高度
-      let rowMaxH = 0;
-      for (let c = 0; c < rowCount; c++) {
-        const idx = rowStart + c;
-        const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
-        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
-      }
-      for (let c = 0; c < rowCount; c++) {
-        const idx = rowStart + c;
-        const x = contentX + rowOffset + c * (coverW + OTHER_ALSO_COVER_GAP);
-        const y = painter.y;
-        const src = toCanvasUrl(alsoList[idx].coverSrc);
-        const img = src ? imageCache.get(src) : null;
-        const coverH = calcGameCoverHeight(img);
-        drawCoverCard(painter, x, y, coverW, coverH, img, src, 6);
-      }
-      painter.shiftY(rowMaxH);
-      if (r < rows - 1) painter.shiftY(OTHER_ALSO_COVER_GAP);
-    }
-    painter.shiftY(OTHER_SECTION_GAP);
-  }
-  // ---- 卡片区域（每行居中，卡片标题居中18px，CP图100+gap10，配角100）----
-  const cards = getOtherCards(annualData);
-  if (cards.length > 0) {
-    const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
-    const rows = Math.ceil(cards.length / cols);
-    const textSize = config.customTextFontSize || 16;
-    // 先计算每行高度
-    const rowHeights = [];
-    for (let r = 0; r < rows; r++) {
-      let rowMax = 0;
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        if (idx >= cards.length) continue;
-        const card = cards[idx];
-        let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
-        if (card.type === 'cp') ch += OTHER_CP_COVER_SIZE;
-        else if (card.type === 'support') ch += OTHER_SUPPORT_COVER_SIZE;
-        else {
-          const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
-          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
-          ch += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otome FavList</title>
+    <link rel="stylesheet" href="./css/main.css">
+    <!-- 新增年度报告样式 -->
+    <link rel="stylesheet" href="./css/annual.css">
+    <!-- html2canvas CDN（第三方库，保留全局引入） -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
+    </script>
+    <!-- 必须 type="module"，games.js内部使用动态import，不能去掉module属性 -->
+    <!-- 使用绝对路径 /data/games.js 确保从网站根目录加载 -->
+    <script type="module" src="/data/games.js">
+    </script>
+    <!-- ==========【新增样式】弹窗锁定 + 年度报告标题切换 ========== -->
+    <style>
+        body.modal-lock {
+            overflow: hidden;
         }
-        rowMax = Math.max(rowMax, ch);
-      }
-      rowHeights.push(rowMax);
-    }
-    for (let r = 0; r < rows; r++) {
-      const rowH = rowHeights[r];
-      const rowStart = r * cols;
-      const rowCount = Math.min(cols, cards.length - rowStart);
-      const rowTotalW = rowCount * OTHER_CARD_W + (rowCount - 1) * OTHER_CARD_GAP;
-      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
-      for (let c = 0; c < rowCount; c++) {
-        const idx = rowStart + c;
-        const card = cards[idx];
-        const x = contentX + rowOffset + c * (OTHER_CARD_W + OTHER_CARD_GAP);
-        const y = painter.y;
-        // 修改点12：卡片背景用 boxBgColor
-        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
-        // 卡片标题（居中18px）
-        const titleY = y + OTHER_CARD_PAD;
-        drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
-          OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
-          OTHER_SECTION_TITLE_SIZE, labelColor, true);
-        const contentY = titleY + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
-        if (card.type === 'cp') {
-          // CP双图：各100px，间距CP_GAP=10，整体居中（与模块四一致）
-          const fSrc = toCanvasUrl(card.data.femaleCoverSrc);
-          const mSrc = toCanvasUrl(card.data.maleCoverSrc);
-          const fImg = fSrc ? imageCache.get(fSrc) : null;
-          const mImg = mSrc ? imageCache.get(mSrc) : null;
-          const totalW = OTHER_CP_COVER_SIZE * 2 + CP_GAP;
-          const startX = x + (OTHER_CARD_W - totalW) / 2;
-          drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
-          drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
-        } else if (card.type === 'support') {
-          // 配角图：100px正方形，居中（与CP图一致）
-          const src = toCanvasUrl(card.data.coverSrc);
-          const img = src ? imageCache.get(src) : null;
-          const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
-          drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
-        } else {
-          // 修改点12：文本框居中（第8参数 true）
-          const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
-          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-          const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true, true);
+        /* 年度报告模式下隐藏副标题 */
+        .site-title.annual-active .title-sub-cn,
+        .site-title.annual-active .sub-desc {
+            display: none;
         }
-      }
-      painter.shiftY(rowH);
-      if (r < rows - 1) painter.shiftY(OTHER_CARD_GAP);
-    }
-  }
-}
-
-// ===================== 六、七宫格绘制 =====================
-function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerText, config, imageCache) {
-  const wrapW = getWrapW(targetW);
-  const wrapX = getWrapX(targetW, wrapW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
-  const contentX = wrapX + CARD_INNER_PAD;
-  const ctx = painter.ctx;
-  // 修改点13：标签色用 labelColor
-  const labelColor = config.labelColor || config.subtitle || '#b85878';
-  const coverW = getGridCoverW(gridKind);
-  const labelLineH = GRID_LABEL_SIZE * 1.4;
-  if (items.length > 0) {
-    const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
-    const rows = Math.ceil(items.length / cols);
-    for (let r = 0; r < rows; r++) {
-      const rowStart = r * cols;
-      const rowCount = Math.min(cols, items.length - rowStart);
-      const rowTotalW = rowCount * coverW + (rowCount - 1) * GRID_GAP;
-      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
-      // 先算本行最大单元格高度
-      let rowMaxH = 0;
-      const cellHeights = [];
-      for (let c = 0; c < rowCount; c++) {
-        const idx = rowStart + c;
-        const item = items[idx];
-        const covH = getGridCoverH(item, gridKind, imageCache);
-        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
-        const labH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
-        const cellH = covH + GRID_LABEL_GAP + Math.max(labH, labelLineH);
-        cellHeights.push(cellH);
-        rowMaxH = Math.max(rowMaxH, cellH);
-      }
-      // 绘制本行
-      for (let c = 0; c < rowCount; c++) {
-        const idx = rowStart + c;
-        const item = items[idx];
-        const x = contentX + rowOffset + c * (coverW + GRID_GAP);
-        const y = painter.y;
-        const covH = getGridCoverH(item, gridKind, imageCache);
-        // 封面（复用drawCoverCard，与模块二/三完全一致的样式）
-        const src = toCanvasUrl(item.coverSrc);
-        const img = src ? imageCache.get(src) : null;
-        drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
-        // 标签（居中18px，支持多行）
-        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
-        const labelY = y + covH + GRID_LABEL_GAP;
-        drawCenteredText(ctx, labelText, x + coverW / 2, labelY, coverW,
-          labelLineH, GRID_LABEL_SIZE, labelColor, true);
-      }
-      painter.shiftY(rowMaxH);
-      if (r < rows - 1) painter.shiftY(GRID_GAP);
-    }
-  }
-  // 底部文本框（标题"明年最期待"/"还想说"在框内顶部居中18px）
-  if ((footerText || '').trim()) {
-    if (items.length > 0) painter.shiftY(GRID_FOOTER_GAP);
-    const textSize = config.customTextFontSize || 16;
-    const boxInnerW = innerW - FOOTER_PAD * 2;
-    const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-    const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-    const outerBoxH = FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
-    // 修改点13：底部外框背景用 boxBgColor
-    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
-    // 标题（在框内顶部居中18px）
-    const titleY = painter.y + FOOTER_PAD;
-    drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
-      OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
-    // 文本框（标题下方，白底无边框）
-    const boxY = titleY + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP;
-    drawTextBox(painter, contentX + FOOTER_PAD, boxY, boxInnerW, textBoxH, footerText, config, true);
-    painter.shiftY(outerBoxH);
-  }
-}
-
-// ===================== 主入口：单模块导出 =====================
-export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config) {
-  // IOS内存清理
-  if (IS_IOS_WEBKIT) {
-    for (const [, res] of rawImageResourceCache.entries()) {
-      if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
-        try { res.data.close(); } catch (e) {}
-      }
-    }
-    roundImageCache.clear();
-    rawImageResourceCache.clear();
-  }
-
-  // 修改点10：空模块判断改用 getStatsParts
-  if (moduleType === 'stats') {
-    if (getStatsParts(annualData).length === 0) return null;
-  } else if (moduleType === 'other') {
-    if (!hasOtherContent(annualData)) return null;
-  } else if (moduleType === 'gameGrid') {
-    if (!hasGridContent(annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect)) return null;
-  } else if (moduleType === 'charGrid') {
-    if (!hasGridContent(annualData.charGrid, 'char', annualData.charGrid?.extraThoughts)) return null;
-  } else {
-    const validItems = getValidItems(moduleType, annualData);
-    if (validItems.length === 0) return null;
-  }
-
-  emitRenderProgress(5);
-
-  // 第一步：加载图片（游戏封面高度依赖图片尺寸，必须先加载）
-  let imageUrls = collectModuleImages(moduleType, annualData);
-  // ✅兜底防火墙：再次清洗，剔除null/空/R2 pub/github raw（对齐export补丁8）
-  const SAFE_URL_PATTERN = /^(http|https):\/\//;
-  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
-  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
-  imageUrls = imageUrls.filter(src => {
-    if (!src) return false;
-    if (!SAFE_URL_PATTERN.test(src)) return false;
-    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
-    if (BLOCK_RAW_PATTERN.test(src)) return false;
-    return true;
-  });
-  imageUrls = [...new Set(imageUrls)];
-  const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
-  const imageCache = loadRet.resultMap;
-
-  // ✅离屏圆角画布方案已弃用（改为实时clip绘制），跳过预生成，直接进入绘制阶段
-  await new Promise(r => setTimeout(r, 30));
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  emitRenderProgress(65);
-
-  // 第二步：基于加载后的图片计算高度
-  const vCanvas = document.createElement('canvas');
-  const vCtx = vCanvas.getContext('2d');
-  // 修改点11：calcStatsHeight 调用传入 imageCache
-  const totalH = moduleType === 'stats'
-    ? calcStatsHeight(vCtx, designW, annualData, config, imageCache)
-    : calcModuleHeight(vCtx, designW, moduleType, moduleTitle, annualData, config, imageCache);
-  vCanvas.width = 0; vCanvas.height = 0;
-
-  // 第三步：创建正式画布并绘制
-  // ✅IOS画布总像素预警（对齐export补丁5）
-  if (IS_IOS_WEBKIT) {
-    const totalPixel = (designW * DPR) * (totalH * DPR);
-    if (totalPixel > 32 * 1024 * 1024) {
-      console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
-    }
-  }
-  // ✅修复：画布高度预留底部getBodyPad()，否则卡片下边框外侧1px超出画布被裁，下边框比其余三边细
-  const canvasHeight = totalH + getBodyPad();
-  const canvas = document.createElement('canvas');
-  const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
-
-  // 大标题（传入annualData用于年份标题）
-  drawBigTitle(painter, designW, config, annualData);
-
-  // 模块卡片
-  const wrapW = getWrapW(designW);
-  const wrapX = getWrapX(designW, wrapW);
-  const cardTop = painter.y;
-  const cardInnerW = wrapW - CARD_INNER_PAD * 2;
-
-  // 计算卡片内容高度
-  let cardContentH = 0;
-  if (moduleType === 'other') {
-    // 五模块无模块标题，内容由drawOtherContent独立计算
-    // 用calcOtherHeight反推contentH
-    const totalH = calcOtherHeight(painter.ctx, designW, annualData, config, imageCache);
-    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
-  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
-    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
-    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
-    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
-    const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config, imageCache);
-    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
-  } else {
-    // 修改点4：stats模块无小标题，不加标题高度
-    if (moduleTitle && moduleType !== 'stats') {
-      cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
-    }
-    if (moduleType === 'stats') {
-      const parts = getStatsParts(annualData);
-      if (parts.length > 0) {
-        const bgInfo = STATS_BG_CONFIG[parts.join('')];
-        if (bgInfo) {
-          const bgUrl = toCanvasUrl(bgInfo.file);
-          const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
-          const dims = getImgSize(bgImg);
-          if (dims.w > 0 && dims.h > 0) {
-            // 底图按卡片完整宽度(wrapW)等比缩放
-            cardContentH += Math.round(wrapW * dims.h / dims.w);
-          } else {
-            cardContentH += 300;
-          }
+        /* NO.1/NO.2/NO.3 颜色由小标题文字色CSS变量控制，移除!important否则无法实时变色 */
+        .annual-top-label {
+            color: var(--annual-export-subtitle, #b85878);
         }
-      }
-    } else {
-      const items = getValidItems(moduleType, annualData);
-      const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
-      items.forEach((item, i) => {
-        item._no = i;
-        cardContentH += calcTopItemHeight(painter.ctx, designW, item, itemType, config, imageCache);
-        if (i < items.length - 1) cardContentH += ITEM_GAP;
-      });
-    }
-  }
+        /* 移动端标题字号调整（保留原样） */
+        @media (max-width: 768px) {
+            .site-title h1 {
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
 
-  // 修改点5：stats模块不加CARD_INNER_PAD
-  const cardH = (moduleType === 'stats') ? cardContentH : (CARD_INNER_PAD * 2 + cardContentH);
+    <!-- ========== 交互页面（用户操作） ========== -->
+    <div class="wrap">
+        <div class="site-title">
+            <h1>Otome FavList</h1>
+            <p class="title-sub-cn">日乙个人喜好表</p>
+            <p class="sub-desc text-gray-desc">选择你喜欢的角色，生成属于你的FavList。</p>
+            <!-- ===== 新增：使用指南按钮 ===== -->
+            <div class="center-btn-block guide-btn-block">
+                <button id="open-guide-btn" style="
+                padding: 8px 22px;
+                border: 2px solid #f6a5b8;
+                border-radius: 8px;
+                background: #fff7f9;
+                color: #b85878;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: 0.2s;
+            " onmouseover="this.style.background='#fce8ed'" onmouseout="this.style.background='#fff7f9'">
+            📖 使用指南
+        </button>
+    </div>
+</div>
 
-  // 绘制卡片背景+边框
-  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+<!-- ========== 模式切换按钮组 FavList / Annual Report ========== -->
+<div class="mode-switch-wrap">
+    <button class="mode-btn active" data-mode="favlist">FavList</button>
+    <button class="mode-btn" data-mode="annual">Annual Report</button>
+</div>
 
-  // 修改点6：stats模块不绘制"数据统计"小标题
-  let contentY = cardTop + CARD_INNER_PAD;
-  if (moduleTitle && moduleType !== 'other' && moduleType !== 'stats') {
-    drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
-    contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
-  }
+<!-- ========== FavList 模式 wrap ========== -->
+<div class="mode-wrap" data-mode="favlist">
 
-  // 绘制内容
-  // 修改点7：stats绘制调用——图片从卡片左上角开始
-  if (moduleType === 'stats') {
-    // 底图从卡片左上角(wrapX, cardTop)开始，宽度=wrapW，贴满边框
-    drawStatsContent(painter, wrapX, cardTop, wrapW, annualData, config, imageCache);
-    painter.y = cardTop + cardH;
-  } else if (moduleType === 'other') {
-    // 五模块：无模块标题，从卡片顶部+内边距开始绘制
-    painter.y = cardTop + CARD_INNER_PAD;
-    drawOtherContent(painter, designW, annualData, config, imageCache);
-    painter.shiftY(CARD_INNER_PAD);
-  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
-    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
-    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
-    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
-    const footerLabel = moduleType === 'gameGrid' ? '明年最期待' : '还想说';
-    const items = getValidGridItems(gridData, gridKind);
-    painter.y = contentY;
-    drawGridContent(painter, designW, items, gridKind, footerLabel, footer, config, imageCache);
-    painter.shiftY(CARD_INNER_PAD);
-  } else {
-    const items = getValidItems(moduleType, annualData);
-    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
-    painter.y = contentY;
-    items.forEach((item, i) => {
-      item._no = i;
-      drawTopItem(painter, designW, item, itemType, imageCache, config);
-      if (i < items.length - 1) painter.shiftY(ITEM_GAP);
-      emitRenderProgress(65 + ((i + 1) / items.length) * 30);
+    <div class="big-card" id="card-setting">
+        <h2>一、设置</h2>
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-sub-char">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示次要角色</span>
+                <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+            </div>
+        </div>
+        <!-- ✅补丁新增：全局显示续作/FD次要角色开关 -->
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-fd-sub-char">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示续作/FD次要角色</span>
+                <p class="switch-desc">开启后显示所有游戏续作、FD新增次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+            </div>
+        </div>
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-hide-char">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示隐藏图片、角色</span>
+                <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+            </div>
+        </div>
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="global-fd-game">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">全局显示续作/FD图片、角色</span>
+                <p class="switch-desc">开启后显示所有游戏续作、FD新增图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="big-card" id="card-base">
+        <h2>二、基础信息</h2>
+        <div class="form-row-double">
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">昵称</label>
+                <input type="text" id="input-nick" placeholder="填写你的昵称">
+            </div>
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">游玩总数</label>
+                <input type="number" id="input-count" placeholder="数字" min="0">
+            </div>
+        </div>
+        <div class="form-row-double">
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">入坑时间</label>
+                <input type="text" id="input-story" placeholder="例如：2020年">
+            </div>
+            <div class="form-row">
+                <label class="text-light-pink base-info-item">入坑作品</label>
+                <input type="text" id="input-firstgame" placeholder="第一款日乙游戏">
+            </div>
+        </div>
+    </div>
+
+    <div class="big-card" id="card-game">
+        <h2>三、游戏列表</h2>
+        <div class="center-btn-block">
+            <button id="btn-add-game">+ 添加游戏</button>
+        </div>
+        <!-- 搜索面板：默认隐藏，JS通过 .active 控制显示 -->
+        <div class="game-search-box" id="search-panel">
+            <input type="text" id="game-search-input" placeholder="搜索游戏名称">
+            <div class="filter-group">
+                <!-- 筛选顺序：编剧 → 画师 → 发售年份 → 开发厂商 → 汉化厂商 -->
+                <select id="filter-writer">
+                    <option value="">筛选编剧</option>
+                </select>
+                <select id="filter-art">
+                    <option value="">筛选画师</option>
+                </select>
+                <select id="filter-year">
+                    <option value="">筛选发售年份</option>
+                </select>
+                <select id="filter-publisher">
+                    <option value="">筛选开发厂商</option>
+                </select>
+                <select id="filter-cn">
+                    <option value="">筛选汉化厂商</option>
+                </select>
+            </div>
+            <div class="game-list-select" id="game-select-list"></div>
+        </div>
+
+        <div id="added-game-container"></div>
+    </div>
+
+    <div class="big-card" id="card-export">
+        <h2>四、导出</h2>
+        <!-- ==========【新增】导出折叠内容开关 ========== -->
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="export-fold-content">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">导出折叠内容</span>
+                <p class="switch-desc">开启后生成并导出的图片会包含折叠的游戏卡片，关闭则只生成并导出展开的游戏卡片。</p>
+            </div>
+        </div>
+        <!-- ==========【新增】导出隐藏/续作/FD角色名开关 ========== -->
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="export-show-hidden-fd-name">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">导出隐藏/续作/FD角色名</span>
+                <p class="switch-desc">开启后生成并导出的图片中会显示隐藏/续作/FD的角色名，关闭则只显示角色图片。适合搭配剪影图使用，形成剧透防护。</p>
+            </div>
+        </div>
+        <!-- 恢复默认设置按钮（导出折叠内容下方、导出背景色上方） -->
+        <div class="center-btn-block left-align-btn">
+            <button id="btn-reset-color">恢复默认设置</button>
+        </div>
+
+        <!-- 颜色选择区域 -->
+        <div class="color-set-row">
+            <div class="color-item">
+                <label class="text-light-pink">图片底色</label>
+                <input type="color" id="color-bg" value="#fff7f9">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">标题文字色</label>
+                <input type="color" id="color-title" value="#b33a3a">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">小标题文字色</label>
+                <input type="color" id="color-subtitle" value="#b85878">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">基础信息色</label>
+                <input type="color" id="color-baseinfotext" value="#c98fac">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">游戏名文字色</label>
+                <input type="color" id="color-gamename" value="#000000">
+            </div>
+            <!-- 新增：自定义文本色 -->
+            <div class="color-item">
+                <label class="text-light-pink">自定义文本色</label>
+                <input type="color" id="color-customtext" value="#c98fac">
+            </div>
+            <div class="color-item">
+                <label class="text-light-pink">卡片边框色</label>
+                <input type="color" id="color-border" value="#f6a5b8">
+            </div>
+        </div>
+
+        <div class="font-size-set-row">
+            <label for="slider-custom-text-font">调节自定义文本字号</label>
+            <div id="custom-text-font-value" class="font-size-value-display">16px</div>
+            <input id="slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
+        </div>
+
+        <!-- 导出尺寸选项 -->
+        <div class="size-select">
+            <label class="text-light-pink">导出尺寸：</label>
+            <!-- 固定尺寸（启用分页） -->
+            <label><input type="radio" name="export-size" value="640,853">640×853</label>
+            <label><input type="radio" name="export-size" value="810,1080">810×1080</label>
+            <label><input type="radio" name="export-size" value="1080,1440">1080×1440</label>
+            <label><input type="radio" name="export-size" value="640,640">640×640</label>
+            <label><input type="radio" name="export-size" value="810,810">810×810</label>
+            <label><input type="radio" name="export-size" value="1080,1080">1080×1080</label>
+            <!-- 长图模式 -->
+            <label><input type="radio" name="export-size" value="long-640">640长图</label>
+            <label><input type="radio" name="export-size" value="long-810" checked>810长图</label>
+            <label><input type="radio" name="export-size" value="long-1080">1080长图</label>
+        </div>
+
+        <div class="center-btn-block export-btn-wrap">
+            <button id="btn-export">生成并导出图片</button>
+            <p class="switch-desc">图片源文件存储于海外节点，使用🔮可显著提高生成效率</p>
+        </div>
+
+        <canvas id="export-canvas" style="display:none;"></canvas>
+    </div>
+
+    <!-- 回到添加游戏、最后一张游戏卡片悬浮按钮 -->
+    <button id="back-to-add-btn" class="float-scroll-btn back-to-add">▲</button>
+    <button id="scroll-to-last-game-btn" class="float-scroll-btn scroll-last-card">▼</button>
+
+    <div class="about-block">
+        <h2>About</h2>
+        <p>由于开发者未接触所有游戏，部分游戏可能缺少隐藏角色。</p>
+        <p>如果发现角色遗漏（若涉及剧透烦请在邮件标题添加预警）、内容错误、功能异常，<br>
+            或有希望新增的作品，欢迎通过邮箱联系。</p>
+        <p class="email-text">Email：<a href="mailto:otomefavlist@163.com">otomefavlist@163.com</a></p>
+    </div>
+
+</div>
+<!-- ========== FavList 模式 wrap 结束 ========== -->
+
+<!-- ========== 年度报告模式 wrap，默认mode-hidden占位隐藏，不用display:none ========== -->
+<div class="mode-wrap mode-hidden" data-mode="annual">
+    <!-- 年度报告页面主标题已移除，改为动态替换 .site-title h1 -->
+
+    <!-- 独立卡片1：一、数据统计 -->
+    <div class="big-card annual-card-stats">
+        <div class="annual-card-header">
+            <h2>一、数据统计</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+        <div class="annual-stat-line">
+            <span></span>
+            <input class="annual-input" data-key="reportYear" type="text">
+            <span>年游玩了</span>
+            <input class="annual-input" data-key="playCount" type="text">
+            <span>部日乙<br>总时数</span>
+            <input class="annual-input" data-key="totalHours" type="text">
+            <span>小时<br>喜欢</span>
+            <input class="annual-input" data-key="likeCharCount" type="text">
+            <span>个人<br>嗑</span>
+            <input class="annual-input" data-key="cpCount" type="text">
+            <span>对CP<br>一共买了</span>
+            <input class="annual-input" data-key="buyCount" type="text">
+            <span>部游戏<br>花费 </span>
+            <input class="annual-input" data-key="costMoney" type="text">
+            <span>元<br>其中，</span>
+            <input class="annual-input" data-key="finished" type="text">
+            <span>部已封盘<br></span>
+            <input class="annual-input" data-key="ongoing" type="text">
+            <span>部正在进行<br></span>
+            <input class="annual-input" data-key="notStart" type="text">
+            <span>部还未开始</span>
+        </div>
+        </div><!-- /.annual-card-body -->
+    </div>
+    <!-- 独立卡片2：二、ゲームTOP -->
+
+    <div class="big-card annual-card-top3">
+        <div class="annual-card-header">
+            <h2>二、ゲームTOP</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+        <!-- ✅全局唯一添加游戏按钮，板块顶部，移除每个item内部按钮 -->
+        <div class="annual-global-add-game-btn-wrap center-btn-block">
+            <button id="annual-global-add-game-btn" class="annual-add-game-btn">+ 添加游戏</button>
+        </div>
+        <!-- 拖拽容器 -->
+        <div id="annual-game-top-drag-container">
+            <!-- 全部条目由JS动态生成，页面不预置任何annual-top-item -->
+        </div>
+        </div><!-- /.annual-card-body -->
+    </div>
+    <!-- 独立卡片3：三、キャラTOP -->
+
+    <div class="big-card annual-card-char-top3">
+        <div class="annual-card-header">
+            <h2>三、キャラTOP</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+        <!-- ✅全局唯一添加角色按钮，板块顶部，移除每个item内部按钮 -->
+        <div class="annual-global-add-char-btn-wrap center-btn-block">
+            <button id="annual-global-add-char-btn" class="annual-add-char-btn">+ 添加角色</button>
+        </div>
+        <!-- 角色拖拽容器 -->
+        <div id="annual-char-top-drag-container">
+            <!-- 全部条目由JS动态生成，页面不预置任何annual-char-top-item -->
+        </div>
+        </div><!-- /.annual-card-body -->
+    </div>
+    <!-- 独立卡片4：四、カップルTOP -->
+
+    <div class="big-card annual-card-cp-top3">
+        <div class="annual-card-header">
+            <h2>四、カップルTOP</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+        <div class="annual-global-add-cp-btn-wrap center-btn-block">
+            <button id="annual-global-add-cp-btn" class="annual-add-cp-btn">+ 添加Couple</button>
+        </div>
+        <div id="annual-cp-top-drag-container"></div>
+        </div><!-- /.annual-card-body -->
+    </div>
+
+    <!-- 独立卡片5：五、其他 -->
+    <div class="big-card annual-card-other">
+        <div class="annual-card-header">
+            <h2>五、其他</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <!-- 还玩了：圆角长框 -->
+            <div class="annual-other-also-box" id="annual-other-also-box">
+                <div class="annual-other-also-title">还玩了</div>
+                <div class="annual-other-also-content" id="annual-other-also-content">
+                    <!-- 空状态＋按钮 / 已添加封面列表 由JS动态渲染 -->
+                </div>
+            </div>
+            <!-- 六个圆角框 -->
+            <div class="annual-other-cards-row" id="annual-other-cards-row">
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的CP</div>
+                    <div class="annual-other-card-body" id="annual-other-favcp-body">
+                        <button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的配角</div>
+                    <div class="annual-other-card-body" id="annual-other-favsupport-body">
+                        <button class="annual-grid-add-btn" data-other-action="addFavSupport">+</button>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的台词</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favLine"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的OP/ED/BGM</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favMusic"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的HE</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favHe"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+                <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的BE</div>
+                    <div class="annual-custom-text-wrap">
+                        <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favBe"></textarea>
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 独立卡片6：六、ゲーム宫格 -->
+    <div class="big-card annual-card-game-grid">
+        <div class="annual-card-header">
+            <h2>六、ゲーム宫格</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <div class="annual-grid-container" id="annual-game-grid-container"></div>
+            <div class="annual-grid-footer-text">
+                <div class="annual-other-card-title">明年最期待</div>
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-other-textarea" placeholder="自定义文本" id="annual-game-grid-footer-text"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 独立卡片7：七、キャラ宫格 -->
+    <div class="big-card annual-card-char-grid">
+        <div class="annual-card-header">
+            <h2>七、キャラ宫格</h2>
+            <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <div class="annual-grid-container" id="annual-char-grid-container"></div>
+            <div class="annual-grid-footer-text">
+                <div class="annual-other-card-title">还想说</div>
+                <div class="annual-custom-text-wrap">
+                    <textarea class="annual-other-textarea" placeholder="自定义文本" id="annual-char-grid-footer-text"></textarea>
+                    <div class="resize-handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<!-- ========== 导出 ========== -->
+<div class="big-card" id="annual-card-export">
+    <div class="annual-card-header">
+        <h2>八、导出</h2>
+        <button class="annual-card-fold-btn">▲</button>
+    </div>
+    <div class="annual-card-body">
+    <!-- 填表人 -->
+    <div class="annual-reporter-row">
+        <span class="text-light-pink">填表人：</span>
+        <input type="text" id="annual-reporter-name" placeholder="选填，生成并导出图片时显示在标题右下方">
+    </div>
+    <!-- 导出标题开关 -->
+    <div class="switch-row">
+        <label class="switch">
+            <input type="checkbox" id="annual-use-summary-title">
+            <span class="slider"></span>
+        </label>
+        <div>
+            <span class="text-light-pink">导出标题使用 Otome Summary Report</span>
+            <p class="switch-desc">开启后生成并导出的图片标题为 Otome Summary Report，关闭则标题默认为 20XX Otome Annual Report。</p>
+        </div>
+    </div>
+    <!-- 恢复默认设置按钮 -->
+    <div class="center-btn-block left-align-btn">
+        <button id="annual-btn-reset-color">恢复默认设置</button>
+    </div>
+    <!-- 颜色选择区域 -->
+    <div class="color-set-row">
+        <div class="color-item">
+            <label class="text-light-pink">图片底色</label>
+            <input type="color" id="annual-color-bg" value="#fff7f9">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">标题文字色</label>
+            <input type="color" id="annual-color-title" value="#b33a3a">
+        </div>
+        <!-- ✅新增：小标题文字色（控制TOP模块标题+NO标签） -->
+        <div class="color-item">
+            <label class="text-light-pink">小标题文字色</label>
+            <input type="color" id="annual-color-subtitle" value="#b85878">
+        </div>
+        <!-- ✅新增：数据统计文字色（控制"年度/游玩总数"等标签） -->
+        <div class="color-item">
+            <label class="text-light-pink">数据统计文字色</label>
+            <input type="color" id="annual-color-stattext" value="#b85878">
+        </div>
+        <!-- 数据统计数据色 -->
+        <div class="color-item">
+            <label class="text-light-pink">数据统计数据色</label>
+            <input type="color" id="annual-color-statdata" value="#b33a3a">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">游戏角色名文字色</label>
+            <input type="color" id="annual-color-gamename" value="#000000">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">自定义文本色</label>
+            <input type="color" id="annual-color-customtext" value="#c98fac">
+        </div>
+        <!-- 自定义文本边框色 -->
+        <div class="color-item">
+            <label class="text-light-pink">自定义文本边框色</label>
+            <input type="color" id="annual-color-customborder" value="#eeeeee">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">内容底色</label>
+            <input type="color" id="annual-color-boxbg" value="#fff7f9">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">标签文字色</label>
+            <input type="color" id="annual-color-labelcolor" value="#b85878">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">填表人文字色</label>
+            <input type="color" id="annual-color-reportercolor" value="#b33a3a">
+        </div>
+        <div class="color-item">
+            <label class="text-light-pink">卡片边框色</label>
+            <input type="color" id="annual-color-border" value="#f6a5b8">
+        </div>
+    </div>
+    <div class="font-size-set-row">
+        <label for="annual-slider-custom-text-font">调节自定义文本字号</label>
+        <div id="annual-custom-text-font-value" class="font-size-value-display">16px</div>
+        <input id="annual-slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
+    </div>
+    <!-- 导出尺寸：仅长图三选一，name独立避免与FavList的export-size冲突 -->
+    <div class="size-select">
+        <label class="text-light-pink">导出尺寸：</label>
+        <label><input type="radio" name="annual-export-size" value="long-640">640长图</label>
+        <label><input type="radio" name="annual-export-size" value="long-810" checked>810长图</label>
+        <label><input type="radio" name="annual-export-size" value="long-1080">1080长图</label>
+    </div>
+    <div class="center-btn-block export-btn-wrap">
+        <button id="annual-btn-export-image">生成并导出图片</button>
+        <p class="switch-desc">图片源文件存储于海外节点，使用🔮可显著提高生成效率</p>
+    </div>
+    <canvas id="annual-export-canvas" style="display:none;"></canvas>
+    </div><!-- /.annual-card-body -->
+</div>
+
+<!-- ✅新增：annual模式悬浮滚动按钮（复用.float-scroll-btn样式，逻辑独立） -->
+<button id="annual-back-to-top-btn" class="float-scroll-btn back-to-add">▲</button>
+<button id="annual-scroll-to-bottom-btn" class="float-scroll-btn scroll-last-card">▼</button>
+
+<!-- ========== 年度报告模式 wrap 结束 ========== -->
+
+</div> <!-- .wrap 结束 -->
+
+<!-- ========== 快照容器（导出截图专用，不可见） ========== -->
+<div id="snapshot-container" style="
+opacity: 0;
+position: fixed;
+left: 0;
+top: 0;
+width: 1080px;
+padding: 20px;
+pointer-events: none;
+z-index: -999;
+"></div>
+
+<!-- 剧透警告弹窗：id="spoiler-modal" class="modal-mask"，用 .active 控制显示 -->
+<div id="spoiler-modal" class="modal-mask">
+    <div class="modal-box">
+        <h3>⚠️剧透警告⚠️</h3>
+        <p class="text-gray-desc">注意！<br>开启后可能涉及：<br>剧情结局、最终攻略对象、真相路线，<br>是否继续？</p>
+        <div class="modal-btns">
+            <button id="spoiler-cancel">取消</button>
+            <button id="spoiler-confirm">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========【新增】游戏数据加载进度弹窗 样式完全对齐剧透弹窗，仅单个确认按钮 ========== -->
+<div id="game-load-modal" class="modal-mask">
+    <div class="modal-box">
+        <h3>提示</h3>
+        <p class="text-gray-desc" id="load-progress-text">游戏数据正在加载 0/140，请稍候…</p>
+        <div class="modal-btns">
+            <button id="load-modal-confirm">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- 【新增】导出预览弹窗容器，复用modal-mask遮罩体系 -->
+<div id="export-preview-modal" class="modal-mask">
+    <div class="modal-preview-box">
+        <div class="modal-preview-head">
+            <h3>预览</h3>
+        </div>
+        <div class="preview-scroll-wrap">
+            <!-- 弹窗内置加载状态 -->
+            <div class="preview-inner-loading">
+                <div class="loading-spinner"></div>
+                <p>正在生成预览，请稍候…</p>
+            </div>
+            <!-- 预览图片动态插入 -->
+        </div>
+        <div class="modal-preview-footer">
+            <button id="preview-close-btn">关闭</button>
+            <button id="preview-regen-btn">重新生成</button>
+            <button id="preview-download-btn" disabled>导出图片</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 使用指南弹窗（长内容滚动弹窗） ========== -->
+<div id="guide-modal" class="modal-mask">
+    <div class="modal-guide-box" style="background:#fff; border-radius:12px; border:2px solid #f6a5b8; width:min(92vw, 900px); max-height:85vh; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="modal-guide-scroll" style="flex:1; padding:24px 28px; overflow-y:auto;">
+            <!-- ===== 标题 + 按钮行 ===== -->
+            <div style="display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 4px;">
+                <h2 style="margin: 0; font-size: 24px; color: #b85878; border-left: 5px solid #b85878; padding-left: 12px; font-weight: bold; margin-right:auto;">
+                    📖 使用指南
+                </h2>
+                <div style="display:flex;gap:10px;">
+            <button id="guide-close-btn" style="
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #888;
+            color: #fff;
+            font-size: 15px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: 0.2s;
+        " onmouseover="this.style.background='#666'" onmouseout="this.style.background='#888'">
+        关闭
+    </button>
+</div>
+</div>
+
+<!-- ===== 内容区域（移除折叠控制） ===== -->
+<div id="intro-content" style="margin-top: 16px;">
+
+    <!-- 简介 -->
+    <p style="font-size: 17px; line-height: 1.8; color: #333; margin-bottom: 20px;">
+        <strong style="font-size: 18px; color: #b33a3a;">日乙个人喜好表生成工具</strong>
+        — 选择你喜欢的角色，生成属于你的 FavList。
+    </p>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin-bottom: 24px;">
+        这是一款纯前端、无需安装的 Web 应用，专为日乙玩家设计。
+        你可以自由添加已玩过的游戏、选择喜欢的角色（支持单角色、多角色与 CP 组合）、用爱心评分，
+        并一键导出为高清图片，用于分享或收藏。
+    </p>
+
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+
+    <!-- 功能特色 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">✨ 功能特色</h3>
+    <ul style="font-size: 15px; line-height: 1.9; color: #444; padding-left: 22px; margin-bottom: 20px; list-style-type: disc;">
+        <li><strong>游戏库管理</strong>：内置 140+ 款日乙游戏（持续更新），支持按编剧、画师、年份、厂商等筛选。</li>
+        <li><strong>剧透保护</strong>：全局/单游戏控制隐藏角色、续作/FD角色的显示，开启前会弹出剧透警告。</li>
+        <li><strong>评分系统</strong>：每款游戏可给予 1~5 颗爱心评分。</li>
+        <li><strong>角色选择</strong>：
+            <ul style="padding-left: 22px; margin-top: 2px; list-style-type: circle;">
+                <li><strong>Character 模式</strong>：为游戏卡片添加你喜欢的角色（支持多立绘切换）。</li>
+                <li><strong>Couple 模式</strong>：为女主角搭配男主角，组成 CP 。</li>
+            </ul>
+        </li>
+        <li><strong>自定义文本</strong>：每个游戏卡片可添加三段自由文本（分别位于游戏标题、Character 区域、Couple 区域下方），用于记录个人感想。</li>
+        <li><strong>高度自定义导出</strong>：
+            <ul style="padding-left: 22px; margin-top: 2px; list-style-type: circle;">
+                <li>多种尺寸：固定比例（如 640×853、810×1080）或长图模式（640/810/1080 宽）。</li>
+                <li>自由配色：背景色、标题色、正文色、边框色等均可调整，且在网页中即时生效。</li>
+                <li>导出折叠内容：开关控制是否包含折叠的游戏卡片。</li>
+                <li>导出角色名称：开关控制是否显示隐藏/续作/FD的角色名。适合搭配剪影图，预防剧透。</li>
+            </ul>
+        </li>
+        <li><strong>预览及分页导出</strong>：生成图片前先预览，多页内容自动分页并支持批量下载。</li>
+        <li><strong>本地数据持久化</strong>：所有配置（游戏列表、角色选择、自定义文本等）自动保存到浏览器本地，刷新页面不丢失。</li>
+    </ul>
+
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+
+    <!-- 如何使用 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">🚀 如何使用</h3>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">1. 访问地址</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 12px 0;">
+        项目已部署至：<br>
+        <a href="https://otomefavlist.pages.dev" target="_blank" style="color: #b33a3a; font-weight: 600; text-decoration: underline;">otomefavlist.pages.dev</a>
+    </p>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">2. 添加游戏</h4>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li>点击「+ 添加游戏」打开搜索面板。</li>
+        <li>可按名称搜索，或使用编剧/画师/年份/厂商等筛选。</li>
+        <li>点击任意游戏卡片即可添加至列表。</li>
+    </ul>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">3. 评分</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 12px 0;">
+        游戏名称右侧有五颗爱心，点击即可为该游戏评分（1~5 颗爱心）。
+    </p>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">4. 选择角色</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        每个已添加的游戏卡片下方有两个按钮：
+    </p>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li><strong>选择角色 Character</strong>：勾选你喜欢的角色（可多选，按照选择的顺序进行添加），点击确认保存。</li>
+        <li><strong>选择角色 Couple</strong>：点击女主卡片展开男主列表，勾选你心仪的 CP 组合，确认后保存。</li>
+    </ul>
+    <blockquote style="font-size: 14px; line-height: 1.7; color: #666; background: #fff7f9; border-left: 4px solid #e895a8; padding: 8px 16px; margin: 4px 0 12px 0;">
+        💡 角色立绘支持多张图片切换（例如动作、服装差分或FD ver），点击左右箭头即可。角色名也支持切换，点击左右箭头即可。
+    </blockquote>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">5. 添加自定义文本</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        在每个游戏卡片中各有三个文本框分别位于游戏标题、Character 区域、Couple 区域下方：
+    </p>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li><strong>游戏标题下方文本框</strong>：适合填写对整部游戏的短评或印象。</li>
+        <li><strong>Character 区域下方文本框</strong>：可针对所选角色添加感想等内容。</li>
+        <li><strong>Couple 区域下方文本框</strong>：可针对所选 CP 组合添加感想等内容。</li>
+    </ul>
+    <blockquote style="font-size: 14px; line-height: 1.7; color: #666; background: #fff7f9; border-left: 4px solid #e895a8; padding: 8px 16px; margin: 4px 0 12px 0;">
+        💡 文本内容支持换行且自动保存。可拖动右下角改变文本框大小。
+    </blockquote>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">6. 自定义导出设置</h4>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li><strong>导出折叠内容</strong>：开启后，即使游戏卡片处于折叠状态，也会在生成的图片中完整显示。</li>
+        <li><strong>导出隐藏/续作/FD 角色名</strong>：关闭后，角色名不会出现在生成的图片中（仅显示相应角色图片），适合搭配剪影图使用。</li>
+        <li><strong>配色</strong>：通过颜色选择器自由调整图片的配色方案，点击「恢复默认设置」可一键重置。</li>
+        <li><strong>尺寸</strong>：支持多种固定尺寸及长图模式，满足不同社交平台需求。</li>
+    </ul>
+
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">7. 生成并导出图片</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 20px 0;">
+        点击「生成并导出图片」→ 预览弹窗出现 → 确认无误后点击「导出图片」即可下载（多页时自动分批下载）。
+    </p>
+
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+
+    <!-- 常见问题 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">❓ 常见问题</h3>
+
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">Q：生成预览的进度停滞？</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 12px 0; padding-left: 20px;">
+        A：图片源文件存储于海外节点，国内访问链路波动属于普遍现象，使用🔮可显著提高生成效率。已新增国内节点作为备用原，若长时间等待后仍停滞，可尝试刷新或更换网络重试。
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">Q：生成的图片中角色图空白？</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 12px 0; padding-left: 20px;">
+        A：请确保在导出前所有角色图片已完整显示。若仍有问题，可尝试刷新、重新添加游戏卡片、清除缓存或更换浏览器重试。
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">Q：添加的数据会丢失吗？</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 20px 0; padding-left: 20px;">
+        A：所有数据保存在浏览器 localStorage 中，清除浏览器缓存或使用无痕模式会导致数据丢失，建议定期导出图片。只会缓存已添加图片的图片源，不会缓存多余文件。
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">❗IOS 设备无法导出长图</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 20px 0; padding-left: 20px;">
+        <strong>已针对IOS系统增加补丁。</strong><br>
+        iOS系统存在对内核与总像素的硬性限制，补丁只能缓解、降低触发概率，无法完全杜绝，且IOS系统强制在苹果商店上架的应用使用同一套渲染引擎，所以更换浏览器也无法解决。<br>
+        建议IOS设备使用分页导出；若要使用长图导出，请通过「导出折叠内容」开关来控制图片长度，使图片不超出上限就可以成功生成并导出。
+    </p>
+
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+
+    <!-- 反馈与建议 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">📧 反馈与建议</h3>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 12px 0;">
+        由于开发者未接触所有游戏，部分游戏可能缺少隐藏角色。
+        若发现遗漏、内容错误、功能异常，或有希望新增的作品，欢迎通过以下邮箱联系：
+    </p>
+    <p style="font-size: 16px; line-height: 1.8; color: #222; margin: 0 0 12px 0; text-align: center;">
+        📬 <strong style="color: #b33a3a; font-size: 17px;">otomefavlist@163.com</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: #888; margin: 0 0 4px 0; text-align: center;">
+        （若涉及剧透，请在邮件标题添加【剧透】预警）
+    </p>
+    <blockquote style="font-size: 14px; line-height: 1.7; color: #888; background: #fafafa; border-left: 4px solid #ddd; padding: 8px 16px; margin: 12px 0 0 0;">
+        本项目为非商业项目，仅供爱好者交流学习使用。所有游戏图片及角色素材版权归原厂商所有。
+    </blockquote>
+
+</div>
+<!-- ===== Annual Report 模式使用指南（默认隐藏，切换到annual模式时显示） ===== -->
+<div id="annual-intro-content" style="margin-top: 16px; display: none;">
+    <!-- 简介 -->
+    <p style="font-size: 17px; line-height: 1.8; color: #333; margin-bottom: 20px;">
+        <strong style="font-size: 18px; color: #b33a3a;">年度报告生成工具</strong>
+        — 生成属于你的 Annual Report / Summary Report。
+    </p>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin-bottom: 24px;">
+        这是一款纯前端、无需安装的 Web 应用，专为日乙玩家设计。
+        你可以自由添加已玩过的游戏、选择喜欢的角色、CP，将你的游玩历程汇总成一份年度报告或总结报告，
+        并一键导出为高清图片，用于分享或收藏。
+    </p>
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+    <!-- 功能特色 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">✨ 功能特色</h3>
+    <ul style="font-size: 15px; line-height: 1.9; color: #444; padding-left: 22px; margin-bottom: 20px; list-style-type: disc;">
+        <li>
+            <strong>「TOP」模块</strong>：游戏 TOP、角色 TOP、CP TOP 三大模块，可无限添加卡片，每个卡片均包含自定义文本框，并可更改排序。若没有对某个模块或自定义文本添加内容，则不会生成与导出相应模块或自定义文本。
+            <ul style="padding-left: 22px; margin-top: 2px; list-style-type: circle;">
+                <li><strong>排序模式</strong>：长按游戏名称/角色名、游戏封面/角色图的部分 1 秒进入排序模式，卡片变为虚线高亮并在各个卡片之间出现红色插入指示线；点击指示线第一次变深红，第二次点击执行插入排序，并自动更改序号。进入排序模式后长按游戏名称/角色名行、游戏封面/角色图的部分即可退出。</li>
+            </ul>
+        </li>
+        <li>
+            <strong>「其他」模块</strong>：
+            <ul style="padding-left: 22px; margin-top: 2px; list-style-type: circle;">
+                <li>7项固定标签可添加对应游戏、角色、文字内容，若没有对某个卡片添加内容，则不会生成与导出该卡片。</li>
+                <li>可无限添加自定义标签与自定义文本框，用于记录任何额外内容。</li>
+            </ul>
+        </li>
+        <li>
+            <strong>「宫格」模块</strong>：
+            <ul style="padding-left: 22px; margin-top: 2px; list-style-type: circle;">
+                <li>固定标签（19项游戏标签 / 13项角色标签）可添加对应游戏封面、角色图，若没有对某个卡片添加内容，则不会生成与导出该卡片。</li>
+                <li>可无限添加自定义标签与游戏封面/角色图，用于记录任何额外内容。在自定义标题中添加 TOP 或月份即可成为排名宫格或月度总结宫格。</li>
+                <li>底部各存在文本框，用于补充说明。若无添加则不会生成与导出相应自定义文本。</li>
+            </ul>
+        </li>
+    </ul>
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+    <!-- 如何使用 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">🚀 如何使用</h3>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">1. 切换至 Annual Report 模式</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 12px 0;">
+        点击页面顶部按钮组中的 <strong>Annual Report</strong> 按钮，即可切换到年度报告编辑界面。
+    </p>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">2. 添加数据统计</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 12px 0;">
+        在「数据统计」模块中，填写各项数据，所有输入框内容自动保存。
+    </p>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">3. 添加 TOP 卡片</h4>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li>每个 TOP 卡片顶部的「+ 添加游戏/角色/Couple」按钮点击后会弹出对应的选择弹窗。</li>
+        <li><strong>游戏 TOP</strong>：搜索游戏弹窗显示完整游戏列表，支持搜索游戏名，点击即可添加。</li>
+        <li><strong>角色 TOP</strong>：搜索角色弹窗先显示游戏列表，选择游戏后进入角色列表，点击角色即可添加。
+            <blockquote style="font-size: 14px; line-height: 1.7; color: #666; background: #fff7f9; border-left: 4px solid #e895a8; padding: 8px 16px; margin: 4px 0 8px 0;">
+                💡 角色立绘支持多张图片切换（例如动作、服装差分或 FD ver），点击左右箭头即可。角色名也支持切换，点击左右箭头即可。
+            </blockquote>
+        </li>
+        <li><strong>CP TOP</strong>：搜索 Couple 弹窗先显示游戏列表，选择游戏后显示女主列表，点击女主展开男主列表，选择男主后以 CP 组合添加。</li>
+        <li>所有 TOP 条目均支持 <strong>排序模式</strong>：长按游戏名称/角色名、游戏封面/角色图的部分 1 秒进入排序模式，卡片变为虚线高亮并在各个卡片之间出现红色插入指示线；点击指示线第一次变深红，第二次点击执行插入排序，并自动更改序号。进入排序模式后长按游戏名称/角色名行、游戏封面/角色图的部分即可退出。</li>
+        <li>每个卡片右上角存在「×」删除按钮，可随时移除。</li>
+    </ul>
+    <blockquote style="font-size: 14px; line-height: 1.7; color: #666; background: #fff7f9; border-left: 4px solid #e895a8; padding: 8px 16px; margin: 4px 0 12px 0;">
+        💡 文本内容支持换行且自动保存。可拖拽右下角改变文本框大小。
+    </blockquote>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">4. 编辑「其他」模块</h4>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li><strong>「还玩了」框</strong>：点击「+」按钮，搜索游戏弹窗显示完整游戏列表，点击即可添加。</li>
+        <li><strong>最喜欢的CP / 配角</strong>：点击 + 按钮，分别搜索 Couple 弹窗与搜索角色弹窗，点击即可添加。</li>
+        <li><strong>最喜欢的台词 / OP/ED/BGM / HE / BE</strong>：直接编辑文本框，用于填写相应内容。若没有对某个固定卡片添加内容，则不会生成与导出该卡片。</li>
+        <li><strong>自定义卡片</strong>：每个卡片包含自定义标签与自定义文本框，填写标签后会自动在末尾追加新的空白自定义卡片，支持无限添加。</li>
+    </ul>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">5. 编辑「宫格」模块</h4>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li>固定标签（19项游戏标签 / 13项角色标签）：可点击「+」按钮选择添加游戏或角色。若没有对某个固定卡片添加内容，则不会生成与导出该卡片。</li>
+        <li><strong>自定义宫格</strong>：点击「+」进行添加，每次添加后会自动在末尾追加新的空白自定义卡片，支持无限添加。在自定义标题中添加 TOP 或月份即可成为排名宫格或月度总结宫格。</li>
+        <li>底部各存在文本框，用于补充说明。若无添加则不会生成与导出相应自定义文本。</li>
+        <li>每个卡片右上角存在「×」删除按钮，有图片时删除图片，无图片时则删除整个自定义卡片（固定卡片只删除图片）。</li>
+    </ul>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">6. 自定义导出设置</h4>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
+        <li><strong>填表人</strong>：可输入昵称，生成并导出图片时显示在标题右下方。</li>
+        <li><strong>导出标题开关</strong>：开启后标题为"Otome Summary Report"，关闭则默认为"20XX Otome Annual Report"。</li>
+        <li><strong>颜色选择器</strong>：自由调整所有配色，即时生效。</li>
+        <li><strong>自定义文本字号</strong>：统一控制所有自定义文本的字号。</li>
+        <li><strong>导出尺寸</strong>：仅支持各模块各自生成一张长图（640/810/1080 宽），高度自适应内容。</li>
+    </ul>
+    <h4 style="font-size: 16px; color: #b33a3a; margin: 12px 0 4px 0; font-weight: 600;">7. 生成并导出图片</h4>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 20px 0;">
+        点击「生成并导出图片」→ 预览弹窗出现 → 确认无误后点击「导出图片」即可下载（多页时自动分批下载）。
+    </p>
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+    <!-- 常见问题 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">❓ 常见问题</h3>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">Q：生成预览的进度停滞？</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 12px 0; padding-left: 20px;">
+        A：图片源文件存储于海外节点，国内访问链路波动属于普遍现象，使用🔮可显著提高生成效率。已新增国内节点作为备用原，若长时间等待后仍停滞，可尝试刷新或更换网络重试。
+    </p>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">Q：生成的图片中角色图空白？</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 12px 0; padding-left: 20px;">
+        A：请确保在导出前所有角色图片已完整显示。若仍有问题，可尝试刷新、重新添加游戏卡片、清除缓存或更换浏览器重试。
+    </p>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">Q：添加的数据会丢失吗？</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 20px 0; padding-left: 20px;">
+        A：所有数据保存在浏览器 localStorage 中，清除浏览器缓存或使用无痕模式会导致数据丢失，建议定期导出图片。只会缓存已添加图片的图片源，不会缓存多余文件。
+    </p>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 4px 0;">
+        <strong style="color: #b33a3a;">❗IOS 设备无法导出长图</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 20px 0; padding-left: 20px;">
+        <strong>已针对IOS系统增加补丁。</strong><br>
+        iOS系统存在对内核与总像素的硬性限制，补丁只能缓解、降低触发概率，无法完全杜绝，且IOS系统强制在苹果商店上架的应用使用同一套渲染引擎，所以更换浏览器也无法解决。<br>
+        建议IOS设备使用分页导出；若要使用长图导出，请通过「导出折叠内容」开关来控制图片长度，使图片不超出上限就可以成功生成并导出。
+    </p>
+    <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
+    <!-- 反馈与建议 -->
+    <h3 style="font-size: 19px; color: #b85878; margin: 0 0 12px 0; font-weight: bold;">📧 反馈与建议</h3>
+    <p style="font-size: 15px; line-height: 1.8; color: #555; margin: 0 0 12px 0;">
+        由于开发者未接触所有游戏，部分游戏可能缺少隐藏角色。
+        若发现遗漏、内容错误、功能异常，或有希望新增的作品，欢迎通过以下邮箱联系：
+    </p>
+    <p style="font-size: 16px; line-height: 1.8; color: #222; margin: 0 0 12px 0; text-align: center;">
+        📬 <strong style="color: #b33a3a; font-size: 17px;">otomefavlist@163.com</strong>
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: #888; margin: 0 0 4px 0; text-align: center;">
+        （若涉及剧透，请在邮件标题添加【剧透】预警）
+    </p>
+    <blockquote style="font-size: 14px; line-height: 1.7; color: #888; background: #fafafa; border-left: 4px solid #ddd; padding: 8px 16px; margin: 12px 0 0 0;">
+        本项目为非商业项目，仅供爱好者交流学习使用。所有游戏图片及角色素材版权归原厂商所有。
+    </blockquote>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 全局独立Loading遮罩已删除，所有加载状态移至预览弹窗内部 -->
+
+<script type="module">
+    import { bootstrapCore } from "./js/main.js";
+
+    (async function() {
+        await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve));
+
+        // 获取加载弹窗元素
+        const loadModal = document.getElementById("game-load-modal");
+        const progressText = document.getElementById("load-progress-text");
+        const loadConfirmBtn = document.getElementById("load-modal-confirm");
+
+        // 页面初始锁定：显示加载弹窗
+        loadModal.classList.add("active");
+        document.body.classList.add("modal-lock");
+
+        // 监听游戏加载进度（全局回调，由data/games.js内注入进度通知）
+        window.onGameLoadProgress = (current, total) => {
+            progressText.innerHTML = `游戏数据正在加载 ${current}/${total}，请稍候…`;
+        };
+
+        // 1. 加载所有游戏文件（内部应通过并发批量加载并回调进度）
+        if (typeof window.loadAllGames === "function") {
+            await window.loadAllGames();
+        }
+
+        // 加载完成，启用确认按钮
+        loadConfirmBtn.disabled = false;
+
+        // 点击确认关闭弹窗，继续初始化页面
+        loadConfirmBtn.onclick = async () => {
+            loadModal.classList.remove("active");
+            document.body.classList.remove("modal-lock");
+            // 2. bootstrapCore
+            await bootstrapCore();
+            // 3. 启动UI
+            if (typeof window.uiBootstrap === "function") {
+                await window.uiBootstrap();
+            }
+
+            // =========修复：等待annual.js模块挂载到window，解决ES Module加载时序竞争=========
+            async function safeInitAnnual(){
+                let retry = 0;
+                while(typeof window.initAnnualModule !== "function" && retry < 20){
+                    await new Promise(r=>setTimeout(r,50));
+                    retry++;
+                }
+                if(typeof window.initAnnualModule === "function"){
+                    window.initAnnualModule();
+                    console.log("✅年度报告模块已初始化");
+                }else{
+                    console.warn("⚠️年度报告模块初始化失败，window.initAnnualModule仍然未定义");
+                }
+            }
+            await safeInitAnnual();
+
+            // 清理进度回调，防止内存残留
+            window.onGameLoadProgress = null;
+        };
+    })();
+</script>
+
+<!-- 使用指南弹窗交互（已移除收起展开逻辑） -->
+<script>
+    (function() {
+        const guideModal = document.getElementById('guide-modal');
+        const openBtn = document.getElementById('open-guide-btn');
+        const closeBtn = document.getElementById('guide-close-btn');
+
+        // 打开弹窗
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                guideModal.classList.add('active');
+                document.body.classList.add("modal-lock");
+            });
+        }
+
+        // 关闭弹窗
+        function closeGuideModal() {
+            guideModal.classList.remove('active');
+            document.body.classList.remove("modal-lock");
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeGuideModal);
+        }
+
+        // 点击遮罩关闭
+        if (guideModal) {
+            guideModal.addEventListener('click', (e) => {
+                if (e.target === guideModal) {
+                    closeGuideModal();
+                }
+            });
+        }
+    })();
+</script>
+
+<!-- 防图片保存JS防护 -->
+<script>
+(function(){
+    // 1. 拦截右键上下文菜单；允许输入框/文本域右键
+    document.addEventListener('contextmenu', function(e){
+        const tag = e.target.tagName;
+        if(tag === 'INPUT' || tag === 'TEXTAREA'){
+            return;
+        }
+        e.preventDefault();
+        return false;
     });
-    painter.shiftY(CARD_INNER_PAD);
-  }
+    // 2. 拦截图片拖拽
+    document.addEventListener('dragstart', function(e){
+        if(e.target.tagName === 'IMG'){
+            e.preventDefault();
+            return false;
+        }
+    });
+    // 3. 移动端：长按弹出菜单禁止
+    document.addEventListener('touchstart', function(e){
+        // 输入框放行
+        const tag = e.target.tagName;
+        if(tag === 'INPUT' || tag === 'TEXTAREA'){
+            return;
+        }
+    }, {passive:true});
+    // 禁止图片长按呼出系统菜单（webkit内核：Safari、微信、华为浏览器）
+    document.documentElement.style.webkitTouchCallout = 'none';
+})();
+</script>
 
-  emitRenderProgress(100);
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b88bc20591cc4e0b8702b7339c4d0e6d"}'></script><!-- End Cloudflare Web Analytics -->
 
-  // 裁剪到实际高度（对齐export-canvas-render.js的cropCanvas：先填背景色，再9参数1:1复制，不拉伸变形）
-  const finalH = painter.getY() + getBodyPad();
-  const outputCanvas = document.createElement('canvas');
-  outputCanvas.width = designW * DPR;
-  outputCanvas.height = Math.max(finalH, designW * 0.4) * DPR;
-  const oCtx = outputCanvas.getContext('2d');
-  oCtx.imageSmoothingEnabled = true;
-  oCtx.imageSmoothingQuality = "high";
-  // ✅先填充背景色，覆盖输出画布底部多出的边距区域
-  oCtx.fillStyle = config.bg || '#fff7f9';
-  oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
-  // ✅9参数1:1复制源画布内容，不再用5参数整体拉伸导致图片变形
-  oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+<!-- ===== 模式切换逻辑（FavList / Annual Report） ===== -->
+<script>
+// 模式切换：FavList / Annual Report
+(function(){
+    const btns = document.querySelectorAll('.mode-switch-wrap .mode-btn');
+    const wraps = document.querySelectorAll('.mode-wrap');
+    const siteTitleDom = document.querySelector('.site-title h1');
+    const siteTitleWrap = document.querySelector('.site-title');
+    // 保存原始标题
+    const originalTitleText = siteTitleDom.innerText;
+    const annualTitleText = "Otome Annual Report";
 
-  let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
-  if (IS_IOS_WEBKIT && !blob) {
-    await new Promise(r => setTimeout(r, 100));
-    blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
-  }
+    btns.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            const targetMode = btn.dataset.mode;
+            // 更新按钮active
+            btns.forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            // 切换容器显示隐藏
+            wraps.forEach(w=>{
+                if(w.dataset.mode === targetMode){
+                    w.classList.remove('mode-hidden');
+                }else{
+                    w.classList.add('mode-hidden');
+                }
+            })
 
-  if (IS_IOS_WEBKIT) {
-    canvas.width = 0; canvas.height = 0;
-    outputCanvas.width = 0; outputCanvas.height = 0;
-  }
-  return blob;
-}
+            // -------- 标题切换逻辑 --------
+            if(targetMode === "annual"){
+                siteTitleDom.innerText = annualTitleText;
+                siteTitleWrap.classList.add("annual-active");
+            }else{
+                siteTitleDom.innerText = originalTitleText;
+                siteTitleWrap.classList.remove("annual-active");
+            }
+            // -------- 使用指南内容切换 --------
+            const introContent = document.getElementById('intro-content');
+            const annualIntroContent = document.getElementById('annual-intro-content');
+            if(targetMode === "annual"){
+                if(introContent) introContent.style.display = 'none';
+                if(annualIntroContent) annualIntroContent.style.display = 'block';
+            }else{
+                if(introContent) introContent.style.display = 'block';
+                if(annualIntroContent) annualIntroContent.style.display = 'none';
+            }
+        })
+    })
+})();
+</script>
 
-// ===================== 批量导出所有模块 =====================
-export async function renderAllAnnualModules(designW, annualData, config, titleMap) {
-  const modules = [
-    { type: 'stats', title: titleMap?.stats || '' },
-    { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
-    { type: 'charTop', title: titleMap?.charTop || 'キャラTOP' },
-    { type: 'cpTop', title: titleMap?.cpTop || 'カップルTOP' },
-    // ✅新增：五、其他（title传空，不导出"五、其他"标题）
-    { type: 'other', title: '' },
-    // ✅新增：六、ゲーム宫格
-    { type: 'gameGrid', title: titleMap?.gameGrid || 'ゲーム宫格' },
-    // ✅新增：七、キャラ宫格
-    { type: 'charGrid', title: titleMap?.charGrid || 'キャラ宫格' },
-  ];
-  const results = [];
-  for (const mod of modules) {
-    const blob = await renderAnnualModuleCanvas(designW, mod.type, mod.title, annualData, config);
-    if (blob) {
-      results.push({ moduleType: mod.type, moduleTitle: mod.title, blob });
-    }
-  }
-  return results;
-}
+<!-- ===== 新增年度报告脚本 ===== -->
+<script type="module" src="./js/annual.js"></script>
 
-if (typeof window !== 'undefined') {
-  window.renderAnnualModuleCanvas = renderAnnualModuleCanvas;
-  window.renderAllAnnualModules = renderAllAnnualModules;
-}
+<!-- ===== 年度报告全局游戏选择弹窗（body直接子节点）【修改后】 ===== -->
+<div id="annual-global-game-modal">
+    <div class="annual-global-modal-inner">
+        <!-- 弹窗头部【固定，不参与滚动】 -->
+        <div class="annual-modal-header">
+            <div class="annual-modal-header-title">搜索游戏</div>
+            <button class="annual-modal-close-btn">×</button>
+        </div>
+        <!-- =========【新增：搜索框固定层，不在滚动区域内】 ========= -->
+        <div class="annual-modal-search-bar-wrap">
+            <input class="annual-global-search-input" placeholder="搜索游戏名称">
+        </div>
+        <!-- 大滚动外壳：只保留游戏列表，搜索框已经移出 -->
+        <div class="annual-modal-scroll-wrap">
+            <div class="annual-global-game-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 年度报告全局角色选择弹窗【修复滚动范围】 ========== -->
+<div id="annual-global-char-modal">
+    <div class="annual-global-modal-inner">
+        <!-- 弹窗头部【固定不参与滚动】：←返回按钮 + 居中标题 + ×关闭按钮 -->
+        <div class="annual-modal-header">
+            <button class="annual-modal-back-btn">←</button>
+            <div class="annual-modal-header-title">搜索角色</div>
+            <button class="annual-modal-close-btn">×</button>
+        </div>
+        <!-- ========== 大滚动条 ========== -->
+        <div class="annual-modal-scroll-wrap">
+            <!-- 全局开关组（仅gameList视图可见） -->
+            <div class="annual-modal-global-switch-group">
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-sub-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <!-- ✅补丁新增：全局显示续作/FD次要角色开关 -->
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-fd-sub-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-hide-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示隐藏图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="annual-modal-global-fd-game">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+                    </div>
+                </div>
+            </div>
+            <!-- 搜索输入框（仅gameList视图可见） -->
+            <input class="annual-global-char-search-input" placeholder="搜索游戏名称/角色名">
+            <!-- 视图容器 -->
+            <div class="annual-modal-view-container">
+                <!-- 单游戏角色页专属开关组（仅charList视图可见） -->
+                <div class="annual-modal-game-switch-group">
+                    <div class="switch-row">
+                        <label class="switch">
+                            <input type="checkbox" id="annual-modal-game-sub-char">
+                            <span class="slider"></span>
+                        </label>
+                        <div>
+                            <span class="text-light-pink">单独显示本游戏次要角色</span>
+                        </div>
+                    </div>
+                    <!-- ✅补丁新增：单独显示本游戏续作/FD次要角色开关（JS根据当前游戏是否有isFdSub角色自动显隐） -->
+                    <div class="switch-row">
+                        <label class="switch">
+                            <input type="checkbox" id="annual-modal-game-fd-sub-char">
+                            <span class="slider"></span>
+                        </label>
+                        <div>
+                            <span class="text-light-pink">单独显示本游戏续作/FD次要角色</span>
+                        </div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch">
+                            <input type="checkbox" id="annual-modal-game-hide-char">
+                            <span class="slider"></span>
+                        </label>
+                        <div>
+                            <span class="text-light-pink">单独显示本游戏隐藏角色</span>
+                        </div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch">
+                            <input type="checkbox" id="annual-modal-game-fd-game">
+                            <span class="slider"></span>
+                        </label>
+                        <div>
+                            <span class="text-light-pink">单独显示本游戏续作/FD角色</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- 视图A：游戏列表 -->
+                <div class="annual-global-char-game-list"></div>
+                <!-- 视图B：当前游戏待选角色列表 -->
+                <div class="annual-global-char-char-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 年度报告全局CP选择弹窗 ========== -->
+<div id="annual-global-cp-modal">
+    <div class="annual-global-modal-inner">
+        <div class="annual-modal-header">
+            <button class="annual-cp-modal-back-btn">←</button>
+            <div class="annual-modal-header-title">搜索Couple</div>
+            <button class="annual-modal-close-btn annual-cp-close-btn">×</button>
+        </div>
+        <div class="annual-modal-scroll-wrap">
+            <!-- 全局开关组 -->
+            <div class="annual-modal-global-switch-group annual-cp-global-switch-group">
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-sub-char"><span class="slider"></span></label>
+                    <div>
+                        <span class="text-light-pink">全局显示次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-fd-sub-char"><span class="slider"></span></label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-hide-char"><span class="slider"></span></label>
+                    <div>
+                        <span class="text-light-pink">全局显示隐藏图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch"><input type="checkbox" id="annual-modal-cp-global-fd-game"><span class="slider"></span></label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+            </div>
+            <!-- 搜索框（只搜游戏名） -->
+            <input class="annual-global-cp-search-input" placeholder="搜索游戏名称">
+            <!-- 视图容器 -->
+            <div class="annual-modal-view-container annual-cp-view-container">
+                <!-- 单游戏开关组 -->
+                <div class="annual-modal-game-switch-group annual-cp-game-switch-group">
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-sub-char"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏次要角色</span></div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-fd-sub-char"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏续作/FD次要角色</span></div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-hide-char"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏隐藏角色</span></div>
+                    </div>
+                    <div class="switch-row">
+                        <label class="switch"><input type="checkbox" id="annual-modal-cp-game-fd-game"><span class="slider"></span></label>
+                        <div><span class="text-light-pink">单独显示本游戏续作/FD角色</span></div>
+                    </div>
+                </div>
+                <!-- 游戏列表视图 -->
+                <div class="annual-global-cp-game-list"></div>
+                <!-- 女主+男主列表视图 -->
+                <div class="annual-global-cp-female-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
