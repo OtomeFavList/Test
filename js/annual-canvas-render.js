@@ -1,2182 +1,1284 @@
-/* ========== 模式切换按钮组（顶部，site-title下方） ========== */
-.mode-switch-wrap {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    /*
-    拆解：
-    margin‑top:8px → 实现【指南按钮块底部 到 mode‑switch‑wrap顶部】=8px（A距离，对齐h1→title‑sub‑cn的8px间距）
-    margin‑bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，对齐sub‑desc→指南按钮上端的30px）
-    */
-    margin: 8px 0 30px;
-}
-.mode-switch-wrap .mode-btn {
-    padding: 10px 22px;
-    border: 2px solid #f6a5b8;
-    border-radius: 8px;
-    background: #fff7f9;
-    color: #b85878;
-    font-size: 16px;
-    font-weight: normal;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.mode-switch-wrap .mode-btn:hover {
-    background: #fce8ed;
-}
-.mode-switch-wrap .mode-btn.active {
-    background: #f6a5b8;
-    color: #ffffff;
-}
-/* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
-.mode-wrap {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    /* ⚠️关键修复：mode-wrap 移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
-    big‑card之间的垂直间距，全部交给 .big‑card { margin‑top } 来实现，不再使用容器gap */
-    gap: 0;
-}
-.mode-wrap.mode-hidden {
-    visibility: hidden;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-/* 【新增】所有mode-wrap内部的第一个big‑card清除上边距，其余big‑card统一用margin‑top实现卡片之间间距，替代原来gap:30px */
-.mode-wrap .big-card {
-    margin-top: 30px;
-}
-.mode-wrap .big-card:first-child {
-    margin-top: 0;
-}
-/* ========== site-title 年度报告覆盖样式 ========== */
-.site-title.annual-active h1 {
-    font-size: 42px;
-    color: var(--annual-export-title, #b33a3a);
-}
-.site-title.annual-active .title-sub-cn,
-.site-title.annual-active .sub-desc {
-    display: none !important;
-}
-/* ========== 年度报告页面大标题【隐藏，改用site-title位置输出】 ========== */
-.annual-page-title {
-    display: none;
-}
-/* ========== 统计行：整段居中、字号16px，颜色变量控制 ========== */
-.annual-stat-line {
-    font-size: 16px;
-    line-height: 2.2;
-    text-align: center;
-    /* ✅移除统一color，改为span和input分别控制 */
-}
-/* ✅新增：统计标签文字（"年度/游玩总数/小时"等）用数据统计文字色 */
-.annual-stat-line span {
-    color: var(--annual-export-stattext, #b85878);
-}
-.annual-input {
-    width: 80px;
-    padding: 4px 6px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    font-size: 16px;
-    background: #fcfcfc;
-    margin: 0 4px;
-    color: var(--annual-export-statdata, #b33a3a);  /* ✅用户填写的数字用数据统计数据色 */
-}
-/* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
-.annual-top-label {
-    font-size: 22px;
-    font-weight: bold;
-    color: var(--annual-export-subtitle, #b85878);
-    margin-bottom: 10px;
-}
-/* 游戏名称显示：黑色22px，自动换行 */
-.annual-game-name-text {
-    font-size: 22px;
-    color: var(--annual-export-gamename, #000000);
-    word-break: break-all;
-    margin: 8px 0 12px;
-}
-/* ========== TOP3游戏条目 ========== */
-.annual-top-item {
-    margin-bottom: 24px;
-}
-.annual-search-row {
-    display: none !important;
-}
-/* +添加游戏按钮，居中 */
-.annual-add-game-btn-wrap {
-    text-align: center;
-    margin: 8px 0 14px;
-}
-.annual-add-game-btn {
-    padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
-    border-radius:8px;
-    background:#b33a3a;
-    color:#fff;
-    cursor:pointer;
-    transition:0.2s;
-}
-.annual-add-game-btn:hover {
-    background-color: #992e2e;
-}
-/* ==========【修复】年度报告全局居中游戏选择模态弹窗（body直接子节点） 全部半角符号 ========== */
-#annual-global-game-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background-color: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding:16px;
-    box-sizing: border-box;
-}
-#annual-global-game-modal.active {
-    display: flex;
-}
-.annual-global-modal-inner {
-    width: min(92vw, 1200px);
-    max-height: 80vh;
-    min-height: 420px;
-    height: 80vh; /* 新增，和角色弹窗对齐 */
-    background:#ffffff;
-    border-radius:14px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
-    padding:0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-#annual-global-game-modal .annual-modal-header {
-    flex-shrink: 0;
-}
-/* ==========【新增：游戏弹窗搜索框外层固定容器，不参与滚动】 ========== */
-#annual-global-game-modal .annual-modal-search-bar-wrap {
-    flex-shrink: 0;
-    padding: 0 12px 8px 12px;
-}
-#annual-global-game-modal .annual-modal-scroll-wrap {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 12px 12px 12px;
-}
-/* ==========弹窗头部【新增】========== */
-.annual-modal-header {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    padding:16px 20px;
-}
-.annual-modal-header-title {
-    font-size:20px;
-    font-weight:bold;
-    color:#b33a3a;
-}
-/* 关闭按钮：1:1复刻 .game‑fold‑icon‑expand 样式 */
-.annual-modal-close-btn {
-    position:absolute;
-    right:20px;
-    top:50%;
-    transform: translateY(-50%);
-    width:28px;
-    height:28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-}
-.annual-modal-close-btn:hover{
-    background: #992e2e !important;
-    color: #b33a3a !important;
-}
-/* input与列表容器，补回原来的padding */
-.annual-global-search-input {
-    width:calc(100% - 40px);
-    margin:0 20px 0 20px; /* 删除底部margin，交给外层search-bar-wrap */
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
-    background:#fcfcfc;
-    font-size:15px;
-    box-sizing: border-box;
-}
-/* ✅游戏列表容器 - 完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
-.annual-global-game-list {
-    /* 恢复滚动，复刻FavList搜索行为 */
-    min-height:260px;
-    /* ❌删除 max-height: 42vh; */
-    /* ❌删除 overflow-y: auto; */
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-    gap:14px;
-    padding:10px 20px 20px 20px;
-    border:1px solid #eee;
-    border-radius:10px;
-    margin:0 20px 20px 20px;
-}
-/* 弹窗内游戏选项 1:1复刻FavList .game-option-item */
-.annual-global-game-list .game-option-item{
-    border:1px solid #eee;
-    border-radius:10px;
-    padding:12px;
-    cursor:pointer;
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    background:#fff;
-    width: 100%;
-}
-.annual-global-game-list .game-option-item:hover{
-    background:#fff0f3;
-    border-color:#e895a8;
-}
-.annual-global-game-list .game-option-item img{
-    width:120px;
-    height:auto;
-    border-radius:6px;
-    object-fit:cover;
-    flex-shrink:0;
-}
-.annual-global-game-list .game-option-info{
-    flex:1;
-    min-width: 0; /* 新增，防止长文本挤压 */
-}
-.annual-global-game-list .game-option-name{
-    font-weight:bold;
-    font-size:16px;
-    margin-bottom:6px;
-}
-.annual-global-game-list .game-option-info p{
-    font-size:14px;
-    line-height:1.6;
-    color:#333;
-}
-/* ========== TOP3内容行：左侧封面，右侧文本域 ========== */
-.annual-top-content-row {
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-}
-.annual-top-cover-wrap {
-    flex-shrink:0;
-    width:140px;
-}
-.annual-top-cover {
-    width:100%;
-    height:auto;
-    border-radius:8px;
-    border:1px solid #eee;
-}
-.annual-top-text-wrap {
-    flex:1;
-    min-width:260px;
-}
-.annual-top-textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--annual-export-customborder, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: vertical;
-}
-/* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
-.snapshot-container.export-snapshot .annual-add-game-btn,
-.snapshot-container.export-snapshot #btn-annual-export {
-    display:none !important;
-}
-/* ==========【修复权重BUG】hidden-when-empty，降低!important权重，快照可以覆盖 ========== */
-.hidden-when-empty {
-    display: none;
-}
-/* ✅【问题②】移除 !important，让DOM初始状态真正隐藏；只在JS添加render‑visible才显示 */
-.mode-wrap[data-mode="annual"] .hidden-when-empty{
-    display:none;
-}
-.mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible {
-    display: flex;
-}
-.mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible.annual-game-name-text,
-.mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible.annual-char-name-text {
-    display: block;
-}
-/* 快照模式保持原有逻辑不变 */
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible {
-    display: flex !important;
-}
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-game-name-text,
-.snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-char-name-text {
-    display: block !important;
-}
-/* ========== 年度报告快照配色变量 ========== */
-.snapshot-container.export-snapshot.annual-mode {
-    --annual-export-bg: #fff7f9;
-    --annual-export-title: #b33a3a;
-    --annual-export-subtitle: #b85878;
-    --annual-export-gamename: #000000;
-    --annual-export-stattext: #b85878;
-    --annual-export-statdata: #b33a3a;
-    --annual-export-customtext: #c98fac;
-    --annual-export-customborder: #eee;
-    --annual-export-border: #f6a5b8;
-    --annual-export-boxbg: #fff7f9;
-    --annual-export-labelcolor: #b85878;
-}
-/* ==========年度报告字号滑块轨道【修复滑块百分比轨道不变化】========== */
-.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
-    background:transparent;
-    -webkit-appearance:none;
-    appearance:none;
-    z-index:2;
-    position:relative;
-}
-.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::-webkit-slider-runnable-track {
-    height:6px;
-    border-radius:999px;
-    background-color: #fff7f9;
-    background-image: linear-gradient(to right, #e895a8 0%, #e895a8 100%);
-    background-repeat: no-repeat;
-    background-size: var(--annual-slider-progress,0%) 100%;
-}
-.mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance:none;
-    width:16px;
-    height:16px;
-    border-radius:50%;
-    background:#e895a8;
-    border:none;
-    cursor:pointer;
-    margin-top:-5px;
-}
-@-moz-document url-prefix() {
-    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
-        position: relative;
-    }
-    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::before {
-        content:"";
-        position:absolute;
-        left:0;
-        right:0;
-        top:50%;
-        transform: translateY(-50%);
-        height:6px;
-        border-radius:999px;
-        background:#fff7f9;
-        z-index:-1;
-    }
-    .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"]::after {
-        content:"";
-        position:absolute;
-        left:0;
-        top:50%;
-        transform: translateY(-50%);
-        height:6px;
-        border-radius:999px;
-        background:#e895a8;
-        width:var(--annual-slider-progress,0%);
-        z-index:-1;
-    }
-}
-/* ==========年度报告页面常态配色变量绑定 ========== */
-.mode-wrap[data-mode="annual"] {
-    --annual-export-bg:#fff7f9;
-    --annual-export-title:#b33a3a;
-    --annual-export-subtitle:#b85878;
-    --annual-export-gamename:#000000;
-    --annual-export-stattext:#b85878;
-    --annual-export-statdata:#b33a3a;
-    --annual-export-customtext:#c98fac;
-    --annual-export-customborder:#eee;
-    --annual-export-border:#f6a5b8;
-    --annual-export-boxbg:#fff7f9;
-    --annual-export-labelcolor:#b85878;
-    background-color: var(--annual-export-bg, #fff7f9);
-}
-/* ✅新增：年度报告模块标题（一、数据统计/二、ゲームTOP等）受小标题文字色控制，含左侧竖线 */
-.mode-wrap[data-mode="annual"] .big-card h2 {
-    color: var(--annual-export-subtitle, #b85878);
-    border-left-color: var(--annual-export-subtitle, #b85878);
-}
-/* ✅新增：卡片边框色受"卡片边框色"控制，覆盖main.css中的硬编码 */
-.mode-wrap[data-mode="annual"] .big-card {
-    border-color: var(--annual-export-border, #f6a5b8);
-}
-/* ========== ✅三套断点完全复制main.css game-list-select列数逻辑 ========== */
-/* ① 普通手机（≤ 768px）：强制单列 */
-@media (max-width: 768px) {
-    /* 移动端：图片+文本框横向并排，不再纵向堆叠 */
-    .annual-top-content-row {
-        flex-direction: row;
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }
-    /* ✅【问题④】已添加游戏封面：严格等于弹窗待选游戏item图片80px */
-    .annual-top-cover-wrap {
-        width: 80px;
-    }
-    .annual-top-cover {
-        width: 80px;
-        height: auto;
-        object-fit: cover;
-    }
-    /* ✅【问题④】已添加角色封面：严格等于二级待选角色卡片图片90px，强制正方形 */
-    .annual-char-top-content-row {
-        flex-direction: row;
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }
-    .annual-char-cover-wrap{
-        width:90px !important;
-    }
-    .annual-char-cover {
-        width:90px !important;
-        height:90px !important;
-        aspect-ratio: 1 / 1;
-        object-fit:cover;
-        border-radius:6px !important;
-        border:1px solid #eee;
-    }
-    /* 保证移动端：游戏、角色文本框宽度规则完全一致 */
-    .annual-top-text-wrap,
-    .annual-char-text-wrap {
-        flex: 1;
-        min-width: 260px;
-    }
-    .site-title.annual-active h1 {
-        font-size: 30px;
-    }
-    .annual-game-name-text {
-        font-size: 18px;
-    }
-    .annual-char-name-text{
-        font-size:18px;
-    }
-    /* 删除按钮移动端缩小 */
-    .annual-item-delete-btn{
-        width:26px;
-        height:26px;
-        font-size:18px;
-    }
-    /* ✅新增：折叠按钮移动端同步缩小 */
-    .annual-card-fold-btn {
-        width: 26px;
-        height: 26px;
-        font-size: 18px;
-    }
-    .annual-global-modal-inner {
-        width: 100%;
-        max-height: 85vh;
-        min-height:420px;
-    }
-    .annual-global-game-list {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-        border: none !important;
-        border-radius: 0 !important;
-        padding: 10px 0 10px 0;
-        margin: 0;
-        min-height:260px;
-    }
-    .annual-global-game-list .game-option-item img {
-        width: 80px !important;
-    }
-    .annual-modal-header {
-        padding: 14px 16px;
-    }
-    .annual-modal-close-btn {
-        right: 16px;
-        width: 26px;
-        height: 26px;
-        font-size: 18px;
-    }
-    /* ===== 修改：移动端游戏弹窗input边距由外层scroll-wrap控制 ===== */
-    .annual-global-search-input {
-        width: 100%;
-        margin: 0;
-        padding: 11px 14px; /* ⑤统一高度与角色弹窗一致 */
-        font-size: 14px;
-    }
-    /* ✅同步main.css手机端game-option-item布局，解决卡片高度不足、文字裁切 */
-    .annual-global-game-list .game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* ==========②③角色弹窗游戏列表与滚动外壳调整 ========== */
-    .char-list-inner-scroll-wrap {
-        max-height: 55vh;
-    }
-    .annual-global-char-game-list,
-    .annual-global-cp-game-list {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-        padding: 10px 0 10px 0 !important;
-        margin: 0 !important;
-        min-height:260px;
-        max-height:42vh !important; /* ✅新增移动端卡片容器最大高度 */
-        overflow-y:auto !important; /* ✅新增移动端独立滚动 */
-    }
-    .annual-global-char-game-list .game-option-item img,
-    .annual-global-cp-game-list .game-option-item img,
-    .annual-global-cp-game-list .annual-cp-game-option-item img {
-        width: 80px !important;
-    }
-    .annual-global-char-game-list .game-option-item,
-    .annual-global-cp-game-list .game-option-item,
-    .annual-global-cp-game-list .annual-cp-game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-char-game-list .game-option-info,
-    .annual-global-cp-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-char-game-list .game-option-name,
-    .annual-global-cp-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-char-game-list .game-option-info p,
-    .annual-global-cp-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* ===== ④角色弹窗搜索框与开关组完全对齐游戏弹窗 ===== */
-    .annual-global-char-search-input {
-        width: 100%;
-        margin: 0;
-        padding: 11px 12px; /* 左右12px，和开关组对齐 */
-        font-size: 14px;
-    }
-    /* ===== ①移动端开关组同步缩小gap，并保持12px左右边距，与搜索框对齐 ===== */
-    .annual-modal-global-switch-group {
-        gap: 12px;
-        padding: 0 12px 8px 12px;
-    }
-    .annual-modal-game-switch-group {
-        gap: 12px;
-        padding: 0 0 8px 0;
-    }
-    /* ===== 角色弹窗头部返回按钮左距调整 ===== */
-    .annual-modal-back-btn {
-        left:12px;
-        width: 26px;
-        height:26px;
-        font-size:18px;
-    }
-    /* ==========④关键：视图容器顶部增加padding‑top，把搜索栏与游戏卡片框隔开，同时左右内边距归零，由子元素控制 ========== */
-    .annual-modal-view-container {
-        padding:12px 0 12px 0;
-    }
-    /* ===== 防止开关文字被挤压 ===== */
-    .annual-modal-global-switch-group label,
-    .annual-modal-game-switch-group label {
-        flex-shrink: 0;
-    }
-    /* ========== 原480px断点迁移（保持） ========== */
-    .annual-modal-header {
-        padding: 12px 14px;
-    }
-    .annual-modal-close-btn {
-        width: 24px;
-        height: 24px;
-        font-size: 16px;
-    }
-    /* ==========新增：角色弹窗角色列表移动端适配，对齐FavList主站========== */
-    .annual-global-char-char-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-        gap: 10px !important;
-        padding: 10px 0 10px 0 !important;
-        margin: 0 !important;
-    }
-    .annual-global-char-char-list .char-item {
-        width: 100% !important;
-        min-height: 132px !important;
-    }
-    /* CP弹窗二级页面对齐角色弹窗移动端适配 */
-    .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定90px→弹性minmax，与角色列表完全一致 */
-        justify-content: start !important;
-        gap: 10px !important;
-        padding: 10px 0 10px 0 !important;
-        margin: 0 !important;
-        width: 100% !important;       /* ✅新增：确保容器撑满 */
-        box-sizing: border-box !important;  /* ✅新增 */
-    }
-    .annual-global-cp-female-list .char-item,
-    .annual-cp-male-list .char-item {
-        width: 100% !important;
-        min-height: 132px !important;
-        /* ✅移除 padding:10px 和 gap:6px 的 !important 覆盖，
-           让卡片完全继承 main.css .char-item 的默认内边距和间距，
-           与角色弹窗 .annual-global-char-char-list .char-item 保持100%一致 */
-    }
-    /* 修改点6：CP男主列表grid移动端对齐角色列表 */
-    .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定→弹性，与角色列表一致 */
-        justify-content: start !important;
-        gap: 10px !important;
-        width: 100% !important;              /* ✅新增：撑满父容器 */
-        box-sizing: border-box !important;   /* ✅新增 */
-        padding: 10px 0 10px 0 !important;   /* ✅新增：与角色列表padding一致 */
-        margin: 0 !important;                /* ✅新增：清除默认margin */
-    }
-    .annual-cp-modal-back-btn {
-        left: 12px;
-        width: 26px;
-        height: 26px;
-        font-size: 18px;
-    }
-    /* ✅移动端选中女主后保持原尺寸：block改用grid，列宽与外部grid完全一致，
-       女主卡片作为grid item自动占一列，宽度=未选中时的列宽，不放大也不缩小 */
-    .annual-cp-female-block-expanded {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-        gap: 10px !important;
-        align-items: start !important;
-    }
-    /* 男主选择面板跨全列，不影响女主卡片列宽 */
-    .annual-cp-female-block-expanded .annual-cp-male-select-wrap {
-        grid-column: 1 / -1 !important;
-    }
-    /* 搜索结果角色卡片移动端复刻待选角色样式 */
-    .annual-global-char-game-list .search-result-char-item {
-        padding: 10px !important;
-        gap:6px !important;
-    }
-    .annual-global-char-game-list .search-result-char-item .char-card-name {
-        font-size:14px !important;
-    }
-    .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
-        font-size:10px !important;
-    }
-    .annual-global-char-game-list .search-char-result-wrap {
-        grid-column: 1 / -1 !important;
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-        gap: 10px !important;
-        /* ✅删除 margin-bottom:16px !important; */
-    }
-    .annual-global-char-game-list .search-game-result-wrap {
-        grid-column: 1 / -1 !important;
-        grid-template-columns:1fr !important;
-        gap:10px !important;
-    }
-    /* CP TOP移动端封面尺寸（修改点6） */
-    .annual-cp-female-cover,
-    .annual-cp-male-cover {
-        width:90px !important;
-        height:90px !important;
-        border-radius:6px !important;
-    }
-    .annual-cp-name-text {
-        font-size:18px;
-    }
-    /* ✅新增：CP男主选择面板外层撑满 + 间距与角色弹窗一致 */
-    .annual-cp-male-select-wrap {
-        width: 100% !important;
-        box-sizing: border-box !important;
-        margin-top: 14px !important;   /* PC端16px，手机端收紧到14px */
-        margin-bottom: 4px !important;
-        padding: 0 !important;
-    }
-    /* ✅新增：CP男主标题间距与角色弹窗局部开关组一致 */
-    .annual-cp-male-title {
-        margin-top: 0 !important;
-        margin-bottom: 12px !important;  /* PC端14px，手机端12px */
-        font-size: 14px !important;
-    }
-    /* ✅新增：选中女主展开后，block跨全列且不压缩卡片尺寸 */
-    .annual-cp-female-block-expanded {
-        width: 100% !important;
-        grid-column: 1 / -1 !important;
-    }
-    /* 游戏宫格移动端封面高度同步改高 */
-    #annual-game-grid-container .annual-grid-cover-box {
-        height: 120px !important;
-    }
-    /* 模块五自定义卡片移动端字号统一15px */
-    .annual-other-custom-label {
-        font-size: 15px;
-        padding: 3px 6px;
-    }
-    /* 宫格删除按钮移动端缩小 */
-    .annual-grid-remove-btn {
-        width: 20px;
-        height: 20px;
-        font-size: 12px;
-        line-height: 1;
-        padding: 0 0 2px 0;
-        top: -6px;
-        right: -6px;
-    }
-}
-/* ② 折叠屏 + 平板（769px ~ 1200px）：弹性多列 */
-@media (min-width:769px) and (max-width:1200px) {
-    /* 从原1024断点迁移 */
-    .annual-global-modal-inner {
-        width: min(95vw, 1000px);
-    }
+// ================================================================
+// annual-canvas-render.js
+// 年度报告模式 纯Canvas绘制导出（对齐 export-canvas-render.js 视觉风格）
+// 每个模块单独生成一张图，固定尺寸 + DPR×2 高清输出
+// ================================================================
+import {
+  getWebImageUrl,
+  preloadImageBitmap,
+  preloadAndDecodeImage,
+  convertR2ToJsDelivr,
+  LAYOUT_SPACE,
+  LAYOUT_STYLE
+} from './main.js';
+// 复用FavList导出的文字换行工具和绘制器
+import { wrapText, measureWrappedHeight, CanvasLayoutPainter } from './export-canvas-render.js';
 
-    .annual-global-game-list {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-        gap: 14px !important;
-    }
-    .annual-global-game-list .game-option-item img {
-        width: 80px !important;
-    }
-    /* ✅平板端同步main.css卡片防裁切 */
-    .annual-global-game-list .game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* ==========【修改：角色弹窗游戏列表 平板端完全复刻游戏弹窗】 ========== */
-    .annual-global-char-game-list,
-    .annual-global-cp-game-list {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-        gap: 14px !important;
-        padding: 10px 0 20px 0 !important;
-        margin: 0 !important;
-        max-height:48vh !important; /* ✅平板端卡片容器最大高度 */
-        overflow-y:auto !important; /* ✅平板端独立滚动 */
-    }
-    .annual-global-char-game-list .game-option-item img,
-    .annual-global-cp-game-list .game-option-item img,
-    .annual-global-cp-game-list .annual-cp-game-option-item img {
-        width: 80px !important;
-    }
-    .annual-global-char-game-list .game-option-item,
-    .annual-global-cp-game-list .game-option-item,
-    .annual-global-cp-game-list .annual-cp-game-option-item {
-        display: flex !important;
-        gap: 10px !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        overflow-x: hidden !important;
-    }
-    .annual-global-char-game-list .game-option-info,
-    .annual-global-cp-game-list .game-option-info {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-    }
-    .annual-global-char-game-list .game-option-name,
-    .annual-global-cp-game-list .game-option-name {
-        font-size: 16px !important;
-        line-height: 1.4 !important;
-        word-break: break-word !important;
-    }
-    .annual-global-char-game-list .game-option-info p,
-    .annual-global-cp-game-list .game-option-info p {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-    }
-    /* 平板开关组gap与主站保持一致 */
-    .annual-modal-global-switch-group {
-        gap: 12px;
-    }
-    .annual-modal-game-switch-group {
-        gap: 12px;
-    }
-    /* ==========新增：角色弹窗角色网格平板适配========== */
-    .annual-global-char-char-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
-        gap: 12px !important;
-        padding: 10px 0 10px 0 !important;
-        margin: 0 !important;
-    }
-    .annual-global-char-char-list .char-item {
-        width: 100% !important;
-        min-height: 148px !important;
-    }
-    /* CP弹窗二级页面对齐角色弹窗平板端适配 */
-    .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
-        justify-content: start !important;
-        gap: 12px !important;
-        padding: 10px 0 10px 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-    .annual-global-cp-female-list .char-item,
-    .annual-cp-male-list .char-item {
-        width: 100% !important;
-        min-height: 148px !important;
-        /* ✅不覆盖padding/gap，继承main.css默认值 */
-    }
-    /* 修改点7：CP男主列表grid平板端对齐角色列表 */
-    .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
-        justify-content: start !important;
-        gap: 12px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        padding: 10px 0 10px 0 !important;
-        margin: 0 !important;
-    }
-    /* ✅平板端选中女主后保持原尺寸：block改用grid，列宽与外部grid一致 */
-    .annual-cp-female-block-expanded {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
-        gap: 12px !important;
-        align-items: start !important;
-    }
-    .annual-cp-female-block-expanded .annual-cp-male-select-wrap {
-        grid-column: 1 / -1 !important;
-    }
-    /* 搜索结果角色卡片平板端复刻待选角色样式 */
-    .annual-global-char-game-list .search-result-char-item {
-        padding: 10px !important;
-        gap:7px !important;
-    }
-    .annual-global-char-game-list .search-result-char-item .char-card-name {
-        font-size:14.5px !important;
-    }
-    .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
-        font-size:10.5px !important;
-    }
-    .annual-global-char-game-list .search-char-result-wrap {
-        grid-column: 1 / -1 !important;
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
-        gap: 12px !important;
-        /* ✅删除 margin-bottom:18px !important; */
-    }
-    .annual-global-char-game-list .search-game-result-wrap {
-        grid-column: 1 / -1 !important;
-        grid-template-columns:repeat(auto-fill, minmax(280px,1fr)) !important;
-        gap:14px !important;
-    }
-}
-/* ③ 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
+// ===================== 常量 =====================
+const MAX_IMAGE_CONCURRENCY = 4;
+const FONT_SIYUAN = "Noto Sans SC, sans-serif";
+const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const DPR = 2;
+const WRAP_MAX_W = 1200;
 
-/* ========== 三、キャラTOP3 【新增模块样式】 ========== */
-.annual-char-top-item {
-    margin-bottom: 24px;
-}
-.annual-add-char-btn-wrap {
-    text-align: center;
-    margin: 8px 0 14px;
-}
-.annual-add-char-btn {
-    padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
-    border-radius:8px;
-    background:#b33a3a;
-    color:#fff;
-    cursor:pointer;
-    transition:0.2s;
-}
-.annual-add-char-btn:hover {
-    background-color: #992e2e;
-}
-.annual-char-name-text {
-    font-size: 22px;
-    color: var(--annual-export-gamename, #000000);
-    word-break: break-all;
-    margin: 8px 0 12px;
-}
-.annual-char-top-content-row {
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-}
-.annual-char-cover-wrap {
-    flex-shrink:0;
-    width:140px;
-}
-.annual-char-cover {
-    width:100%;
-    height:auto;
-    border-radius:8px;
-    border:1px solid #eee;
-}
-.annual-char-text-wrap {
-    flex:1;
-    min-width:260px;
-}
-.annual-char-textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--annual-export-customborder, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: vertical;
-}
-/* ========== 年度报告全局角色弹窗 #annual‑global‑char-modal ========== */
-#annual-global-char-modal,
-#annual-global-cp-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background-color: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding:16px;
-    box-sizing: border-box;
-}
-#annual-global-char-modal.active,
-#annual-global-cp-modal.active {
-    display: flex;
-}
-/* 角色弹窗内层容器：对齐游戏弹窗样式 */
-#annual-global-char-modal .annual-global-modal-inner,
-#annual-global-cp-modal .annual-global-modal-inner {
-    width: min(92vw, 1200px);
-    max-height: 80vh;
-    min-height: 420px;
-    height: 80vh;
-    background:#ffffff;
-    border-radius:14px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
-    padding:0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-#annual-global-char-modal .annual-modal-header,
-#annual-global-cp-modal .annual-modal-header {
-    flex-shrink: 0;
-}
-/* 返回按钮 ←，完全复刻关闭×按钮样式 */
-.annual-modal-back-btn {
-    position:absolute;
-    left:20px;
-    top:50%;
-    transform: translateY(-50%);
-    width:28px;
-    height:28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-}
-.annual-modal-back-btn:hover{
-    background: #992e2e !important;
-    color: #b33a3a !important;
-}
-/* 全局开关组：搜索框上方，默认显示 */
-.annual-modal-global-switch-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
-    padding: 0 20px 8px 20px;
-}
-/* 消除switch-row在弹窗开关组内的垂直margin，避免横向折行时产生额外间隙 */
-.annual-modal-global-switch-group > .switch-row {
-    margin: 0;
+// ---- 固定尺寸（对齐FavList，不随宽度等比缩放）----
+const TITLE_SIZE = 42;                 // 大标题（对齐FavList）
+const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础信息"24px）
+const NO_SIZE = 22;                    // NO.标签
+const NAME_SIZE = 22;                  // 游戏/角色/CP名称
+const STAT_SIZE = 16;                  // 统计文字
+const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
+const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
+const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
+const LABEL_ROW_MB = 8;                // ✅NO+名称行底部间距（12→8，缩减与下方图片距离）
+const ITEM_GAP = 24;                   // TOP条目间间距
+const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
+const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐BIG_CARD_PADDING）
+const COVER_CARD_PAD = 0;              // ✅封面卡片内边距（8→0，图片贴外框，删除图片与外框间内边距）
+const TEXT_BOX_PAD = 10;               // 感想文字框内边距
+const GAME_COVER_W = 140;              // 游戏封面固定宽度
+const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
+const CP_COVER_SIZE = 100;             // CP封面固定正方形
+const CP_GAP = 10;                     // CP双图间距
+// ========== 五、其他模块 ==========
+const OTHER_SECTION_TITLE_SIZE = 18;   // "还玩了"/卡片标题/底部标题统一18px
+const OTHER_CARD_W = 225;              // 其他模块卡片宽度（容纳CP双图100+10+100=210）
+const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
+const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
+const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
+const OTHER_ALSO_COVER_W = GAME_COVER_W;      // "还玩了"封面宽度=模块二140
+const OTHER_ALSO_COVER_GAP = 16;       // "还玩了"封面间距
+const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的CP封面=模块四100
+const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角=与CP图一致100
+const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
+const OTHER_SECTION_GAP = 20;          // "还玩了"区域与卡片区间距
+// ========== 六、七宫格模块 ==========
+const GRID_GAP = 16;                   // 宫格间距
+const GRID_LABEL_SIZE = 18;            // 宫格标签字号统一18px
+const GRID_LABEL_GAP = 8;              // 封面与标签间距
+const GRID_FOOTER_GAP = 20;            // 宫格与底部文本框间距
+const FOOTER_PAD = 14;                 // 底部文本框内边距
+const FOOTER_TITLE_GAP = 10;           // 底部标题与文本框间距
+const CARD_RADIUS = 16;                // 模块卡片圆角（对齐BIG_CARD_RADIUS）
+const CARD_BORDER_W = 2;               // 模块卡片边框宽度
+const SUB_CARD_RADIUS = 8;             // 封面/感想框圆角
+const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
+
+// ===================== 缓存 =====================
+const roundImageCache = new Map();
+const rawImageResourceCache = new Map();
+
+// ===================== 进度上报 =====================
+function emitRenderProgress(percent) {
+  window.dispatchEvent(new CustomEvent('annual-canvas-progress', {
+    detail: { percent: Math.min(100, Math.max(0, Number(percent))) }
+  }));
 }
 
-/* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
-.annual-modal-game-switch-group {
-    display: none;
-    flex-wrap: wrap;
-    gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
-    padding: 0 0 8px 0; /* 左右边距由外层滚动容器提供，避免双重边距 */
-}
-.annual-modal-game-switch-group.active {
-    display: flex;
-}
-/* 单游戏开关组内部同样清除switch-row上下margin */
-.annual-modal-game-switch-group > .switch-row {
-    margin: 0;
+// ===================== URL安全过滤 =====================
+function isSafeUrl(url) {
+  if (!url) return false;
+  if (!/^https?:\/\//.test(url)) return false;
+  if (/^https:\/\/pub-/.test(url)) return false;
+  if (/raw\.githubusercontent\.com/.test(url)) return false;
+  return true;
 }
 
-.annual-global-char-search-input {
-    width:calc(100% - 40px);
-    margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
-    background:#fcfcfc;
-    font-size:15px;
-    box-sizing: border-box;
-}
-/* 视图容器：两个互斥视图 */
-.annual-modal-view-container {
-    flex:1;
-    min-height:260px;
-    display:flex;
-    flex-direction:column;
-    padding:0;
-    /* 删除 overflow:hidden; */
-}
-/* ========== ✅角色弹窗游戏列表：独立滚动（仅此容器） ========== */
-.annual-global-char-game-list {
-    min-height:260px;
-    max-height: 52vh;  /* ✅新增：卡片容器最大高度，超出出现内部滚动 */
-    overflow-y: auto;   /* ✅新增：仅游戏卡片列表独立滚动 */
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-    gap:14px;
-    padding:10px 20px 20px 20px;
-    border:1px solid #eee;
-    border-radius:10px;
-    margin:0 20px 20px 20px;
+function toCanvasUrl(relativeSrc) {
+  if (!relativeSrc) return '';
+  let url = getWebImageUrl(relativeSrc);
+  if (url && /^https:\/\/pub-/.test(url)) {
+    const converted = convertR2ToJsDelivr(relativeSrc);
+    if (converted && isSafeUrl(converted)) url = converted;
+  }
+  return isSafeUrl(url) ? url : '';
 }
 
-.annual-global-char-game-list .game-option-item {
-    border:1px solid #eee;
-    border-radius:10px;
-    padding:12px;
-    cursor:pointer;
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    background:#fff;
-    width:100%;
-    box-sizing: border-box;
-}
-.annual-global-char-game-list .game-option-item:hover{
-    background:#fff0f3;
-    border-color:#e895a8;
-}
-.annual-global-char-game-list .game-option-item img{
-    width:120px;
-    height:auto;
-    border-radius:6px;
-    object-fit:cover;
-    flex-shrink:0;
-}
-.annual-global-char-game-list .game-option-info{
-    flex:1;
-    min-width: 0; /* 新增，防止长文本挤压 */
-}
-.annual-global-char-game-list .game-option-name{
-    font-weight:bold;
-    font-size:16px;
-    margin-bottom:6px;
-}
-.annual-global-char-game-list .game-option-info p{
-    font-size:14px;
-    line-height:1.6;
-    color:#333;
+// ===================== 图片尺寸工具 =====================
+function getImgSize(img) {
+  if (!img) return { w: 0, h: 0 };
+  return {
+    w: img.naturalWidth ?? img.width ?? 0,
+    h: img.naturalHeight ?? img.height ?? 0
+  };
 }
 
-/* ========== 搜索命中角色卡片（直接搜索角色名结果），完全复刻二级角色待选char-item布局 ========== */
-/* 【新增：搜索结果双层子容器：角色结果块、游戏结果块，实现上下分开排布，互不干扰】 */
-.annual-global-char-game-list .search-char-result-wrap {
-    grid-column: 1 / -1;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-    gap:14px;
-    width:100%;
-    /* ✅移除margin‑bottom:20px，块间距交给父容器grid gap统一控制，与普通游戏卡片间距一致 */
-}
-.annual-global-char-game-list .search-game-result-wrap {
-    grid-column: 1 / -1;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-    gap:14px;
-    width:100%;
-}
-/* 角色搜索结果卡片，完全复用二级待选char-item样式 */
-.annual-global-char-game-list .search-result-char-item {
-    border:1px solid #eee;
-    border-radius:10px;
-    padding:12px;
-    cursor:pointer;
-    background:#fff;
-    width:100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap:8px;
-    min-height: 148px; /* ✅和主站char-item保持一致高度，复刻二级角色选择页面设置 */
-}
-.annual-global-char-game-list .search-result-char-item:hover{
-    background:#fff0f3;
-    border-color:#e895a8;
-}
-.annual-global-char-game-list .search-result-char-item .char-card-img-box {
-    width:100%;
-    aspect-ratio: 1 / 1; /* ✅修复：强制正方形，不再拉长 */
-    overflow:hidden;
-    border-radius:6px;
-}
-.annual-global-char-game-list .search-result-char-item .char-card-img-box img {
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-/* ✅修复：垂直+水平全部居中，移除自定义flex扩容，复用原生char-item行为 */
-.annual-global-char-game-list .search-result-char-item .char-card-name-wrap {
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    justify-content: center;
-    align-items: center; /* 新增：垂直居中，解决上方空、下方贴边框 */
-}
-/* 角色名：居中，允许多行自动换行 */
-.annual-global-char-game-list .search-result-char-item .char-card-name {
-    font-weight:bold;
-    font-size:15px;
-    text-align:center;
-    word-break: break-word;
-    line-height:1.4;
-    width: 100%;  /* ✅补丁新增：撑满容器宽度，切换按钮落在名字框左右两端 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-/* 游戏名：灰色小字，居中，自动换行 */
-.annual-global-char-game-list .search-result-char-item .char-card-game-sub {
-    font-size:11px;
-    color:#888;
-    text-align:center;
-    word-break: break-word;
-    line-height:1.35;
+// 游戏封面高度：固定宽度，按原图比例自适应
+function calcGameCoverHeight(img) {
+  const { w, h } = getImgSize(img);
+  if (w <= 0 || h <= 0) return Math.round(GAME_COVER_W * 1.4); // 兜底竖版比例
+  return Math.round(GAME_COVER_W * h / w);
 }
 
-.annual-global-char-char-list {
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-    gap:14px;
-    padding:10px;
-    display:none;
-    /* ❌列表本身不写overflow，滚动交给外层 annual‑modal‑scroll‑wrap */
-}
-.annual-global-char-char-list.active {
-    display:grid;
-}
-.annual-global-char-game-list.hidden-view {
-    display:none;
-}
-/* 弹窗内游戏item直接复用已有的.game-option-item，角色item直接复用.char-item */
-/* ========== 快照模式隐藏角色TOP3交互控件 ========== */
-.snapshot-container.export-snapshot .annual-add-char-btn,
-.snapshot-container.export-snapshot .annual-add-cp-btn {
-    display:none !important;
-}
-/* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
-/* ✅修改：inner高度与header防压缩规则同时覆盖CP弹窗，确保双滚动条结构一致 */
-#annual-global-char-modal .annual-global-modal-inner,
-#annual-global-cp-modal .annual-global-modal-inner {
-    display: flex;
-    flex-direction: column;
-    height: 85vh;
-}
-#annual-global-char-modal .annual-modal-header,
-#annual-global-cp-modal .annual-modal-header {
-    flex-shrink: 0;
-}
-#annual-global-char-modal .annual-modal-scroll-wrap,
-#annual-global-cp-modal .annual-modal-scroll-wrap {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 12px 12px 12px;
-}
-/* 视图模式 class 控制 */
-.char-modal-gamelist-view .annual-modal-global-switch-group { display:flex; }
-.char-modal-gamelist-view .annual-global-char-search-input { display:block; }
-.char-modal-gamelist-view .annual-modal-game-switch-group { display:none; }
-.char-modal-gamelist-view .annual-global-char-game-list { display:grid; }
-.char-modal-gamelist-view .annual-global-char-char-list { display:none; }
-.char-modal-charlist-view .annual-modal-global-switch-group { display:none; }
-.char-modal-charlist-view .annual-global-char-search-input { display:none; }
-.char-modal-charlist-view .annual-modal-game-switch-group { display:flex; }
-.char-modal-charlist-view .annual-global-char-game-list { display:none; }
-.char-modal-charlist-view .annual-global-char-char-list { display:grid; }
-
-/* ========== ✅新增：CP弹窗视图切换 ========== */
-.cp-modal-gamelist-view .annual-cp-global-switch-group { display:flex; }
-.cp-modal-gamelist-view .annual-global-cp-search-input { display:block; }
-.cp-modal-gamelist-view .annual-cp-game-switch-group { display:none; }
-.cp-modal-gamelist-view .annual-global-cp-game-list { display:grid; }
-.cp-modal-gamelist-view .annual-global-cp-female-list { display:none; }
-.cp-modal-femalelist-view .annual-cp-global-switch-group { display:none; }
-.cp-modal-femalelist-view .annual-global-cp-search-input { display:none; }
-.cp-modal-femalelist-view .annual-cp-game-switch-group { display:flex; }
-.cp-modal-femalelist-view .annual-global-cp-game-list { display:none; }
-.cp-modal-femalelist-view .annual-global-cp-female-list { display:grid; }
-
-/* ================================================================ */
-/* ========== 新增修改：修复 TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 ========== */
-/* ================================================================ */
-
-/* ==========【问题④】NO.x + 名称 + ×按钮 严格垂直中线对齐 ========== */
-.annual-top-label-row {
-    display: flex;
-    align-items: center !important;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-    /* ==========修复：关闭整行文本选择，阻止iOS原生长按文本菜单抢占手势========== */
-    user-select: none;
-    -webkit-user-select: none;
-}
-.annual-top-label-row .annual-top-label {
-    flex-shrink: 0;
-    align-self: center;
-    margin: 0;
-    line-height: 1; /* 消除行盒基线偏移 */
-    user-select: none;
-    -webkit-user-select: none;
-}
-/* 修改点5：追加 .annual-cp-name-text 到选择器 */
-.annual-top-label-row .annual-game-name-text,
-.annual-top-label-row .annual-char-name-text,
-.annual-top-label-row .annual-cp-name-text {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-weight: bold;
-    align-self: center;
-    line-height: 1.2;
-    user-select: none;
-    -webkit-user-select: none;
-}
-.annual-top-label-row .annual-item-delete-btn {
-    flex-shrink: 0;
-    align-self: center;
-    margin:0;
+// ===================== 布局计算辅助 =====================
+function getBodyPad() {
+  return LAYOUT_SPACE.BODY_PADDING || 20;
 }
 
-/* ② 删除按钮完整样式（复用弹窗关闭按钮） */
-.annual-item-delete-btn {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.annual-item-delete-btn:hover {
-    background: #992e2e !important;
-    color: #ffffff !important;
+function getWrapW(targetW) {
+  const pad = getBodyPad();
+  return Math.min(WRAP_MAX_W, targetW - pad * 2);
 }
 
-/* ========== ✅新增：模块折叠头部与按钮 ========== */
-.annual-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-/* 覆盖.big-card h2原有的margin-bottom:20px，由header统一控制间距 */
-.annual-card-header h2 {
-    margin-bottom: 0;
-}
-/* 折叠按钮：1:1复用.annual-item-delete-btn全部样式 */
-.annual-card-fold-btn {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.annual-card-fold-btn:hover {
-    background: #992e2e !important;
-    color: #ffffff !important;
-}
-/* 折叠状态：隐藏内容区，仅保留header */
-.big-card.annual-folded .annual-card-body {
-    display: none;
+function getWrapX(targetW, wrapW) {
+  const pad = getBodyPad();
+  return Math.max(pad, (targetW - wrapW) / 2);
 }
 
-/* ③ 年度报告自定义文本框（含拖拽手柄） */
-.annual-custom-text-wrap {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    margin-top: 0;
+function getTitleMb() {
+  return (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
 }
-.annual-custom-text-wrap textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px 26px 10px;
-    border: 1px solid var(--annual-export-customborder, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: none !important;
-    overflow: auto;
+
+// ===================== 圆角离屏画布 =====================
+function createRoundImageCanvas(img, srcUrl, radius) {
+  if (!img) return null;
+  const { w: sourceW, h: sourceH } = getImgSize(img);
+  if (sourceW <= 0 || sourceH <= 0) return null;
+  if (IS_IOS_WEBKIT) {
+    const pxTotal = (sourceW * DPR) * (sourceH * DPR);
+    if (pxTotal > 4096 * 4096) return null;
+  }
+  const cacheKey = `${srcUrl}||${sourceW}x${sourceH}||${radius}||${DPR}`;
+  if (roundImageCache.has(cacheKey)) return roundImageCache.get(cacheKey);
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = sourceW * DPR;
+  offCanvas.height = sourceH * DPR;
+  const offCtx = offCanvas.getContext('2d');
+  if (!offCtx) return null;
+  offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);  // ✅补：清空离屏画布
+  offCtx.imageSmoothingEnabled = true;
+  offCtx.imageSmoothingQuality = "high";
+  offCtx.webkitImageSmoothingEnabled = true;  // ✅补：IOS Safari前缀兼容
+  try {
+    offCtx.save();
+    offCtx.scale(DPR, DPR);
+    offCtx.beginPath();
+    offCtx.moveTo(radius, 0);
+    offCtx.lineTo(sourceW - radius, 0);
+    offCtx.quadraticCurveTo(sourceW, 0, sourceW, radius);
+    offCtx.lineTo(sourceW, sourceH - radius);
+    offCtx.quadraticCurveTo(sourceW, sourceH, sourceW - radius, sourceH);
+    offCtx.lineTo(radius, sourceH);
+    offCtx.quadraticCurveTo(0, sourceH, 0, sourceH - radius);
+    offCtx.lineTo(0, radius);
+    offCtx.quadraticCurveTo(0, 0, radius, 0);
+    offCtx.closePath();
+    offCtx.clip();
+    offCtx.drawImage(img, 0, 0, sourceW, sourceH);
+    offCtx.restore();
+  } catch (e) {
+    console.warn("annual离屏画布绘制异常", srcUrl, e);  // ✅补：可追踪警告
+    offCanvas.width = 0; offCanvas.height = 0;
+    return null;
+  }
+  roundImageCache.set(cacheKey, offCanvas);
+  return offCanvas;
 }
-.annual-custom-text-wrap textarea:focus {
-    outline: none;
-    border-color: #f6a5b8;
-}
-.annual-custom-text-wrap .resize-handle {
-    position: absolute;
-    right: 0px;
-    bottom: 0px;
-    width: 24px;
-    height: 24px;
-    cursor: ns-resize;
-    z-index: 2;
-}
-.annual-custom-text-wrap .resize-handle::after {
-    content: "";
-    display: block;
-    width: 14px;
-    height: 14px;
-    background-color: #b33a3a;
-    clip-path: polygon(100% 0, 100% 100%, 0 100%);
-    position: absolute;
-    right: 0;
-    bottom: 0;
-}
-.annual-custom-text-wrap .resize-handle:active::after {
-    opacity: 0.7;
-}
-/* 快照模式隐藏拖拽手柄 */
-.snapshot-container.export-snapshot .annual-custom-text-wrap .resize-handle {
-    display: none !important;
-}
-/* 移动端放大拖拽热区 */
-@media (max-width: 1200px) {
-    .annual-custom-text-wrap .resize-handle {
-        width: 32px;
-        height: 32px;
+
+async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
+  const taskMap = new Map();
+  for (const task of roundTaskList) {
+    const img = imageCache.get(task.src);
+    if (!img) continue;
+    const { w, h } = getImgSize(img);
+    const key = `${task.src}||${w}x${h}||${task.radius}||${DPR}`;
+    if (!taskMap.has(key)) taskMap.set(key, task);
+  }
+  let idx = 0;
+  const total = taskMap.size;
+  for (const task of taskMap.values()) {
+    createRoundImageCanvas(imageCache.get(task.src), task.src, task.radius);
+    await new Promise(r => setTimeout(r, IS_IOS_WEBKIT ? 30 : 12));
+    idx++;
+    if (total > 0) emitRenderProgress(45 + (idx / total) * 15);
+  }
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => setTimeout(r, 50));
+  if (IS_IOS_WEBKIT && roundImageCache.size > 80) {
+    const del = roundImageCache.size - 80;
+    let count = 0;
+    for (const [k, c] of roundImageCache) {
+      if (count >= del) break;
+      c.width = 0; c.height = 0;
+      roundImageCache.delete(k);
+      count++;
     }
-    .annual-custom-text-wrap .resize-handle::after {
-        right: 0px;
-        bottom: 4px;
-        width: 16px;
-        height: 16px;
+  }
+}
+
+// ===================== 图片加载 =====================
+async function loadImagesWithLimit(urlList, limit) {
+  const uniqueUrls = [...new Set(urlList)];
+  const resultMap = new Map();
+  let index = 0;
+
+  async function loadSingleUrl(url, retryCount = 2) {
+    try {
+      const bitmap = await preloadImageBitmap(url);
+      if (!bitmap || bitmap.width === 0 || bitmap.height === 0) throw new Error("empty");
+      if (IS_IOS_WEBKIT) await new Promise(r => requestAnimationFrame(r));
+      rawImageResourceCache.set(url, { type: 'bitmap', data: bitmap });
+      return bitmap;
+    } catch (err) {
+      if (retryCount > 0) {
+        await new Promise(r => setTimeout(r, 600));
+        return loadSingleUrl(url, retryCount - 1);
+      }
+      try {
+        const img = await preloadAndDecodeImage(url);
+        await new Promise(r => requestAnimationFrame(r));
+        rawImageResourceCache.set(url, { type: 'image', data: img });
+        return img;
+      } catch (e2) {
+        rawImageResourceCache.set(url, { type: 'fail', data: null });
+        return null;
+      }
     }
-}
+  }
 
-/* ✅全局板块添加按钮容器（替换原item内部wrap） */
-.annual-global-add-game-btn-wrap,
-.annual-global-add-char-btn-wrap {
-    text-align: center;
-    margin: 8px 0 18px;
-}
-.annual-add-game-btn {
-    padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
-    border-radius:8px;
-    background:#b33a3a;
-    color:#fff;
-    cursor:pointer;
-    transition:0.2s;
-}
-.annual-add-game-btn:hover {
-    background-color: #992e2e;
-}
-.annual-add-char-btn {
-    padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
-    border-radius:8px;
-    background:#b33a3a;
-    color:#fff;
-    cursor:pointer;
-    transition:0.2s;
-}
-.annual-add-char-btn:hover {
-    background-color: #992e2e;
-}
-
-/* ========== 三、キャラTOP3 【新增模块样式】 ========== */
-.annual-char-top-item {
-    margin-bottom: 24px;
-}
-
-/* ========== 选中排序模式样式【重写】 ========== */
-/* 全部设备移除原生拖拽光标，不再使用浏览器draggable拖拽 */
-.annual-top-label-row,
-.annual-top-label-row *,
-.annual-top-label,
-.annual-game-name-text,
-.annual-char-name-text {
-    -webkit-user-drag: none;
-    user-drag: none;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -webkit-touch-callout: none !important;
-    cursor: default;
-}
-
-/* 插入指示线：排序模式下批量生成在每两个卡片中间；常态无DOM */
-.sort-insert-indicator {
-    height: 4px;
-    /* 宽度对齐选中卡片虚线框，不占满父容器；左右margin模拟向内缩进，匹配outline-offset:2px */
-    width: calc(100% - 16px);
-    margin: 14px auto;
-    background-color: #f6a5b8;
-    border-radius: 2px;
-    pointer-events: auto;
-    cursor: pointer;
-    transition: background-color 0.15s;
-}
-
-/* ✅第一次点击激活状态：#b33a3a深红色 */
-.sort-insert-indicator.active-hit {
-    background-color: #b33a3a;
-    height:4px;
-}
-
-/* ✅选中排序模式：外层卡片虚线 #f6a5b8；解决①下陷缩小：使用outline代替border，outline不占用盒模型空间！！ */
-.annual-top-item.sort-selected-item,
-.annual-char-top-item.sort-selected-item {
-    outline: 2px dashed #f6a5b8;
-    outline-offset: 2px;
-    border-radius: 8px;
-    opacity: 1;
-    transform: none !important;
-    scale: 1 !important;
-    /* 重要：不改动原有border，改用outline，不会挤压内部内容，不会改变卡片布局尺寸 */
-    box-sizing: border-box;
-}
-/* 选中模式布局锁定，禁止浏览器手势触发的位移偏移 */
-.annual-top-item.sort-lock-layout,
-.annual-char-top-item.sort-lock-layout {
-    transform: none !important;
-    translate: none !important;
-    position: relative;
-}
-
-/* 内部label-row清除outline，不再高亮内部行 */
-.annual-top-item.sort-selected-item > .annual-top-label-row,
-.annual-char-top-item.sort-selected-item > .annual-top-label-row {
-    outline: none;
-}
-
-/* 封面图片区域禁止系统长按菜单（iOS） */
-.annual-top-cover,
-.annual-char-cover {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    pointer-events: auto;
-}
-
-/* 快照导出模式：隐藏插入指示线与选中高亮 */
-.snapshot-container.export-snapshot .sort-insert-indicator,
-.snapshot-container.export-snapshot .sort-selected-item {
-    opacity: 1 !important;
-    display: none !important;
-    outline: none !important;
-}
-
-.sort-selected-item,
-.annual-top-item,
-.annual-char-top-item {
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-/* ✅关键修复：文本框/输入框恢复文字选择和输入能力，不被父级 user-select:none 连带禁止 */
-.annual-top-item textarea,
-.annual-char-top-item textarea,
-.annual-cp-top-item textarea,
-.annual-top-item input,
-.annual-char-top-item input,
-.annual-cp-top-item input {
-    user-select: text;
-    -webkit-user-select: text;
-    pointer-events: auto;
-}
-
-/* ========== ✅新增：CP弹窗游戏列表（样式对齐角色弹窗） ========== */
-.annual-global-cp-game-list {
-    min-height:260px;
-    max-height: 52vh;
-    overflow-y: auto;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-    gap:14px;
-    padding:10px 20px 20px 20px;
-    border:1px solid #eee;
-    border-radius:10px;
-    margin:0 20px 20px 20px;
-}
-.annual-global-cp-game-list .game-option-item {
-    border:1px solid #eee; border-radius:10px; padding:12px; cursor:pointer;
-    display:flex; gap:12px; align-items:flex-start; background:#fff; width:100%; box-sizing:border-box;
-}
-.annual-global-cp-game-list .game-option-item:hover{ background:#fff0f3; border-color:#e895a8; }
-.annual-global-cp-game-list .game-option-item img{ width:120px; height:auto; border-radius:6px; object-fit:cover; flex-shrink:0; }
-.annual-global-cp-game-list .game-option-info{ flex:1; min-width:0; }
-.annual-global-cp-game-list .game-option-name{ font-weight:bold; font-size:16px; margin-bottom:6px; }
-.annual-global-cp-game-list .game-option-info p{ font-size:14px; line-height:1.6; color:#333; }
-
-.annual-global-cp-search-input {
-    width:calc(100% - 40px);
-    margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
-    background:#fcfcfc;
-    font-size:15px;
-    box-sizing: border-box;
-}
-
-/* CP弹窗女主列表容器：1:1对齐.annual-global-char-char-list */
-.annual-global-cp-female-list {
-    display:none;
-    grid-template-columns: repeat(auto-fill, 130px);  /* minmax→固定130px，与角色弹窗实际列宽一致 */
-    justify-content: start;                           /* 新增：左对齐，不拉伸 */
-    gap:14px;
-    padding:10px;
-    align-items:start;
-}
-.annual-cp-female-card.selected {
-    border-color:#e895a8;
-    background:#fff0f3;
-}
-
-/* ========== ✅新增：カップルTOP条目样式 ========== */
-.annual-cp-top-item {
-    margin-bottom: 24px;
-}
-.annual-cp-name-text {
-    font-size: 22px;
-    color: var(--annual-export-gamename, #000000);
-    word-break: break-all;
-    margin: 8px 0 12px;
-}
-.annual-cp-top-content-row {
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-}
-.annual-cp-cover-wrap {
-    flex-shrink:0;
-    display:flex;
-    gap:10px;
-}
-/* 修改点4：PC端CP封面尺寸140px */
-.annual-cp-female-cover,
-.annual-cp-male-cover {
-    width:140px;
-    height:140px;
-    aspect-ratio: 1 / 1;
-    object-fit:cover;
-    border-radius:8px;
-    border:1px solid #eee;
-}
-.annual-cp-text-wrap {
-    flex:1;
-    min-width:260px;
-}
-.annual-cp-textarea {
-    width: 100%;
-    min-height: 120px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--annual-export-customborder, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: vertical;
-}
-.annual-global-add-cp-btn-wrap {
-    text-align: center;
-    margin: 8px 0 18px;
-}
-.annual-add-cp-btn {
-    padding:10px 18px;
-    min-height:42px;
-    font-size:15px;
-    border: none;
-    border-radius:8px;
-    background:#b33a3a;
-    color:#fff;
-    cursor:pointer;
-    transition:0.2s;
-}
-.annual-add-cp-btn:hover {
-    background-color: #992e2e;
-}
-
-/* ================================================================ */
-/* ========== CP弹窗独立class样式（视觉1:1复刻角色弹窗.char-item） ========== */
-/* ================================================================ */
-
-/* 独立返回按钮：复用.annual-modal-back-btn的视觉 */
-.annual-cp-modal-back-btn {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.annual-cp-modal-back-btn:hover {
-    background: #992e2e !important;
-    color: #b33a3a !important;
-}
-
-/* 游戏列表卡片：对齐.annual-global-cp-game-list .game-option-item */
-.annual-global-cp-game-list .annual-cp-game-option-item {
-    border: 1px solid #eee;
-    border-radius: 10px;
-    padding: 12px;
-    cursor: pointer;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    background: #fff;
-    width: 100%;
-    box-sizing: border-box;
-}
-.annual-global-cp-game-list .annual-cp-game-option-item:hover {
-    background: #fff0f3;
-    border-color: #e895a8;
-}
-.annual-global-cp-game-list .annual-cp-game-option-item img {
-    width: 120px;
-    height: auto;
-    border-radius: 6px;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-
-/* ---------- 女主block：纯包裹容器，无边框无间距，由grid gap控制 ---------- */
-.annual-cp-female-block {
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-/* 修改点1：选中女主时block跨全列 */
-.annual-cp-female-block-expanded {
-    grid-column: 1 / -1;
-    width: 100%;
-}
-/* ✅选中女主后不再放大：用max-width锁定与grid列宽一致，卡片保持原尺寸 */
-.annual-cp-female-block-expanded .char-item {
-    max-width: 130px;
-}
-
-/* ---------- 女主block内部男主选择面板 ---------- */
-.annual-cp-male-select-wrap {
-    margin-top: 16px;
-    margin-bottom: 4px;
-    padding: 0;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    width: 100%;
-    box-sizing: border-box;
-}
-.annual-cp-male-title {
-    font-size: 14px;
-    color: #b33a3a;
-    margin-top: 0;
-    margin-bottom: 14px;
-    font-weight: bold;
-    text-align: left;
-}
-.annual-cp-male-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 130px);
-    justify-content: start;
-    gap: 14px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* ================================================================ */
-/* ========== 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 ========== */
-/* ================================================================ */
-
-/* ---------- 通用＋按钮（复用×按钮视觉，符号为+） ---------- */
-.annual-grid-add-btn {
-    width: 28px;
-    height: 28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.annual-grid-add-btn:hover {
-    background: #992e2e !important;
-    color: #ffffff !important;
-}
-
-/* 宫格封面右上角圆形删除按钮 */
-.annual-grid-remove-btn {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
-    border: 1px solid #b33a3a;
-    border-radius: 50%;
-    background: #fff;
-    color: #b33a3a;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    z-index: 10;
-}
-.annual-grid-remove-btn:hover {
-    background: #992e2e;
-    color: #fff;
-}
-/* 封面框设为相对定位，供删除按钮定位 */
-.annual-grid-cover-box.filled {
-    position: relative;
-}
-
-/* ---------- 五、其他：还玩了 圆角长框 ---------- */
-.annual-other-also-box {
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 20px;
-    background: #fff;
-    min-width: 120px;
-}
-.annual-other-also-title {
-    text-align: center;
-    font-size: 16px;  /* 修改点4：字号从15px改为16px */
-    font-weight: bold;
-    color: var(--annual-export-labelcolor, #b85878);  /* 修改点：改用labelcolor */
-    margin-bottom: 12px;
-}
-.annual-other-also-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-.annual-other-also-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: center;
-}
-.annual-other-also-item {
-    position: relative;
-    width: 140px;
-}
-.annual-other-also-cover {
-    width: 140px;
-    height: auto;
-    border-radius: 8px;
-    border: 1px solid #eee;
-    display: block;
-}
-.annual-other-also-remove {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
-    border: 1px solid #b33a3a;
-    border-radius: 50%;
-    background: #fff;
-    color: #b33a3a;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-}
-.annual-other-also-remove:hover { background: #992e2e; color: #fff; }
-
-/* ---------- 五、其他：六个圆角框 ---------- */
-.annual-other-cards-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-}
-.annual-other-card {
-    background: var(--annual-export-boxbg, #fff7f9);  /* 修改点4：背景色接入CSS变量 */
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.annual-other-card-title {
-    text-align: center;
-    font-size: 15px;
-    font-weight: bold;
-    color: var(--annual-export-labelcolor, #b85878);  /* 修改点5：标签文字色接入CSS变量 */
-}
-/* 模块五自定义卡片标签（可编辑输入框） */
-.annual-other-custom-label {
-    width: 100%;
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
-    border: 1px dashed #ddd;
-    border-radius: 6px;
-    padding: 4px 8px;
-    box-sizing: border-box;
-    background: #fff;
-    color: var(--annual-export-labelcolor, #b85878);  /* 修改点5：标签文字色接入CSS变量 */
-}
-.annual-other-custom-label:focus {
-    outline: none;
-    border-color: #f6a5b8;
-}
-.annual-other-card-body {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 120px;
-    position: relative;
-}
-.annual-other-cp-preview {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
-.annual-other-cp-preview img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #eee;
-}
-.annual-other-support-preview img {
-    width: 90px;
-    height: 90px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #eee;
-}
-.annual-other-mini-remove {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 22px;
-    height: 22px;
-    border: 1px solid #b33a3a;
-    border-radius: 50%;
-    background: #fff;
-    color: #b33a3a;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-}
-.annual-other-mini-remove:hover { background: #992e2e; color: #fff; }
-.annual-other-textarea {
-    width: 100%;
-    min-height: 80px;
-    box-sizing: border-box;
-    padding: 8px 10px 26px 10px;
-    border: 1px solid var(--annual-export-customborder, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 15px;
-    color: var(--annual-export-customtext, #c98fac);
-    resize: none !important;
-    overflow: auto;
-}
-.annual-other-textarea:focus { outline: none; border-color: #f6a5b8; }
-
-/* 模块五自定义卡片右上角删除按钮 */
-.annual-other-custom-card {
-    position: relative;
-}
-.annual-other-custom-remove {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
-    border: 1px solid #b33a3a;
-    border-radius: 50%;
-    background: #fff;
-    color: #b33a3a;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    z-index: 10;
-}
-.annual-other-custom-remove:hover {
-    background: #992e2e;
-    color: #fff;
-}
-
-/* ---------- 六、七：宫格通用 ---------- */
-.annual-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-}
-.annual-grid-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-.annual-grid-cover-box {
-    width: 140px;
-    height: 140px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    overflow: visible;
-    position: relative;  /* 修改点3：增加 position:relative */
-}
-/* 游戏宫格封面：竖版比例，高度高于宽度 */
-#annual-game-grid-container .annual-grid-cover-box {
-    height: 186px;
-}
-.annual-grid-cover-box.empty {
-    border: 1px solid #f6a5b8;
-    background: #fff;
-}
-.annual-grid-cover-box.filled {
-    border: 1px solid #eeeeee;
-    background: #fff;
-}
-.annual-grid-cover-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-}
-.annual-grid-label {
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
-    color: var(--annual-export-labelcolor, #b85878);  /* 修改点5：标签文字色接入CSS变量 */
-    word-break: break-word;
-    line-height: 1.4;
-    width: 100%;
-}
-.annual-grid-custom-label {
-    width: 100%;
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
-    border: 1px dashed #ddd;
-    border-radius: 6px;
-    padding: 4px 6px;
-    box-sizing: border-box;
-    background: #fcfcfc;
-    color: var(--annual-export-labelcolor, #b85878);  /* 修改点5：标签文字色接入CSS变量 */
-}
-.annual-grid-custom-label:focus { outline: none; border-color: #f6a5b8; }
-
-/* ---------- 宫格底部长文本框 ---------- */
-.annual-grid-footer-text {
-    background: var(--annual-export-boxbg, #fff7f9);  /* 修改点4：背景色接入CSS变量 */
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 14px;
-}
-.annual-grid-footer-text .annual-other-card-title {
-    margin-bottom: 10px;
-    font-size: 16px;  /* 修改点5：增加 font-size:16px */
-}
-
-/* ---------- 移动端适配 ---------- */
-@media (max-width: 768px) {
-    .annual-other-cards-row {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 10px;
+  async function worker() {
+    while (index < uniqueUrls.length) {
+      const url = uniqueUrls[index++];
+      if (resultMap.has(url)) continue;
+      const bitmap = await loadSingleUrl(url);
+      resultMap.set(url, bitmap);
+      if (uniqueUrls.length > 0) emitRenderProgress((resultMap.size / uniqueUrls.length) * 45);
     }
-    .annual-other-also-item,
-    .annual-other-also-cover {
-        width: 80px;
-    }
-    .annual-grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-        gap: 10px !important;
-    }
-    .annual-grid-cover-box {
-        width: 90px !important;
-        height: 90px !important;
-    }
-    .annual-grid-label,
-    .annual-grid-custom-label {
-        font-size: 15px;
-    }
-    .annual-other-cp-preview img {
-        width: 60px;
-        height: 60px;
-    }
-    .annual-other-support-preview img {
-        width: 70px;
-        height: 70px;
-    }
-    /* 游戏宫格移动端封面高度同步改高 */
-    #annual-game-grid-container .annual-grid-cover-box {
-        height: 120px !important;
-    }
-    /* 模块五自定义卡片移动端字号统一15px */
-    .annual-other-custom-label {
-        font-size: 15px;
-        padding: 3px 6px;
-    }
-    /* 宫格删除按钮移动端缩小 */
-    .annual-grid-remove-btn {
-        width: 20px;
-        height: 20px;
-        font-size: 12px;
-        line-height: 1;
-        padding: 0 0 2px 0;
-        top: -6px;
-        right: -6px;
-    }
+  }
+
+  await Promise.all(Array.from({ length: limit }, worker));
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => setTimeout(r, 30));
+  // ✅收集失败列表（对齐export容错模式）
+  const failList = [];
+  for (const [u, val] of resultMap.entries()) {
+    if (!val) failList.push(u);
+  }
+  if (failList.length > 0) {
+    console.warn("⚠️ annual部分图片加载失败，继续渲染（空白占位）：", failList);
+  }
+  return { resultMap, failList };
 }
 
-/* ---------- 修改点3：填表人输入行 ---------- */
-.annual-reporter-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
+// ===================== 统计文本 =====================
+const STAT_LABELS = [
+  ['reportYear', '年度'],
+  ['playCount', '游玩总数'],
+  ['totalHours', '总时长'],
+  ['likeCharCount', '喜欢角色'],
+  ['cpCount', 'CP'],
+  ['buyCount', '购买'],
+  ['costMoney', '花费'],
+  ['finished', '完结'],
+  ['ongoing', '途中'],
+  ['notStart', '未开'],
+];
+
+function buildStatsText(annualData) {
+  const parts = [];
+  for (const [key, label] of STAT_LABELS) {
+    const val = annualData[key];
+    if (val !== undefined && val !== null && String(val).trim() !== '') {
+      parts.push(`${label}：${String(val).trim()}`);
+    }
+  }
+  return parts.join('  ');
 }
-.annual-reporter-row input {
-    flex: 1;
-    max-width: 300px;
-    padding: 6px 12px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #333;
-    background: #fff;
-    box-sizing: border-box;
+
+// ===================== 收集图片URL =====================
+function collectModuleImages(moduleType, annualData) {
+  const urls = [];
+  const safeEach = (list, cb) => { (list || []).forEach(item => { if (item) cb(item); }); };
+  const pushUrl = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
+  if (moduleType === 'gameTop') {
+    safeEach(annualData.topList, item => { if (!item.gameId) return; pushUrl(item.coverSrc); });
+  } else if (moduleType === 'charTop') {
+    safeEach(annualData.charTopList, item => { if (!item.charId) return; pushUrl(item.coverSrc); });
+  } else if (moduleType === 'cpTop') {
+    safeEach(annualData.cpTopList, item => {
+      if (!item.femaleId || !item.maleId) return;
+      pushUrl(item.femaleCoverSrc); pushUrl(item.maleCoverSrc);
+    });
+  } else if (moduleType === 'other') {
+    // 还玩了
+    safeEach(annualData.other?.alsoPlayed, item => pushUrl(item.coverSrc));
+    // 最喜欢的CP
+    const cp = annualData.other?.favCp;
+    if (cp && cp.femaleId && cp.maleId) { pushUrl(cp.femaleCoverSrc); pushUrl(cp.maleCoverSrc); }
+    // 最喜欢的配角
+    const sup = annualData.other?.favSupport;
+    if (sup && sup.charId) pushUrl(sup.coverSrc);
+  } else if (moduleType === 'gameGrid') {
+    const g = annualData.gameGrid;
+    safeEach(g?.fixed, item => { if (item.gameId) pushUrl(item.coverSrc); });
+    safeEach(g?.custom, item => { if (item.gameId) pushUrl(item.coverSrc); });
+  } else if (moduleType === 'charGrid') {
+    const g = annualData.charGrid;
+    safeEach(g?.fixed, item => { if (item.charId) pushUrl(item.coverSrc); });
+    safeEach(g?.custom, item => { if (item.charId) pushUrl(item.coverSrc); });
+  }
+  return [...new Set(urls)];
 }
-.annual-reporter-row input:focus {
-    outline: none;
-    border-color: #f6a5b8;
+
+// ===================== 过滤有效条目 =====================
+function getValidItems(moduleType, annualData) {
+  if (moduleType === 'gameTop') {
+    return (annualData.topList || []).filter(item => item && item.gameId);
+  } else if (moduleType === 'charTop') {
+    return (annualData.charTopList || []).filter(item => item && item.charId);
+  } else if (moduleType === 'cpTop') {
+    return (annualData.cpTopList || []).filter(item => item && item.femaleId && item.maleId);
+  }
+  return [];
+}
+
+// ===================== 五、其他模块：判断是否有内容 =====================
+function hasOtherContent(annualData) {
+  const o = annualData.other || {};
+  if ((o.alsoPlayed || []).length > 0) return true;
+  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) return true;
+  if (o.favSupport && o.favSupport.charId) return true;
+  if ((o.favLine || '').trim()) return true;
+  if ((o.favMusic || '').trim()) return true;
+  if ((o.favHe || '').trim()) return true;
+  if ((o.favBe || '').trim()) return true;
+  const customValid = (o.customCards || []).some(c => c && ((c.label || '').trim() || (c.text || '').trim()));
+  if (customValid) return true;
+  return false;
+}
+
+// 收集五模块中有内容的卡片列表（不含"还玩了"区域）
+function getOtherCards(annualData) {
+  const o = annualData.other || {};
+  const cards = [];
+  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) {
+    cards.push({ type: 'cp', title: '最喜欢的CP', data: o.favCp });
+  }
+  if (o.favSupport && o.favSupport.charId) {
+    cards.push({ type: 'support', title: '最喜欢的配角', data: o.favSupport });
+  }
+  if ((o.favLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的台词', text: o.favLine });
+  if ((o.favMusic || '').trim()) cards.push({ type: 'text', title: '最喜欢的OP/ED/BGM', text: o.favMusic });
+  if ((o.favHe || '').trim()) cards.push({ type: 'text', title: '最喜欢的HE', text: o.favHe });
+  if ((o.favBe || '').trim()) cards.push({ type: 'text', title: '最喜欢的BE', text: o.favBe });
+  (o.customCards || []).forEach(c => {
+    if (c && ((c.label || '').trim() || (c.text || '').trim())) {
+      cards.push({ type: 'custom', title: c.label || '自定义', text: c.text || '' });
+    }
+  });
+  return cards;
+}
+
+// ===================== 六、七宫格：收集有效项 =====================
+function getValidGridItems(gridData, gridKind) {
+  // gridKind: 'game' | 'char'
+  const valid = [];
+  const hasId = (item) => gridKind === 'game' ? !!(item && item.gameId) : !!(item && item.charId);
+  // 固定项：有图才导出
+  (gridData?.fixed || []).forEach(item => {
+    if (hasId(item)) valid.push({ ...item, isCustom: false });
+  });
+  // 自定义项：有图或有标签才导出
+  (gridData?.custom || []).forEach(item => {
+    if (!item) return;
+    if (hasId(item) || (item.label && item.label.trim())) valid.push({ ...item, isCustom: true });
+  });
+  return valid;
+}
+
+function hasGridContent(gridData, gridKind, footerText) {
+  if (getValidGridItems(gridData, gridKind).length > 0) return true;
+  if ((footerText || '').trim()) return true;
+  return false;
+}
+
+// ===================== 高度计算（需在图片加载后调用） =====================
+function calcStatsHeight(ctx, targetW, annualData, config) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  // ✅修复：CanvasLayoutPainter从y=BODY_PADDING开始绘制，画布高度必须包含顶部边距，否则底部内容超出画布被裁
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
+  // 模块卡片
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  const statsText = buildStatsText(annualData);
+  if (statsText) {
+    contentH += measureWrappedHeight(ctx, statsText, innerW, STAT_SIZE * 1.8, STAT_SIZE);
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = 0;
+
+  // ---- NO + 名称行 ----
+  const nameText = itemType === 'cp'
+    ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
+    : (item.gameName || item.charName || '');
+  const noText = `NO.${(item._no ?? 0) + 1}`;
+  ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
+  const noW = ctx.measureText(noText).width;
+  const nameMaxW = innerW - noW - 12;
+  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
+  // ✅NO行高使用 NO_SIZE*1.3（与名称行高一致），不再用裸NO_SIZE=22
+  const noLineH = NO_SIZE * 1.3;
+  h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
+
+  // ---- 封面 + 感想行 ----
+  let coverH; // 封面卡片总高度（含内边距）
+  let coverAreaW;
+  if (itemType === 'game') {
+    const img = imageCache.get(toCanvasUrl(item.coverSrc));
+    coverH = calcGameCoverHeight(img) + COVER_CARD_PAD * 2;
+    coverAreaW = GAME_COVER_W + COVER_CARD_PAD * 2;
+  } else if (itemType === 'char') {
+    coverH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+    coverAreaW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+  } else { // cp
+    coverH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
+    coverAreaW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：两张卡片各含左右内边距
+  }
+  // 感想框（仅当有文字时计算）
+  let textBoxH = 0;
+  const text = (item.text || '').trim();
+  if (text) {
+    const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;  // ✅统一间距常量
+    const textSize = config.customTextFontSize || 16;
+    const textH = measureWrappedHeight(ctx, text, textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    textBoxH = textH + TEXT_BOX_PAD * 2;
+  }
+
+  h += Math.max(coverH, textBoxH);
+  return h;
+}
+
+function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, config, imageCache) {
+  // 五、其他模块独立计算（无模块标题）
+  if (moduleType === 'other') {
+    return calcOtherHeight(ctx, targetW, annualData, config, imageCache);
+  }
+  // 六、七宫格独立计算
+  if (moduleType === 'gameGrid') {
+    return calcGridHeight(ctx, targetW, annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect, config, imageCache);
+  }
+  if (moduleType === 'charGrid') {
+    return calcGridHeight(ctx, targetW, annualData.charGrid, 'char', annualData.charGrid?.extraThoughts, config, imageCache);
+  }
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let contentH = 0;
+  if (moduleTitle) {
+    contentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  }
+  const items = getValidItems(moduleType, annualData);
+  if (items.length > 0) {
+    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+    items.forEach((item, i) => {
+      item._no = i;
+      contentH += calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache);
+      if (i < items.length - 1) contentH += ITEM_GAP;
+    });
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// ===================== 五、其他模块高度计算 =====================
+function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题
+  let contentH = 0;
+  const o = annualData.other || {};
+  const labelColor = config.subtitle || '#b85878';
+  // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
+  const alsoList = o.alsoPlayed || [];
+  if (alsoList.length > 0) {
+    contentH += OTHER_SECTION_TITLE_SIZE + 12; // 标题+底部间距
+    const coverW = OTHER_ALSO_COVER_W;
+    const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
+    const rows = Math.ceil(alsoList.length / cols);
+    // 逐行计算最大封面高度
+    for (let r = 0; r < rows; r++) {
+      let rowMaxH = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx >= alsoList.length) break;
+        const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
+        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+      }
+      contentH += rowMaxH;
+      if (r < rows - 1) contentH += OTHER_ALSO_COVER_GAP;
+    }
+    contentH += OTHER_SECTION_GAP;
+  }
+  // ---- 卡片区域（每行居中，CP图100+间距10，配角100）----
+  const cards = getOtherCards(annualData);
+  if (cards.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
+    const rows = Math.ceil(cards.length / cols);
+    const textSize = config.customTextFontSize || 16;
+    const cardHeights = cards.map(card => {
+      let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+      if (card.type === 'cp') {
+        ch += OTHER_CP_COVER_SIZE; // 100，与模块四一致
+      } else if (card.type === 'support') {
+        ch += OTHER_SUPPORT_COVER_SIZE; // 100，与CP图一致
+      } else {
+        const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
+        const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
+        ch += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+      }
+      return ch;
+    });
+    let gridH = 0;
+    for (let r = 0; r < rows; r++) {
+      let rowMax = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx < cardHeights.length) rowMax = Math.max(rowMax, cardHeights[idx]);
+      }
+      gridH += rowMax;
+      if (r < rows - 1) gridH += OTHER_CARD_GAP;
+    }
+    contentH += gridH;
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// ===================== 六、七宫格高度计算 =====================
+function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16); // 模块标题
+  const items = getValidGridItems(gridData, gridKind);
+  const coverW = getGridCoverW(gridKind);
+  const labelLineH = GRID_LABEL_SIZE * 1.4;
+  if (items.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
+    const rows = Math.ceil(items.length / cols);
+    for (let r = 0; r < rows; r++) {
+      let rowMaxH = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx >= items.length) break;
+        const item = items[idx];
+        const coverH = getGridCoverH(item, gridKind, imageCache);
+        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
+        const labelH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
+        const cellH = coverH + GRID_LABEL_GAP + Math.max(labelH, labelLineH);
+        rowMaxH = Math.max(rowMaxH, cellH);
+      }
+      contentH += rowMaxH;
+      if (r < rows - 1) contentH += GRID_GAP;
+    }
+  }
+  // 底部文本框（标题"明年最期待"/"还想说"在框内顶部居中）
+  if ((footerText || '').trim()) {
+    if (items.length > 0) contentH += GRID_FOOTER_GAP;
+    const textSize = config.customTextFontSize || 16;
+    const boxInnerW = innerW - FOOTER_PAD * 2;
+    const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+    // 外框高度 = 上下内边距 + 标题 + 标题间距 + 文本框
+    contentH += FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// ===================== 绘制函数 =====================
+function drawBigTitle(painter, targetW, config, annualData) {
+  // ✅大标题在"画布上沿→第一个框上沿"区域内垂直居中，与export逻辑一致
+  const titleAreaH = getBodyPad() + TITLE_SIZE + getTitleMb();
+  const titleY = (titleAreaH - TITLE_SIZE) / 2;
+  // ✅新增：根据 useSummaryTitle 开关决定标题文本
+  let titleText;
+  if (config.useSummaryTitle) {
+    titleText = 'Otome Summary Report';
+  } else {
+    const year = (annualData && annualData.reportYear && String(annualData.reportYear).trim())
+      ? String(annualData.reportYear).trim()
+      : String(new Date().getFullYear());
+    titleText = `${year} Otome Annual Report`;
+  }
+  painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
+  // 修改点11：填表人右对齐绘制
+  if (config.reporterName && String(config.reporterName).trim()) {
+    const reporterText = '填表人：' + String(config.reporterName).trim();
+    const reporterSize = 16;
+    const reporterY = titleY + TITLE_SIZE + 4;
+    const ctx = painter.ctx;
+    ctx.save();
+    ctx.font = 'bold ' + reporterSize + 'px ' + FONT_SIYUAN;
+    ctx.fillStyle = config.reporterColor || '#b33a3a';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(reporterText, targetW - getBodyPad(), reporterY);
+    ctx.restore();
+  }
+  painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
+}
+
+// 修改点2：模块小标题居中绘制
+function drawModuleTitle(painter, centerX, y, title, config) {
+  // ✅模块小标题居中绘制，颜色由"小标题文字色"控制
+  painter.drawTextCenter(title, centerX, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
+}
+
+// 绘制封面卡片（白色底+#eee边框+圆角，内含圆角图片）
+function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
+  painter.drawRoundRect(x, y, cardW, cardH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
+  if (img) {
+    const imgX = x + COVER_CARD_PAD;
+    const imgY = y + COVER_CARD_PAD;
+    const imgW = cardW - COVER_CARD_PAD * 2;
+    const imgH = cardH - COVER_CARD_PAD * 2;
+    const ctx = painter.ctx;
+    ctx.save();
+    try {
+      // 圆角裁剪路径
+      ctx.beginPath();
+      ctx.moveTo(imgX + radius, imgY);
+      ctx.lineTo(imgX + imgW - radius, imgY);
+      ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + radius);
+      ctx.lineTo(imgX + imgW, imgY + imgH - radius);
+      ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - radius, imgY + imgH);
+      ctx.lineTo(imgX + radius, imgY + imgH);
+      ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - radius);
+      ctx.lineTo(imgX, imgY + radius);
+      ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
+      ctx.closePath();
+      ctx.clip();
+      // ✅直接完整缩放绘制（不再使用drawImageRound的cover裁剪模式），
+      // 确保图片底部不被裁剪，完整显示在目标区域内
+      const resInfo = rawImageResourceCache.get(srcUrl);
+      const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
+      ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
+    } finally {
+      ctx.restore();
+    }
+  }
+}
+
+// 绘制感想文字框（白色底+可选边框）
+// 修改点10：新增 centerText 参数（第8参数），支持文本居中
+function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText) {
+  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
+    noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
+  if (text) {
+    const textSize = config.customTextFontSize || 16;
+    if (centerText) {
+      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
+        boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
+        config.customtext || '#c98fac', false);
+    } else {
+      wrapText(
+        painter.ctx, text,
+        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
+        boxW - TEXT_BOX_PAD * 2,
+        textSize * 1.55, textSize,
+        config.customtext || '#c98fac'
+      );
+    }
+  }
+}
+
+// ===================== 新增辅助函数 =====================
+// 居中文本绘制（支持CJK自动换行，返回实际占用高度）
+function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize, color, bold) {
+  if (!text) return 0;
+  ctx.font = `${bold ? 'bold ' : ''}${fontSize}px ${FONT_SIYUAN}`;
+  ctx.fillStyle = color;
+  const chars = Array.from(text);
+  let line = '';
+  const lines = [];
+  for (const ch of chars) {
+    if (line && ctx.measureText(line + ch).width > maxWidth) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line += ch;
+    }
+  }
+  if (line) lines.push(line);
+  lines.forEach((l, i) => {
+    const w = ctx.measureText(l).width;
+    ctx.fillText(l, centerX - w / 2, y + i * lineHeight);
+  });
+  return lines.length * lineHeight;
+}
+// 测量居中文本的实际高度（与drawCenteredText换行逻辑一致）
+function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
+  if (!text) return 0;
+  ctx.font = `bold ${fontSize}px ${FONT_SIYUAN}`;
+  const chars = Array.from(text);
+  let line = '';
+  let lines = 1;
+  for (const ch of chars) {
+    if (line && ctx.measureText(line + ch).width > maxWidth) {
+      lines++;
+      line = ch;
+    } else {
+      line += ch;
+    }
+  }
+  return lines * lineHeight;
+}
+// 宫格封面宽度：游戏=140（模块二），角色=120（模块三）
+function getGridCoverW(gridKind) {
+  return gridKind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
+}
+// 宫格封面高度：游戏按原图比例自适应（模块二），角色固定120（模块三）
+function getGridCoverH(item, gridKind, imageCache) {
+  if (gridKind === 'game') {
+    const src = toCanvasUrl(item.coverSrc);
+    const img = src ? imageCache.get(src) : null;
+    return calcGameCoverHeight(img);
+  }
+  return CHAR_COVER_SIZE;
+}
+
+// ✅新增：返回结构化的标签+数据对，供Canvas分别着色
+function buildStatsParts(annualData) {
+  const parts = [];
+  for (const [key, label] of STAT_LABELS) {
+    const val = annualData[key];
+    if (val !== undefined && val !== null && String(val).trim() !== '') {
+      parts.push({ label: `${label}：`, value: String(val).trim() });
+    }
+  }
+  return parts;
+}
+
+function drawStatsContent(painter, x, y, innerW, annualData, config) {
+  const parts = buildStatsParts(annualData);
+  if (parts.length === 0) return;
+  const ctx = painter.ctx;
+  const fontSize = STAT_SIZE;
+  const lineHeight = STAT_SIZE * 1.8;
+  const labelColor = config.stattext || '#b85878';   // ✅数据统计文字色（标签）
+  const dataColor = config.statdata || '#b33a3a';     // ✅数据统计数据色（用户填写内容）
+  ctx.font = `${fontSize}px ${FONT_SIYUAN}`;
+  let curX = x;
+  let curY = y;
+  const gap = '  ';
+  const gapW = ctx.measureText(gap).width;
+  // 逐字符绘制，标签用labelColor，数据用dataColor，超宽自动换行
+  for (let i = 0; i < parts.length; i++) {
+    const { label, value } = parts[i];
+    // 绘制标签
+    ctx.fillStyle = labelColor;
+    for (const ch of Array.from(label)) {
+      const chW = ctx.measureText(ch).width;
+      if (curX + chW > x + innerW) { curX = x; curY += lineHeight; }
+      ctx.fillText(ch, curX, curY);
+      curX += chW;
+    }
+    // 绘制数据
+    ctx.fillStyle = dataColor;
+    for (const ch of Array.from(value)) {
+      const chW = ctx.measureText(ch).width;
+      if (curX + chW > x + innerW) { curX = x; curY += lineHeight; }
+      ctx.fillText(ch, curX, curY);
+      curX += chW;
+    }
+    // 段间空格
+    if (i < parts.length - 1) {
+      if (curX + gapW > x + innerW) { curX = x; curY += lineHeight; }
+      else { curX += gapW; }
+    }
+  }
+}
+
+function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+
+  // ---- NO + 名称行（统一用wrapText绘制，确保基线完全一致；整体垂直居中）----
+  const noText = `NO.${(item._no ?? 0) + 1}`;
+  ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
+  const noW = ctx.measureText(noText).width;
+  const nameText = itemType === 'cp'
+    ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
+    : (item.gameName || item.charName || '');
+  const nameX = contentX + noW + 12;
+  const nameMaxW = innerW - noW - 12;
+  // 先测量名称高度
+  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
+  // ✅NO行高与名称统一使用 NO_SIZE*1.3
+  const noLineH = NO_SIZE * 1.3;
+  const rowH = Math.max(noLineH, nameH);
+  // ✅NO和名称从同一顶部坐标nameTopY开始绘制，两者字号相同(22px)、行高相同，自然上下对齐
+  const nameTopY = painter.y + (rowH - nameH) / 2;
+  // ✅NO也用wrapText绘制（单行），与名称使用完全相同的基线逻辑，彻底消除fillText与wrapText基线不一致问题
+  // ✅NO标签颜色由"小标题文字色"控制，不再硬编码NO_COLOR
+  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
+  wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
+  painter.shiftY(rowH + LABEL_ROW_MB);
+
+  // ---- 封面 + 感想行 ----
+  const contentY = painter.y;
+  let coverCardW, coverCardH, coverImg, coverSrc;
+
+  if (itemType === 'game') {
+    coverSrc = toCanvasUrl(item.coverSrc);
+    coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+    const imgH = calcGameCoverHeight(coverImg);
+    coverCardW = GAME_COVER_W + COVER_CARD_PAD * 2;
+    coverCardH = imgH + COVER_CARD_PAD * 2;
+    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
+  } else if (itemType === 'char') {
+    coverSrc = toCanvasUrl(item.coverSrc);
+    coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+    coverCardW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+    coverCardH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
+  } else { // cp
+    const fSrc = toCanvasUrl(item.femaleCoverSrc);
+    const mSrc = toCanvasUrl(item.maleCoverSrc);
+    const fImg = fSrc ? imageCache.get(fSrc) : null;
+    const mImg = mSrc ? imageCache.get(mSrc) : null;
+    coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：与calcTopItemHeight一致
+    coverCardH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
+    // 女主卡片
+    drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 6);
+    // 男主卡片
+    drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 6);
+  }
+
+  // 感想框（仅当有文字时绘制）✅统一使用 COVER_TEXT_GAP 间距
+  const text = (item.text || '').trim();
+  let finalTextBoxH = 0;
+  if (text) {
+    const textX = contentX + coverCardW + COVER_TEXT_GAP;
+    const textW = innerW - coverCardW - COVER_TEXT_GAP;
+    const textSize = config.customTextFontSize || 16;
+    const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    finalTextBoxH = textH + TEXT_BOX_PAD * 2;
+    // 模块二三四感想框保留边框，不传 noBorder，不居中
+    drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
+  }
+  painter.shiftY(Math.max(coverCardH, finalTextBoxH));
+}
+
+// ===================== 五、其他模块绘制 =====================
+function drawOtherContent(painter, targetW, annualData, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+  const o = annualData.other || {};
+  // 修改点12：标签色用 labelColor
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
+  // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
+  const alsoList = o.alsoPlayed || [];
+  if (alsoList.length > 0) {
+    // 标题居中
+    drawCenteredText(ctx, '还玩了', contentX + innerW / 2, painter.y, innerW,
+      OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
+    painter.shiftY(OTHER_SECTION_TITLE_SIZE + 12);
+    // 封面横向排列，每行居中
+    const coverW = OTHER_ALSO_COVER_W;
+    const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
+    const rows = Math.ceil(alsoList.length / cols);
+    for (let r = 0; r < rows; r++) {
+      // 计算本行实际元素数和居中偏移
+      const rowStart = r * cols;
+      const rowCount = Math.min(cols, alsoList.length - rowStart);
+      const rowTotalW = rowCount * coverW + (rowCount - 1) * OTHER_ALSO_COVER_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
+      // 本行最大封面高度
+      let rowMaxH = 0;
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
+        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+      }
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const x = contentX + rowOffset + c * (coverW + OTHER_ALSO_COVER_GAP);
+        const y = painter.y;
+        const src = toCanvasUrl(alsoList[idx].coverSrc);
+        const img = src ? imageCache.get(src) : null;
+        const coverH = calcGameCoverHeight(img);
+        drawCoverCard(painter, x, y, coverW, coverH, img, src, 6);
+      }
+      painter.shiftY(rowMaxH);
+      if (r < rows - 1) painter.shiftY(OTHER_ALSO_COVER_GAP);
+    }
+    painter.shiftY(OTHER_SECTION_GAP);
+  }
+  // ---- 卡片区域（每行居中，卡片标题居中18px，CP图100+gap10，配角100）----
+  const cards = getOtherCards(annualData);
+  if (cards.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
+    const rows = Math.ceil(cards.length / cols);
+    const textSize = config.customTextFontSize || 16;
+    // 先计算每行高度
+    const rowHeights = [];
+    for (let r = 0; r < rows; r++) {
+      let rowMax = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx >= cards.length) continue;
+        const card = cards[idx];
+        let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+        if (card.type === 'cp') ch += OTHER_CP_COVER_SIZE;
+        else if (card.type === 'support') ch += OTHER_SUPPORT_COVER_SIZE;
+        else {
+          const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
+          ch += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+        }
+        rowMax = Math.max(rowMax, ch);
+      }
+      rowHeights.push(rowMax);
+    }
+    for (let r = 0; r < rows; r++) {
+      const rowH = rowHeights[r];
+      const rowStart = r * cols;
+      const rowCount = Math.min(cols, cards.length - rowStart);
+      const rowTotalW = rowCount * OTHER_CARD_W + (rowCount - 1) * OTHER_CARD_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const card = cards[idx];
+        const x = contentX + rowOffset + c * (OTHER_CARD_W + OTHER_CARD_GAP);
+        const y = painter.y;
+        // 修改点12：卡片背景用 boxBgColor
+        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
+        // 卡片标题（居中18px）
+        const titleY = y + OTHER_CARD_PAD;
+        drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
+          OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
+          OTHER_SECTION_TITLE_SIZE, labelColor, true);
+        const contentY = titleY + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+        if (card.type === 'cp') {
+          // CP双图：各100px，间距CP_GAP=10，整体居中（与模块四一致）
+          const fSrc = toCanvasUrl(card.data.femaleCoverSrc);
+          const mSrc = toCanvasUrl(card.data.maleCoverSrc);
+          const fImg = fSrc ? imageCache.get(fSrc) : null;
+          const mImg = mSrc ? imageCache.get(mSrc) : null;
+          const totalW = OTHER_CP_COVER_SIZE * 2 + CP_GAP;
+          const startX = x + (OTHER_CARD_W - totalW) / 2;
+          drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
+          drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
+        } else if (card.type === 'support') {
+          // 配角图：100px正方形，居中（与CP图一致）
+          const src = toCanvasUrl(card.data.coverSrc);
+          const img = src ? imageCache.get(src) : null;
+          const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
+          drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
+        } else {
+          // 修改点12：文本框居中（第8参数 true）
+          const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+          const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true, true);
+        }
+      }
+      painter.shiftY(rowH);
+      if (r < rows - 1) painter.shiftY(OTHER_CARD_GAP);
+    }
+  }
+}
+
+// ===================== 六、七宫格绘制 =====================
+function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerText, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+  // 修改点13：标签色用 labelColor
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
+  const coverW = getGridCoverW(gridKind);
+  const labelLineH = GRID_LABEL_SIZE * 1.4;
+  if (items.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
+    const rows = Math.ceil(items.length / cols);
+    for (let r = 0; r < rows; r++) {
+      const rowStart = r * cols;
+      const rowCount = Math.min(cols, items.length - rowStart);
+      const rowTotalW = rowCount * coverW + (rowCount - 1) * GRID_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
+      // 先算本行最大单元格高度
+      let rowMaxH = 0;
+      const cellHeights = [];
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const item = items[idx];
+        const covH = getGridCoverH(item, gridKind, imageCache);
+        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
+        const labH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
+        const cellH = covH + GRID_LABEL_GAP + Math.max(labH, labelLineH);
+        cellHeights.push(cellH);
+        rowMaxH = Math.max(rowMaxH, cellH);
+      }
+      // 绘制本行
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const item = items[idx];
+        const x = contentX + rowOffset + c * (coverW + GRID_GAP);
+        const y = painter.y;
+        const covH = getGridCoverH(item, gridKind, imageCache);
+        // 封面（复用drawCoverCard，与模块二/三完全一致的样式）
+        const src = toCanvasUrl(item.coverSrc);
+        const img = src ? imageCache.get(src) : null;
+        drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
+        // 标签（居中18px，支持多行）
+        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
+        const labelY = y + covH + GRID_LABEL_GAP;
+        drawCenteredText(ctx, labelText, x + coverW / 2, labelY, coverW,
+          labelLineH, GRID_LABEL_SIZE, labelColor, true);
+      }
+      painter.shiftY(rowMaxH);
+      if (r < rows - 1) painter.shiftY(GRID_GAP);
+    }
+  }
+  // 底部文本框（标题"明年最期待"/"还想说"在框内顶部居中18px）
+  if ((footerText || '').trim()) {
+    if (items.length > 0) painter.shiftY(GRID_FOOTER_GAP);
+    const textSize = config.customTextFontSize || 16;
+    const boxInnerW = innerW - FOOTER_PAD * 2;
+    const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+    const outerBoxH = FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
+    // 修改点13：底部外框背景用 boxBgColor
+    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
+    // 标题（在框内顶部居中18px）
+    const titleY = painter.y + FOOTER_PAD;
+    drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
+      OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
+    // 文本框（标题下方，白底无边框）
+    const boxY = titleY + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP;
+    drawTextBox(painter, contentX + FOOTER_PAD, boxY, boxInnerW, textBoxH, footerText, config, true);
+    painter.shiftY(outerBoxH);
+  }
+}
+
+// ===================== 主入口：单模块导出 =====================
+export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config) {
+  // IOS内存清理
+  if (IS_IOS_WEBKIT) {
+    for (const [, res] of rawImageResourceCache.entries()) {
+      if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
+        try { res.data.close(); } catch (e) {}
+      }
+    }
+    roundImageCache.clear();
+    rawImageResourceCache.clear();
+  }
+
+  // 空模块判断
+  if (moduleType === 'stats') {
+    if (!buildStatsText(annualData)) return null;
+  } else if (moduleType === 'other') {
+    if (!hasOtherContent(annualData)) return null;
+  } else if (moduleType === 'gameGrid') {
+    if (!hasGridContent(annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect)) return null;
+  } else if (moduleType === 'charGrid') {
+    if (!hasGridContent(annualData.charGrid, 'char', annualData.charGrid?.extraThoughts)) return null;
+  } else {
+    const validItems = getValidItems(moduleType, annualData);
+    if (validItems.length === 0) return null;
+  }
+
+  emitRenderProgress(5);
+
+  // 第一步：加载图片（游戏封面高度依赖图片尺寸，必须先加载）
+  let imageUrls = collectModuleImages(moduleType, annualData);
+  // ✅兜底防火墙：再次清洗，剔除null/空/R2 pub/github raw（对齐export补丁8）
+  const SAFE_URL_PATTERN = /^(http|https):\/\//;
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
+  imageUrls = [...new Set(imageUrls)];
+  const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
+  const imageCache = loadRet.resultMap;
+
+  // ✅离屏圆角画布方案已弃用（改为实时clip绘制），跳过预生成，直接进入绘制阶段
+  await new Promise(r => setTimeout(r, 30));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  emitRenderProgress(65);
+
+  // 第二步：基于加载后的图片计算高度
+  const vCanvas = document.createElement('canvas');
+  const vCtx = vCanvas.getContext('2d');
+  const totalH = moduleType === 'stats'
+    ? calcStatsHeight(vCtx, designW, annualData, config)
+    : calcModuleHeight(vCtx, designW, moduleType, moduleTitle, annualData, config, imageCache);
+  vCanvas.width = 0; vCanvas.height = 0;
+
+  // 第三步：创建正式画布并绘制
+  // ✅IOS画布总像素预警（对齐export补丁5）
+  if (IS_IOS_WEBKIT) {
+    const totalPixel = (designW * DPR) * (totalH * DPR);
+    if (totalPixel > 32 * 1024 * 1024) {
+      console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
+    }
+  }
+  // ✅修复：画布高度预留底部getBodyPad()，否则卡片下边框外侧1px超出画布被裁，下边框比其余三边细
+  const canvasHeight = totalH + getBodyPad();
+  const canvas = document.createElement('canvas');
+  const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
+
+  // 大标题（传入annualData用于年份标题）
+  drawBigTitle(painter, designW, config, annualData);
+
+  // 模块卡片
+  const wrapW = getWrapW(designW);
+  const wrapX = getWrapX(designW, wrapW);
+  const cardTop = painter.y;
+  const cardInnerW = wrapW - CARD_INNER_PAD * 2;
+
+  // 计算卡片内容高度
+  let cardContentH = 0;
+  if (moduleType === 'other') {
+    // 五模块无模块标题，内容由drawOtherContent独立计算
+    // 用calcOtherHeight反推contentH
+    const totalH = calcOtherHeight(painter.ctx, designW, annualData, config, imageCache);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
+    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
+    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
+    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
+    const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config, imageCache);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else {
+    if (moduleTitle) {
+      cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+    }
+    if (moduleType === 'stats') {
+      const statsText = buildStatsText(annualData);
+      if (statsText) {
+        cardContentH += measureWrappedHeight(painter.ctx, statsText, cardInnerW, STAT_SIZE * 1.8, STAT_SIZE);
+      }
+    } else {
+      const items = getValidItems(moduleType, annualData);
+      const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+      items.forEach((item, i) => {
+        item._no = i;
+        cardContentH += calcTopItemHeight(painter.ctx, designW, item, itemType, config, imageCache);
+        if (i < items.length - 1) cardContentH += ITEM_GAP;
+      });
+    }
+  }
+
+  const cardH = CARD_INNER_PAD * 2 + cardContentH;
+
+  // 绘制卡片背景+边框
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+
+  // 绘制模块标题（修改点3：传入居中X坐标）
+  let contentY = cardTop + CARD_INNER_PAD;
+  if (moduleTitle && moduleType !== 'other') {
+    drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
+    contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  }
+
+  // 绘制内容
+  if (moduleType === 'stats') {
+    drawStatsContent(painter, wrapX + CARD_INNER_PAD, contentY, cardInnerW, annualData, config);
+    painter.y = cardTop + cardH;
+  } else if (moduleType === 'other') {
+    // 五模块：无模块标题，从卡片顶部+内边距开始绘制
+    painter.y = cardTop + CARD_INNER_PAD;
+    drawOtherContent(painter, designW, annualData, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
+  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
+    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
+    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
+    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
+    const footerLabel = moduleType === 'gameGrid' ? '明年最期待' : '还想说';
+    const items = getValidGridItems(gridData, gridKind);
+    painter.y = contentY;
+    drawGridContent(painter, designW, items, gridKind, footerLabel, footer, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
+  } else {
+    const items = getValidItems(moduleType, annualData);
+    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+    painter.y = contentY;
+    items.forEach((item, i) => {
+      item._no = i;
+      drawTopItem(painter, designW, item, itemType, imageCache, config);
+      if (i < items.length - 1) painter.shiftY(ITEM_GAP);
+      emitRenderProgress(65 + ((i + 1) / items.length) * 30);
+    });
+    painter.shiftY(CARD_INNER_PAD);
+  }
+
+  emitRenderProgress(100);
+
+  // 裁剪到实际高度（对齐export-canvas-render.js的cropCanvas：先填背景色，再9参数1:1复制，不拉伸变形）
+  const finalH = painter.getY() + getBodyPad();
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = designW * DPR;
+  outputCanvas.height = Math.max(finalH, designW * 0.4) * DPR;
+  const oCtx = outputCanvas.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = "high";
+  // ✅先填充背景色，覆盖输出画布底部多出的边距区域
+  oCtx.fillStyle = config.bg || '#fff7f9';
+  oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+  // ✅9参数1:1复制源画布内容，不再用5参数整体拉伸导致图片变形
+  oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+
+  let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  if (IS_IOS_WEBKIT && !blob) {
+    await new Promise(r => setTimeout(r, 100));
+    blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  }
+
+  if (IS_IOS_WEBKIT) {
+    canvas.width = 0; canvas.height = 0;
+    outputCanvas.width = 0; outputCanvas.height = 0;
+  }
+  return blob;
+}
+
+// ===================== 批量导出所有模块 =====================
+export async function renderAllAnnualModules(designW, annualData, config, titleMap) {
+  const modules = [
+    { type: 'stats', title: titleMap?.stats || '' },
+    { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
+    { type: 'charTop', title: titleMap?.charTop || 'キャラTOP' },
+    { type: 'cpTop', title: titleMap?.cpTop || 'カップルTOP' },
+    // ✅新增：五、其他（title传空，不导出"五、其他"标题）
+    { type: 'other', title: '' },
+    // ✅新增：六、ゲーム宫格
+    { type: 'gameGrid', title: titleMap?.gameGrid || 'ゲーム宫格' },
+    // ✅新增：七、キャラ宫格
+    { type: 'charGrid', title: titleMap?.charGrid || 'キャラ宫格' },
+  ];
+  const results = [];
+  for (const mod of modules) {
+    const blob = await renderAnnualModuleCanvas(designW, mod.type, mod.title, annualData, config);
+    if (blob) {
+      results.push({ moduleType: mod.type, moduleTitle: mod.title, blob });
+    }
+  }
+  return results;
+}
+
+if (typeof window !== 'undefined') {
+  window.renderAnnualModuleCanvas = renderAnnualModuleCanvas;
+  window.renderAllAnnualModules = renderAllAnnualModules;
 }
