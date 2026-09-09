@@ -609,6 +609,20 @@ function drawBigTitle(painter, targetW, config, annualData) {
     titleText = `${year} Otome Annual Report`;
   }
   painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
+  // 修改点11：填表人右对齐绘制
+  if (config.reporterName && String(config.reporterName).trim()) {
+    const reporterText = '填表人：' + String(config.reporterName).trim();
+    const reporterSize = 16;
+    const reporterY = titleY + TITLE_SIZE + 4;
+    const ctx = painter.ctx;
+    ctx.save();
+    ctx.font = 'bold ' + reporterSize + 'px ' + FONT_SIYUAN;
+    ctx.fillStyle = config.reporterColor || '#b33a3a';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(reporterText, targetW - getBodyPad(), reporterY);
+    ctx.restore();
+  }
   painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
 }
 
@@ -654,20 +668,25 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
 }
 
 // 绘制感想文字框（白色底+可选边框）
-// 修改点4：增加 noBorder 参数，为 true 时不绘制边框
-function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder) {
-  // ✅noBorder=true时不绘制边框（五模块自定义文本、六七底部文本）；模块二三四感想框仍保留边框
+// 修改点10：新增 centerText 参数（第8参数），支持文本居中
+function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText) {
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
     noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
     const textSize = config.customTextFontSize || 16;
-    wrapText(
-      painter.ctx, text,
-      x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
-      boxW - TEXT_BOX_PAD * 2,
-      textSize * 1.55, textSize,
-      config.customtext || '#c98fac'
-    );
+    if (centerText) {
+      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
+        boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
+        config.customtext || '#c98fac', false);
+    } else {
+      wrapText(
+        painter.ctx, text,
+        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
+        boxW - TEXT_BOX_PAD * 2,
+        textSize * 1.55, textSize,
+        config.customtext || '#c98fac'
+      );
+    }
   }
 }
 
@@ -846,7 +865,7 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     finalTextBoxH = textH + TEXT_BOX_PAD * 2;
-    // 模块二三四感想框保留边框，不传 noBorder
+    // 模块二三四感想框保留边框，不传 noBorder，不居中
     drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
   }
   painter.shiftY(Math.max(coverCardH, finalTextBoxH));
@@ -860,7 +879,8 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
   const o = annualData.other || {};
-  const labelColor = config.subtitle || '#b85878';
+  // 修改点12：标签色用 labelColor
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
   // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
   const alsoList = o.alsoPlayed || [];
   if (alsoList.length > 0) {
@@ -936,8 +956,8 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const card = cards[idx];
         const x = contentX + rowOffset + c * (OTHER_CARD_W + OTHER_CARD_GAP);
         const y = painter.y;
-        // 卡片背景
-        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, '#fff7f9', '#eee', 1);
+        // 修改点12：卡片背景用 boxBgColor
+        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
         // 卡片标题（居中18px）
         const titleY = y + OTHER_CARD_PAD;
         drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
@@ -961,11 +981,11 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
           const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
           drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
         } else {
-          // text / custom（白底框无边框）
+          // 修改点12：文本框居中（第8参数 true）
           const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
           const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true);
+          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true, true);
         }
       }
       painter.shiftY(rowH);
@@ -981,7 +1001,8 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
   const innerW = wrapW - CARD_INNER_PAD * 2;
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
-  const labelColor = config.subtitle || '#b85878';
+  // 修改点13：标签色用 labelColor
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
   const coverW = getGridCoverW(gridKind);
   const labelLineH = GRID_LABEL_SIZE * 1.4;
   if (items.length > 0) {
@@ -1034,8 +1055,8 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
     const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
     const outerBoxH = FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
-    // 外框（粉色底）
-    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, '#fff7f9', '#eee', 1);
+    // 修改点13：底部外框背景用 boxBgColor
+    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
     // 标题（在框内顶部居中18px）
     const titleY = painter.y + FOOTER_PAD;
     drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
