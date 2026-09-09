@@ -21,7 +21,11 @@ const annualExportDefault = {
     customborder: "#eeeeee",      // ✅自定义文本边框色，默认#eeeeee（input[type=color]只接受六位#rrggbb，三位#eee会回退黑色）
     border: "#f6a5b8",
     customTextFontSize: 16,
-    useSummaryTitle: false
+    useSummaryTitle: false,
+    labelColor: "#b85878",        // ✅修改点6：标签文字色
+    boxBgColor: "#fff7f9",        // ✅修改点6：内容框背景色
+    reporterName: "",             // ✅修改点6：填表人姓名
+    reporterColor: "#b33a3a"      // ✅修改点6：填表人文字色
 };
 
 function loadAnnualExportConfig() {
@@ -37,11 +41,14 @@ function loadAnnualExportConfig() {
         config = {...annualExportDefault};
     }
     // ✅归一化：input[type=color]只接受#rrggbb六位格式，旧数据中存的#eee三位简写会被移动端浏览器回退为黑色#000000
-    if (config.customborder && /^#[0-9a-fA-F]{3}$/.test(config.customborder)) {
-        config.customborder = "#" + config.customborder[1].repeat(2)
-                             + config.customborder[2].repeat(2)
-                             + config.customborder[3].repeat(2);
-    }
+    // ✅修改点7：扩展到新字段
+    ['customborder', 'labelColor', 'boxBgColor', 'reporterColor'].forEach(key => {
+        if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
+            config[key] = "#" + config[key][1].repeat(2)
+                         + config[key][2].repeat(2)
+                         + config[key][3].repeat(2);
+        }
+    });
     return config;
 }
 
@@ -1938,6 +1945,11 @@ function bindAnnualExportPanel() {
     const colorStattext = document.getElementById("annual-color-stattext");
     const colorStatdata = document.getElementById("annual-color-statdata");
     const colorCustomborder = document.getElementById("annual-color-customborder");
+    // ✅修改点8：新增四个控件元素引用
+    const colorLabelcolor = document.getElementById("annual-color-labelcolor");
+    const colorBoxbg = document.getElementById("annual-color-boxbg");
+    const colorReportercolor = document.getElementById("annual-color-reportercolor");
+    const reporterNameInput = document.getElementById("annual-reporter-name");
     const sliderFont = document.getElementById("annual-slider-custom-text-font");
     const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
     const btnExportImage = document.getElementById("annual-btn-export-image");
@@ -1959,6 +1971,11 @@ function bindAnnualExportPanel() {
     colorStattext.value = annualExportConfig.stattext;
     colorStatdata.value = annualExportConfig.statdata;
     colorCustomborder.value = annualExportConfig.customborder;
+    // ✅修改点8：新字段初始化
+    if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
+    if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
+    if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
+    if (reporterNameInput) reporterNameInput.value = annualExportConfig.reporterName || "";
     sliderFont.value = annualExportConfig.customTextFontSize;
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
@@ -1972,6 +1989,9 @@ function bindAnnualExportPanel() {
     annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
     annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
     annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
+    // ✅修改点8：新增CSS变量注入
+    annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
+    annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
     annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
     // ✅同步到 .wrap（控制整个页面背景 + site-title大标题颜色）
     applyAnnualPageColors();
@@ -1990,6 +2010,11 @@ function bindAnnualExportPanel() {
         colorStattext.value = annualExportConfig.stattext;
         colorStatdata.value = annualExportConfig.statdata;
         colorCustomborder.value = annualExportConfig.customborder;
+        // ✅修改点9：重置按钮更新新字段
+        if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
+        if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
+        if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
+        if (reporterNameInput) reporterNameInput.value = annualExportConfig.reporterName || "";
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
         if (useSummaryTitleEl) useSummaryTitleEl.checked = false;
@@ -2001,6 +2026,9 @@ function bindAnnualExportPanel() {
         annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
         annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
         annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
+        // ✅修改点9：重置按钮CSS变量重新注入
+        annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
+        annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
         annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
         // ✅同步到 .wrap
         applyAnnualPageColors();
@@ -2064,6 +2092,34 @@ function bindAnnualExportPanel() {
         annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder);
         saveAnnualExportConfig();
     };
+    // ✅修改点9：新增四个控件的事件绑定
+    if (colorLabelcolor) {
+        colorLabelcolor.oninput = () => {
+            annualExportConfig.labelColor = colorLabelcolor.value;
+            annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
+            saveAnnualExportConfig();
+        };
+    }
+    if (colorBoxbg) {
+        colorBoxbg.oninput = () => {
+            annualExportConfig.boxBgColor = colorBoxbg.value;
+            annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
+            saveAnnualExportConfig();
+        };
+    }
+    if (colorReportercolor) {
+        colorReportercolor.oninput = () => {
+            annualExportConfig.reporterColor = colorReportercolor.value;
+            saveAnnualExportConfig();
+        };
+    }
+    if (reporterNameInput) {
+        reporterNameInput.oninput = () => {
+            annualExportConfig.reporterName = reporterNameInput.value;
+            saveAnnualExportConfig();
+        };
+    }
+
     sliderFont.oninput = () => {
         const val = Number(sliderFont.value);
         annualExportConfig.customTextFontSize = val;
@@ -2137,236 +2193,7 @@ function bindAnnualExportPanel() {
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
 }
-
-// ===================== ✅新增：年度报告导出预计耗时计算（对齐FavList逻辑） =====================
-function calcAnnualEstimateSec() {
-    const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isAndroid = /Android/.test(navigator.userAgent);
-    // 统计有效模块数和图片数
-    let moduleCount = 0;
-    let imgCount = 0;
-    // stats模块
-    const hasStats = ['reportYear','playCount','totalHours','likeCharCount','cpCount','buyCount','costMoney','finished','ongoing','notStart']
-        .some(k => annualData[k] !== undefined && annualData[k] !== null && String(annualData[k]).trim() !== '');
-    if (hasStats) moduleCount++;
-    // gameTop
-    const gameValid = (annualData.topList || []).filter(i => i && i.gameId);
-    if (gameValid.length) { moduleCount++; imgCount += gameValid.length; }
-    // charTop
-    const charValid = (annualData.charTopList || []).filter(i => i && i.charId);
-    if (charValid.length) { moduleCount++; imgCount += charValid.length; }
-    // cpTop（每对CP两张图）
-    const cpValid = (annualData.cpTopList || []).filter(i => i && i.femaleId && i.maleId);
-    if (cpValid.length) { moduleCount++; imgCount += cpValid.length * 2; }
-
-    // ✅对齐script.js：纳入降级概率+重试开销+圆角画布串行延时
-    let moduleCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
-    if (IS_IOS_WEBKIT) {
-        moduleCost = 1.10; imgCost = 0.85;
-        networkBufferSec = 4.8;
-        roundCanvasOverheadSec = Math.min(8, imgCount * 0.030);
-    } else if (isAndroid) {
-        moduleCost = 0.55; imgCost = 0.40;
-        networkBufferSec = 2.6;
-        roundCanvasOverheadSec = Math.min(4, imgCount * 0.012);
-    } else {
-        moduleCost = 0.35; imgCost = 0.25;
-        networkBufferSec = 1.8;
-        roundCanvasOverheadSec = Math.min(2.5, imgCount * 0.012);
-    }
-    const baseEstimate = moduleCount * moduleCost + imgCount * imgCost;
-    const fallbackProbability = 0.30;  // 30%图片触发jsdelivr超时降级
-    const fallbackPerImageSec = 0.6;   // 每次降级600ms
-    const fallbackEstimate = imgCount * fallbackProbability * fallbackPerImageSec;
-    let sec = Math.ceil(baseEstimate + networkBufferSec + roundCanvasOverheadSec + fallbackEstimate);
-    sec = IS_IOS_WEBKIT ? Math.max(2, Math.min(45, sec)) : Math.max(1, Math.min(35, sec));
-    return sec;
-}
-
-// ===================== ✅新增：在预览弹窗中显示loading+预计时间+进度，返回进度监听器 =====================
-function showAnnualPreviewLoading(scrollWrap) {
-    const estimateSec = calcAnnualEstimateSec();
-    // 完全对齐FavList loading UI结构
-    scrollWrap.innerHTML = `
-        <div class="preview-inner-loading">
-            <div class="loading-spinner"></div>
-            <p>正在生成预览，请稍候…<br>预计耗时：${estimateSec}s</p>
-            <p class="render-progress-text" style="margin-top:8px;font-size:14px;">进度：0%</p>
-        </div>
-    `;
-    // 监听 annual-canvas-render.js 发出的进度事件
-    const progressHandler = function(e) {
-        const p = e.detail.percent.toFixed(0);
-        const progressDom = scrollWrap.querySelector('.render-progress-text');
-        if (progressDom) progressDom.textContent = `进度：${p}%`;
-    };
-    window.addEventListener('annual-canvas-progress', progressHandler);
-    return progressHandler;
-}
-
-// ===================== 年度报告预览弹窗管理（复用 #export-preview-modal） =====================
-let _annualPreviewResults = [];
-let _annualPreviewUrls = [];
-let _annualPreviewWidth = 810;
-let _annualPreviewBound = false;
-let _annualCurrentPage = 0;  // ✅新增：当前预览页码（对齐FavList currentPreviewPage）
-
-function showAnnualPreviewModal(results, exportWidth) {
-    _annualPreviewResults = results;
-    _annualPreviewWidth = exportWidth;
-    _annualCurrentPage = 0;  // ✅重置到第1张
-    const downloadBtn = document.getElementById("preview-download-btn");
-    // 清理旧URL
-    _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
-    _annualPreviewUrls = results.map(r => URL.createObjectURL(r.blob));
-    // ✅渲染第1张（分页切换模式，对齐FavList renderPreviewPage）
-    renderAnnualPreviewPage(0);
-    downloadBtn.disabled = false;
-    // 绑定弹窗按钮（只绑定一次）
-    if (!_annualPreviewBound) {
-        bindAnnualPreviewButtons();
-        _annualPreviewBound = true;
-    }
-}
-
-// ===================== ✅新增：渲染单张预览图 + 上一张/下一张切换控件（对齐FavList renderPreviewPage） =====================
-function renderAnnualPreviewPage(pageIndex) {
-    _annualCurrentPage = pageIndex;
-    const modal = document.getElementById("export-preview-modal");
-    const scrollWrap = modal.querySelector(".preview-scroll-wrap");
-    const totalPage = _annualPreviewResults.length;
-    const currentUrl = _annualPreviewUrls[pageIndex];
-    // 分页控件（仅当多于1张时显示）
-    let paginationHtml = "";
-    if (totalPage > 1) {
-        paginationHtml = `
-        <div class="preview-pagination-bar" style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:center;">
-            <button class="preview-prev-page" ${pageIndex <= 0 ? 'disabled' : ''}>上一张</button>
-            <span>第 ${pageIndex + 1} / ${totalPage} 张</span>
-            <button class="preview-next-page" ${pageIndex >= totalPage - 1 ? 'disabled' : ''}>下一张</button>
-        </div>`;
-    }
-    // 单张图片 + 分页控件
-    scrollWrap.innerHTML = `
-        <img class="preview-img-item" src="${currentUrl}" alt="年度报告预览" style="max-width:100%;display:block;margin:0 auto;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
-        ${paginationHtml}
-    `;
-    // 绑定上一张/下一张点击
-    const prevBtn = scrollWrap.querySelector(".preview-prev-page");
-    const nextBtn = scrollWrap.querySelector(".preview-next-page");
-    if (prevBtn) {
-        prevBtn.onclick = () => {
-            if (pageIndex > 0) renderAnnualPreviewPage(pageIndex - 1);
-        };
-    }
-    if (nextBtn) {
-        nextBtn.onclick = () => {
-            if (pageIndex < totalPage - 1) renderAnnualPreviewPage(pageIndex + 1);
-        };
-    }
-}
-
-function bindAnnualPreviewButtons() {
-    const closeBtn = document.getElementById("preview-close-btn");
-    const regenBtn = document.getElementById("preview-regen-btn");
-    const downloadBtn = document.getElementById("preview-download-btn");
-    const modal = document.getElementById("export-preview-modal");
-
-    // 关闭
-    closeBtn.addEventListener("click", () => {
-        modal.classList.remove("active");
-        document.body.classList.remove("modal-lock");
-        _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
-        _annualPreviewUrls = [];
-        _annualPreviewResults = [];
-    });
-
-    // 遮罩点击关闭
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeBtn.click();
-    });
-
-    // 重新生成（✅对齐FavList：loading含预计时间+进度）
-    regenBtn.addEventListener("click", async () => {
-        if (_annualIsRendering) return;
-        const scrollWrap = modal.querySelector(".preview-scroll-wrap");
-        downloadBtn.disabled = true;
-        // ✅显示loading+预计时间+进度
-        const progressHandler = showAnnualPreviewLoading(scrollWrap);
-        let unlockTimer = null;
-        _annualIsRendering = true;
-        unlockTimer = setTimeout(() => {
-            _annualIsRendering = false;
-            console.warn("[annual]重新生成超时，强制解除渲染锁");
-        }, 15000);
-        try {
-            const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
-            const sizeVal = sizeRadio?.value || 'long-810';
-            const selectedExportWidth = Number(sizeVal.replace('long-', ''));
-            const designW = selectedExportWidth;
-            const titleMap = getAnnualModuleTitles();
-            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
-            if (!results || results.length === 0) {
-                alert("没有可导出的内容。");
-                return;
-            }
-            showAnnualPreviewModal(results, selectedExportWidth);
-        } catch (err) {
-            console.error("重新生成失败", err);
-            alert("重新生成失败：" + (err?.message || "未知错误"));
-        } finally {
-            // ✅清理进度监听
-            if (typeof progressHandler !== 'undefined') {
-                window.removeEventListener('annual-canvas-progress', progressHandler);
-            }
-            if (unlockTimer) clearTimeout(unlockTimer);
-            _annualIsRendering = false;
-        }
-    });
-
-    // 导出图片（下载所有模块）
-    downloadBtn.addEventListener("click", () => {
-        _annualPreviewResults.forEach((r, i) => {
-            const url = URL.createObjectURL(r.blob);
-            const a = document.createElement("a");
-            a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
-            a.href = url;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
-        });
-    });
-}
-
-function bindAnnualExport() {
-    btnAnnualExport = document.getElementById("btn-annual-export");
-    if(!btnAnnualExport) return;
-    btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
-    btnAnnualExport._clickHandler = async ()=>{
-        const snapshotBox = document.getElementById("snapshot-container");
-        const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
-        snapshotBox.innerHTML = annualWrap.innerHTML;
-        snapshotBox.classList.add("export-snapshot");
-        try {
-            const canvas = await html2canvas(snapshotBox, {
-                useCORS:true,
-                scale:2,
-                backgroundColor: annualExportConfig.bg
-            });
-            const link = document.createElement("a");
-            link.download = "Otome-Annual-Report.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        } catch(err) {
-            console.error("Annual Report导出失败", err);
-        } finally {
-            snapshotBox.innerHTML = "";
-            snapshotBox.classList.remove("export-snapshot");
-        }
-    };
-    btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
-}
+// ===================== 第二部分：bindAnnualFloatScrollButtons ～ 文件末尾 =====================
 
 /**
  * ✅新增：annual模式悬浮滚动按钮逻辑
@@ -2828,6 +2655,236 @@ function closeAnnualGlobalCpModal(){
     const modal = document.getElementById("annual-global-cp-modal");
     if(!modal) return;
     modal.classList.remove("active");
+}
+
+// ===================== ✅新增：年度报告导出预计耗时计算（对齐FavList逻辑） =====================
+function calcAnnualEstimateSec() {
+    const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/.test(navigator.userAgent);
+    // 统计有效模块数和图片数
+    let moduleCount = 0;
+    let imgCount = 0;
+    // stats模块
+    const hasStats = ['reportYear','playCount','totalHours','likeCharCount','cpCount','buyCount','costMoney','finished','ongoing','notStart']
+        .some(k => annualData[k] !== undefined && annualData[k] !== null && String(annualData[k]).trim() !== '');
+    if (hasStats) moduleCount++;
+    // gameTop
+    const gameValid = (annualData.topList || []).filter(i => i && i.gameId);
+    if (gameValid.length) { moduleCount++; imgCount += gameValid.length; }
+    // charTop
+    const charValid = (annualData.charTopList || []).filter(i => i && i.charId);
+    if (charValid.length) { moduleCount++; imgCount += charValid.length; }
+    // cpTop（每对CP两张图）
+    const cpValid = (annualData.cpTopList || []).filter(i => i && i.femaleId && i.maleId);
+    if (cpValid.length) { moduleCount++; imgCount += cpValid.length * 2; }
+
+    // ✅对齐script.js：纳入降级概率+重试开销+圆角画布串行延时
+    let moduleCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
+    if (IS_IOS_WEBKIT) {
+        moduleCost = 1.10; imgCost = 0.85;
+        networkBufferSec = 4.8;
+        roundCanvasOverheadSec = Math.min(8, imgCount * 0.030);
+    } else if (isAndroid) {
+        moduleCost = 0.55; imgCost = 0.40;
+        networkBufferSec = 2.6;
+        roundCanvasOverheadSec = Math.min(4, imgCount * 0.012);
+    } else {
+        moduleCost = 0.35; imgCost = 0.25;
+        networkBufferSec = 1.8;
+        roundCanvasOverheadSec = Math.min(2.5, imgCount * 0.012);
+    }
+    const baseEstimate = moduleCount * moduleCost + imgCount * imgCost;
+    const fallbackProbability = 0.30;  // 30%图片触发jsdelivr超时降级
+    const fallbackPerImageSec = 0.6;   // 每次降级600ms
+    const fallbackEstimate = imgCount * fallbackProbability * fallbackPerImageSec;
+    let sec = Math.ceil(baseEstimate + networkBufferSec + roundCanvasOverheadSec + fallbackEstimate);
+    sec = IS_IOS_WEBKIT ? Math.max(2, Math.min(45, sec)) : Math.max(1, Math.min(35, sec));
+    return sec;
+}
+
+// ===================== ✅新增：在预览弹窗中显示loading+预计时间+进度，返回进度监听器 =====================
+function showAnnualPreviewLoading(scrollWrap) {
+    const estimateSec = calcAnnualEstimateSec();
+    // 完全对齐FavList loading UI结构
+    scrollWrap.innerHTML = `
+        <div class="preview-inner-loading">
+            <div class="loading-spinner"></div>
+            <p>正在生成预览，请稍候…<br>预计耗时：${estimateSec}s</p>
+            <p class="render-progress-text" style="margin-top:8px;font-size:14px;">进度：0%</p>
+        </div>
+    `;
+    // 监听 annual-canvas-render.js 发出的进度事件
+    const progressHandler = function(e) {
+        const p = e.detail.percent.toFixed(0);
+        const progressDom = scrollWrap.querySelector('.render-progress-text');
+        if (progressDom) progressDom.textContent = `进度：${p}%`;
+    };
+    window.addEventListener('annual-canvas-progress', progressHandler);
+    return progressHandler;
+}
+
+// ===================== 年度报告预览弹窗管理（复用 #export-preview-modal） =====================
+let _annualPreviewResults = [];
+let _annualPreviewUrls = [];
+let _annualPreviewWidth = 810;
+let _annualPreviewBound = false;
+let _annualCurrentPage = 0;  // ✅新增：当前预览页码（对齐FavList currentPreviewPage）
+
+function showAnnualPreviewModal(results, exportWidth) {
+    _annualPreviewResults = results;
+    _annualPreviewWidth = exportWidth;
+    _annualCurrentPage = 0;  // ✅重置到第1张
+    const downloadBtn = document.getElementById("preview-download-btn");
+    // 清理旧URL
+    _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+    _annualPreviewUrls = results.map(r => URL.createObjectURL(r.blob));
+    // ✅渲染第1张（分页切换模式，对齐FavList renderPreviewPage）
+    renderAnnualPreviewPage(0);
+    downloadBtn.disabled = false;
+    // 绑定弹窗按钮（只绑定一次）
+    if (!_annualPreviewBound) {
+        bindAnnualPreviewButtons();
+        _annualPreviewBound = true;
+    }
+}
+
+// ===================== ✅新增：渲染单张预览图 + 上一张/下一张切换控件（对齐FavList renderPreviewPage） =====================
+function renderAnnualPreviewPage(pageIndex) {
+    _annualCurrentPage = pageIndex;
+    const modal = document.getElementById("export-preview-modal");
+    const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+    const totalPage = _annualPreviewResults.length;
+    const currentUrl = _annualPreviewUrls[pageIndex];
+    // 分页控件（仅当多于1张时显示）
+    let paginationHtml = "";
+    if (totalPage > 1) {
+        paginationHtml = `
+        <div class="preview-pagination-bar" style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:center;">
+            <button class="preview-prev-page" ${pageIndex <= 0 ? 'disabled' : ''}>上一张</button>
+            <span>第 ${pageIndex + 1} / ${totalPage} 张</span>
+            <button class="preview-next-page" ${pageIndex >= totalPage - 1 ? 'disabled' : ''}>下一张</button>
+        </div>`;
+    }
+    // 单张图片 + 分页控件
+    scrollWrap.innerHTML = `
+        <img class="preview-img-item" src="${currentUrl}" alt="年度报告预览" style="max-width:100%;display:block;margin:0 auto;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        ${paginationHtml}
+    `;
+    // 绑定上一张/下一张点击
+    const prevBtn = scrollWrap.querySelector(".preview-prev-page");
+    const nextBtn = scrollWrap.querySelector(".preview-next-page");
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            if (pageIndex > 0) renderAnnualPreviewPage(pageIndex - 1);
+        };
+    }
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            if (pageIndex < totalPage - 1) renderAnnualPreviewPage(pageIndex + 1);
+        };
+    }
+}
+
+function bindAnnualPreviewButtons() {
+    const closeBtn = document.getElementById("preview-close-btn");
+    const regenBtn = document.getElementById("preview-regen-btn");
+    const downloadBtn = document.getElementById("preview-download-btn");
+    const modal = document.getElementById("export-preview-modal");
+
+    // 关闭
+    closeBtn.addEventListener("click", () => {
+        modal.classList.remove("active");
+        document.body.classList.remove("modal-lock");
+        _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+        _annualPreviewUrls = [];
+        _annualPreviewResults = [];
+    });
+
+    // 遮罩点击关闭
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeBtn.click();
+    });
+
+    // 重新生成（✅对齐FavList：loading含预计时间+进度）
+    regenBtn.addEventListener("click", async () => {
+        if (_annualIsRendering) return;
+        const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+        downloadBtn.disabled = true;
+        // ✅显示loading+预计时间+进度
+        const progressHandler = showAnnualPreviewLoading(scrollWrap);
+        let unlockTimer = null;
+        _annualIsRendering = true;
+        unlockTimer = setTimeout(() => {
+            _annualIsRendering = false;
+            console.warn("[annual]重新生成超时，强制解除渲染锁");
+        }, 15000);
+        try {
+            const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
+            const sizeVal = sizeRadio?.value || 'long-810';
+            const selectedExportWidth = Number(sizeVal.replace('long-', ''));
+            const designW = selectedExportWidth;
+            const titleMap = getAnnualModuleTitles();
+            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
+            if (!results || results.length === 0) {
+                alert("没有可导出的内容。");
+                return;
+            }
+            showAnnualPreviewModal(results, selectedExportWidth);
+        } catch (err) {
+            console.error("重新生成失败", err);
+            alert("重新生成失败：" + (err?.message || "未知错误"));
+        } finally {
+            // ✅清理进度监听
+            if (typeof progressHandler !== 'undefined') {
+                window.removeEventListener('annual-canvas-progress', progressHandler);
+            }
+            if (unlockTimer) clearTimeout(unlockTimer);
+            _annualIsRendering = false;
+        }
+    });
+
+    // 导出图片（下载所有模块）
+    downloadBtn.addEventListener("click", () => {
+        _annualPreviewResults.forEach((r, i) => {
+            const url = URL.createObjectURL(r.blob);
+            const a = document.createElement("a");
+            a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        });
+    });
+}
+
+function bindAnnualExport() {
+    btnAnnualExport = document.getElementById("btn-annual-export");
+    if(!btnAnnualExport) return;
+    btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
+    btnAnnualExport._clickHandler = async ()=>{
+        const snapshotBox = document.getElementById("snapshot-container");
+        const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
+        snapshotBox.innerHTML = annualWrap.innerHTML;
+        snapshotBox.classList.add("export-snapshot");
+        try {
+            const canvas = await html2canvas(snapshotBox, {
+                useCORS:true,
+                scale:2,
+                backgroundColor: annualExportConfig.bg
+            });
+            const link = document.createElement("a");
+            link.download = "Otome-Annual-Report.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        } catch(err) {
+            console.error("Annual Report导出失败", err);
+        } finally {
+            snapshotBox.innerHTML = "";
+            snapshotBox.classList.remove("export-snapshot");
+        }
+    };
+    btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
 
 /**
