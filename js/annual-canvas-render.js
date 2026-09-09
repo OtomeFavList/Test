@@ -27,10 +27,9 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-// 修改点1：字号增大——值24→36，标签20→30，行高34→44
-const STAT_VALUE_SIZE = 36;            // 用户输入值固定36px（红/蓝/粉框较大，原24px偏小）
-const STAT_LABEL_SIZE = 30;            // 标签文字固定30px（原20px偏小）
-const STAT_LINE_HEIGHT = 44;           // 混排行高（多行紧凑排列，确保框内垂直居中）
+const STAT_VALUE_SIZE = 36;            // 用户输入值固定36px
+const STAT_LABEL_SIZE = 30;            // 标签文字固定30px
+const STAT_LINE_HEIGHT = 44;           // 混排行高
 const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
 const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
 const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
@@ -279,58 +278,62 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
-// ========== 修改点2：数据统计底图配置（框比例重调） ==========
+// ========== 修改点1：数据统计底图配置（框比例重调） ==========
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    // 红框：避开顶部挂钩和底部波浪，左右留边
-    boxes: { A: { l: 0.10, r: 0.90, t: 0.16, b: 0.82 } }
+    // 红框：文字偏上→框整体下移（t 0.16→0.22，b 0.82→0.78）
+    boxes: { A: { l: 0.10, r: 0.90, t: 0.22, b: 0.78 } }
   },
   B: {
     file: 'game/Stats2.png',
-    // 蓝框：左侧l=0.35避开礼物图标，右侧留边避开甜筒
-    boxes: { B: { l: 0.35, r: 0.86, t: 0.14, b: 0.72 } }
+    // 蓝框：文字偏右→框整体左移（l 0.35→0.40，r 0.86→0.82）
+    boxes: { B: { l: 0.40, r: 0.82, t: 0.14, b: 0.72 } }
   },
   C: {
     file: 'game/Stats3.png',
-    // 粉框：避开左侧咖啡杯和右侧蓝色云朵装饰
+    // 粉框：用户确认无问题，保持不变
     boxes: { C: { l: 0.14, r: 0.74, t: 0.16, b: 0.88 } }
   },
   AB: {
     file: 'game/Stats4.png',
     boxes: {
-      A: { l: 0.10, r: 0.90, t: 0.10, b: 0.39 },
-      B: { l: 0.35, r: 0.86, t: 0.55, b: 0.87 }
+      // A偏上→下移（t 0.10→0.14，b 0.39→0.42）
+      A: { l: 0.10, r: 0.90, t: 0.14, b: 0.42 },
+      // B偏右→左移（l 0.35→0.40，r 0.86→0.82；t 0.55→0.57，b 0.87→0.85）
+      B: { l: 0.40, r: 0.82, t: 0.57, b: 0.85 }
     }
   },
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      A: { l: 0.10, r: 0.90, t: 0.09, b: 0.35 },
-      C: { l: 0.14, r: 0.74, t: 0.50, b: 0.92 }
+      // A特别偏上（与红框上沿重叠）→大幅下移（t 0.09→0.16，b 0.35→0.40）
+      A: { l: 0.10, r: 0.90, t: 0.16, b: 0.40 },
+      // C偏上→下移（t 0.50→0.54，b 0.92→0.88）
+      C: { l: 0.14, r: 0.74, t: 0.54, b: 0.88 }
     }
   },
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      B: { l: 0.35, r: 0.86, t: 0.10, b: 0.44 },
-      C: { l: 0.14, r: 0.74, t: 0.59, b: 0.92 }
+      // B偏右→左移（l 0.35→0.40，r 0.86→0.82；t 0.10→0.12，b 0.44→0.42）
+      B: { l: 0.40, r: 0.82, t: 0.12, b: 0.42 },
+      // C偏下→上移（t 0.59→0.55，b 0.92→0.90）
+      C: { l: 0.14, r: 0.74, t: 0.55, b: 0.90 }
     }
   },
   ABC: {
     file: 'game/Stats7.png',
     boxes: {
-      // A红框：原b=0.27严重偏小（红框实际延伸到0.39），导致文字偏上
-      A: { l: 0.10, r: 0.90, t: 0.11, b: 0.39 },
-      // B蓝框：原l=0.25与礼物图标重叠，改为0.38；t/b扩展到实际框范围
-      B: { l: 0.38, r: 0.86, t: 0.49, b: 0.69 },
-      // C粉框：微调t/b确保垂直居中
-      C: { l: 0.14, r: 0.74, t: 0.79, b: 0.95 }
+      // 全部偏下→整体上移
+      A: { l: 0.10, r: 0.90, t: 0.08, b: 0.36 },
+      B: { l: 0.40, r: 0.82, t: 0.46, b: 0.66 },
+      C: { l: 0.14, r: 0.74, t: 0.76, b: 0.92 }
     }
   }
 };
 
-// ========== 修改点3：判断A/B/C哪些部分有数据 ==========
+// ========== 判断A/B/C哪些部分有数据 ==========
 function getStatsParts(annualData) {
   const has = (key) => String(annualData[key] ?? '').trim() !== '';
   const parts = [];
@@ -340,61 +343,99 @@ function getStatsParts(annualData) {
   return parts;
 }
 
-// ========== 修改点1：buildStatPartSegments 加入换行标记 ==========
+// ========== 修改点2：buildStatPartSegments 重写（空行跳过） ==========
 function buildStatPartSegments(part, annualData) {
   const v = (key) => String(annualData[key] ?? '').trim();
-  const BR = { text: '', isBreak: true }; // 强制换行标记
+  const BR = { text: '', isBreak: true };
+  // 按行构建，每行所有用户值全为空则跳过该行
+  const lines = [];
   if (part === 'A') {
-    // 对齐网页：第1行"年游玩了部日乙"，第2行"总时数小时"
-    return [
-      { text: v('reportYear'), isValue: true },
-      { text: '年游玩了', isValue: false },
-      { text: v('playCount'), isValue: true },
-      { text: '部日乙', isValue: false },
-      BR,
-      { text: '总时数', isValue: false },
-      { text: v('totalHours'), isValue: true },
-      { text: '小时', isValue: false },
-    ];
+    // 第1行：{年}年游玩了{部数}部日乙 — reportYear或playCount任一非空则保留
+    if (v('reportYear') || v('playCount')) {
+      const line = [];
+      if (v('reportYear')) line.push({ text: v('reportYear'), isValue: true });
+      line.push({ text: '年游玩了', isValue: false });
+      if (v('playCount')) line.push({ text: v('playCount'), isValue: true });
+      line.push({ text: '部日乙', isValue: false });
+      lines.push(line);
+    }
+    // 第2行：总时数{小时}小时 — totalHours非空则保留
+    if (v('totalHours')) {
+      lines.push([
+        { text: '总时数', isValue: false },
+        { text: v('totalHours'), isValue: true },
+        { text: '小时', isValue: false }
+      ]);
+    }
   }
   if (part === 'B') {
-    // 对齐网页：4行——"喜欢个人"/"嗑对CP"/"一共买了部游戏"/"花费元"
-    return [
-      { text: '喜欢', isValue: false },
-      { text: v('likeCharCount'), isValue: true },
-      { text: '个人', isValue: false },
-      BR,
-      { text: '嗑', isValue: false },
-      { text: v('cpCount'), isValue: true },
-      { text: '对CP', isValue: false },
-      BR,
-      { text: '一共买了', isValue: false },
-      { text: v('buyCount'), isValue: true },
-      { text: '部游戏', isValue: false },
-      BR,
-      { text: '花费', isValue: false },
-      { text: v('costMoney'), isValue: true },
-      { text: '元', isValue: false },
-    ];
+    // 第1行：喜欢{数}个人
+    if (v('likeCharCount')) {
+      lines.push([
+        { text: '喜欢', isValue: false },
+        { text: v('likeCharCount'), isValue: true },
+        { text: '个人', isValue: false }
+      ]);
+    }
+    // 第2行：嗑{数}对CP
+    if (v('cpCount')) {
+      lines.push([
+        { text: '嗑', isValue: false },
+        { text: v('cpCount'), isValue: true },
+        { text: '对CP', isValue: false }
+      ]);
+    }
+    // 第3行：一共买了{数}部游戏
+    if (v('buyCount')) {
+      lines.push([
+        { text: '一共买了', isValue: false },
+        { text: v('buyCount'), isValue: true },
+        { text: '部游戏', isValue: false }
+      ]);
+    }
+    // 第4行：花费{数}元
+    if (v('costMoney')) {
+      lines.push([
+        { text: '花费', isValue: false },
+        { text: v('costMoney'), isValue: true },
+        { text: '元', isValue: false }
+      ]);
+    }
   }
   if (part === 'C') {
-    // 对齐网页：3行——"其中，部已封盘"/"部正在进行"/"部还未开始"
-    return [
-      { text: '其中，', isValue: false },
-      { text: v('finished'), isValue: true },
-      { text: '部已封盘', isValue: false },
-      BR,
-      { text: v('ongoing'), isValue: true },
-      { text: '部正在进行', isValue: false },
-      BR,
-      { text: v('notStart'), isValue: true },
-      { text: '部还未开始', isValue: false },
-    ];
+    // 第1行：其中，{数}部已封盘 — finished非空则保留（含前缀"其中，"）
+    if (v('finished')) {
+      lines.push([
+        { text: '其中，', isValue: false },
+        { text: v('finished'), isValue: true },
+        { text: '部已封盘', isValue: false }
+      ]);
+    }
+    // 第2行：{数}部正在进行
+    if (v('ongoing')) {
+      lines.push([
+        { text: v('ongoing'), isValue: true },
+        { text: '部正在进行', isValue: false }
+      ]);
+    }
+    // 第3行：{数}部还未开始
+    if (v('notStart')) {
+      lines.push([
+        { text: v('notStart'), isValue: true },
+        { text: '部还未开始', isValue: false }
+      ]);
+    }
   }
-  return [];
+  // 展开为segments，行间用BR分隔
+  const segments = [];
+  lines.forEach((line, i) => {
+    if (i > 0) segments.push(BR);
+    segments.push(...line);
+  });
+  return segments;
 }
 
-// ========== 修改点2：wrapStatSegments 支持强制换行标记 ==========
+// ========== 修改点3：wrapStatSegments 重写（值段加粗测量 + 2px间距 + 段边界标记） ==========
 function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   const lines = [[]];
   let curWidth = 0;
@@ -405,21 +446,35 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
       continue;
     }
     const size = seg.isValue ? valueSize : labelSize;
-    ctx.font = size + 'px ' + FONT_SIYUAN;
-    for (const ch of Array.from(seg.text)) {
+    // 值段加粗测量
+    ctx.font = (seg.isValue ? 'bold ' : '') + size + 'px ' + FONT_SIYUAN;
+    const chars = Array.from(seg.text);
+    chars.forEach((ch, ci) => {
       const chW = ctx.measureText(ch).width;
-      if (curWidth + chW > maxWidth && lines[lines.length - 1].length > 0) {
+      // 值段：第一个字符前留2px，最后一个字符后留2px
+      let extraBefore = 0, extraAfter = 0;
+      if (seg.isValue) {
+        if (ci === 0) extraBefore = 2;
+        if (ci === chars.length - 1) extraAfter = 2;
+      }
+      if (curWidth + chW + extraBefore > maxWidth && lines[lines.length - 1].length > 0) {
         lines.push([]);
         curWidth = 0;
       }
-      lines[lines.length - 1].push({ ch: ch, size: size, isValue: seg.isValue });
-      curWidth += chW;
-    }
+      lines[lines.length - 1].push({
+        ch: ch,
+        size: size,
+        isValue: seg.isValue,
+        isValueStart: seg.isValue && ci === 0,
+        isValueEnd: seg.isValue && ci === chars.length - 1
+      });
+      curWidth += chW + extraBefore + extraAfter;
+    });
   }
   return lines;
 }
 
-// ========== 修改点6：在指定框内绘制混合字号文字 ==========
+// ========== 修改点4：drawStatPartCentered 重写（底端对齐 + 值加粗 + 2px间距） ==========
 function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
                               valueSize, labelSize, lineHeight, valueColor, labelColor) {
   const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
@@ -427,17 +482,31 @@ function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
   let y = boxY + (boxH - totalH) / 2;
   ctx.textBaseline = 'top';
   for (const line of lines) {
+    // 计算行宽（含值段前后2px间距）
     let lineW = 0;
     for (const item of line) {
-      ctx.font = item.size + 'px ' + FONT_SIYUAN;
+      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       lineW += ctx.measureText(item.ch).width;
+      if (item.isValueStart) lineW += 2;
+      if (item.isValueEnd) lineW += 2;
+    }
+    // 本行最大字号（用于底端对齐偏移）
+    let maxSize = 0;
+    for (const item of line) {
+      if (item.size > maxSize) maxSize = item.size;
     }
     let x = boxX + (boxW - lineW) / 2;
     for (const item of line) {
-      ctx.font = item.size + 'px ' + FONT_SIYUAN;
+      // 值段左侧2px间距
+      if (item.isValueStart) x += 2;
+      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       ctx.fillStyle = item.isValue ? valueColor : labelColor;
-      ctx.fillText(item.ch, x, y);
+      // 底端对齐：小字号向下偏移 (maxSize - item.size)，使文字底部与最大字号齐平
+      const charY = y + (maxSize - item.size);
+      ctx.fillText(item.ch, x, charY);
       x += ctx.measureText(item.ch).width;
+      // 值段右侧2px间距
+      if (item.isValueEnd) x += 2;
     }
     y += lineHeight;
   }
@@ -459,7 +528,6 @@ function collectModuleImages(moduleType, annualData) {
   const urls = [];
   const safeEach = (list, cb) => { (list || []).forEach(item => { if (item) cb(item); }); };
   const pushUrl = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
-  // 修改点7：stats模块底图收集
   if (moduleType === 'stats') {
     const parts = getStatsParts(annualData);
     if (parts.length > 0) {
@@ -571,11 +639,9 @@ function hasGridContent(gridData, gridKind, footerText) {
 }
 
 // ===================== 高度计算（需在图片加载后调用） =====================
-// 修改点3：calcStatsHeight 重写——去掉小标题、去掉卡片内边距、图片宽度用wrapW
 function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
   const wrapW = getWrapW(targetW);
   let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
-  // stats模块无小标题、无卡片内边距，底图直接贴满卡片边框
   let contentH = 0;
   const parts = getStatsParts(annualData);
   if (parts.length > 0) {
@@ -585,14 +651,13 @@ function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
       const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
       const dims = getImgSize(bgImg);
       if (dims.w > 0 && dims.h > 0) {
-        // 底图按卡片完整宽度(wrapW)等比缩放，贴满边框
         contentH += Math.round(wrapW * dims.h / dims.w);
       } else {
-        contentH += 300; // 图片未加载时的兜底高度
+        contentH += 300;
       }
     }
   }
-  h += contentH; // 无CARD_INNER_PAD，图片即卡片高度
+  h += contentH;
   return h;
 }
 
@@ -610,12 +675,11 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
   const noW = ctx.measureText(noText).width;
   const nameMaxW = innerW - noW - 12;
   const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
-  // ✅NO行高使用 NO_SIZE*1.3（与名称行高一致），不再用裸NO_SIZE=22
   const noLineH = NO_SIZE * 1.3;
   h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
 
   // ---- 封面 + 感想行 ----
-  let coverH; // 封面卡片总高度（含内边距）
+  let coverH;
   let coverAreaW;
   if (itemType === 'game') {
     const img = imageCache.get(toCanvasUrl(item.coverSrc));
@@ -624,15 +688,14 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
   } else if (itemType === 'char') {
     coverH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
     coverAreaW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
-  } else { // cp
+  } else {
     coverH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
-    coverAreaW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：两张卡片各含左右内边距
+    coverAreaW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;
   }
-  // 感想框（仅当有文字时计算）
   let textBoxH = 0;
   const text = (item.text || '').trim();
   if (text) {
-    const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;  // ✅统一间距常量
+    const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;
     const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     textBoxH = textH + TEXT_BOX_PAD * 2;
@@ -643,11 +706,9 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
 }
 
 function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, config, imageCache) {
-  // 五、其他模块独立计算（无模块标题）
   if (moduleType === 'other') {
     return calcOtherHeight(ctx, targetW, annualData, config, imageCache);
   }
-  // 六、七宫格独立计算
   if (moduleType === 'gameGrid') {
     return calcGridHeight(ctx, targetW, annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect, config, imageCache);
   }
@@ -678,18 +739,16 @@ function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, con
 function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
   let contentH = 0;
   const o = annualData.other || {};
   const labelColor = config.subtitle || '#b85878';
-  // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
   const alsoList = o.alsoPlayed || [];
   if (alsoList.length > 0) {
-    contentH += OTHER_SECTION_TITLE_SIZE + 12; // 标题+底部间距
+    contentH += OTHER_SECTION_TITLE_SIZE + 12;
     const coverW = OTHER_ALSO_COVER_W;
     const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
     const rows = Math.ceil(alsoList.length / cols);
-    // 逐行计算最大封面高度
     for (let r = 0; r < rows; r++) {
       let rowMaxH = 0;
       for (let c = 0; c < cols; c++) {
@@ -703,7 +762,6 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
     }
     contentH += OTHER_SECTION_GAP;
   }
-  // ---- 卡片区域（每行居中，CP图100+间距10，配角100）----
   const cards = getOtherCards(annualData);
   if (cards.length > 0) {
     const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
@@ -712,9 +770,9 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
     const cardHeights = cards.map(card => {
       let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
       if (card.type === 'cp') {
-        ch += OTHER_CP_COVER_SIZE; // 100，与模块四一致
+        ch += OTHER_CP_COVER_SIZE;
       } else if (card.type === 'support') {
-        ch += OTHER_SUPPORT_COVER_SIZE; // 100，与CP图一致
+        ch += OTHER_SUPPORT_COVER_SIZE;
       } else {
         const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
         const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
@@ -742,8 +800,8 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
 function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, imageCache) {
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题
-  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16); // 模块标题
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   const items = getValidGridItems(gridData, gridKind);
   const coverW = getGridCoverW(gridKind);
   const labelLineH = GRID_LABEL_SIZE * 1.4;
@@ -766,14 +824,12 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
       if (r < rows - 1) contentH += GRID_GAP;
     }
   }
-  // 底部文本框（标题"明年最期待"/"还想说"在框内顶部居中）
   if ((footerText || '').trim()) {
     if (items.length > 0) contentH += GRID_FOOTER_GAP;
     const textSize = config.customTextFontSize || 16;
     const boxInnerW = innerW - FOOTER_PAD * 2;
     const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-    // 外框高度 = 上下内边距 + 标题 + 标题间距 + 文本框
     contentH += FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
   }
   h += CARD_INNER_PAD * 2 + contentH;
@@ -782,10 +838,8 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
 
 // ===================== 绘制函数 =====================
 function drawBigTitle(painter, targetW, config, annualData) {
-  // ✅大标题在"画布上沿→第一个框上沿"区域内垂直居中，与export逻辑一致
   const titleAreaH = getBodyPad() + TITLE_SIZE + getTitleMb();
   const titleY = (titleAreaH - TITLE_SIZE) / 2;
-  // ✅新增：根据 useSummaryTitle 开关决定标题文本
   let titleText;
   if (config.useSummaryTitle) {
     titleText = 'Otome Summary Report';
@@ -796,7 +850,6 @@ function drawBigTitle(painter, targetW, config, annualData) {
     titleText = `${year} Otome Annual Report`;
   }
   painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
-  // 修改点11：填表人右对齐绘制
   if (config.reporterName && String(config.reporterName).trim()) {
     const reporterText = '填表人：' + String(config.reporterName).trim();
     const reporterSize = 16;
@@ -810,16 +863,13 @@ function drawBigTitle(painter, targetW, config, annualData) {
     ctx.fillText(reporterText, targetW - getBodyPad(), reporterY);
     ctx.restore();
   }
-  painter.y = titleAreaH;  // 第一个框从区域底部开始，总高度与原逻辑一致
+  painter.y = titleAreaH;
 }
 
-// 修改点2：模块小标题居中绘制
 function drawModuleTitle(painter, centerX, y, title, config) {
-  // ✅模块小标题居中绘制，颜色由"小标题文字色"控制
   painter.drawTextCenter(title, centerX, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
 }
 
-// 绘制封面卡片（白色底+#eee边框+圆角，内含圆角图片）
 function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
   painter.drawRoundRect(x, y, cardW, cardH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
   if (img) {
@@ -830,7 +880,6 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
     const ctx = painter.ctx;
     ctx.save();
     try {
-      // 圆角裁剪路径
       ctx.beginPath();
       ctx.moveTo(imgX + radius, imgY);
       ctx.lineTo(imgX + imgW - radius, imgY);
@@ -843,8 +892,6 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
       ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
       ctx.closePath();
       ctx.clip();
-      // ✅直接完整缩放绘制（不再使用drawImageRound的cover裁剪模式），
-      // 确保图片底部不被裁剪，完整显示在目标区域内
       const resInfo = rawImageResourceCache.get(srcUrl);
       const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
       ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
@@ -854,8 +901,6 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
   }
 }
 
-// 绘制感想文字框（白色底+可选边框）
-// 修改点10：新增 centerText 参数（第8参数），支持文本居中
 function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText) {
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
     noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
@@ -878,7 +923,6 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
 }
 
 // ===================== 新增辅助函数 =====================
-// 居中文本绘制（支持CJK自动换行，返回实际占用高度）
 function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize, color, bold) {
   if (!text) return 0;
   ctx.font = `${bold ? 'bold ' : ''}${fontSize}px ${FONT_SIYUAN}`;
@@ -901,7 +945,7 @@ function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize,
   });
   return lines.length * lineHeight;
 }
-// 测量居中文本的实际高度（与drawCenteredText换行逻辑一致）
+
 function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
   if (!text) return 0;
   ctx.font = `bold ${fontSize}px ${FONT_SIYUAN}`;
@@ -918,11 +962,11 @@ function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
   }
   return lines * lineHeight;
 }
-// 宫格封面宽度：游戏=140（模块二），角色=120（模块三）
+
 function getGridCoverW(gridKind) {
   return gridKind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
 }
-// 宫格封面高度：游戏按原图比例自适应（模块二），角色固定120（模块三）
+
 function getGridCoverH(item, gridKind, imageCache) {
   if (gridKind === 'game') {
     const src = toCanvasUrl(item.coverSrc);
@@ -932,7 +976,6 @@ function getGridCoverH(item, gridKind, imageCache) {
   return CHAR_COVER_SIZE;
 }
 
-// ✅新增：返回结构化的标签+数据对，供Canvas分别着色
 function buildStatsParts(annualData) {
   const parts = [];
   for (const [key, label] of STAT_LABELS) {
@@ -944,24 +987,21 @@ function buildStatsParts(annualData) {
   return parts;
 }
 
-// ========== 修改点8：drawStatsContent 重写——圆角裁剪贴满边框+重绘边框 ==========
+// ========== drawStatsContent：绘制底图+文字 ==========
 function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache) {
   const parts = getStatsParts(annualData);
   if (parts.length === 0) return;
   const bgInfo = STATS_BG_CONFIG[parts.join('')];
   if (!bgInfo) return;
   const ctx = painter.ctx;
-  // 加载底图
   const bgUrl = toCanvasUrl(bgInfo.file);
   const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
   const dims = getImgSize(bgImg);
   if (dims.w <= 0 || dims.h <= 0) return;
-  // 底图按卡片完整宽度等比缩放，贴满边框
   const drawW = innerW;
   const drawH = Math.round(innerW * dims.h / dims.w);
   const resInfo = rawImageResourceCache.get(bgUrl);
   const drawTarget = (resInfo && resInfo.data) ? resInfo.data : bgImg;
-  // 圆角裁剪：底图被裁剪成与卡片一致的圆角，确保四角不溢出
   ctx.save();
   ctx.beginPath();
   const r = CARD_RADIUS;
@@ -978,7 +1018,6 @@ function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache)
   ctx.clip();
   ctx.drawImage(drawTarget, x, y, drawW, drawH);
   ctx.restore();
-  // 重绘卡片边框（确保边框在底图之上，不被覆盖）
   ctx.save();
   ctx.lineWidth = CARD_BORDER_W;
   ctx.strokeStyle = config.border || '#f6a5b8';
@@ -995,7 +1034,6 @@ function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache)
   ctx.closePath();
   ctx.stroke();
   ctx.restore();
-  // 在各彩色框内绘制文字（值36px，标签30px，按网页换行结构，上下左右居中）
   const valueColor = config.statdata || '#b33a3a';
   const labelColor = config.stattext || '#b85878';
   for (const part of parts) {
@@ -1018,7 +1056,6 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
 
-  // ---- NO + 名称行（统一用wrapText绘制，确保基线完全一致；整体垂直居中）----
   const noText = `NO.${(item._no ?? 0) + 1}`;
   ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
   const noW = ctx.measureText(noText).width;
@@ -1027,20 +1064,14 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     : (item.gameName || item.charName || '');
   const nameX = contentX + noW + 12;
   const nameMaxW = innerW - noW - 12;
-  // 先测量名称高度
   const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
-  // ✅NO行高与名称统一使用 NO_SIZE*1.3
   const noLineH = NO_SIZE * 1.3;
   const rowH = Math.max(noLineH, nameH);
-  // ✅NO和名称从同一顶部坐标nameTopY开始绘制，两者字号相同(22px)、行高相同，自然上下对齐
   const nameTopY = painter.y + (rowH - nameH) / 2;
-  // ✅NO也用wrapText绘制（单行），与名称使用完全相同的基线逻辑，彻底消除fillText与wrapText基线不一致问题
-  // ✅NO标签颜色由"小标题文字色"控制，不再硬编码NO_COLOR
   wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
   wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
   painter.shiftY(rowH + LABEL_ROW_MB);
 
-  // ---- 封面 + 感想行 ----
   const contentY = painter.y;
   let coverCardW, coverCardH, coverImg, coverSrc;
 
@@ -1057,20 +1088,17 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     coverCardW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
     coverCardH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
     drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
-  } else { // cp
+  } else {
     const fSrc = toCanvasUrl(item.femaleCoverSrc);
     const mSrc = toCanvasUrl(item.maleCoverSrc);
     const fImg = fSrc ? imageCache.get(fSrc) : null;
     const mImg = mSrc ? imageCache.get(mSrc) : null;
-    coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;  // ✅修复：与calcTopItemHeight一致
+    coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;
     coverCardH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
-    // 女主卡片
     drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 6);
-    // 男主卡片
     drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 6);
   }
 
-  // 感想框（仅当有文字时绘制）✅统一使用 COVER_TEXT_GAP 间距
   const text = (item.text || '').trim();
   let finalTextBoxH = 0;
   if (text) {
@@ -1079,7 +1107,6 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     finalTextBoxH = textH + TEXT_BOX_PAD * 2;
-    // 模块二三四感想框保留边框，不传 noBorder，不居中
     drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
   }
   painter.shiftY(Math.max(coverCardH, finalTextBoxH));
@@ -1093,26 +1120,20 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
   const o = annualData.other || {};
-  // 修改点12：标签色用 labelColor
   const labelColor = config.labelColor || config.subtitle || '#b85878';
-  // ---- "还玩了"区域（标题居中18px，封面140宽比例自适应，每行居中）----
   const alsoList = o.alsoPlayed || [];
   if (alsoList.length > 0) {
-    // 标题居中
     drawCenteredText(ctx, '还玩了', contentX + innerW / 2, painter.y, innerW,
       OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
     painter.shiftY(OTHER_SECTION_TITLE_SIZE + 12);
-    // 封面横向排列，每行居中
     const coverW = OTHER_ALSO_COVER_W;
     const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
     const rows = Math.ceil(alsoList.length / cols);
     for (let r = 0; r < rows; r++) {
-      // 计算本行实际元素数和居中偏移
       const rowStart = r * cols;
       const rowCount = Math.min(cols, alsoList.length - rowStart);
       const rowTotalW = rowCount * coverW + (rowCount - 1) * OTHER_ALSO_COVER_GAP;
       const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
-      // 本行最大封面高度
       let rowMaxH = 0;
       for (let c = 0; c < rowCount; c++) {
         const idx = rowStart + c;
@@ -1133,13 +1154,11 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
     }
     painter.shiftY(OTHER_SECTION_GAP);
   }
-  // ---- 卡片区域（每行居中，卡片标题居中18px，CP图100+gap10，配角100）----
   const cards = getOtherCards(annualData);
   if (cards.length > 0) {
     const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
     const rows = Math.ceil(cards.length / cols);
     const textSize = config.customTextFontSize || 16;
-    // 先计算每行高度
     const rowHeights = [];
     for (let r = 0; r < rows; r++) {
       let rowMax = 0;
@@ -1170,16 +1189,13 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const card = cards[idx];
         const x = contentX + rowOffset + c * (OTHER_CARD_W + OTHER_CARD_GAP);
         const y = painter.y;
-        // 修改点12：卡片背景用 boxBgColor
         painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
-        // 卡片标题（居中18px）
         const titleY = y + OTHER_CARD_PAD;
         drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
           OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
           OTHER_SECTION_TITLE_SIZE, labelColor, true);
         const contentY = titleY + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
         if (card.type === 'cp') {
-          // CP双图：各100px，间距CP_GAP=10，整体居中（与模块四一致）
           const fSrc = toCanvasUrl(card.data.femaleCoverSrc);
           const mSrc = toCanvasUrl(card.data.maleCoverSrc);
           const fImg = fSrc ? imageCache.get(fSrc) : null;
@@ -1189,13 +1205,11 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
           drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
           drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
         } else if (card.type === 'support') {
-          // 配角图：100px正方形，居中（与CP图一致）
           const src = toCanvasUrl(card.data.coverSrc);
           const img = src ? imageCache.get(src) : null;
           const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
           drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
         } else {
-          // 修改点12：文本框居中（第8参数 true）
           const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
           const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
@@ -1215,7 +1229,6 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
   const innerW = wrapW - CARD_INNER_PAD * 2;
   const contentX = wrapX + CARD_INNER_PAD;
   const ctx = painter.ctx;
-  // 修改点13：标签色用 labelColor
   const labelColor = config.labelColor || config.subtitle || '#b85878';
   const coverW = getGridCoverW(gridKind);
   const labelLineH = GRID_LABEL_SIZE * 1.4;
@@ -1227,7 +1240,6 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
       const rowCount = Math.min(cols, items.length - rowStart);
       const rowTotalW = rowCount * coverW + (rowCount - 1) * GRID_GAP;
       const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
-      // 先算本行最大单元格高度
       let rowMaxH = 0;
       const cellHeights = [];
       for (let c = 0; c < rowCount; c++) {
@@ -1240,18 +1252,15 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
         cellHeights.push(cellH);
         rowMaxH = Math.max(rowMaxH, cellH);
       }
-      // 绘制本行
       for (let c = 0; c < rowCount; c++) {
         const idx = rowStart + c;
         const item = items[idx];
         const x = contentX + rowOffset + c * (coverW + GRID_GAP);
         const y = painter.y;
         const covH = getGridCoverH(item, gridKind, imageCache);
-        // 封面（复用drawCoverCard，与模块二/三完全一致的样式）
         const src = toCanvasUrl(item.coverSrc);
         const img = src ? imageCache.get(src) : null;
         drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
-        // 标签（居中18px，支持多行）
         const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
         const labelY = y + covH + GRID_LABEL_GAP;
         drawCenteredText(ctx, labelText, x + coverW / 2, labelY, coverW,
@@ -1261,7 +1270,6 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
       if (r < rows - 1) painter.shiftY(GRID_GAP);
     }
   }
-  // 底部文本框（标题"明年最期待"/"还想说"在框内顶部居中18px）
   if ((footerText || '').trim()) {
     if (items.length > 0) painter.shiftY(GRID_FOOTER_GAP);
     const textSize = config.customTextFontSize || 16;
@@ -1269,13 +1277,10 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
     const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
     const outerBoxH = FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
-    // 修改点13：底部外框背景用 boxBgColor
     painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
-    // 标题（在框内顶部居中18px）
     const titleY = painter.y + FOOTER_PAD;
     drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
       OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
-    // 文本框（标题下方，白底无边框）
     const boxY = titleY + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP;
     drawTextBox(painter, contentX + FOOTER_PAD, boxY, boxInnerW, textBoxH, footerText, config, true);
     painter.shiftY(outerBoxH);
@@ -1284,7 +1289,6 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
 
 // ===================== 主入口：单模块导出 =====================
 export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config) {
-  // IOS内存清理
   if (IS_IOS_WEBKIT) {
     for (const [, res] of rawImageResourceCache.entries()) {
       if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
@@ -1295,7 +1299,6 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     rawImageResourceCache.clear();
   }
 
-  // 修改点10：空模块判断改用 getStatsParts
   if (moduleType === 'stats') {
     if (getStatsParts(annualData).length === 0) return null;
   } else if (moduleType === 'other') {
@@ -1311,9 +1314,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
 
   emitRenderProgress(5);
 
-  // 第一步：加载图片（游戏封面高度依赖图片尺寸，必须先加载）
   let imageUrls = collectModuleImages(moduleType, annualData);
-  // ✅兜底防火墙：再次清洗，剔除null/空/R2 pub/github raw（对齐export补丁8）
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
   const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
   const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
@@ -1328,47 +1329,36 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
   const imageCache = loadRet.resultMap;
 
-  // ✅离屏圆角画布方案已弃用（改为实时clip绘制），跳过预生成，直接进入绘制阶段
   await new Promise(r => setTimeout(r, 30));
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   emitRenderProgress(65);
 
-  // 第二步：基于加载后的图片计算高度
   const vCanvas = document.createElement('canvas');
   const vCtx = vCanvas.getContext('2d');
-  // 修改点11：calcStatsHeight 调用传入 imageCache
   const totalH = moduleType === 'stats'
     ? calcStatsHeight(vCtx, designW, annualData, config, imageCache)
     : calcModuleHeight(vCtx, designW, moduleType, moduleTitle, annualData, config, imageCache);
   vCanvas.width = 0; vCanvas.height = 0;
 
-  // 第三步：创建正式画布并绘制
-  // ✅IOS画布总像素预警（对齐export补丁5）
   if (IS_IOS_WEBKIT) {
     const totalPixel = (designW * DPR) * (totalH * DPR);
     if (totalPixel > 32 * 1024 * 1024) {
       console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
     }
   }
-  // ✅修复：画布高度预留底部getBodyPad()，否则卡片下边框外侧1px超出画布被裁，下边框比其余三边细
   const canvasHeight = totalH + getBodyPad();
   const canvas = document.createElement('canvas');
   const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
 
-  // 大标题（传入annualData用于年份标题）
   drawBigTitle(painter, designW, config, annualData);
 
-  // 模块卡片
   const wrapW = getWrapW(designW);
   const wrapX = getWrapX(designW, wrapW);
   const cardTop = painter.y;
   const cardInnerW = wrapW - CARD_INNER_PAD * 2;
 
-  // 计算卡片内容高度
   let cardContentH = 0;
   if (moduleType === 'other') {
-    // 五模块无模块标题，内容由drawOtherContent独立计算
-    // 用calcOtherHeight反推contentH
     const totalH = calcOtherHeight(painter.ctx, designW, annualData, config, imageCache);
     cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
   } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
@@ -1378,7 +1368,6 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config, imageCache);
     cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
   } else {
-    // 修改点4：stats模块无小标题，不加标题高度
     if (moduleTitle && moduleType !== 'stats') {
       cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
     }
@@ -1391,7 +1380,6 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
           const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
           const dims = getImgSize(bgImg);
           if (dims.w > 0 && dims.h > 0) {
-            // 底图按卡片完整宽度(wrapW)等比缩放
             cardContentH += Math.round(wrapW * dims.h / dims.w);
           } else {
             cardContentH += 300;
@@ -1409,27 +1397,20 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     }
   }
 
-  // 修改点5：stats模块不加CARD_INNER_PAD
   const cardH = (moduleType === 'stats') ? cardContentH : (CARD_INNER_PAD * 2 + cardContentH);
 
-  // 绘制卡片背景+边框
   painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
 
-  // 修改点6：stats模块不绘制"数据统计"小标题
   let contentY = cardTop + CARD_INNER_PAD;
   if (moduleTitle && moduleType !== 'other' && moduleType !== 'stats') {
     drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
     contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   }
 
-  // 绘制内容
-  // 修改点7：stats绘制调用——图片从卡片左上角开始
   if (moduleType === 'stats') {
-    // 底图从卡片左上角(wrapX, cardTop)开始，宽度=wrapW，贴满边框
     drawStatsContent(painter, wrapX, cardTop, wrapW, annualData, config, imageCache);
     painter.y = cardTop + cardH;
   } else if (moduleType === 'other') {
-    // 五模块：无模块标题，从卡片顶部+内边距开始绘制
     painter.y = cardTop + CARD_INNER_PAD;
     drawOtherContent(painter, designW, annualData, config, imageCache);
     painter.shiftY(CARD_INNER_PAD);
@@ -1457,7 +1438,6 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
 
   emitRenderProgress(100);
 
-  // 裁剪到实际高度（对齐export-canvas-render.js的cropCanvas：先填背景色，再9参数1:1复制，不拉伸变形）
   const finalH = painter.getY() + getBodyPad();
   const outputCanvas = document.createElement('canvas');
   outputCanvas.width = designW * DPR;
@@ -1465,10 +1445,8 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   const oCtx = outputCanvas.getContext('2d');
   oCtx.imageSmoothingEnabled = true;
   oCtx.imageSmoothingQuality = "high";
-  // ✅先填充背景色，覆盖输出画布底部多出的边距区域
   oCtx.fillStyle = config.bg || '#fff7f9';
   oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
-  // ✅9参数1:1复制源画布内容，不再用5参数整体拉伸导致图片变形
   oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
 
   let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
@@ -1491,11 +1469,8 @@ export async function renderAllAnnualModules(designW, annualData, config, titleM
     { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
     { type: 'charTop', title: titleMap?.charTop || 'キャラTOP' },
     { type: 'cpTop', title: titleMap?.cpTop || 'カップルTOP' },
-    // ✅新增：五、其他（title传空，不导出"五、其他"标题）
     { type: 'other', title: '' },
-    // ✅新增：六、ゲーム宫格
     { type: 'gameGrid', title: titleMap?.gameGrid || 'ゲーム宫格' },
-    // ✅新增：七、キャラ宫格
     { type: 'charGrid', title: titleMap?.charGrid || 'キャラ宫格' },
   ];
   const results = [];
