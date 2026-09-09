@@ -300,8 +300,8 @@ const STATS_BG_CONFIG = {
     boxes: {
       // A高范围505-890px → t=0.21 b=0.45；左右全宽居中
       A: { l: 0.00, r: 1.00, t: 0.21, b: 0.45 },
-      // B宽范围405-1405px → l=0.24 r=0.89；高范围下半蓝框 t=0.56 b=0.87
-      B: { l: 0.24, r: 0.89, t: 0.56, b: 0.87 }
+      // B高范围1065-1625px → t=0.55 b=0.90；宽范围405-1405px → l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.55, b: 0.90 }
     }
   },
   AC: {
@@ -316,8 +316,8 @@ const STATS_BG_CONFIG = {
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      // B高范围275-830px → t=0.08 b=0.47；宽范围405-1405px → l=0.24 r=0.89
-      B: { l: 0.24, r: 0.89, t: 0.08, b: 0.47 },
+      // B高范围275-825px → t=0.08 b=0.46；宽范围405-1405px → l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.08, b: 0.46 },
       // C高范围915-1515px → t=0.53 b=0.95；宽范围175-1270px → l=0.09 r=0.80
       C: { l: 0.09, r: 0.80, t: 0.53, b: 0.95 }
     }
@@ -463,13 +463,18 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   return lines;
 }
 
-// ========== 修改点4：drawStatPartCentered — 清理 noStyle 代码，保持底端对齐+4px间距 ==========
+// ========== 修改点1：drawStatPartCentered — 修正垂直居中计算（解决文字偏下） ==========
 function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
                               valueSize, labelSize, lineHeight, valueColor, labelColor) {
   const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
-  const totalH = lines.length * lineHeight;
+  if (lines.length === 0) return;
+  // bottom基线模式：末行文字底部在 y+maxSize，文字块总高=(n-1)*lineHeight+末行maxSize
+  let lastMaxSize = 0;
+  for (const item of lines[lines.length - 1]) {
+    if (item.size > lastMaxSize) lastMaxSize = item.size;
+  }
+  const totalH = (lines.length - 1) * lineHeight + lastMaxSize;
   let y = boxY + (boxH - totalH) / 2;
-  // bottom 基线实现底端对齐：所有文字底部落在同一基线上
   ctx.textBaseline = 'bottom';
   for (const line of lines) {
     // 计算行宽（含值段前后4px间距）
