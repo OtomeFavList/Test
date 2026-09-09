@@ -1854,7 +1854,7 @@
     text-align: center;
     font-size: 16px;  /* 修改点4：字号从15px改为16px */
     font-weight: bold;
-    color: var(--annual-export-subtitle, #b85878);
+    color: var(--annual-export-labelcolor, #b85878);  /* 修改点：改用labelcolor */
     margin-bottom: 12px;
 }
 .annual-other-also-content {
