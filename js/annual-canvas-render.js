@@ -278,22 +278,22 @@ const STAT_LABELS = [
   ['notStart', '未开'],
 ];
 
-// ========== 修改点2：STATS_BG_CONFIG 框范围按1620px像素范围精确换算 ==========
+// ========== STATS_BG_CONFIG 框范围按1620px像素范围精确换算 ==========
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    // 只有A：高范围505-890px → t=0.37 b=0.79；左右以底图全宽居中
-    boxes: { A: { l: 0.00, r: 1.00, t: 0.37, b: 0.79 } }
+    // 只有A：高502-890px（底图上204px/高874px）→ t=0.34 b=0.79；左右全宽居中
+    boxes: { A: { l: 0.00, r: 1.00, t: 0.34, b: 0.79 } }
   },
   B: {
     file: 'game/Stats2.png',
-    // 只有B：宽范围405-1405px → l=0.24 r=0.89；高范围蓝框可写区 t=0.16 b=0.74
-    boxes: { B: { l: 0.24, r: 0.89, t: 0.16, b: 0.74 } }
+    // 只有B：高270-820px（底图上204px/高786px）→ t=0.08 b=0.78；宽405-1405px → l=0.24 r=0.89
+    boxes: { B: { l: 0.24, r: 0.89, t: 0.08, b: 0.78 } }
   },
   C: {
     file: 'game/Stats3.png',
-    // 只有C：宽范围175-1270px → l=0.09 r=0.80；高范围280-880px → t=0.15 b=0.91
-    boxes: { C: { l: 0.09, r: 0.80, t: 0.15, b: 0.91 } }
+    // 只有C：高275-880px（底图上204px/高748px）→ t=0.10 b=0.90；宽175-1270px → l=0.09 r=0.80
+    boxes: { C: { l: 0.09, r: 0.80, t: 0.10, b: 0.90 } }
   },
   AB: {
     file: 'game/Stats4.png',
@@ -307,10 +307,10 @@ const STATS_BG_CONFIG = {
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      // A高范围505-890px → t=0.21 b=0.45；左右全宽居中
-      A: { l: 0.00, r: 1.00, t: 0.21, b: 0.45 },
-      // C高范围1100-1705px → t=0.58 b=0.96；宽范围175-1270px → l=0.09 r=0.80
-      C: { l: 0.09, r: 0.80, t: 0.58, b: 0.96 }
+      // A高502-890px（底图上204px/高1568px）→ t=0.19 b=0.44；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.19, b: 0.44 },
+      // C高1097-1703px → t=0.57 b=0.96；宽175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.57, b: 0.96 }
     }
   },
   BC: {
@@ -345,7 +345,7 @@ function getStatsParts(annualData) {
   return parts;
 }
 
-// ========== 修改点2：buildStatPartSegments — 去掉 finished 的 noStyle 标记 ==========
+// ========== buildStatPartSegments — 去掉 finished 的 noStyle 标记 ==========
 function buildStatPartSegments(part, annualData) {
   const v = (key) => String(annualData[key] ?? '').trim();
   const BR = { text: '', isBreak: true };
@@ -438,7 +438,7 @@ function buildStatPartSegments(part, annualData) {
   return segments;
 }
 
-// ========== 修改点3：wrapStatSegments — 去掉自动换行，只按 BR 强制换行 ==========
+// ========== wrapStatSegments — 去掉自动换行，只按 BR 强制换行 ==========
 function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   // 不自动换行：只按 BR 标记强制换行，每行内容直接排列
   const lines = [[]];
@@ -463,7 +463,7 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   return lines;
 }
 
-// ========== 修改点1：drawStatPartCentered — 修正垂直居中计算（解决文字偏下） ==========
+// ========== drawStatPartCentered — 修正垂直居中计算（解决文字偏下） ==========
 function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
                               valueSize, labelSize, lineHeight, valueColor, labelColor) {
   const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
@@ -836,7 +836,7 @@ function drawBigTitle(painter, targetW, config, annualData) {
   if (config.useSummaryTitle) {
     titleText = 'Otome Summary Report';
   } else {
-    // 修改点1：标题年份固定取当前系统年份，不受数据统计中 reportYear 输入框影响
+    // 标题年份固定取当前系统年份，不受数据统计中 reportYear 输入框影响
     const year = String(new Date().getFullYear());
     titleText = `${year} Otome Annual Report`;
   }
