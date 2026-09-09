@@ -27,7 +27,6 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础
 const NO_SIZE = 22;                    // NO.标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-// 修改点1：新增统计模块文字字号常量
 const STAT_VALUE_SIZE = 24;            // 用户输入值固定24px
 const STAT_LABEL_SIZE = 20;            // 标签文字固定20px
 const STAT_LINE_HEIGHT = 34;           // 混排行高（24×1.4≈34）
@@ -334,39 +333,53 @@ function getStatsParts(annualData) {
   return parts;
 }
 
-// ========== 修改点4：构建各部分的文字片段 ==========
+// ========== 修改点1：buildStatPartSegments 加入换行标记 ==========
 function buildStatPartSegments(part, annualData) {
   const v = (key) => String(annualData[key] ?? '').trim();
+  const BR = { text: '', isBreak: true }; // 强制换行标记
   if (part === 'A') {
+    // 对齐网页：第1行"年游玩了部日乙"，第2行"总时数小时"
     return [
       { text: v('reportYear'), isValue: true },
       { text: '年游玩了', isValue: false },
       { text: v('playCount'), isValue: true },
-      { text: '部日乙总时数', isValue: false },
+      { text: '部日乙', isValue: false },
+      BR,
+      { text: '总时数', isValue: false },
       { text: v('totalHours'), isValue: true },
       { text: '小时', isValue: false },
     ];
   }
   if (part === 'B') {
+    // 对齐网页：4行——"喜欢个人"/"嗑对CP"/"一共买了部游戏"/"花费元"
     return [
       { text: '喜欢', isValue: false },
       { text: v('likeCharCount'), isValue: true },
-      { text: '个人嗑', isValue: false },
+      { text: '个人', isValue: false },
+      BR,
+      { text: '嗑', isValue: false },
       { text: v('cpCount'), isValue: true },
-      { text: '对CP一共买了', isValue: false },
+      { text: '对CP', isValue: false },
+      BR,
+      { text: '一共买了', isValue: false },
       { text: v('buyCount'), isValue: true },
-      { text: '部游戏花费', isValue: false },
+      { text: '部游戏', isValue: false },
+      BR,
+      { text: '花费', isValue: false },
       { text: v('costMoney'), isValue: true },
       { text: '元', isValue: false },
     ];
   }
   if (part === 'C') {
+    // 对齐网页：3行——"其中，部已封盘"/"部正在进行"/"部还未开始"
     return [
       { text: '其中，', isValue: false },
       { text: v('finished'), isValue: true },
       { text: '部已封盘', isValue: false },
+      BR,
       { text: v('ongoing'), isValue: true },
       { text: '部正在进行', isValue: false },
+      BR,
       { text: v('notStart'), isValue: true },
       { text: '部还未开始', isValue: false },
     ];
@@ -374,11 +387,16 @@ function buildStatPartSegments(part, annualData) {
   return [];
 }
 
-// ========== 修改点5：混合字号逐字符换行 ==========
+// ========== 修改点2：wrapStatSegments 支持强制换行标记 ==========
 function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   const lines = [[]];
   let curWidth = 0;
   for (const seg of segments) {
+    if (seg.isBreak) {
+      lines.push([]);
+      curWidth = 0;
+      continue;
+    }
     const size = seg.isValue ? valueSize : labelSize;
     ctx.font = size + 'px ' + FONT_SIYUAN;
     for (const ch of Array.from(seg.text)) {
@@ -546,12 +564,12 @@ function hasGridContent(gridData, gridKind, footerText) {
 }
 
 // ===================== 高度计算（需在图片加载后调用） =====================
-// 修改点8：calcStatsHeight 重写——基于底图比例计算
+// 修改点3：calcStatsHeight 重写——去掉小标题、去掉卡片内边距、图片宽度用wrapW
 function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
   const wrapW = getWrapW(targetW);
-  const innerW = wrapW - CARD_INNER_PAD * 2;
   let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
-  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16); // 模块标题
+  // stats模块无小标题、无卡片内边距，底图直接贴满卡片边框
+  let contentH = 0;
   const parts = getStatsParts(annualData);
   if (parts.length > 0) {
     const bgInfo = STATS_BG_CONFIG[parts.join('')];
@@ -560,14 +578,14 @@ function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
       const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
       const dims = getImgSize(bgImg);
       if (dims.w > 0 && dims.h > 0) {
-        // 底图按卡片内容宽度等比缩放
-        contentH += Math.round(innerW * dims.h / dims.w);
+        // 底图按卡片完整宽度(wrapW)等比缩放，贴满边框
+        contentH += Math.round(wrapW * dims.h / dims.w);
       } else {
         contentH += 300; // 图片未加载时的兜底高度
       }
     }
   }
-  h += CARD_INNER_PAD * 2 + contentH;
+  h += contentH; // 无CARD_INNER_PAD，图片即卡片高度
   return h;
 }
 
@@ -919,7 +937,7 @@ function buildStatsParts(annualData) {
   return parts;
 }
 
-// 修改点9：drawStatsContent 重写——绘制底图+各框内居中文字
+// ========== 修改点8：drawStatsContent 重写——圆角裁剪贴满边框+重绘边框 ==========
 function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache) {
   const parts = getStatsParts(annualData);
   if (parts.length === 0) return;
@@ -931,15 +949,46 @@ function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache)
   const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
   const dims = getImgSize(bgImg);
   if (dims.w <= 0 || dims.h <= 0) return;
-  // 底图按内容宽度等比缩放绘制
+  // 底图按卡片完整宽度等比缩放，贴满边框
   const drawW = innerW;
   const drawH = Math.round(innerW * dims.h / dims.w);
   const resInfo = rawImageResourceCache.get(bgUrl);
   const drawTarget = (resInfo && resInfo.data) ? resInfo.data : bgImg;
+  // 圆角裁剪：底图被裁剪成与卡片一致的圆角，确保四角不溢出
   ctx.save();
+  ctx.beginPath();
+  const r = CARD_RADIUS;
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + drawW - r, y);
+  ctx.quadraticCurveTo(x + drawW, y, x + drawW, y + r);
+  ctx.lineTo(x + drawW, y + drawH - r);
+  ctx.quadraticCurveTo(x + drawW, y + drawH, x + drawW - r, y + drawH);
+  ctx.lineTo(x + r, y + drawH);
+  ctx.quadraticCurveTo(x, y + drawH, x, y + drawH - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.clip();
   ctx.drawImage(drawTarget, x, y, drawW, drawH);
   ctx.restore();
-  // 在各彩色框内绘制文字（值24px，标签20px，上下左右居中）
+  // 重绘卡片边框（确保边框在底图之上，不被覆盖）
+  ctx.save();
+  ctx.lineWidth = CARD_BORDER_W;
+  ctx.strokeStyle = config.border || '#f6a5b8';
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + drawW - r, y);
+  ctx.quadraticCurveTo(x + drawW, y, x + drawW, y + r);
+  ctx.lineTo(x + drawW, y + drawH - r);
+  ctx.quadraticCurveTo(x + drawW, y + drawH, x + drawW - r, y + drawH);
+  ctx.lineTo(x + r, y + drawH);
+  ctx.quadraticCurveTo(x, y + drawH, x, y + drawH - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+  // 在各彩色框内绘制文字（值24px，标签20px，按网页换行结构，上下左右居中）
   const valueColor = config.statdata || '#b33a3a';
   const labelColor = config.stattext || '#b85878';
   for (const part of parts) {
@@ -1322,10 +1371,10 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config, imageCache);
     cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
   } else {
-    if (moduleTitle) {
+    // 修改点4：stats模块无小标题，不加标题高度
+    if (moduleTitle && moduleType !== 'stats') {
       cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
     }
-    // 修改点12：stats模块 cardContentH 改用底图高度
     if (moduleType === 'stats') {
       const parts = getStatsParts(annualData);
       if (parts.length > 0) {
@@ -1335,7 +1384,8 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
           const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
           const dims = getImgSize(bgImg);
           if (dims.w > 0 && dims.h > 0) {
-            cardContentH += Math.round(cardInnerW * dims.h / dims.w);
+            // 底图按卡片完整宽度(wrapW)等比缩放
+            cardContentH += Math.round(wrapW * dims.h / dims.w);
           } else {
             cardContentH += 300;
           }
@@ -1352,22 +1402,24 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     }
   }
 
-  const cardH = CARD_INNER_PAD * 2 + cardContentH;
+  // 修改点5：stats模块不加CARD_INNER_PAD
+  const cardH = (moduleType === 'stats') ? cardContentH : (CARD_INNER_PAD * 2 + cardContentH);
 
   // 绘制卡片背景+边框
   painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
 
-  // 绘制模块标题（修改点3：传入居中X坐标）
+  // 修改点6：stats模块不绘制"数据统计"小标题
   let contentY = cardTop + CARD_INNER_PAD;
-  if (moduleTitle && moduleType !== 'other') {
+  if (moduleTitle && moduleType !== 'other' && moduleType !== 'stats') {
     drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
     contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   }
 
   // 绘制内容
-  // 修改点13：drawStatsContent 调用传入 imageCache
+  // 修改点7：stats绘制调用——图片从卡片左上角开始
   if (moduleType === 'stats') {
-    drawStatsContent(painter, wrapX + CARD_INNER_PAD, contentY, cardInnerW, annualData, config, imageCache);
+    // 底图从卡片左上角(wrapX, cardTop)开始，宽度=wrapW，贴满边框
+    drawStatsContent(painter, wrapX, cardTop, wrapW, annualData, config, imageCache);
     painter.y = cardTop + cardH;
   } else if (moduleType === 'other') {
     // 五模块：无模块标题，从卡片顶部+内边距开始绘制
