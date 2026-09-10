@@ -507,6 +507,8 @@ export function initPage(Core = {}) {
       exportFoldContentSwitch: document.getElementById("export-fold-content"),
       // =========新增：显示隐藏/续作FD角色名开关==========
       exportShowHiddenFDNameSwitch: document.getElementById("export-show-hidden-fd-name"),
+      // =========新增：导出普通画质开关==========
+      exportNormalQualitySwitch: document.getElementById("export-normal-quality"),
       // =========新增：恢复默认配色按钮==========
       resetColorBtn: document.getElementById("btn-reset-color"),
       // =========【新增】自定义文本字号滑块 ==========
@@ -1316,6 +1318,11 @@ export function initPage(Core = {}) {
         el.exportShowHiddenFDNameSwitch.checked = !!appData.exportShowHiddenFDName;
     }
 
+    // =========【新增】渲染【导出普通画质】开关初始状态（默认关闭） =========
+    if (el.exportNormalQualitySwitch) {
+        el.exportNormalQualitySwitch.checked = !!appData.exportNormalQuality;
+    }
+
     refreshHideCharSwitch();
     refreshFDSwitch();
     fillFilterOptions(gameTemplateList);
@@ -1348,6 +1355,15 @@ export function initPage(Core = {}) {
     if (el.exportShowHiddenFDNameSwitch) {
         el.exportShowHiddenFDNameSwitch.addEventListener("change", function() {
             appData.exportShowHiddenFDName = this.checked;
+            saveData();
+            clearPreviewCacheResource();
+        });
+    }
+
+    // =========【新增】导出普通画质开关事件 =========
+    if (el.exportNormalQualitySwitch) {
+        el.exportNormalQualitySwitch.addEventListener("change", function() {
+            appData.exportNormalQuality = this.checked;
             saveData();
             clearPreviewCacheResource();
         });
@@ -1704,7 +1720,9 @@ export function initPage(Core = {}) {
                 }
 
                 // 【核心】调用原生Canvas绘制模块，返回 Blob 数组
-                const blobList = await renderExportCanvas(targetWidth, isLongMode, maxPageHeight, appData, gameTemplateList);
+                // 导出普通画质开关开启时DPR=1（640/810/1080实际像素），关闭时DPR=2（1280/1620/2160实际像素）
+                const exportDpr = appData.exportNormalQuality ? 1 : 2;
+                const blobList = await renderExportCanvas(targetWidth, isLongMode, maxPageHeight, appData, gameTemplateList, exportDpr);
                 if (!Array.isArray(blobList) || blobList.length === 0) throw new Error("Canvas绘制失败，未能生成图片");
 
                 // 多页预览状态
