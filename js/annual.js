@@ -2776,9 +2776,9 @@ function renderAnnualPreviewPage(pageIndex) {
             <button class="preview-next-page" ${pageIndex >= totalPage - 1 ? 'disabled' : ''}>下一张</button>
         </div>`;
     }
-    // 单张图片 + 分页控件
+    // 单张图片 + 分页控件（与FavList预览完全一致，仅用CSS类控制，无内联样式）
     scrollWrap.innerHTML = `
-        <img class="preview-img-item" src="${currentUrl}" alt="年度报告预览" style="max-width:100%;display:block;margin:0 auto;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <img class="preview-img-item" src="${currentUrl}" alt="年度报告预览">
         ${paginationHtml}
     `;
     // 绑定上一张/下一张点击
