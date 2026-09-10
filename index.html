@@ -552,7 +552,7 @@
             <input type="color" id="annual-color-customborder" value="#eeeeee">
         </div>
         <div class="color-item">
-            <label class="text-light-pink">内容底色</label>
+            <label class="text-light-pink">卡片底色</label>
             <input type="color" id="annual-color-boxbg" value="#fff7f9">
         </div>
         <div class="color-item">
@@ -592,6 +592,14 @@
 <button id="annual-back-to-top-btn" class="float-scroll-btn back-to-add">▲</button>
 <button id="annual-scroll-to-bottom-btn" class="float-scroll-btn scroll-last-card">▼</button>
 
+<div class="about-block">
+        <h2>About</h2>
+        <p>由于开发者未接触所有游戏，部分游戏可能缺少隐藏角色。</p>
+        <p>如果发现角色遗漏（若涉及剧透烦请在邮件标题添加预警）、内容错误、功能异常，<br>
+            或有希望新增的作品，欢迎通过邮箱联系。</p>
+        <p class="email-text">Email：<a href="mailto:otomefavlist@163.com">otomefavlist@163.com</a></p>
+</div>
+    
 <!-- ========== 年度报告模式 wrap 结束 ========== -->
 
 </div> <!-- .wrap 结束 -->
@@ -889,11 +897,13 @@ z-index: -999;
         <li>每个 TOP 卡片顶部的「+ 添加游戏/角色/Couple」按钮点击后会弹出对应的选择弹窗。若没有对某个模块或自定义文本框添加内容，则不会生成与导出相应模块或自定义文本框。</li>
         <li><strong>游戏 TOP</strong>：搜索游戏弹窗显示完整游戏列表，支持搜索游戏名，点击即可添加。</li>
         <li><strong>角色 TOP</strong>：搜索角色弹窗先显示游戏列表，选择游戏后进入角色列表，点击角色即可添加。</li>
-        <li><strong>CP TOP</strong>：搜索 Couple 弹窗先显示游戏列表，选择游戏后进入女主列表，点击女主展开男主列表，选择男主后以 CP 组合添加。
-        <blockquote style="font-size: 14px; line-height: 1.7; color: #666; background: #fff7f9; border-left: 4px solid #e895a8; padding: 8px 16px; margin: 4px 0 8px 0;">
-                💡 角色立绘支持多张图片切换（例如动作、服装差分或 FD ver），点击左右箭头即可。角色名同样支持切换。
-            </blockquote>
-        </li>
+        <li><strong>CP TOP</strong>：搜索 Couple 弹窗先显示游戏列表，选择游戏后进入女主列表，点击女主展开男主列表，选择男主后以 CP 组合添加。</li>
+    </ul>
+    <blockquote style="font-size: 14px; line-height: 1.7; color: #666; background: #fff7f9; border-left: 4px solid #e895a8; padding: 8px 16px; margin: 4px 0 8px 0;">
+        💡 搜索游戏弹窗中包含续作/FD的封面图可供添加。搜索角色弹窗与搜索Couple弹窗中只有本篇可供选择，但包含续作/FD内容。可以通过开关控制是否显示次要角色、隐藏角色、续篇/FD角色。<br>
+        💡 角色立绘支持多张图片切换（例如动作、服装差分或 FD ver），点击左右箭头即可。角色名同样支持切换。
+    </blockquote>
+    <ul style="font-size: 15px; line-height: 1.8; color: #444; padding-left: 22px; margin: 0 0 12px 0; list-style-type: disc;">
         <li>所有 TOP 卡片均支持 <strong>排序模式</strong>：长按游戏名称/角色名、游戏封面/角色图的部分 1 秒即可进入排序模式，卡片变为虚线高亮并在各个卡片之间出现红色插入指示线；点击指示线第一次变深红，点击第二次执行移动插入，并自动更改序号。进入排序模式后同样长按游戏名称/角色名行、游戏封面/角色图的部分 1 秒即可退出。</li>
         <li>每个卡片右上角存在「×」删除按钮，可随时移除添加的卡片。</li>
     </ul>
@@ -953,7 +963,7 @@ z-index: -999;
     <p style="font-size: 14px; line-height: 1.8; color: #666; margin: 0 0 20px 0; padding-left: 20px;">
         <strong>已针对 IOS 系统增加补丁。</strong><br>
         iOS 系统存在对内核与总像素的硬性限制，补丁只能缓解、降低触发概率，无法完全杜绝，且 IOS 系统强制在苹果商店上架的应用使用同一套渲染引擎，所以更换浏览器也无法解决。<br>
-        若使用 IOS 设备渲染失败，则建议开启普通画质开关，或使用分页导出，或通过「导出折叠内容」开关来控制图片长度，使图片不超出上限就可以成功生成并导出。
+        若使用 IOS 设备渲染失败，则建议开启普通画质开关，使图片不超出上限就可以成功生成并导出。
     </p>
     <hr style="border: none; border-top: 2px solid #f6d8e0; margin: 20px 0;">
     <!-- 反馈与建议 -->
