@@ -196,6 +196,19 @@
                 <p class="switch-desc">开启后生成并导出的图片中会显示隐藏/续作/FD的角色名，关闭则只显示角色图片。适合搭配剪影图使用，形成剧透防护。</p>
             </div>
         </div>
+
+        <!-- ==========【新增】导出普通画质开关 ========== -->
+        <div class="switch-row">
+            <label class="switch">
+                <input type="checkbox" id="export-normal-quality">
+                <span class="slider"></span>
+            </label>
+            <div>
+                <span class="text-light-pink">导出普通画质</span>
+                <p class="switch-desc">iOS系统存在对内核与总像素的硬性限制，若渲染失败则建议开启，总像素低、图片未超出上限时便可成功生成并导出。</p>
+            </div>
+        </div>
+
         <!-- 恢复默认设置按钮（导出折叠内容下方、导出背景色上方） -->
         <div class="center-btn-block left-align-btn">
             <button id="btn-reset-color">恢复默认设置</button>
@@ -485,6 +498,19 @@
             <p class="switch-desc">开启后生成并导出的图片标题为 Otome Summary Report，关闭则标题默认为 20XX Otome Annual Report。</p>
         </div>
     </div>
+
+    <!-- ==========【新增】导出普通画质开关 ========== -->
+    <div class="switch-row">
+        <label class="switch">
+            <input type="checkbox" id="annual-export-normal-quality">
+            <span class="slider"></span>
+        </label>
+        <div>
+            <span class="text-light-pink">导出普通画质</span>
+            <p class="switch-desc">iOS系统存在对内核与总像素的硬性限制，若渲染失败则建议开启，总像素低、图片未超出上限时便可成功生成并导出。</p>
+        </div>
+    </div>
+
     <!-- 恢复默认设置按钮 -->
     <div class="center-btn-block left-align-btn">
         <button id="annual-btn-reset-color">恢复默认设置</button>
