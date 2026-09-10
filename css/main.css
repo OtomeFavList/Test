@@ -2189,3 +2189,40 @@ img {
     -webkit-user-drag: none !important;
     user-drag: none !important;
 }
+
+/* ========== 安卓浏览器图片防长按增强：透明覆盖层 ========== */
+/* 安卓QQ/UC/华为等浏览器不识别 -webkit-touch-callout，长按<img>仍弹原生菜单。
+   在图片容器上叠加透明::after，触摸目标变为非img元素，从根源阻止图片菜单。
+   不设置 touch-action:none，页面上下滑动滚动完全不受影响；
+   点击事件通过冒泡正常触发角色选择/游戏添加；
+   图片切换按钮 z-index:2 高于覆盖层 z-index:1，切换立绘不受影响。 */
+.mode-wrap[data-mode="favlist"] .char-card-img-box {
+    position: relative !important;
+}
+.mode-wrap[data-mode="favlist"] .char-card-img-box::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* 游戏搜索面板：图片直接在 .game-option-item 内，无图片框包裹，给 item 加覆盖层 */
+.mode-wrap[data-mode="favlist"] .game-option-item {
+    position: relative !important;
+}
+.mode-wrap[data-mode="favlist"] .game-option-item::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    background: transparent;
+    pointer-events: auto;
+}
