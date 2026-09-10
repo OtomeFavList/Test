@@ -22,6 +22,7 @@ const annualExportDefault = {
     border: "#f6a5b8",
     customTextFontSize: 16,
     useSummaryTitle: false,
+    normalQuality: false,
     labelColor: "#b85878",        // ✅修改点6：标签文字色
     boxBgColor: "#fff7f9",        // ✅修改点6：内容框背景色
     reporterName: "",             // ✅修改点6：填表人姓名
@@ -1954,6 +1955,7 @@ function bindAnnualExportPanel() {
     const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
     const btnExportImage = document.getElementById("annual-btn-export-image");
     const useSummaryTitleEl = document.getElementById("annual-use-summary-title");
+    const normalQualityEl = document.getElementById("annual-export-normal-quality");
     const canvasEl = document.getElementById("annual-export-canvas");
     const snapshotBox = document.getElementById("snapshot-container");
 
@@ -1980,6 +1982,7 @@ function bindAnnualExportPanel() {
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
     if (useSummaryTitleEl) useSummaryTitleEl.checked = !!annualExportConfig.useSummaryTitle;
+    if (normalQualityEl) normalQualityEl.checked = !!annualExportConfig.normalQuality;
 
     annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
     annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
@@ -2135,6 +2138,13 @@ function bindAnnualExportPanel() {
             saveAnnualExportConfig();
         };
     }
+    // 导出普通画质开关
+    if (normalQualityEl) {
+        normalQualityEl.onchange = () => {
+            annualExportConfig.normalQuality = normalQualityEl.checked;
+            saveAnnualExportConfig();
+        };
+    }
 
     // ========== 修改点3：导出按钮改为预览弹窗 ==========
     btnExportImage.removeEventListener("click", btnExportImage._handler);
@@ -2167,7 +2177,8 @@ function bindAnnualExportPanel() {
         // ✅显示loading+预计时间+进度，获取进度监听器（finally中清理）
         const progressHandler = showAnnualPreviewLoading(scrollWrap);
         try {
-            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
+            const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
+            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
             if (!results || results.length === 0) {
                 alert("没有可导出的内容，请先在各模块中添加数据。");
                 modal.classList.remove("active");
@@ -2824,7 +2835,8 @@ function bindAnnualPreviewButtons() {
             const selectedExportWidth = Number(sizeVal.replace('long-', ''));
             const designW = selectedExportWidth;
             const titleMap = getAnnualModuleTitles();
-            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap);
+            const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
+            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
             if (!results || results.length === 0) {
                 alert("没有可导出的内容。");
                 return;
