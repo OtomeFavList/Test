@@ -12,13 +12,13 @@ import {
   LAYOUT_STYLE
 } from './main.js';
 // 复用FavList导出的文字换行工具和绘制器
-import { wrapText, measureWrappedHeight, CanvasLayoutPainter } from './export-canvas-render.js';
+import { wrapText, measureWrappedHeight, CanvasLayoutPainter, setCurrentDPR } from './export-canvas-render.js';
 
 // ===================== 常量 =====================
 const MAX_IMAGE_CONCURRENCY = 4;
 const FONT_SIYUAN = "Noto Sans SC, sans-serif";
 const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const DPR = 2;
+let DPR = 2;
 const WRAP_MAX_W = 1200;
 
 // ---- 固定尺寸（对齐FavList，不随宽度等比缩放）----
@@ -1279,7 +1279,9 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
 }
 
 // ===================== 主入口：单模块导出 =====================
-export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config) {
+export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config, dpr) {
+  DPR = dpr || 2;
+  setCurrentDPR(DPR);
   if (IS_IOS_WEBKIT) {
     for (const [, res] of rawImageResourceCache.entries()) {
       if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
@@ -1454,7 +1456,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
 }
 
 // ===================== 批量导出所有模块 =====================
-export async function renderAllAnnualModules(designW, annualData, config, titleMap) {
+export async function renderAllAnnualModules(designW, annualData, config, titleMap, dpr) {
   const modules = [
     { type: 'stats', title: titleMap?.stats || '' },
     { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
@@ -1466,7 +1468,7 @@ export async function renderAllAnnualModules(designW, annualData, config, titleM
   ];
   const results = [];
   for (const mod of modules) {
-    const blob = await renderAnnualModuleCanvas(designW, mod.type, mod.title, annualData, config);
+    const blob = await renderAnnualModuleCanvas(designW, mod.type, mod.title, annualData, config, dpr);
     if (blob) {
       results.push({ moduleType: mod.type, moduleTitle: mod.title, blob });
     }
