@@ -2168,3 +2168,24 @@ img {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* ========== 移动端FavList模式图片防长按补丁 ========== */
+/* 禁止长按图片弹出系统操作菜单（查看/保存/复制/分享/拷贝），覆盖iOS Safari/微信/华为浏览器等WebKit内核 */
+/* 仅作用于FavList模式，不影响Annual模式已有逻辑；-webkit-touch-callout为移动端专属属性，桌面端无副作用 */
+.mode-wrap[data-mode="favlist"] img,
+.mode-wrap[data-mode="favlist"] .char-card-img-box,
+.mode-wrap[data-mode="favlist"] .game-option-item,
+.mode-wrap[data-mode="favlist"] .char-item,
+.mode-wrap[data-mode="favlist"] .char-card-item,
+.mode-wrap[data-mode="favlist"] .cp-female-card-btn,
+.mode-wrap[data-mode="favlist"] .cp-male-item,
+.mode-wrap[data-mode="favlist"] .cp-selected-card-item,
+.mode-wrap[data-mode="favlist"] .char-selected-row,
+.mode-wrap[data-mode="favlist"] .game-card-empty-tip,
+.mode-wrap[data-mode="favlist"] .cp-render-box {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+}
