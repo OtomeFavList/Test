@@ -2180,3 +2180,13 @@
     outline: none;
     border-color: #f6a5b8;
 }
+
+.annual-reporter-row input:focus {
+    outline: none;
+    border-color: #f6a5b8;
+}
+
+/* ========== 修复：Annual模式About区块底部间距与FavList模式一致 ========== */
+.mode-wrap[data-mode="annual"] .about-block {
+    margin-bottom: 30px;
+}
