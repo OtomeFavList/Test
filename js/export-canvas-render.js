@@ -47,6 +47,11 @@ function getExportDPR(width) {
   return 2;
 }
 
+// 供 annual-canvas-render.js 同步 DPR，确保 CanvasLayoutPainter 使用一致的 DPR
+export function setCurrentDPR(dpr) {
+  currentDPR = dpr || 2;
+}
+
 // ============================ 工具函数 ============================
 
 export function wrapText(ctx, text, x, y, maxWidth, lineHeight, fontSize, color, font = FONT_SIYUAN, bold = false) {
