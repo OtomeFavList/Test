@@ -1430,11 +1430,11 @@ export async function renderExportCanvas(
   isLongMode,
   maxPageHeight,
   appData,
-  gameTemplateList
+  gameTemplateList,
+  dpr
 ) {
   const { exportColor, gameList } = appData;
-
-  currentDPR = getExportDPR(targetWidth);
+  currentDPR = dpr || getExportDPR(targetWidth);
   // ==========【补丁1】仅IOS：释放ImageBitmap资源，避免IOS内存泄漏 ==========
   if(IS_IOS_WEBKIT){
     for (const [k, res] of rawImageResourceCache.entries()) {
