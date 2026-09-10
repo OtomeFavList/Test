@@ -2752,6 +2752,19 @@ function showAnnualPreviewModal(results, exportWidth) {
     // ✅渲染第1张（分页切换模式，对齐FavList renderPreviewPage）
     renderAnnualPreviewPage(0);
     downloadBtn.disabled = false;
+    // ✅每次Annual预览时用onclick赋值覆盖下载按钮，防止FavList的下载监听器同时触发
+    downloadBtn.onclick = () => {
+        _annualPreviewResults.forEach((r, i) => {
+            const url = URL.createObjectURL(r.blob);
+            const a = document.createElement("a");
+            a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        });
+    };
     // 绑定弹窗按钮（只绑定一次）
     if (!_annualPreviewBound) {
         bindAnnualPreviewButtons();
@@ -2855,19 +2868,8 @@ function bindAnnualPreviewButtons() {
         }
     });
 
-    // 导出图片（下载所有模块）
-    downloadBtn.addEventListener("click", () => {
-        _annualPreviewResults.forEach((r, i) => {
-            const url = URL.createObjectURL(r.blob);
-            const a = document.createElement("a");
-            a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
-            a.href = url;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
-        });
-    });
+    // 导出图片（下载所有模块）—— 已移至 showAnnualPreviewModal 中通过 onclick 赋值，
+    // 防止与FavList模式的下载监听器冲突导致同时导出两种图片
 }
 
 function bindAnnualExport() {
