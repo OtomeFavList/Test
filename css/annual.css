@@ -2180,10 +2180,3 @@
     outline: none;
     border-color: #f6a5b8;
 }
-
-/* ========== 修复：Annual模式About区块底部间距与FavList一致 ========== */
-/* FavList模式下，.wrap的gap:30px在隐藏的annual mode-wrap前产生30px底部空间；
-   Annual模式下annual是最后一个子元素，无此gap，需手动补30px保持一致 */
-.mode-wrap[data-mode="annual"] .about-block {
-    margin-bottom: 30px;
-}
