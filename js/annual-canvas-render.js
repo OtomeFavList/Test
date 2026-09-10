@@ -18,53 +18,54 @@ import { wrapText, measureWrappedHeight, CanvasLayoutPainter } from './export-ca
 const MAX_IMAGE_CONCURRENCY = 4;
 const FONT_SIYUAN = "Noto Sans SC, sans-serif";
 const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-// 修改点1：常量区所有尺寸 ÷2
 const DPR = 2;
-const WRAP_MAX_W = 600;
-const TITLE_SIZE = 21;
-const MODULE_TITLE_SIZE = 12;
-const NO_SIZE = 11;
-const NAME_SIZE = 11;
-const STAT_SIZE = 8;
-const STAT_VALUE_SIZE = 21;
-const STAT_LABEL_SIZE = 18;
-const STAT_LINE_HEIGHT = 26;
-const SUBTITLE_COLOR = '#b85878';
-const COVER_TEXT_GAP = 8;
-const NO_COLOR = '#b85878';
-const LABEL_ROW_MB = 4;
-const ITEM_GAP = 12;
-const MODULE_GAP = 15;
-const CARD_INNER_PAD = 10;
-const COVER_CARD_PAD = 0;
-const TEXT_BOX_PAD = 5;
-const GAME_COVER_W = 70;
-const CHAR_COVER_SIZE = 60;
-const CP_COVER_SIZE = 50;
-const CP_GAP = 5;
+const WRAP_MAX_W = 1200;
+
+// ---- 固定尺寸（对齐FavList，不随宽度等比缩放）----
+const TITLE_SIZE = 42;                 // 大标题（对齐FavList）
+const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础信息"24px）
+const NO_SIZE = 22;                    // NO.标签
+const NAME_SIZE = 22;                  // 游戏/角色/CP名称
+const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
+const STAT_VALUE_SIZE = 42;            // 用户输入值固定42px（整体调大，更适应文本框）
+const STAT_LABEL_SIZE = 36;            // 标签文字固定36px
+const STAT_LINE_HEIGHT = 52;           // 混排行高
+const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
+const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
+const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
+const LABEL_ROW_MB = 8;                // ✅NO+名称行底部间距（12→8，缩减与下方图片距离）
+const ITEM_GAP = 24;                   // TOP条目间间距
+const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
+const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐BIG_CARD_PADDING）
+const COVER_CARD_PAD = 0;              // ✅封面卡片内边距（8→0，图片贴外框，删除图片与外框间内边距）
+const TEXT_BOX_PAD = 10;               // 感想文字框内边距
+const GAME_COVER_W = 140;              // 游戏封面固定宽度
+const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
+const CP_COVER_SIZE = 100;             // CP封面固定正方形
+const CP_GAP = 10;                     // CP双图间距
 // ========== 五、其他模块 ==========
-const OTHER_SECTION_TITLE_SIZE = 9;
-const OTHER_CARD_W = 112.5;
-const OTHER_CARD_GAP = 8;
-const OTHER_CARD_PAD = 7;
-const OTHER_CARD_TITLE_MB = 5;
-const OTHER_ALSO_COVER_W = GAME_COVER_W;
-const OTHER_ALSO_COVER_GAP = 8;
-const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;
-const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;
-const OTHER_TEXT_BOX_MIN_H = 40;
-const OTHER_SECTION_GAP = 10;
+const OTHER_SECTION_TITLE_SIZE = 18;   // "还玩了"/卡片标题/底部标题统一18px
+const OTHER_CARD_W = 225;              // 其他模块卡片宽度（容纳CP双图100+10+100=210）
+const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
+const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
+const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
+const OTHER_ALSO_COVER_W = GAME_COVER_W;      // "还玩了"封面宽度=模块二140
+const OTHER_ALSO_COVER_GAP = 16;       // "还玩了"封面间距
+const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的CP封面=模块四100
+const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角=与CP图一致100
+const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
+const OTHER_SECTION_GAP = 20;          // "还玩了"区域与卡片区间距
 // ========== 六、七宫格模块 ==========
-const GRID_GAP = 8;
-const GRID_LABEL_SIZE = 9;
-const GRID_LABEL_GAP = 4;
-const GRID_FOOTER_GAP = 10;
-const FOOTER_PAD = 7;
-const FOOTER_TITLE_GAP = 5;
-const CARD_RADIUS = 8;
-const CARD_BORDER_W = 1;
-const SUB_CARD_RADIUS = 4;
-const SUB_CARD_BORDER = '#eee';
+const GRID_GAP = 16;                   // 宫格间距
+const GRID_LABEL_SIZE = 18;            // 宫格标签字号统一18px
+const GRID_LABEL_GAP = 8;              // 封面与标签间距
+const GRID_FOOTER_GAP = 20;            // 宫格与底部文本框间距
+const FOOTER_PAD = 14;                 // 底部文本框内边距
+const FOOTER_TITLE_GAP = 10;           // 底部标题与文本框间距
+const CARD_RADIUS = 16;                // 模块卡片圆角（对齐BIG_CARD_RADIUS）
+const CARD_BORDER_W = 2;               // 模块卡片边框宽度
+const SUB_CARD_RADIUS = 8;             // 封面/感想框圆角
+const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
 
 // ===================== 缓存 =====================
 const roundImageCache = new Map();
@@ -113,9 +114,8 @@ function calcGameCoverHeight(img) {
 }
 
 // ===================== 布局计算辅助 =====================
-// 修改点2：布局辅助函数默认值 ÷2
 function getBodyPad() {
-  return LAYOUT_SPACE.BODY_PADDING || 10;
+  return LAYOUT_SPACE.BODY_PADDING || 20;
 }
 
 function getWrapW(targetW) {
@@ -129,7 +129,7 @@ function getWrapX(targetW, wrapW) {
 }
 
 function getTitleMb() {
-  return (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 10);
+  return (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
 }
 
 // ===================== 圆角离屏画布 =====================
@@ -406,7 +406,7 @@ function buildStatPartSegments(part, annualData) {
   }
   if (part === 'C') {
     // 第1行：其中，{数}部已封盘 — finished非空则保留（含前缀"其中，"）
-    // 数值与其他值一样加粗+左右间距（已移除 noStyle）
+    // 数值与其他值一样加粗+左右4px间距（已移除 noStyle）
     if (v('finished')) {
       lines.push([
         { text: '其中，', isValue: false },
@@ -477,14 +477,13 @@ function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
   let y = boxY + (boxH - totalH) / 2;
   ctx.textBaseline = 'bottom';
   for (const line of lines) {
-    // 计算行宽（含值段前后间距）
+    // 计算行宽（含值段前后4px间距）
     let lineW = 0;
     for (const item of line) {
       ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       lineW += ctx.measureText(item.ch).width;
-      // 修改点4：值段前后间距 4→2
-      if (item.isValueStart) lineW += 2;
-      if (item.isValueEnd) lineW += 2;
+      if (item.isValueStart) lineW += 4;
+      if (item.isValueEnd) lineW += 4;
     }
     // 本行最大字号：底部基线 = 行顶部 + 最大字号
     let maxSize = 0;
@@ -494,14 +493,12 @@ function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
     let x = boxX + (boxW - lineW) / 2;
     const baselineY = y + maxSize;
     for (const item of line) {
-      // 修改点4：值段左侧间距 4→2
-      if (item.isValueStart) x += 2;
+      if (item.isValueStart) x += 4;
       ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
       ctx.fillStyle = item.isValue ? valueColor : labelColor;
       ctx.fillText(item.ch, x, baselineY);
       x += ctx.measureText(item.ch).width;
-      // 修改点4：值段右侧间距 4→2
-      if (item.isValueEnd) x += 2;
+      if (item.isValueEnd) x += 4;
     }
     y += lineHeight;
   }
@@ -648,8 +645,7 @@ function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
       if (dims.w > 0 && dims.h > 0) {
         contentH += Math.round(wrapW * dims.h / dims.w);
       } else {
-        // 修改点8：兜底高度 ÷2
-        contentH += 150;
+        contentH += 300;
       }
     }
   }
@@ -669,8 +665,7 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
   const noText = `NO.${(item._no ?? 0) + 1}`;
   ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
   const noW = ctx.measureText(noText).width;
-  // 修改点5：硬编码间距 12→6
-  const nameMaxW = innerW - noW - 6;
+  const nameMaxW = innerW - noW - 12;
   const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
   const noLineH = NO_SIZE * 1.3;
   h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
@@ -693,8 +688,7 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
   const text = (item.text || '').trim();
   if (text) {
     const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;
-    // 修改点5：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     textBoxH = textH + TEXT_BOX_PAD * 2;
   }
@@ -718,8 +712,7 @@ function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, con
   let h = getBodyPad() + TITLE_SIZE + getTitleMb();
   let contentH = 0;
   if (moduleTitle) {
-    // 修改点6：BIG_CARD_H2_MB fallback ÷2
-    contentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 8);
+    contentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   }
   const items = getValidItems(moduleType, annualData);
   if (items.length > 0) {
@@ -765,8 +758,7 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
   if (cards.length > 0) {
     const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
     const rows = Math.ceil(cards.length / cols);
-    // 修改点7：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     const cardHeights = cards.map(card => {
       let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
       if (card.type === 'cp') {
@@ -801,8 +793,7 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
   let h = getBodyPad() + TITLE_SIZE + getTitleMb();
-  // 修改点6：BIG_CARD_H2_MB fallback ÷2
-  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 8);
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   const items = getValidGridItems(gridData, gridKind);
   const coverW = getGridCoverW(gridKind);
   const labelLineH = GRID_LABEL_SIZE * 1.4;
@@ -827,8 +818,7 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
   }
   if ((footerText || '').trim()) {
     if (items.length > 0) contentH += GRID_FOOTER_GAP;
-    // 修改点12：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     const boxInnerW = innerW - FOOTER_PAD * 2;
     const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
@@ -853,9 +843,8 @@ function drawBigTitle(painter, targetW, config, annualData) {
   painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
   if (config.reporterName && String(config.reporterName).trim()) {
     const reporterText = '填表人：' + String(config.reporterName).trim();
-    // 修改点3：填表人尺寸与间距 ÷2
-    const reporterSize = 8;
-    const reporterY = titleY + TITLE_SIZE + 2;
+    const reporterSize = 16;
+    const reporterY = titleY + TITLE_SIZE + 4;
     const ctx = painter.ctx;
     ctx.save();
     ctx.font = 'bold ' + reporterSize + 'px ' + FONT_SIYUAN;
@@ -903,13 +892,11 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
   }
 }
 
-// 修改点9：drawTextBox — 边框宽度 1→0.5，字号 fallback ÷2
 function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText) {
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
-    noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 0.5);
+    noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
-    // 修改点9：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     if (centerText) {
       drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
         boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
@@ -1066,15 +1053,13 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
   const nameText = itemType === 'cp'
     ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
     : (item.gameName || item.charName || '');
-  // 修改点10：硬编码间距 12→6
-  const nameX = contentX + noW + 6;
-  const nameMaxW = innerW - noW - 6;
+  const nameX = contentX + noW + 12;
+  const nameMaxW = innerW - noW - 12;
   const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
   const noLineH = NO_SIZE * 1.3;
   const rowH = Math.max(noLineH, nameH);
   const nameTopY = painter.y + (rowH - nameH) / 2;
-  // 修改点10：wrapText NO 宽度 +10→+5
-  wrapText(ctx, noText, contentX, nameTopY, noW + 5, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
+  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
   wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
   painter.shiftY(rowH + LABEL_ROW_MB);
 
@@ -1087,15 +1072,13 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     const imgH = calcGameCoverHeight(coverImg);
     coverCardW = GAME_COVER_W + COVER_CARD_PAD * 2;
     coverCardH = imgH + COVER_CARD_PAD * 2;
-    // 修改点10：圆角 6→3
-    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 3);
+    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
   } else if (itemType === 'char') {
     coverSrc = toCanvasUrl(item.coverSrc);
     coverImg = coverSrc ? imageCache.get(coverSrc) : null;
     coverCardW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
     coverCardH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
-    // 修改点10：圆角 6→3
-    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 3);
+    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
   } else {
     const fSrc = toCanvasUrl(item.femaleCoverSrc);
     const mSrc = toCanvasUrl(item.maleCoverSrc);
@@ -1103,9 +1086,8 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
     const mImg = mSrc ? imageCache.get(mSrc) : null;
     coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;
     coverCardH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
-    // 修改点10：圆角 6→3
-    drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 3);
-    drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 3);
+    drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 6);
+    drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 6);
   }
 
   const text = (item.text || '').trim();
@@ -1113,8 +1095,7 @@ function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
   if (text) {
     const textX = contentX + coverCardW + COVER_TEXT_GAP;
     const textW = innerW - coverCardW - COVER_TEXT_GAP;
-    // 修改点10：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     finalTextBoxH = textH + TEXT_BOX_PAD * 2;
     drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
@@ -1135,8 +1116,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
   if (alsoList.length > 0) {
     drawCenteredText(ctx, '还玩了', contentX + innerW / 2, painter.y, innerW,
       OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
-    // 修改点11：硬编码间距 12→6
-    painter.shiftY(OTHER_SECTION_TITLE_SIZE + 6);
+    painter.shiftY(OTHER_SECTION_TITLE_SIZE + 12);
     const coverW = OTHER_ALSO_COVER_W;
     const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
     const rows = Math.ceil(alsoList.length / cols);
@@ -1158,8 +1138,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const src = toCanvasUrl(alsoList[idx].coverSrc);
         const img = src ? imageCache.get(src) : null;
         const coverH = calcGameCoverHeight(img);
-        // 修改点11：圆角 6→3
-        drawCoverCard(painter, x, y, coverW, coverH, img, src, 3);
+        drawCoverCard(painter, x, y, coverW, coverH, img, src, 6);
       }
       painter.shiftY(rowMaxH);
       if (r < rows - 1) painter.shiftY(OTHER_ALSO_COVER_GAP);
@@ -1170,8 +1149,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
   if (cards.length > 0) {
     const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
     const rows = Math.ceil(cards.length / cols);
-    // 修改点11：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     const rowHeights = [];
     for (let r = 0; r < rows; r++) {
       let rowMax = 0;
@@ -1202,8 +1180,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const card = cards[idx];
         const x = contentX + rowOffset + c * (OTHER_CARD_W + OTHER_CARD_GAP);
         const y = painter.y;
-        // 修改点11：圆角 12→6，边框 1→0.5
-        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 6, config.boxBgColor || '#fff7f9', '#eee', 0.5);
+        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
         const titleY = y + OTHER_CARD_PAD;
         drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
           OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
@@ -1216,15 +1193,13 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
           const mImg = mSrc ? imageCache.get(mSrc) : null;
           const totalW = OTHER_CP_COVER_SIZE * 2 + CP_GAP;
           const startX = x + (OTHER_CARD_W - totalW) / 2;
-          // 修改点11：圆角 6→3
-          drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 3);
-          drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 3);
+          drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
+          drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
         } else if (card.type === 'support') {
           const src = toCanvasUrl(card.data.coverSrc);
           const img = src ? imageCache.get(src) : null;
           const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
-          // 修改点11：圆角 6→3
-          drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 3);
+          drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
         } else {
           const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
@@ -1276,8 +1251,7 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
         const covH = getGridCoverH(item, gridKind, imageCache);
         const src = toCanvasUrl(item.coverSrc);
         const img = src ? imageCache.get(src) : null;
-        // 修改点12：圆角 6→3
-        drawCoverCard(painter, x, y, coverW, covH, img, src, 3);
+        drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
         const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
         const labelY = y + covH + GRID_LABEL_GAP;
         drawCenteredText(ctx, labelText, x + coverW / 2, labelY, coverW,
@@ -1289,14 +1263,12 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
   }
   if ((footerText || '').trim()) {
     if (items.length > 0) painter.shiftY(GRID_FOOTER_GAP);
-    // 修改点12：字号 fallback ÷2
-    const textSize = config.customTextFontSize || 8;
+    const textSize = config.customTextFontSize || 16;
     const boxInnerW = innerW - FOOTER_PAD * 2;
     const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
     const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
     const outerBoxH = FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
-    // 修改点12：圆角 12→6，边框 1→0.5
-    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 6, config.boxBgColor || '#fff7f9', '#eee', 0.5);
+    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
     const titleY = painter.y + FOOTER_PAD;
     drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
       OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
@@ -1388,8 +1360,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
   } else {
     if (moduleTitle && moduleType !== 'stats') {
-      // 修改点13：BIG_CARD_H2_MB fallback ÷2
-      cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 8);
+      cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
     }
     if (moduleType === 'stats') {
       const parts = getStatsParts(annualData);
@@ -1402,8 +1373,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
           if (dims.w > 0 && dims.h > 0) {
             cardContentH += Math.round(wrapW * dims.h / dims.w);
           } else {
-            // 修改点13：兜底高度 ÷2
-            cardContentH += 150;
+            cardContentH += 300;
           }
         }
       }
@@ -1425,8 +1395,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
   let contentY = cardTop + CARD_INNER_PAD;
   if (moduleTitle && moduleType !== 'other' && moduleType !== 'stats') {
     drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
-    // 修改点13：BIG_CARD_H2_MB fallback ÷2
-    contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 8);
+    contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
   }
 
   if (moduleType === 'stats') {
