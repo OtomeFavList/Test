@@ -1,3366 +1,1482 @@
-// ===================== 年度报告模块 annual.js =====================
-// 存储key: "annual-report-data"，与喜好表数据隔离
+// ================================================================
+// annual-canvas-render.js
+// 年度报告模式 纯Canvas绘制导出（对齐 export-canvas-render.js 视觉风格）
+// 每个模块单独生成一张图，固定尺寸 + DPR×2 高清输出
+// ================================================================
+import {
+  getWebImageUrl,
+  preloadImageBitmap,
+  preloadAndDecodeImage,
+  convertR2ToJsDelivr,
+  LAYOUT_SPACE,
+  LAYOUT_STYLE
+} from './main.js';
+// 复用FavList导出的文字换行工具和绘制器
+import { wrapText, measureWrappedHeight, CanvasLayoutPainter, setCurrentDPR } from './export-canvas-render.js';
 
-// =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
+// ===================== 常量 =====================
+const MAX_IMAGE_CONCURRENCY = 4;
+const FONT_SIYUAN = "Noto Sans SC, sans-serif";
+const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+let DPR = 2;
+const WRAP_MAX_W = 1200;
 
-import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide, switchCharImageWithLoading } from '/js/main.js';
-import { renderAllAnnualModules } from './annual-canvas-render.js';
+// ---- 固定尺寸（对齐FavList，不随宽度等比缩放）----
+const TITLE_SIZE = 42;                 // 大标题（对齐FavList）
+const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐FavList"基础信息"24px）
+const NO_SIZE = 22;                    // NO.标签
+const NAME_SIZE = 22;                  // 游戏/角色/CP名称
+const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
+const STAT_VALUE_SIZE = 42;            // 用户输入值固定42px（整体调大，更适应文本框）
+const STAT_LABEL_SIZE = 36;            // 标签文字固定36px
+const STAT_LINE_HEIGHT = 52;           // 混排行高
+const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页.annual-top-label，用户指定）
+const COVER_TEXT_GAP = 16;             // ✅新增：封面卡片右边框 到 感想框左边框 的统一间距
+const NO_COLOR = '#b85878';            // NO标签颜色（对齐网页.annual-top-label）
+const LABEL_ROW_MB = 8;                // ✅NO+名称行底部间距（12→8，缩减与下方图片距离）
+const ITEM_GAP = 24;                   // TOP条目间间距
+const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
+const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐BIG_CARD_PADDING）
+const COVER_CARD_PAD = 0;              // ✅封面卡片内边距（8→0，图片贴外框，删除图片与外框间内边距）
+const TEXT_BOX_PAD = 10;               // 感想文字框内边距
+const GAME_COVER_W = 140;              // 游戏封面固定宽度
+const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
+const CP_COVER_SIZE = 100;             // CP封面固定正方形
+const CP_GAP = 10;                     // CP双图间距
+// ========== 五、其他模块 ==========
+const OTHER_SECTION_TITLE_SIZE = 18;   // "还玩了"/卡片标题/底部标题统一18px
+const OTHER_CARD_W = 225;              // 其他模块卡片宽度（容纳CP双图100+10+100=210）
+const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
+const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
+const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
+const OTHER_ALSO_COVER_W = GAME_COVER_W;      // "还玩了"封面宽度=模块二140
+const OTHER_ALSO_COVER_GAP = 16;       // "还玩了"封面间距
+const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的CP封面=模块四100
+const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角=与CP图一致100
+const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
+const OTHER_SECTION_GAP = 20;          // "还玩了"区域与卡片区间距
+// ========== 六、七宫格模块 ==========
+const GRID_GAP = 16;                   // 宫格间距
+const GRID_LABEL_SIZE = 18;            // 宫格标签字号统一18px
+const GRID_LABEL_GAP = 8;              // 封面与标签间距
+const GRID_FOOTER_GAP = 20;            // 宫格与底部文本框间距
+const FOOTER_PAD = 14;                 // 底部文本框内边距
+const FOOTER_TITLE_GAP = 10;           // 底部标题与文本框间距
+const CARD_RADIUS = 16;                // 模块卡片圆角（对齐BIG_CARD_RADIUS）
+const CARD_BORDER_W = 2;               // 模块卡片边框宽度
+const SUB_CARD_RADIUS = 8;             // 封面/感想框圆角
+const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
 
-const ANNUAL_STORE_KEY = "annual-report-data";
+// ===================== 缓存 =====================
+const roundImageCache = new Map();
+const rawImageResourceCache = new Map();
 
-// ============【配色持久化，对齐script.js】============
-
-const annualExportDefault = {
-    bg: "#fff7f9",
-    title: "#b33a3a",
-    subtitle: "#b85878",          // ✅新增：小标题文字色（TOP模块标题+NO）
-    gamename: "#000000",
-    stattext: "#b85878",          // ✅新增：数据统计标签文字色
-    statdata: "#b33a3a",          // ✅新增：数据统计数据色
-    customtext: "#c98fac",
-    customborder: "#eeeeee",      // ✅自定义文本边框色，默认#eeeeee（input[type=color]只接受六位#rrggbb，三位#eee会回退黑色）
-    border: "#f6a5b8",
-    customTextFontSize: 16,
-    useSummaryTitle: false,
-    normalQuality: false,
-    labelColor: "#b85878",        // ✅修改点6：标签文字色
-    boxBgColor: "#fff7f9",        // ✅修改点6：内容框背景色
-    reporterName: "",             // ✅修改点6：填表人姓名
-    reporterColor: "#b33a3a"      // ✅修改点6：填表人文字色
-};
-
-function loadAnnualExportConfig() {
-    const raw = localStorage.getItem("annual-export-config");
-    let config;
-    if(raw) {
-        try {
-            config = Object.assign({}, annualExportDefault, JSON.parse(raw));
-        } catch(e) {
-            config = {...annualExportDefault};
-        }
-    } else {
-        config = {...annualExportDefault};
-    }
-    // ✅归一化：input[type=color]只接受#rrggbb六位格式，旧数据中存的#eee三位简写会被移动端浏览器回退为黑色#000000
-    // ✅修改点7：扩展到新字段
-    ['customborder', 'labelColor', 'boxBgColor', 'reporterColor'].forEach(key => {
-        if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
-            config[key] = "#" + config[key][1].repeat(2)
-                         + config[key][2].repeat(2)
-                         + config[key][3].repeat(2);
-        }
-    });
-    return config;
+// ===================== 进度上报 =====================
+function emitRenderProgress(percent) {
+  window.dispatchEvent(new CustomEvent('annual-canvas-progress', {
+    detail: { percent: Math.min(100, Math.max(0, Number(percent))) }
+  }));
 }
 
-function saveAnnualExportConfig() {
-    if(!annualExportConfig){
-        annualExportConfig = {...annualExportDefault};
-    }
-    localStorage.setItem("annual-export-config", JSON.stringify(annualExportConfig));
+// ===================== URL安全过滤 =====================
+function isSafeUrl(url) {
+  if (!url) return false;
+  if (!/^https?:\/\//.test(url)) return false;
+  if (/^https:\/\/pub-/.test(url)) return false;
+  if (/raw\.githubusercontent\.com/.test(url)) return false;
+  return true;
 }
 
-let annualExportConfig = loadAnnualExportConfig();
+function toCanvasUrl(relativeSrc) {
+  if (!relativeSrc) return '';
+  let url = getWebImageUrl(relativeSrc);
+  if (url && /^https:\/\/pub-/.test(url)) {
+    const converted = convertR2ToJsDelivr(relativeSrc);
+    if (converted && isSafeUrl(converted)) url = converted;
+  }
+  return isSafeUrl(url) ? url : '';
+}
 
-// 游戏宫格固定标签（19项）
-const GAME_GRID_FIXED_LABELS = [
-    "年度最佳", "时长最长", "剧情最爱", "画风最爱", "音乐最爱",
-    "过程最开心", "过程最幸福", "过程最心痛", "过程最坐牢",
-    "流过最多眼泪", "获得最多欢笑", "最意外惊艳", "最不对电波",
-    "最想安利", "最想避雷", "最被低估偏冷门", "最需要续作/FD",
-    "没期待但打完真香", "评价两极但我喜欢"
+// ===================== 图片尺寸工具 =====================
+function getImgSize(img) {
+  if (!img) return { w: 0, h: 0 };
+  return {
+    w: img.naturalWidth ?? img.width ?? 0,
+    h: img.naturalHeight ?? img.height ?? 0
+  };
+}
+
+// 游戏封面高度：固定宽度，按原图比例自适应
+function calcGameCoverHeight(img) {
+  const { w, h } = getImgSize(img);
+  if (w <= 0 || h <= 0) return Math.round(GAME_COVER_W * 1.4); // 兜底竖版比例
+  return Math.round(GAME_COVER_W * h / w);
+}
+
+// ===================== 布局计算辅助 =====================
+function getBodyPad() {
+  return LAYOUT_SPACE.BODY_PADDING || 20;
+}
+
+function getWrapW(targetW) {
+  const pad = getBodyPad();
+  return Math.min(WRAP_MAX_W, targetW - pad * 2);
+}
+
+function getWrapX(targetW, wrapW) {
+  const pad = getBodyPad();
+  return Math.max(pad, (targetW - wrapW) / 2);
+}
+
+function getTitleMb() {
+  return (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
+}
+
+// ===================== 圆角离屏画布 =====================
+function createRoundImageCanvas(img, srcUrl, radius) {
+  if (!img) return null;
+  const { w: sourceW, h: sourceH } = getImgSize(img);
+  if (sourceW <= 0 || sourceH <= 0) return null;
+  if (IS_IOS_WEBKIT) {
+    const pxTotal = (sourceW * DPR) * (sourceH * DPR);
+    if (pxTotal > 4096 * 4096) return null;
+  }
+  const cacheKey = `${srcUrl}||${sourceW}x${sourceH}||${radius}||${DPR}`;
+  if (roundImageCache.has(cacheKey)) return roundImageCache.get(cacheKey);
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = sourceW * DPR;
+  offCanvas.height = sourceH * DPR;
+  const offCtx = offCanvas.getContext('2d');
+  if (!offCtx) return null;
+  offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);  // ✅补：清空离屏画布
+  offCtx.imageSmoothingEnabled = true;
+  offCtx.imageSmoothingQuality = "high";
+  offCtx.webkitImageSmoothingEnabled = true;  // ✅补：IOS Safari前缀兼容
+  try {
+    offCtx.save();
+    offCtx.scale(DPR, DPR);
+    offCtx.beginPath();
+    offCtx.moveTo(radius, 0);
+    offCtx.lineTo(sourceW - radius, 0);
+    offCtx.quadraticCurveTo(sourceW, 0, sourceW, radius);
+    offCtx.lineTo(sourceW, sourceH - radius);
+    offCtx.quadraticCurveTo(sourceW, sourceH, sourceW - radius, sourceH);
+    offCtx.lineTo(radius, sourceH);
+    offCtx.quadraticCurveTo(0, sourceH, 0, sourceH - radius);
+    offCtx.lineTo(0, radius);
+    offCtx.quadraticCurveTo(0, 0, radius, 0);
+    offCtx.closePath();
+    offCtx.clip();
+    offCtx.drawImage(img, 0, 0, sourceW, sourceH);
+    offCtx.restore();
+  } catch (e) {
+    console.warn("annual离屏画布绘制异常", srcUrl, e);  // ✅补：可追踪警告
+    offCanvas.width = 0; offCanvas.height = 0;
+    return null;
+  }
+  roundImageCache.set(cacheKey, offCanvas);
+  return offCanvas;
+}
+
+async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
+  const taskMap = new Map();
+  for (const task of roundTaskList) {
+    const img = imageCache.get(task.src);
+    if (!img) continue;
+    const { w, h } = getImgSize(img);
+    const key = `${task.src}||${w}x${h}||${task.radius}||${DPR}`;
+    if (!taskMap.has(key)) taskMap.set(key, task);
+  }
+  let idx = 0;
+  const total = taskMap.size;
+  for (const task of taskMap.values()) {
+    createRoundImageCanvas(imageCache.get(task.src), task.src, task.radius);
+    await new Promise(r => setTimeout(r, IS_IOS_WEBKIT ? 30 : 12));
+    idx++;
+    if (total > 0) emitRenderProgress(45 + (idx / total) * 15);
+  }
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => setTimeout(r, 50));
+  if (IS_IOS_WEBKIT && roundImageCache.size > 80) {
+    const del = roundImageCache.size - 80;
+    let count = 0;
+    for (const [k, c] of roundImageCache) {
+      if (count >= del) break;
+      c.width = 0; c.height = 0;
+      roundImageCache.delete(k);
+      count++;
+    }
+  }
+}
+
+// ===================== 图片加载 =====================
+async function loadImagesWithLimit(urlList, limit) {
+  const uniqueUrls = [...new Set(urlList)];
+  const resultMap = new Map();
+  let index = 0;
+
+  async function loadSingleUrl(url, retryCount = 2) {
+    try {
+      const bitmap = await preloadImageBitmap(url);
+      if (!bitmap || bitmap.width === 0 || bitmap.height === 0) throw new Error("empty");
+      if (IS_IOS_WEBKIT) await new Promise(r => requestAnimationFrame(r));
+      rawImageResourceCache.set(url, { type: 'bitmap', data: bitmap });
+      return bitmap;
+    } catch (err) {
+      if (retryCount > 0) {
+        await new Promise(r => setTimeout(r, 600));
+        return loadSingleUrl(url, retryCount - 1);
+      }
+      try {
+        const img = await preloadAndDecodeImage(url);
+        await new Promise(r => requestAnimationFrame(r));
+        rawImageResourceCache.set(url, { type: 'image', data: img });
+        return img;
+      } catch (e2) {
+        rawImageResourceCache.set(url, { type: 'fail', data: null });
+        return null;
+      }
+    }
+  }
+
+  async function worker() {
+    while (index < uniqueUrls.length) {
+      const url = uniqueUrls[index++];
+      if (resultMap.has(url)) continue;
+      const bitmap = await loadSingleUrl(url);
+      resultMap.set(url, bitmap);
+      if (uniqueUrls.length > 0) emitRenderProgress((resultMap.size / uniqueUrls.length) * 45);
+    }
+  }
+
+  await Promise.all(Array.from({ length: limit }, worker));
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
+  await new Promise(r => setTimeout(r, 30));
+  // ✅收集失败列表（对齐export容错模式）
+  const failList = [];
+  for (const [u, val] of resultMap.entries()) {
+    if (!val) failList.push(u);
+  }
+  if (failList.length > 0) {
+    console.warn("⚠️ annual部分图片加载失败，继续渲染（空白占位）：", failList);
+  }
+  return { resultMap, failList };
+}
+
+// ===================== 统计文本 =====================
+const STAT_LABELS = [
+  ['reportYear', '年度'],
+  ['playCount', '游玩总数'],
+  ['totalHours', '总时长'],
+  ['likeCharCount', '喜欢角色'],
+  ['cpCount', 'CP'],
+  ['buyCount', '购买'],
+  ['costMoney', '花费'],
+  ['finished', '完结'],
+  ['ongoing', '途中'],
+  ['notStart', '未开'],
 ];
-// 角色宫格固定标签（13项）
-const CHAR_GRID_FIXED_LABELS = [
-    "TA最可爱", "TA最蛊惑", "TA最符合XP", "TA最让人心疼",
-    "为TA流过最多眼泪", "TA的线最甜", "TA的线最虐",
-    "TA的线年度最佳", "TA的线就能值回票价", "打完TA的线就想封盘",
-    "对TA一见钟情", "TA外表与内在差别最大", "感觉会喜欢TA很久"
-];
 
-const getDefaultAnnualData = () => ({
-    reportYear: "",
-    playCount: "",
-    totalHours: "",
-    likeCharCount: "",
-    cpCount: "",
-    buyCount: "",
-    costMoney: "",
-    finished: "",
-    ongoing: "",
-    notStart: "",
-    topList: [],
-    charTopList: [],
-    cpTopList: [],
-    // ===== 新增：五、其他 =====
-    other: {
-        alsoPlayed: [],                                    // [{gameId, gameName, coverSrc}]
-        favCp: null,                                       // {gameId, femaleId, maleId, femaleName, maleName, femaleCoverSrc, maleCoverSrc}
-        favSupport: null,                                  // {gameId, charId, charName, coverSrc}
-        favLine: "",
-        favMusic: "",
-        favHe: "",
-        favBe: "",
-        customCards: []                                    // [{label, text}] 模块五末尾自定义框
-    },
-    // ===== 新增：六、ゲーム宫格 =====
-    gameGrid: {
-        fixed: GAME_GRID_FIXED_LABELS.map(label => ({label, gameId: "", gameName: "", coverSrc: ""})),
-        custom: [],                                        // [{label, gameId, gameName, coverSrc}]
-        nextYearExpect: ""
-    },
-    // ===== 新增：七、キャラ宫格 =====
-    charGrid: {
-        fixed: CHAR_GRID_FIXED_LABELS.map(label => ({label, gameId: "", charId: "", charName: "", coverSrc: ""})),
-        custom: [],                                        // [{label, gameId, charId, charName, coverSrc}]
-        extraThoughts: ""
+// ========== STATS_BG_CONFIG 框范围按1620px像素范围精确换算 ==========
+const STATS_BG_CONFIG = {
+  A: {
+    file: 'game/Stats1.png',
+    // 只有A：高502-890px（底图上204px/高874px）→ t=0.34 b=0.79；左右全宽居中
+    boxes: { A: { l: 0.00, r: 1.00, t: 0.34, b: 0.79 } }
+  },
+  B: {
+    file: 'game/Stats2.png',
+    // 只有B：高270-820px（底图上204px/高786px）→ t=0.08 b=0.78；宽405-1405px → l=0.24 r=0.89
+    boxes: { B: { l: 0.24, r: 0.89, t: 0.08, b: 0.78 } }
+  },
+  C: {
+    file: 'game/Stats3.png',
+    // 只有C：高275-880px（底图上204px/高748px）→ t=0.10 b=0.90；宽175-1270px → l=0.09 r=0.80
+    boxes: { C: { l: 0.09, r: 0.80, t: 0.10, b: 0.90 } }
+  },
+  AB: {
+    file: 'game/Stats4.png',
+    boxes: {
+      // A高505-890px（底图上204px/高1586px）→ t=0.19 b=0.43；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.19, b: 0.43 },
+      // B高1065-1625px → t=0.54 b=0.90；宽405-1405px（底图左40px/宽1540px）→ l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.54, b: 0.90 }
     }
-});
-
-let annualData = getDefaultAnnualData();
-
-let btnAnnualExport;
-let _annualIsRendering = false;  // ✅新增：导出渲染锁，防止重复点击
-
-// =========【新增】全局弹窗：记录当前操作的TOP条目下标 0/1/2；null=弹窗关闭
-let activeTopItemIndex = null;
-
-// ========= キャラTOP3弹窗状态 =========
-let activeCharTopItemIndex = null;
-
-// ========= ✅新增：カップルTOP弹窗状态 =========
-let activeCpTopItemIndex = null;
-// ===== 新增：弹窗上下文标记，区分当前弹窗服务于哪个模块 =====
-let _activeModalContext = null;   // "gameTop"|"charTop"|"cpTop"|"otherAlso"|"otherFavCp"|"otherFavSupport"|"gameGrid"|"charGrid"
-let _activeGridTarget = null;     // {type:"fixed"|"custom", index:number}  宫格模块当前操作目标
-let cpModalViewMode = "gameList";       // gameList / femaleList
-let cpModalCurrentGameId = null;
-let cpModalCurrentFemaleId = null;      // 展开男主列表时记录当前女主
-let cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-let cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-const annualCpImgIndex = new Map();     // key="${gameId}-${charId}"
-const annualCpNameIndex = new Map();
-
-// 弹窗内部视图状态：gameList / charList
-let charModalViewMode = "gameList";
-// 当前弹窗选中的游戏ID（进入角色列表时赋值）
-let charModalCurrentGameId = null;
-// 弹窗内开关临时状态（只作用弹窗内部，不污染全局appData）
-let charModalGlobal = {
-    subChar: false,
-    hideChar: false,
-    fdChar: false,
-    fdSubChar: false  // ✅补丁新增：全局显示续作/FD次要角色
-};
-let charModalLocal = {
-    subChar: false,
-    hideChar: false,
-    fdChar: false,
-    fdSubChar: false  // ✅补丁新增：单游戏显示续作/FD次要角色
+  },
+  AC: {
+    file: 'game/Stats5.png',
+    boxes: {
+      // A高502-890px（底图上204px/高1568px）→ t=0.19 b=0.44；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.19, b: 0.44 },
+      // C高1097-1703px → t=0.57 b=0.96；宽175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.57, b: 0.96 }
+    }
+  },
+  BC: {
+    file: 'game/Stats6.png',
+    boxes: {
+      // B高275-825px（底图上204px/高1382px）→ t=0.05 b=0.45；宽405-1405px → l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.05, b: 0.45 },
+      // C高915-1515px → t=0.51 b=0.95；宽175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.51, b: 0.95 }
+    }
+  },
+  ABC: {
+    file: 'game/Stats7.png',
+    boxes: {
+      // A高505-890px（底图上204px/高2178px）→ t=0.14 b=0.32；左右全宽居中
+      A: { l: 0.00, r: 1.00, t: 0.14, b: 0.32 },
+      // B高1070-1625px → t=0.40 b=0.65；宽405-1405px → l=0.24 r=0.89
+      B: { l: 0.24, r: 0.89, t: 0.40, b: 0.65 },
+      // C高1705-2310px → t=0.69 b=0.97；宽175-1270px → l=0.09 r=0.80
+      C: { l: 0.09, r: 0.80, t: 0.69, b: 0.97 }
+    }
+  }
 };
 
-// 模块内部状态标记
-let _annualRealInitialized = false;
+// ========== 判断A/B/C哪些部分有数据 ==========
+function getStatsParts(annualData) {
+  const has = (key) => String(annualData[key] ?? '').trim() !== '';
+  const parts = [];
+  if (has('reportYear') || has('playCount') || has('totalHours')) parts.push('A');
+  if (has('likeCharCount') || has('cpCount') || has('buyCount') || has('costMoney')) parts.push('B');
+  if (has('finished') || has('ongoing') || has('notStart')) parts.push('C');
+  return parts;
+}
 
-// 模块级标记，用于全局document click防重复绑定（当前方案已移除，保留作为预留）
-let _annualDocClickBound = false;
-let _annualSortDocClickHandler = null;
-// ✅补丁新增：Annual模式独立角色立绘索引，key="${gameId}-${charId}"，不污染FavList的charImageSelect
-const annualCharImgIndex = new Map();
-// ✅补丁新增：Annual模式独立角色名字索引，key="${gameId}-${charId}"，0=正常名，与立绘索引完全同构
-const annualCharNameIndex = new Map();
+// ========== buildStatPartSegments — 去掉 finished 的 noStyle 标记 ==========
+function buildStatPartSegments(part, annualData) {
+  const v = (key) => String(annualData[key] ?? '').trim();
+  const BR = { text: '', isBreak: true };
+  // 按行构建，每行所有用户值全为空则跳过该行
+  const lines = [];
+  if (part === 'A') {
+    // 第1行：{年}年游玩了{部数}部日乙 — reportYear或playCount任一非空则保留
+    if (v('reportYear') || v('playCount')) {
+      const line = [];
+      if (v('reportYear')) line.push({ text: v('reportYear'), isValue: true });
+      line.push({ text: '年游玩了', isValue: false });
+      if (v('playCount')) line.push({ text: v('playCount'), isValue: true });
+      line.push({ text: '部日乙', isValue: false });
+      lines.push(line);
+    }
+    // 第2行：总时数{小时}小时 — totalHours非空则保留
+    if (v('totalHours')) {
+      lines.push([
+        { text: '总时数', isValue: false },
+        { text: v('totalHours'), isValue: true },
+        { text: '小时', isValue: false }
+      ]);
+    }
+  }
+  if (part === 'B') {
+    // 第1行：喜欢{数}个人
+    if (v('likeCharCount')) {
+      lines.push([
+        { text: '喜欢', isValue: false },
+        { text: v('likeCharCount'), isValue: true },
+        { text: '个人', isValue: false }
+      ]);
+    }
+    // 第2行：嗑{数}对CP
+    if (v('cpCount')) {
+      lines.push([
+        { text: '嗑', isValue: false },
+        { text: v('cpCount'), isValue: true },
+        { text: '对CP', isValue: false }
+      ]);
+    }
+    // 第3行：一共买了{数}部游戏
+    if (v('buyCount')) {
+      lines.push([
+        { text: '一共买了', isValue: false },
+        { text: v('buyCount'), isValue: true },
+        { text: '部游戏', isValue: false }
+      ]);
+    }
+    // 第4行：花费{数}元
+    if (v('costMoney')) {
+      lines.push([
+        { text: '花费', isValue: false },
+        { text: v('costMoney'), isValue: true },
+        { text: '元', isValue: false }
+      ]);
+    }
+  }
+  if (part === 'C') {
+    // 第1行：其中，{数}部已封盘 — finished非空则保留（含前缀"其中，"）
+    // 数值与其他值一样加粗+左右4px间距（已移除 noStyle）
+    if (v('finished')) {
+      lines.push([
+        { text: '其中，', isValue: false },
+        { text: v('finished'), isValue: true },
+        { text: '部已封盘', isValue: false }
+      ]);
+    }
+    // 第2行：{数}部正在进行
+    if (v('ongoing')) {
+      lines.push([
+        { text: v('ongoing'), isValue: true },
+        { text: '部正在进行', isValue: false }
+      ]);
+    }
+    // 第3行：{数}部还未开始
+    if (v('notStart')) {
+      lines.push([
+        { text: v('notStart'), isValue: true },
+        { text: '部还未开始', isValue: false }
+      ]);
+    }
+  }
+  // 展开为segments，行间用BR分隔
+  const segments = [];
+  lines.forEach((line, i) => {
+    if (i > 0) segments.push(BR);
+    segments.push(...line);
+  });
+  return segments;
+}
 
-/**
- * 获取基础游戏模板（仅普通游戏，不含FD续作）
- * 供：角色弹窗使用，角色弹窗禁止读取FD游戏
- */
-function getGameTemplateState_BaseOnly() {
-    const core = window.Core;
-    let baseList = null;
-    let baseReady = false;
-    if(core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true){
-        baseList = core.gameTemplateList;
-        baseReady = true;
-    }else{
-        const winList = window.__gameTemplateList;
-        const winReady = window.__gameTemplateReady;
-        if(Array.isArray(winList) && winList.length>0 && winReady === true){
-            baseList = winList;
-            baseReady = true;
+// ========== wrapStatSegments — 去掉自动换行，只按 BR 强制换行 ==========
+function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
+  // 不自动换行：只按 BR 标记强制换行，每行内容直接排列
+  const lines = [[]];
+  for (const seg of segments) {
+    if (seg.isBreak) {
+      lines.push([]);
+      continue;
+    }
+    const size = seg.isValue ? valueSize : labelSize;
+    ctx.font = (seg.isValue ? 'bold ' : '') + size + 'px ' + FONT_SIYUAN;
+    const chars = Array.from(seg.text);
+    chars.forEach((ch, ci) => {
+      lines[lines.length - 1].push({
+        ch: ch,
+        size: size,
+        isValue: seg.isValue,
+        isValueStart: seg.isValue && ci === 0,
+        isValueEnd: seg.isValue && ci === chars.length - 1
+      });
+    });
+  }
+  return lines;
+}
+
+// ========== drawStatPartCentered — 修正垂直居中计算（解决文字偏下） ==========
+function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
+                              valueSize, labelSize, lineHeight, valueColor, labelColor) {
+  const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
+  if (lines.length === 0) return;
+  // bottom基线模式：末行文字底部在 y+maxSize，文字块总高=(n-1)*lineHeight+末行maxSize
+  let lastMaxSize = 0;
+  for (const item of lines[lines.length - 1]) {
+    if (item.size > lastMaxSize) lastMaxSize = item.size;
+  }
+  const totalH = (lines.length - 1) * lineHeight + lastMaxSize;
+  let y = boxY + (boxH - totalH) / 2;
+  ctx.textBaseline = 'bottom';
+  for (const line of lines) {
+    // 计算行宽（含值段前后4px间距）
+    let lineW = 0;
+    for (const item of line) {
+      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
+      lineW += ctx.measureText(item.ch).width;
+      if (item.isValueStart) lineW += 4;
+      if (item.isValueEnd) lineW += 4;
+    }
+    // 本行最大字号：底部基线 = 行顶部 + 最大字号
+    let maxSize = 0;
+    for (const item of line) {
+      if (item.size > maxSize) maxSize = item.size;
+    }
+    let x = boxX + (boxW - lineW) / 2;
+    const baselineY = y + maxSize;
+    for (const item of line) {
+      if (item.isValueStart) x += 4;
+      ctx.font = (item.isValue ? 'bold ' : '') + item.size + 'px ' + FONT_SIYUAN;
+      ctx.fillStyle = item.isValue ? valueColor : labelColor;
+      ctx.fillText(item.ch, x, baselineY);
+      x += ctx.measureText(item.ch).width;
+      if (item.isValueEnd) x += 4;
+    }
+    y += lineHeight;
+  }
+}
+
+function buildStatsText(annualData) {
+  const parts = [];
+  for (const [key, label] of STAT_LABELS) {
+    const val = annualData[key];
+    if (val !== undefined && val !== null && String(val).trim() !== '') {
+      parts.push(`${label}：${String(val).trim()}`);
+    }
+  }
+  return parts.join('  ');
+}
+
+// ===================== 收集图片URL =====================
+function collectModuleImages(moduleType, annualData) {
+  const urls = [];
+  const safeEach = (list, cb) => { (list || []).forEach(item => { if (item) cb(item); }); };
+  const pushUrl = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
+  if (moduleType === 'stats') {
+    const parts = getStatsParts(annualData);
+    if (parts.length > 0) {
+      const bgInfo = STATS_BG_CONFIG[parts.join('')];
+      if (bgInfo) pushUrl(bgInfo.file);
+    }
+    return [...new Set(urls)];
+  }
+  if (moduleType === 'gameTop') {
+    safeEach(annualData.topList, item => { if (!item.gameId) return; pushUrl(item.coverSrc); });
+  } else if (moduleType === 'charTop') {
+    safeEach(annualData.charTopList, item => { if (!item.charId) return; pushUrl(item.coverSrc); });
+  } else if (moduleType === 'cpTop') {
+    safeEach(annualData.cpTopList, item => {
+      if (!item.femaleId || !item.maleId) return;
+      pushUrl(item.femaleCoverSrc); pushUrl(item.maleCoverSrc);
+    });
+  } else if (moduleType === 'other') {
+    // 还玩了
+    safeEach(annualData.other?.alsoPlayed, item => pushUrl(item.coverSrc));
+    // 最喜欢的CP
+    const cp = annualData.other?.favCp;
+    if (cp && cp.femaleId && cp.maleId) { pushUrl(cp.femaleCoverSrc); pushUrl(cp.maleCoverSrc); }
+    // 最喜欢的配角
+    const sup = annualData.other?.favSupport;
+    if (sup && sup.charId) pushUrl(sup.coverSrc);
+  } else if (moduleType === 'gameGrid') {
+    const g = annualData.gameGrid;
+    safeEach(g?.fixed, item => { if (item.gameId) pushUrl(item.coverSrc); });
+    safeEach(g?.custom, item => { if (item.gameId) pushUrl(item.coverSrc); });
+  } else if (moduleType === 'charGrid') {
+    const g = annualData.charGrid;
+    safeEach(g?.fixed, item => { if (item.charId) pushUrl(item.coverSrc); });
+    safeEach(g?.custom, item => { if (item.charId) pushUrl(item.coverSrc); });
+  }
+  return [...new Set(urls)];
+}
+
+// ===================== 过滤有效条目 =====================
+function getValidItems(moduleType, annualData) {
+  if (moduleType === 'gameTop') {
+    return (annualData.topList || []).filter(item => item && item.gameId);
+  } else if (moduleType === 'charTop') {
+    return (annualData.charTopList || []).filter(item => item && item.charId);
+  } else if (moduleType === 'cpTop') {
+    return (annualData.cpTopList || []).filter(item => item && item.femaleId && item.maleId);
+  }
+  return [];
+}
+
+// ===================== 五、其他模块：判断是否有内容 =====================
+function hasOtherContent(annualData) {
+  const o = annualData.other || {};
+  if ((o.alsoPlayed || []).length > 0) return true;
+  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) return true;
+  if (o.favSupport && o.favSupport.charId) return true;
+  if ((o.favLine || '').trim()) return true;
+  if ((o.favMusic || '').trim()) return true;
+  if ((o.favHe || '').trim()) return true;
+  if ((o.favBe || '').trim()) return true;
+  const customValid = (o.customCards || []).some(c => c && ((c.label || '').trim() || (c.text || '').trim()));
+  if (customValid) return true;
+  return false;
+}
+
+// 收集五模块中有内容的卡片列表（不含"还玩了"区域）
+function getOtherCards(annualData) {
+  const o = annualData.other || {};
+  const cards = [];
+  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) {
+    cards.push({ type: 'cp', title: '最喜欢的CP', data: o.favCp });
+  }
+  if (o.favSupport && o.favSupport.charId) {
+    cards.push({ type: 'support', title: '最喜欢的配角', data: o.favSupport });
+  }
+  if ((o.favLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的台词', text: o.favLine });
+  if ((o.favMusic || '').trim()) cards.push({ type: 'text', title: '最喜欢的OP/ED/BGM', text: o.favMusic });
+  if ((o.favHe || '').trim()) cards.push({ type: 'text', title: '最喜欢的HE', text: o.favHe });
+  if ((o.favBe || '').trim()) cards.push({ type: 'text', title: '最喜欢的BE', text: o.favBe });
+  (o.customCards || []).forEach(c => {
+    if (c && ((c.label || '').trim() || (c.text || '').trim())) {
+      cards.push({ type: 'custom', title: c.label || '自定义', text: c.text || '' });
+    }
+  });
+  return cards;
+}
+
+// ===================== 六、七宫格：收集有效项 =====================
+function getValidGridItems(gridData, gridKind) {
+  // gridKind: 'game' | 'char'
+  const valid = [];
+  const hasId = (item) => gridKind === 'game' ? !!(item && item.gameId) : !!(item && item.charId);
+  // 固定项：有图才导出
+  (gridData?.fixed || []).forEach(item => {
+    if (hasId(item)) valid.push({ ...item, isCustom: false });
+  });
+  // 自定义项：有图或有标签才导出
+  (gridData?.custom || []).forEach(item => {
+    if (!item) return;
+    if (hasId(item) || (item.label && item.label.trim())) valid.push({ ...item, isCustom: true });
+  });
+  return valid;
+}
+
+function hasGridContent(gridData, gridKind, footerText) {
+  if (getValidGridItems(gridData, gridKind).length > 0) return true;
+  if ((footerText || '').trim()) return true;
+  return false;
+}
+
+// ===================== 高度计算（需在图片加载后调用） =====================
+function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
+  let contentH = 0;
+  const parts = getStatsParts(annualData);
+  if (parts.length > 0) {
+    const bgInfo = STATS_BG_CONFIG[parts.join('')];
+    if (bgInfo) {
+      const bgUrl = toCanvasUrl(bgInfo.file);
+      const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
+      const dims = getImgSize(bgImg);
+      if (dims.w > 0 && dims.h > 0) {
+        contentH += Math.round(wrapW * dims.h / dims.w);
+      } else {
+        contentH += 300;
+      }
+    }
+  }
+  h += contentH;
+  return h;
+}
+
+function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = 0;
+
+  // ---- NO + 名称行 ----
+  const nameText = itemType === 'cp'
+    ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
+    : (item.gameName || item.charName || '');
+  const noText = `NO.${(item._no ?? 0) + 1}`;
+  ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
+  const noW = ctx.measureText(noText).width;
+  const nameMaxW = innerW - noW - 12;
+  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
+  const noLineH = NO_SIZE * 1.3;
+  h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
+
+  // ---- 封面 + 感想行 ----
+  let coverH;
+  let coverAreaW;
+  if (itemType === 'game') {
+    const img = imageCache.get(toCanvasUrl(item.coverSrc));
+    coverH = calcGameCoverHeight(img) + COVER_CARD_PAD * 2;
+    coverAreaW = GAME_COVER_W + COVER_CARD_PAD * 2;
+  } else if (itemType === 'char') {
+    coverH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+    coverAreaW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+  } else {
+    coverH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
+    coverAreaW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;
+  }
+  let textBoxH = 0;
+  const text = (item.text || '').trim();
+  if (text) {
+    const textAreaW = innerW - coverAreaW - COVER_TEXT_GAP;
+    const textSize = config.customTextFontSize || 16;
+    const textH = measureWrappedHeight(ctx, text, textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    textBoxH = textH + TEXT_BOX_PAD * 2;
+  }
+
+  h += Math.max(coverH, textBoxH);
+  return h;
+}
+
+function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, config, imageCache) {
+  if (moduleType === 'other') {
+    return calcOtherHeight(ctx, targetW, annualData, config, imageCache);
+  }
+  if (moduleType === 'gameGrid') {
+    return calcGridHeight(ctx, targetW, annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect, config, imageCache);
+  }
+  if (moduleType === 'charGrid') {
+    return calcGridHeight(ctx, targetW, annualData.charGrid, 'char', annualData.charGrid?.extraThoughts, config, imageCache);
+  }
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let contentH = 0;
+  if (moduleTitle) {
+    contentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  }
+  const items = getValidItems(moduleType, annualData);
+  if (items.length > 0) {
+    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+    items.forEach((item, i) => {
+      item._no = i;
+      contentH += calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache);
+      if (i < items.length - 1) contentH += ITEM_GAP;
+    });
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// ===================== 五、其他模块高度计算 =====================
+function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let contentH = 0;
+  const o = annualData.other || {};
+  const labelColor = config.subtitle || '#b85878';
+  const alsoList = o.alsoPlayed || [];
+  if (alsoList.length > 0) {
+    contentH += OTHER_SECTION_TITLE_SIZE + 12;
+    const coverW = OTHER_ALSO_COVER_W;
+    const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
+    const rows = Math.ceil(alsoList.length / cols);
+    for (let r = 0; r < rows; r++) {
+      let rowMaxH = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx >= alsoList.length) break;
+        const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
+        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+      }
+      contentH += rowMaxH;
+      if (r < rows - 1) contentH += OTHER_ALSO_COVER_GAP;
+    }
+    contentH += OTHER_SECTION_GAP;
+  }
+  const cards = getOtherCards(annualData);
+  if (cards.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
+    const rows = Math.ceil(cards.length / cols);
+    const textSize = config.customTextFontSize || 16;
+    const cardHeights = cards.map(card => {
+      let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+      if (card.type === 'cp') {
+        ch += OTHER_CP_COVER_SIZE;
+      } else if (card.type === 'support') {
+        ch += OTHER_SUPPORT_COVER_SIZE;
+      } else {
+        const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
+        const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
+        ch += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+      }
+      return ch;
+    });
+    let gridH = 0;
+    for (let r = 0; r < rows; r++) {
+      let rowMax = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx < cardHeights.length) rowMax = Math.max(rowMax, cardHeights[idx]);
+      }
+      gridH += rowMax;
+      if (r < rows - 1) gridH += OTHER_CARD_GAP;
+    }
+    contentH += gridH;
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// ===================== 六、七宫格高度计算 =====================
+function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  const items = getValidGridItems(gridData, gridKind);
+  const coverW = getGridCoverW(gridKind);
+  const labelLineH = GRID_LABEL_SIZE * 1.4;
+  if (items.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
+    const rows = Math.ceil(items.length / cols);
+    for (let r = 0; r < rows; r++) {
+      let rowMaxH = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx >= items.length) break;
+        const item = items[idx];
+        const coverH = getGridCoverH(item, gridKind, imageCache);
+        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
+        const labelH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
+        const cellH = coverH + GRID_LABEL_GAP + Math.max(labelH, labelLineH);
+        rowMaxH = Math.max(rowMaxH, cellH);
+      }
+      contentH += rowMaxH;
+      if (r < rows - 1) contentH += GRID_GAP;
+    }
+  }
+  if ((footerText || '').trim()) {
+    if (items.length > 0) contentH += GRID_FOOTER_GAP;
+    const textSize = config.customTextFontSize || 16;
+    const boxInnerW = innerW - FOOTER_PAD * 2;
+    const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+    contentH += FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
+  }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// ===================== 绘制函数 =====================
+function drawBigTitle(painter, targetW, config, annualData) {
+  const titleAreaH = getBodyPad() + TITLE_SIZE + getTitleMb();
+  const titleY = (titleAreaH - TITLE_SIZE) / 2;
+  let titleText;
+  if (config.useSummaryTitle) {
+    titleText = 'Otome Summary Report';
+  } else {
+    // 标题年份固定取当前系统年份，不受数据统计中 reportYear 输入框影响
+    const year = String(new Date().getFullYear());
+    titleText = `${year} Otome Annual Report`;
+  }
+  painter.drawTextCenter(titleText, targetW / 2, titleY, TITLE_SIZE, config.title || '#b33a3a', 'sans-serif', true);
+  if (config.reporterName && String(config.reporterName).trim()) {
+    const reporterText = '填表人：' + String(config.reporterName).trim();
+    const reporterSize = 16;
+    const reporterY = titleY + TITLE_SIZE + 4;
+    const ctx = painter.ctx;
+    ctx.save();
+    ctx.font = 'bold ' + reporterSize + 'px ' + FONT_SIYUAN;
+    ctx.fillStyle = config.reporterColor || '#b33a3a';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(reporterText, targetW - getBodyPad(), reporterY);
+    ctx.restore();
+  }
+  painter.y = titleAreaH;
+}
+
+function drawModuleTitle(painter, centerX, y, title, config) {
+  painter.drawTextCenter(title, centerX, y, MODULE_TITLE_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
+}
+
+function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
+  painter.drawRoundRect(x, y, cardW, cardH, SUB_CARD_RADIUS, '#ffffff', SUB_CARD_BORDER, 1);
+  if (img) {
+    const imgX = x + COVER_CARD_PAD;
+    const imgY = y + COVER_CARD_PAD;
+    const imgW = cardW - COVER_CARD_PAD * 2;
+    const imgH = cardH - COVER_CARD_PAD * 2;
+    const ctx = painter.ctx;
+    ctx.save();
+    try {
+      ctx.beginPath();
+      ctx.moveTo(imgX + radius, imgY);
+      ctx.lineTo(imgX + imgW - radius, imgY);
+      ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + radius);
+      ctx.lineTo(imgX + imgW, imgY + imgH - radius);
+      ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - radius, imgY + imgH);
+      ctx.lineTo(imgX + radius, imgY + imgH);
+      ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - radius);
+      ctx.lineTo(imgX, imgY + radius);
+      ctx.quadraticCurveTo(imgX, imgY, imgX + radius, imgY);
+      ctx.closePath();
+      ctx.clip();
+      const resInfo = rawImageResourceCache.get(srcUrl);
+      const drawTarget = resInfo?.type === 'image' ? resInfo.data : img;
+      ctx.drawImage(drawTarget, imgX, imgY, imgW, imgH);
+    } finally {
+      ctx.restore();
+    }
+  }
+}
+
+function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText) {
+  painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
+    noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
+  if (text) {
+    const textSize = config.customTextFontSize || 16;
+    if (centerText) {
+      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
+        boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
+        config.customtext || '#c98fac', false);
+    } else {
+      wrapText(
+        painter.ctx, text,
+        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
+        boxW - TEXT_BOX_PAD * 2,
+        textSize * 1.55, textSize,
+        config.customtext || '#c98fac'
+      );
+    }
+  }
+}
+
+// ===================== 新增辅助函数 =====================
+function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize, color, bold) {
+  if (!text) return 0;
+  ctx.font = `${bold ? 'bold ' : ''}${fontSize}px ${FONT_SIYUAN}`;
+  ctx.fillStyle = color;
+  const chars = Array.from(text);
+  let line = '';
+  const lines = [];
+  for (const ch of chars) {
+    if (line && ctx.measureText(line + ch).width > maxWidth) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line += ch;
+    }
+  }
+  if (line) lines.push(line);
+  lines.forEach((l, i) => {
+    const w = ctx.measureText(l).width;
+    ctx.fillText(l, centerX - w / 2, y + i * lineHeight);
+  });
+  return lines.length * lineHeight;
+}
+
+function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
+  if (!text) return 0;
+  ctx.font = `bold ${fontSize}px ${FONT_SIYUAN}`;
+  const chars = Array.from(text);
+  let line = '';
+  let lines = 1;
+  for (const ch of chars) {
+    if (line && ctx.measureText(line + ch).width > maxWidth) {
+      lines++;
+      line = ch;
+    } else {
+      line += ch;
+    }
+  }
+  return lines * lineHeight;
+}
+
+function getGridCoverW(gridKind) {
+  return gridKind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
+}
+
+function getGridCoverH(item, gridKind, imageCache) {
+  if (gridKind === 'game') {
+    const src = toCanvasUrl(item.coverSrc);
+    const img = src ? imageCache.get(src) : null;
+    return calcGameCoverHeight(img);
+  }
+  return CHAR_COVER_SIZE;
+}
+
+function buildStatsParts(annualData) {
+  const parts = [];
+  for (const [key, label] of STAT_LABELS) {
+    const val = annualData[key];
+    if (val !== undefined && val !== null && String(val).trim() !== '') {
+      parts.push({ label: `${label}：`, value: String(val).trim() });
+    }
+  }
+  return parts;
+}
+
+// ========== drawStatsContent：绘制底图+文字 ==========
+function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache) {
+  const parts = getStatsParts(annualData);
+  if (parts.length === 0) return;
+  const bgInfo = STATS_BG_CONFIG[parts.join('')];
+  if (!bgInfo) return;
+  const ctx = painter.ctx;
+  const bgUrl = toCanvasUrl(bgInfo.file);
+  const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
+  const dims = getImgSize(bgImg);
+  if (dims.w <= 0 || dims.h <= 0) return;
+  const drawW = innerW;
+  const drawH = Math.round(innerW * dims.h / dims.w);
+  const resInfo = rawImageResourceCache.get(bgUrl);
+  const drawTarget = (resInfo && resInfo.data) ? resInfo.data : bgImg;
+  ctx.save();
+  ctx.beginPath();
+  const r = CARD_RADIUS;
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + drawW - r, y);
+  ctx.quadraticCurveTo(x + drawW, y, x + drawW, y + r);
+  ctx.lineTo(x + drawW, y + drawH - r);
+  ctx.quadraticCurveTo(x + drawW, y + drawH, x + drawW - r, y + drawH);
+  ctx.lineTo(x + r, y + drawH);
+  ctx.quadraticCurveTo(x, y + drawH, x, y + drawH - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(drawTarget, x, y, drawW, drawH);
+  ctx.restore();
+  ctx.save();
+  ctx.lineWidth = CARD_BORDER_W;
+  ctx.strokeStyle = config.border || '#f6a5b8';
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + drawW - r, y);
+  ctx.quadraticCurveTo(x + drawW, y, x + drawW, y + r);
+  ctx.lineTo(x + drawW, y + drawH - r);
+  ctx.quadraticCurveTo(x + drawW, y + drawH, x + drawW - r, y + drawH);
+  ctx.lineTo(x + r, y + drawH);
+  ctx.quadraticCurveTo(x, y + drawH, x, y + drawH - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+  const valueColor = config.statdata || '#b33a3a';
+  const labelColor = config.stattext || '#b85878';
+  for (const part of parts) {
+    const box = bgInfo.boxes[part];
+    if (!box) continue;
+    const boxX = x + drawW * box.l;
+    const boxY = y + drawH * box.t;
+    const boxW = drawW * (box.r - box.l);
+    const boxH = drawH * (box.b - box.t);
+    const segments = buildStatPartSegments(part, annualData);
+    drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
+      STAT_VALUE_SIZE, STAT_LABEL_SIZE, STAT_LINE_HEIGHT, valueColor, labelColor);
+  }
+}
+
+function drawTopItem(painter, targetW, item, itemType, imageCache, config) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+
+  const noText = `NO.${(item._no ?? 0) + 1}`;
+  ctx.font = `bold ${NO_SIZE}px ${FONT_SIYUAN}`;
+  const noW = ctx.measureText(noText).width;
+  const nameText = itemType === 'cp'
+    ? `${item.femaleName ?? ''}×${item.maleName ?? ''}`
+    : (item.gameName || item.charName || '');
+  const nameX = contentX + noW + 12;
+  const nameMaxW = innerW - noW - 12;
+  const nameH = measureWrappedHeight(ctx, nameText, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, true);
+  const noLineH = NO_SIZE * 1.3;
+  const rowH = Math.max(noLineH, nameH);
+  const nameTopY = painter.y + (rowH - nameH) / 2;
+  wrapText(ctx, noText, contentX, nameTopY, noW + 10, NAME_SIZE * 1.3, NAME_SIZE, config.subtitle || '#b85878', FONT_SIYUAN, true);
+  wrapText(ctx, nameText, nameX, nameTopY, nameMaxW, NAME_SIZE * 1.3, NAME_SIZE, config.gamename || '#000000', FONT_SIYUAN, true);
+  painter.shiftY(rowH + LABEL_ROW_MB);
+
+  const contentY = painter.y;
+  let coverCardW, coverCardH, coverImg, coverSrc;
+
+  if (itemType === 'game') {
+    coverSrc = toCanvasUrl(item.coverSrc);
+    coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+    const imgH = calcGameCoverHeight(coverImg);
+    coverCardW = GAME_COVER_W + COVER_CARD_PAD * 2;
+    coverCardH = imgH + COVER_CARD_PAD * 2;
+    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
+  } else if (itemType === 'char') {
+    coverSrc = toCanvasUrl(item.coverSrc);
+    coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+    coverCardW = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+    coverCardH = CHAR_COVER_SIZE + COVER_CARD_PAD * 2;
+    drawCoverCard(painter, contentX, contentY, coverCardW, coverCardH, coverImg, coverSrc, 6);
+  } else {
+    const fSrc = toCanvasUrl(item.femaleCoverSrc);
+    const mSrc = toCanvasUrl(item.maleCoverSrc);
+    const fImg = fSrc ? imageCache.get(fSrc) : null;
+    const mImg = mSrc ? imageCache.get(mSrc) : null;
+    coverCardW = (CP_COVER_SIZE + COVER_CARD_PAD * 2) * 2 + CP_GAP;
+    coverCardH = CP_COVER_SIZE + COVER_CARD_PAD * 2;
+    drawCoverCard(painter, contentX, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, fImg, fSrc, 6);
+    drawCoverCard(painter, contentX + CP_COVER_SIZE + COVER_CARD_PAD * 2 + CP_GAP, contentY, CP_COVER_SIZE + COVER_CARD_PAD * 2, coverCardH, mImg, mSrc, 6);
+  }
+
+  const text = (item.text || '').trim();
+  let finalTextBoxH = 0;
+  if (text) {
+    const textX = contentX + coverCardW + COVER_TEXT_GAP;
+    const textW = innerW - coverCardW - COVER_TEXT_GAP;
+    const textSize = config.customTextFontSize || 16;
+    const textH = measureWrappedHeight(ctx, text, textW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    finalTextBoxH = textH + TEXT_BOX_PAD * 2;
+    drawTextBox(painter, textX, contentY, textW, finalTextBoxH, text, config);
+  }
+  painter.shiftY(Math.max(coverCardH, finalTextBoxH));
+}
+
+// ===================== 五、其他模块绘制 =====================
+function drawOtherContent(painter, targetW, annualData, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+  const o = annualData.other || {};
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
+  const alsoList = o.alsoPlayed || [];
+  if (alsoList.length > 0) {
+    drawCenteredText(ctx, '还玩了', contentX + innerW / 2, painter.y, innerW,
+      OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
+    painter.shiftY(OTHER_SECTION_TITLE_SIZE + 12);
+    const coverW = OTHER_ALSO_COVER_W;
+    const cols = Math.max(1, Math.floor((innerW + OTHER_ALSO_COVER_GAP) / (coverW + OTHER_ALSO_COVER_GAP)));
+    const rows = Math.ceil(alsoList.length / cols);
+    for (let r = 0; r < rows; r++) {
+      const rowStart = r * cols;
+      const rowCount = Math.min(cols, alsoList.length - rowStart);
+      const rowTotalW = rowCount * coverW + (rowCount - 1) * OTHER_ALSO_COVER_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
+      let rowMaxH = 0;
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
+        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+      }
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const x = contentX + rowOffset + c * (coverW + OTHER_ALSO_COVER_GAP);
+        const y = painter.y;
+        const src = toCanvasUrl(alsoList[idx].coverSrc);
+        const img = src ? imageCache.get(src) : null;
+        const coverH = calcGameCoverHeight(img);
+        drawCoverCard(painter, x, y, coverW, coverH, img, src, 6);
+      }
+      painter.shiftY(rowMaxH);
+      if (r < rows - 1) painter.shiftY(OTHER_ALSO_COVER_GAP);
+    }
+    painter.shiftY(OTHER_SECTION_GAP);
+  }
+  const cards = getOtherCards(annualData);
+  if (cards.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + OTHER_CARD_GAP) / (OTHER_CARD_W + OTHER_CARD_GAP)));
+    const rows = Math.ceil(cards.length / cols);
+    const textSize = config.customTextFontSize || 16;
+    const rowHeights = [];
+    for (let r = 0; r < rows; r++) {
+      let rowMax = 0;
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        if (idx >= cards.length) continue;
+        const card = cards[idx];
+        let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+        if (card.type === 'cp') ch += OTHER_CP_COVER_SIZE;
+        else if (card.type === 'support') ch += OTHER_SUPPORT_COVER_SIZE;
+        else {
+          const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
+          ch += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
         }
+        rowMax = Math.max(rowMax, ch);
+      }
+      rowHeights.push(rowMax);
     }
-    if(!baseReady || !Array.isArray(baseList)){
-        return {
-            list: null,
-            ready: false
-        };
-    }
-    return {
-        list: [...baseList],
-        ready: true
-    };
-}
-
-/**
- * 获取游戏模板【包含FD续作】，仅年度报告【游戏TOP弹窗】使用
- * 普通FavList不会读取；角色弹窗不调用此函数
- */
-function getGameTemplateState_WithFD() {
-    const baseState = getGameTemplateState_BaseOnly();
-    if(!baseState.ready){
-        return {
-            list: null,
-            ready: false
-        };
-    }
-    const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
-    const combinedList = [...baseState.list, ...fdList];
-    return {
-        list: combinedList,
-        ready: true
-    };
-}
-
-/**
- * ✅补丁新增：获取角色在当前弹窗开关状态下的全部可用立绘src列表
- * 复用 main.js getAvailableCharImages，传入弹窗全局/局部开关
- * @param {Object} char 角色对象
- * @returns {string[]} 可用图片相对路径数组
- */
-function getAnnualCharAvailImages(char) {
-    if (!char) return [];
-    const availUnits = getAvailableCharImages(
-        char,
-        charModalGlobal.hideChar,
-        charModalGlobal.fdChar,
-        charModalLocal.hideChar,
-        charModalLocal.fdChar
-    );
-    const allSrc = [];
-    availUnits.forEach(u => {
-        if (Array.isArray(u.srcList)) allSrc.push(...u.srcList);
-    });
-    return allSrc;
-}
-
-/**
- * ✅补丁新增：重置角色弹窗局部开关（逻辑状态 + DOM勾选状态同步）
- * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
- * 防止上一个游戏的开关DOM勾选残留到下一个游戏造成显示与逻辑相反
- */
-function resetCharModalLocalSwitches() {
-    charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    const modal = document.getElementById("annual-global-char-modal");
-    if (!modal) return;
-    const subEl = modal.querySelector("#annual-modal-game-sub-char");
-    const hideEl = modal.querySelector("#annual-modal-game-hide-char");
-    const fdEl = modal.querySelector("#annual-modal-game-fd-game");
-    const fdSubEl = modal.querySelector("#annual-modal-game-fd-sub-char");
-    if (subEl) subEl.checked = false;
-    if (hideEl) hideEl.checked = false;
-    if (fdEl) fdEl.checked = false;
-    if (fdSubEl) fdSubEl.checked = false;
-}
-
-/**
- * ✅新增：重置CP弹窗局部开关（逻辑+DOM同步）
- */
-function resetCpModalLocalSwitches() {
-    cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    const modal = document.getElementById("annual-global-cp-modal");
-    if (!modal) return;
-    const ids = ["#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
-                 "#annual-modal-cp-game-fd-game","#annual-modal-cp-game-fd-sub-char"];
-    ids.forEach(sel=>{ const el = modal.querySelector(sel); if(el) el.checked = false; });
-}
-
-/**
- * ✅新增：CP弹窗角色可用立绘列表
- */
-function getAnnualCpAvailImages(char) {
-    if (!char) return [];
-    const availUnits = getAvailableCharImages(
-        char, cpModalGlobal.hideChar, cpModalGlobal.fdChar,
-        cpModalLocal.hideChar, cpModalLocal.fdChar
-    );
-    const allSrc = [];
-    availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
-    return allSrc;
-}
-
-/**
- * 更新单个TOP条目UI显隐状态（游戏）
- * @param {HTMLElement} itemDom annual-top-item
- * @param {Object} dataItem topList单条数据
- */
-function refreshTopItemUi(itemDom, dataItem) {
-    const labelRow = itemDom.querySelector(".annual-top-label-row");
-    const contentRow = itemDom.querySelector(".annual-top-content-row");
-    const hasGame = !!dataItem.gameId;
-    if (hasGame) {
-        labelRow.classList.remove("hidden-when-empty");
-        contentRow.classList.remove("hidden-when-empty");
-        labelRow.classList.add("render-visible");
-        contentRow.classList.add("render-visible");
-    } else {
-        labelRow.classList.add("hidden-when-empty");
-        contentRow.classList.add("hidden-when-empty");
-        labelRow.classList.remove("render-visible");
-        contentRow.classList.remove("render-visible");
-    }
-}
-
-/**
- * 更新キャラTOP3单条UI
- * @param {HTMLElement} itemDom .annual-char-top-item
- * @param {Object} dataItem charTopList子项
- */
-function refreshCharTopItemUi(itemDom, dataItem) {
-    const labelRow = itemDom.querySelector(".annual-top-label-row");
-    const contentRow = itemDom.querySelector(".annual-char-top-content-row");
-    const hasChar = !!dataItem.charId;
-    if (hasChar) {
-        labelRow.classList.remove("hidden-when-empty");
-        contentRow.classList.remove("hidden-when-empty");
-        labelRow.classList.add("render-visible");
-        contentRow.classList.add("render-visible");
-    } else {
-        labelRow.classList.add("hidden-when-empty");
-        contentRow.classList.add("hidden-when-empty");
-        labelRow.classList.remove("render-visible");
-        contentRow.classList.remove("render-visible");
-    }
-}
-
-/**
- * ✅新增：更新カップルTOP单条UI显隐
- */
-function refreshCpTopItemUi(itemDom, dataItem) {
-    const labelRow = itemDom.querySelector(".annual-top-label-row");
-    const contentRow = itemDom.querySelector(".annual-cp-top-content-row");
-    const hasCp = !!(dataItem.femaleId && dataItem.maleId);
-    if (hasCp) {
-        labelRow.classList.remove("hidden-when-empty");
-        contentRow.classList.remove("hidden-when-empty");
-        labelRow.classList.add("render-visible");
-        contentRow.classList.add("render-visible");
-    } else {
-        labelRow.classList.add("hidden-when-empty");
-        contentRow.classList.add("hidden-when-empty");
-        labelRow.classList.remove("render-visible");
-        contentRow.classList.remove("render-visible");
-    }
-}
-
-function loadAnnualData() {
-    const raw = localStorage.getItem(ANNUAL_STORE_KEY);
-    if(raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            annualData = Object.assign(getDefaultAnnualData(), parsed);
-        } catch(e) {
-            annualData = getDefaultAnnualData();
-        }
-    }
-}
-
-function saveAnnualData() {
-    localStorage.setItem(ANNUAL_STORE_KEY, JSON.stringify(annualData));
-}
-
-function bindStatInputs() {
-    const statInputs = document.querySelectorAll(".annual-input");
-    statInputs.forEach(input=>{
-        const key = input.dataset.key;
-        input.value = annualData[key] ?? "";
-        input.addEventListener("input", ()=>{
-            annualData[key] = input.value;
-            saveAnnualData();
-        });
-    });
-}
-
-function isGameTemplateReady() {
-    const state = getGameTemplateState_BaseOnly();
-    return state.ready;
-}
-
-/**
- * 渲染【全局模态弹窗】游戏候选列表（游戏TOP3）
- * @param {HTMLElement} wrap 弹窗内列表容器
- * @param {string} keyword
- */
-function renderGameList(wrap, keyword) {
-    wrap.innerHTML = "";
-    const state = getGameTemplateState_WithFD();
-    const gameTemplateList = state.list;
-    const gameTemplateReady = state.ready;
-    console.log("[annual.js renderGameList] gameTemplateReady=", gameTemplateReady, "listLength=", gameTemplateList?.length);
-
-    if(!gameTemplateList || !isGameTemplateReady()) {
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
-        return;
-    }
-
-    const kw = (keyword ?? "").toLowerCase().trim();
-    const filtered = gameTemplateList.filter(g=>{
-        if(!kw) return true;
-        return String(g.name).toLowerCase().includes(kw);
-    });
-
-    // ✅【核心修改：完全复用FavList主列表的中英日排序逻辑 localeCompare("zh-CN")】
-    const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
-
-    sorted.forEach((game, listIndex)=>{
-        if(!game) return;
-        const div = document.createElement("div");
-        div.className = "game-option-item";
-        div.innerHTML = renderGameSelectItem(game, listIndex);
-        div.addEventListener("click", ()=>{
-            // ===== 新增：还玩了模块 =====
-            if (_activeModalContext === "otherAlso") {
-                annualData.other.alsoPlayed.push({gameId: game.id, gameName: game.name, coverSrc: game.cover ?? ""});
-                saveAnnualData();
-                renderOtherAlsoPlayed();
-                closeAnnualGlobalGameModal();
-                return;
-            }
-            // ===== 新增：游戏宫格模块 =====
-            if (_activeModalContext === "gameGrid" && _activeGridTarget) {
-                const t = _activeGridTarget;
-                const targetItem = (t.type === "fixed") ? annualData.gameGrid.fixed[t.index] : annualData.gameGrid.custom[t.index];
-                if (targetItem) {
-                    targetItem.gameId = game.id;
-                    targetItem.gameName = game.name;
-                    targetItem.coverSrc = game.cover ?? "";
-                }
-                // 自定义项添加后，在末尾追加一个新空白自定义项
-                if (t.type === "custom") {
-                    annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
-                }
-                saveAnnualData();
-                renderGameGrid();
-                closeAnnualGlobalGameModal();
-                return;
-            }
-            if (activeTopItemIndex === null) return;
-            //【问题③】重复游戏校验：排除当前正在编辑这一条，其余不能重复
-            const isDuplicate = annualData.topList.some((item,i)=> i !== activeTopItemIndex && item.gameId === game.id);
-            if(isDuplicate){
-                alert("该游戏已经添加，不可重复添加");
-                return;
-            }
-            // 回填到当前激活的topList条目
-            const targetItem = annualData.topList[activeTopItemIndex];
-            targetItem.gameId = game.id;
-            targetItem.gameName = game.name;
-            targetItem.coverSrc = game.cover ?? "";
-            // 更新对应DOM条目UI
-            const topItemDomList = Array.from(document.querySelectorAll(".annual-top-item"));
-            const targetDom = topItemDomList[activeTopItemIndex];
-            if(targetDom){
-                const nameTextEl = targetDom.querySelector(".annual-game-name-text");
-                const coverImg = targetDom.querySelector(".annual-top-cover");
-                nameTextEl.textContent = game.name;
-                coverImg.src = getWebImageUrl(targetItem.coverSrc);
-                refreshTopItemUi(targetDom, targetItem);
-            }
-            saveAnnualData();
-            // 关闭全局弹窗
-            closeAnnualGlobalGameModal();
-        });
-        wrap.appendChild(div);
-    });
-}
-
-/**
- * 角色弹窗：渲染游戏列表（キャラTOP3）
- * @param {HTMLElement} wrap
- * @param {string} keyword
- */
-function renderCharModalGameList(wrap, keyword) {
-    wrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
-    const gameTemplateList = state.list;
-    if (!gameTemplateList || !isGameTemplateReady()) {
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
-        return;
-    }
-    const kw = (keyword ?? "").toLowerCase().trim();
-
-    // 关键词为空：原始逻辑，只渲染游戏列表
-    if (!kw) {
-        const filtered = [...gameTemplateList];
-        const { sortFilterOptionList } = window.Core || {};
-        let sorted = filtered;
-        if (typeof sortFilterOptionList === 'function') {
-            const sortedNames = sortFilterOptionList(filtered.map(g=>g.name));
-            sorted = sortedNames.map(name=>filtered.find(g=>g.name===name)).filter(Boolean);
+    for (let r = 0; r < rows; r++) {
+      const rowH = rowHeights[r];
+      const rowStart = r * cols;
+      const rowCount = Math.min(cols, cards.length - rowStart);
+      const rowTotalW = rowCount * OTHER_CARD_W + (rowCount - 1) * OTHER_CARD_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const card = cards[idx];
+        const x = contentX + rowOffset + c * (OTHER_CARD_W + OTHER_CARD_GAP);
+        const y = painter.y;
+        painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
+        const titleY = y + OTHER_CARD_PAD;
+        drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
+          OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
+          OTHER_SECTION_TITLE_SIZE, labelColor, true);
+        const contentY = titleY + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+        if (card.type === 'cp') {
+          const fSrc = toCanvasUrl(card.data.femaleCoverSrc);
+          const mSrc = toCanvasUrl(card.data.maleCoverSrc);
+          const fImg = fSrc ? imageCache.get(fSrc) : null;
+          const mImg = mSrc ? imageCache.get(mSrc) : null;
+          const totalW = OTHER_CP_COVER_SIZE * 2 + CP_GAP;
+          const startX = x + (OTHER_CARD_W - totalW) / 2;
+          drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
+          drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
+        } else if (card.type === 'support') {
+          const src = toCanvasUrl(card.data.coverSrc);
+          const img = src ? imageCache.get(src) : null;
+          const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
+          drawCoverCard(painter, sx, contentY, OTHER_SUPPORT_COVER_SIZE, OTHER_SUPPORT_COVER_SIZE, img, src, 6);
         } else {
-            sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+          const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+          const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+          drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true, true);
         }
-        sorted.forEach((game) => {
-            if (!game) return;
-            const div = document.createElement("div");
-            div.className = "game-option-item";
-            div.innerHTML = renderGameSelectItem(game);
-            div.addEventListener("click", () => {
-                charModalCurrentGameId = game.id;
-                // ✅补丁修改：统一重置局部开关（逻辑+DOM同步），防止跨游戏开关状态残留
-                resetCharModalLocalSwitches();
-                switchCharModalView("charList");
-                renderCharModalCharList();
-            });
-            wrap.appendChild(div);
-        });
-        return;
+      }
+      painter.shiftY(rowH);
+      if (r < rows - 1) painter.shiftY(OTHER_CARD_GAP);
     }
+  }
+}
 
-    // ====== 有搜索词：同时收集匹配角色、匹配游戏 ======
-    const matchedCharacters = [];
-    const matchedGames = new Set();
-
-    for(const game of gameTemplateList) {
-        const gameNameLow = String(game.name).toLowerCase();
-        const matchGame = gameNameLow.includes(kw);
-        if(matchGame) matchedGames.add(game.id);
-
-        if(!Array.isArray(game.charList)) continue;
-        for(const char of game.charList) {
-            const charNameLow = String(char.name).toLowerCase();
-            // ✅补丁修改：隐藏开关或FD开关（角色isFD时）任一开启即可搜索隐藏名
-            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
-            let hiddenNameMatch = false;
-            if (showHideForSearch && char.hiddenName) {
-                if (Array.isArray(char.hiddenName)) {
-                    hiddenNameMatch = char.hiddenName.some(n => String(n).toLowerCase().includes(kw));
-                } else {
-                    hiddenNameMatch = String(char.hiddenName).toLowerCase().includes(kw);
-                }
-            }
-            if(!charNameLow.includes(kw) && !hiddenNameMatch) continue;
-            // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
-            const isSub = char.isSub ?? false;
-            const isHidden = !!char.isHidden;
-            const isFD = !!char.isFD;
-            const isFdSub = !!char.isFdSub;
-            const showHide = charModalGlobal.hideChar;
-            const showFD = charModalGlobal.fdChar;
-            const showSub = charModalGlobal.subChar;
-            const showFdSub = charModalGlobal.fdSubChar;
-            let pass = false;
-            if (!isSub && !isHidden && !isFD && !isFdSub) {
-                pass = true;
-            } else {
-                pass = (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
-            }
-            if(pass){
-                matchedCharacters.push({game, char});
-                // ✅移除 matchedGames.add(game.id);
-            }
-        }
+// ===================== 六、七宫格绘制 =====================
+function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerText, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
+  const coverW = getGridCoverW(gridKind);
+  const labelLineH = GRID_LABEL_SIZE * 1.4;
+  if (items.length > 0) {
+    const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
+    const rows = Math.ceil(items.length / cols);
+    for (let r = 0; r < rows; r++) {
+      const rowStart = r * cols;
+      const rowCount = Math.min(cols, items.length - rowStart);
+      const rowTotalW = rowCount * coverW + (rowCount - 1) * GRID_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
+      let rowMaxH = 0;
+      const cellHeights = [];
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const item = items[idx];
+        const covH = getGridCoverH(item, gridKind, imageCache);
+        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
+        const labH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
+        const cellH = covH + GRID_LABEL_GAP + Math.max(labH, labelLineH);
+        cellHeights.push(cellH);
+        rowMaxH = Math.max(rowMaxH, cellH);
+      }
+      for (let c = 0; c < rowCount; c++) {
+        const idx = rowStart + c;
+        const item = items[idx];
+        const x = contentX + rowOffset + c * (coverW + GRID_GAP);
+        const y = painter.y;
+        const covH = getGridCoverH(item, gridKind, imageCache);
+        const src = toCanvasUrl(item.coverSrc);
+        const img = src ? imageCache.get(src) : null;
+        drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
+        const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
+        const labelY = y + covH + GRID_LABEL_GAP;
+        drawCenteredText(ctx, labelText, x + coverW / 2, labelY, coverW,
+          labelLineH, GRID_LABEL_SIZE, labelColor, true);
+      }
+      painter.shiftY(rowMaxH);
+      if (r < rows - 1) painter.shiftY(GRID_GAP);
     }
+  }
+  if ((footerText || '').trim()) {
+    if (items.length > 0) painter.shiftY(GRID_FOOTER_GAP);
+    const textSize = config.customTextFontSize || 16;
+    const boxInnerW = innerW - FOOTER_PAD * 2;
+    const textH = measureWrappedHeight(ctx, footerText, boxInnerW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
+    const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+    const outerBoxH = FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
+    painter.drawRoundRect(contentX, painter.y, innerW, outerBoxH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
+    const titleY = painter.y + FOOTER_PAD;
+    drawCenteredText(ctx, footerLabel, contentX + innerW / 2, titleY, innerW - FOOTER_PAD * 2,
+      OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE, labelColor, true);
+    const boxY = titleY + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP;
+    drawTextBox(painter, contentX + FOOTER_PAD, boxY, boxInnerW, textBoxH, footerText, config, true);
+    painter.shiftY(outerBoxH);
+  }
+}
 
-    // ✅【改动：创建两个独立子容器，角色、游戏上下分块，不混在同一个grid】
-    const searchCharWrap = document.createElement("div");
-    searchCharWrap.className = "search-char-result-wrap";
-
-    const searchGameWrap = document.createElement("div");
-    searchGameWrap.className = "search-game-result-wrap";
-
-    // 渲染搜索命中的角色项（优先展示角色卡片，全部放入角色子容器）
-    for(const {game, char} of matchedCharacters){
-        const div = document.createElement("div");
-        div.className = "char-item search-result-char-item";
-        // ========== ✅补丁新增：搜索结果角色卡片支持多立绘切换 ==========
-        // 搜索视图只有全局开关生效，局部开关传false
-        const availUnits = getAvailableCharImages(char, charModalGlobal.hideChar, charModalGlobal.fdChar, false, false);
-        const allSrc = [];
-        availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
-        const imgKey = `${game.id}-${char.id}`;
-        if (!annualCharImgIndex.has(imgKey)) annualCharImgIndex.set(imgKey, 0);
-        let imgIdx = annualCharImgIndex.get(imgKey);
-        if (imgIdx >= allSrc.length) imgIdx = 0;
-        const hasMultiImg = allSrc.length > 1;
-        const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // ========== ✅补丁修改：搜索结果角色卡片名字切换（隐藏或FD开关任一开启） ==========
-        const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
-        const searchNameList = getCharNameList(char, searchShowHide);
-        const searchTotalNames = searchNameList.length;
-        const searchCanSwitchName = searchTotalNames > 1;
-        if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
-        let searchNameIdx = annualCharNameIndex.get(imgKey);
-        if (searchNameIdx >= searchTotalNames) searchNameIdx = 0;
-        const searchDisplayName = searchNameList[searchNameIdx] || char.name;
-        const searchNameMultiCls = searchCanSwitchName ? "char-name-multi" : "";
-        const searchNameSwitchBtns = searchCanSwitchName ? `
-            <button class="char-name-switch-btn char-name-switch-prev annual-search-name-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>
-            <button class="char-name-switch-btn char-name-switch-next annual-search-name-next" data-game-id="${game.id}" data-char-id="${char.id}">&gt;</button>
-        ` : "";
-        // ========== 补丁结束 ==========
-        div.innerHTML = `
-            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-search-img-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>` : ""}
-                <img src="${currentImgSrc}" alt="${searchDisplayName}" decoding="async">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next annual-search-img-next" data-game-id="${game.id}" data-char-id="${char.id}">&gt;</button>` : ""}
-            </div>
-            <div class="char-card-name-wrap">
-                <div class="char-card-name ${searchNameMultiCls}">
-                    ${searchNameSwitchBtns}
-                    <span class="char-name-text">${searchDisplayName}</span>
-                </div>
-                <div class="char-card-game-sub">${game.name}</div>
-            </div>
-        `;
-        if (hasMultiImg) {
-            const imgEl = div.querySelector("img");
-            const prevBtn = div.querySelector(".annual-search-img-prev");
-            const nextBtn = div.querySelector(".annual-search-img-next");
-            prevBtn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                let idx = annualCharImgIndex.get(imgKey) ?? 0;
-                idx = idx - 1;
-                if (idx < 0) idx = allSrc.length - 1;
-                annualCharImgIndex.set(imgKey, idx);
-                const imgBox = imgEl.closest('.char-card-img-box');
-                if (imgBox) {
-                    await switchCharImageWithLoading(imgBox, getWebImageUrl(allSrc[idx] || ""));
-                } else {
-                    imgEl.src = getWebImageUrl(allSrc[idx] || "");
-                }
-            });
-            nextBtn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                let idx = annualCharImgIndex.get(imgKey) ?? 0;
-                idx = idx + 1;
-                if (idx >= allSrc.length) idx = 0;
-                annualCharImgIndex.set(imgKey, idx);
-                const imgBox = imgEl.closest('.char-card-img-box');
-                if (imgBox) {
-                    await switchCharImageWithLoading(imgBox, getWebImageUrl(allSrc[idx] || ""));
-                } else {
-                    imgEl.src = getWebImageUrl(allSrc[idx] || "");
-                }
-            });
-        }
-        // ========== ✅补丁新增：搜索结果名字切换事件 ==========
-        if (searchCanSwitchName) {
-            const nameTextEl = div.querySelector(".char-name-text");
-            const namePrevBtn = div.querySelector(".annual-search-name-prev");
-            const nameNextBtn = div.querySelector(".annual-search-name-next");
-            namePrevBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                let idx = annualCharNameIndex.get(imgKey) ?? 0;
-                idx = (idx - 1 + searchTotalNames) % searchTotalNames;
-                annualCharNameIndex.set(imgKey, idx);
-                nameTextEl.textContent = searchNameList[idx] || char.name;
-            });
-            nameNextBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                let idx = annualCharNameIndex.get(imgKey) ?? 0;
-                idx = (idx + 1) % searchTotalNames;
-                annualCharNameIndex.set(imgKey, idx);
-                nameTextEl.textContent = searchNameList[idx] || char.name;
-            });
-        }
-        // ========== 补丁结束 ==========
-        div.addEventListener("click", ()=>{
-            if(activeCharTopItemIndex === null) return;
-            const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
-            if(isDuplicate){
-                alert("该角色已经添加，不可重复添加");
-                return;
-            }
-            const targetItem = annualData.charTopList[activeCharTopItemIndex];
-            targetItem.gameId = game.id;
-            targetItem.charId = char.id;
-            // ✅补丁新增：保存用户当前选择的名字及索引
-            const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
-            targetItem.nameIndex = finalNameIdx;
-            targetItem.charName = searchNameList[finalNameIdx] || char.name;
-            // ✅使用当前选中的立绘索引
-            const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
-            targetItem.coverSrc = allSrc[finalIdx] || "";
-            const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
-            const targetDom = charItemDoms[activeCharTopItemIndex];
-            if(targetDom){
-                const nameEl = targetDom.querySelector(".annual-char-name-text");
-                const imgEl = targetDom.querySelector(".annual-char-cover");
-                nameEl.textContent = targetItem.charName;
-                imgEl.src = getWebImageUrl(targetItem.coverSrc);
-                refreshCharTopItemUi(targetDom, targetItem);
-            }
-            saveAnnualData();
-            closeAnnualGlobalCharModal();
-        });
-        searchCharWrap.appendChild(div);
+// ===================== 主入口：单模块导出 =====================
+export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config, dpr) {
+  DPR = dpr || 2;
+  setCurrentDPR(DPR);
+  if (IS_IOS_WEBKIT) {
+    for (const [, res] of rawImageResourceCache.entries()) {
+      if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
+        try { res.data.close(); } catch (e) {}
+      }
     }
+    roundImageCache.clear();
+    rawImageResourceCache.clear();
+  }
 
-    // 渲染匹配的游戏卡片，全部放入游戏子容器
-    const gameList = gameTemplateList.filter(g=>matchedGames.has(g.id));
-    const { sortFilterOptionList } = window.Core || {};
-    let sortedGames = gameList;
-    if (typeof sortFilterOptionList === 'function') {
-        const sortedNames = sortFilterOptionList(gameList.map(g=>g.name));
-        sortedGames = sortedNames.map(name=>gameList.find(g=>g.name===name)).filter(Boolean);
+  if (moduleType === 'stats') {
+    if (getStatsParts(annualData).length === 0) return null;
+  } else if (moduleType === 'other') {
+    if (!hasOtherContent(annualData)) return null;
+  } else if (moduleType === 'gameGrid') {
+    if (!hasGridContent(annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect)) return null;
+  } else if (moduleType === 'charGrid') {
+    if (!hasGridContent(annualData.charGrid, 'char', annualData.charGrid?.extraThoughts)) return null;
+  } else {
+    const validItems = getValidItems(moduleType, annualData);
+    if (validItems.length === 0) return null;
+  }
+
+  emitRenderProgress(5);
+
+  let imageUrls = collectModuleImages(moduleType, annualData);
+  const SAFE_URL_PATTERN = /^(http|https):\/\//;
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
+  imageUrls = [...new Set(imageUrls)];
+  const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
+  const imageCache = loadRet.resultMap;
+
+  await new Promise(r => setTimeout(r, 30));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  emitRenderProgress(65);
+
+  const vCanvas = document.createElement('canvas');
+  const vCtx = vCanvas.getContext('2d');
+  const totalH = moduleType === 'stats'
+    ? calcStatsHeight(vCtx, designW, annualData, config, imageCache)
+    : calcModuleHeight(vCtx, designW, moduleType, moduleTitle, annualData, config, imageCache);
+  vCanvas.width = 0; vCanvas.height = 0;
+
+  if (IS_IOS_WEBKIT) {
+    const totalPixel = (designW * DPR) * (totalH * DPR);
+    if (totalPixel > 32 * 1024 * 1024) {
+      console.warn(`⚠️ annual IOS画布像素超限风险：${totalPixel}，模块=${moduleType}，可能toBlob返回null`);
+    }
+  }
+  const canvasHeight = totalH + getBodyPad();
+  const canvas = document.createElement('canvas');
+  const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
+
+  drawBigTitle(painter, designW, config, annualData);
+
+  const wrapW = getWrapW(designW);
+  const wrapX = getWrapX(designW, wrapW);
+  const cardTop = painter.y;
+  const cardInnerW = wrapW - CARD_INNER_PAD * 2;
+
+  let cardContentH = 0;
+  if (moduleType === 'other') {
+    const totalH = calcOtherHeight(painter.ctx, designW, annualData, config, imageCache);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
+    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
+    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
+    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
+    const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config, imageCache);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else {
+    if (moduleTitle && moduleType !== 'stats') {
+      cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+    }
+    if (moduleType === 'stats') {
+      const parts = getStatsParts(annualData);
+      if (parts.length > 0) {
+        const bgInfo = STATS_BG_CONFIG[parts.join('')];
+        if (bgInfo) {
+          const bgUrl = toCanvasUrl(bgInfo.file);
+          const bgImg = bgUrl ? imageCache.get(bgUrl) : null;
+          const dims = getImgSize(bgImg);
+          if (dims.w > 0 && dims.h > 0) {
+            cardContentH += Math.round(wrapW * dims.h / dims.w);
+          } else {
+            cardContentH += 300;
+          }
+        }
+      }
     } else {
-        sortedGames = [...gameList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+      const items = getValidItems(moduleType, annualData);
+      const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+      items.forEach((item, i) => {
+        item._no = i;
+        cardContentH += calcTopItemHeight(painter.ctx, designW, item, itemType, config, imageCache);
+        if (i < items.length - 1) cardContentH += ITEM_GAP;
+      });
     }
-    sortedGames.forEach((game) => {
-        if (!game) return;
-        const div = document.createElement("div");
-        div.className = "game-option-item";
-        div.innerHTML = renderGameSelectItem(game);
-        div.addEventListener("click", () => {
-            charModalCurrentGameId = game.id;
-            // ✅补丁修改：统一重置局部开关（逻辑+DOM同步），防止跨游戏开关状态残留
-            resetCharModalLocalSwitches();
-            switchCharModalView("charList");
-            renderCharModalCharList();
-        });
-        searchGameWrap.appendChild(div);
+  }
+
+  const cardH = (moduleType === 'stats') ? cardContentH : (CARD_INNER_PAD * 2 + cardContentH);
+
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+
+  let contentY = cardTop + CARD_INNER_PAD;
+  if (moduleTitle && moduleType !== 'other' && moduleType !== 'stats') {
+    drawModuleTitle(painter, wrapX + wrapW / 2, contentY, moduleTitle, config);
+    contentY += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+  }
+
+  if (moduleType === 'stats') {
+    drawStatsContent(painter, wrapX, cardTop, wrapW, annualData, config, imageCache);
+    painter.y = cardTop + cardH;
+  } else if (moduleType === 'other') {
+    painter.y = cardTop + CARD_INNER_PAD;
+    drawOtherContent(painter, designW, annualData, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
+  } else if (moduleType === 'gameGrid' || moduleType === 'charGrid') {
+    const gridData = moduleType === 'gameGrid' ? annualData.gameGrid : annualData.charGrid;
+    const gridKind = moduleType === 'gameGrid' ? 'game' : 'char';
+    const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
+    const footerLabel = moduleType === 'gameGrid' ? '明年最期待' : '还想说';
+    const items = getValidGridItems(gridData, gridKind);
+    painter.y = contentY;
+    drawGridContent(painter, designW, items, gridKind, footerLabel, footer, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
+  } else {
+    const items = getValidItems(moduleType, annualData);
+    const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
+    painter.y = contentY;
+    items.forEach((item, i) => {
+      item._no = i;
+      drawTopItem(painter, designW, item, itemType, imageCache, config);
+      if (i < items.length - 1) painter.shiftY(ITEM_GAP);
+      emitRenderProgress(65 + ((i + 1) / items.length) * 30);
     });
+    painter.shiftY(CARD_INNER_PAD);
+  }
 
-    // 输出到外层wrap：角色块在上，游戏块在下，完全上下分开
-    wrap.innerHTML = "";
-    if(matchedCharacters.length > 0) {
-        wrap.appendChild(searchCharWrap);
-    }
-    if(sortedGames.length > 0) {
-        wrap.appendChild(searchGameWrap);
-    }
+  emitRenderProgress(100);
 
-    // 无结果提示
-    if(matchedCharacters.length === 0 && matchedGames.size === 0){
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏或角色</div>`;
-    }
+  const finalH = painter.getY() + getBodyPad();
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = designW * DPR;
+  outputCanvas.height = Math.max(finalH, designW * 0.4) * DPR;
+  const oCtx = outputCanvas.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = "high";
+  oCtx.fillStyle = config.bg || '#fff7f9';
+  oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+  oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+
+  let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  if (IS_IOS_WEBKIT && !blob) {
+    await new Promise(r => setTimeout(r, 100));
+    blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  }
+
+  if (IS_IOS_WEBKIT) {
+    canvas.width = 0; canvas.height = 0;
+    outputCanvas.width = 0; outputCanvas.height = 0;
+  }
+  return blob;
 }
 
-/**
- * 角色弹窗：渲染当前游戏待选角色列表
- */
-function renderCharModalCharList() {
-    const modal = document.getElementById("annual-global-char-modal");
-    const charWrap = modal.querySelector(".annual-global-char-char-list");
-    charWrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
-    const gameInfo = state.list.find(g=>g.id === charModalCurrentGameId);
-    if(!gameInfo){
-        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
-        return;
+// ===================== 批量导出所有模块 =====================
+export async function renderAllAnnualModules(designW, annualData, config, titleMap, dpr) {
+  const modules = [
+    { type: 'stats', title: titleMap?.stats || '' },
+    { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
+    { type: 'charTop', title: titleMap?.charTop || 'キャラTOP' },
+    { type: 'cpTop', title: titleMap?.cpTop || 'カップルTOP' },
+    { type: 'other', title: '' },
+    { type: 'gameGrid', title: titleMap?.gameGrid || 'ゲーム宫格' },
+    { type: 'charGrid', title: titleMap?.charGrid || 'キャラ宫格' },
+  ];
+  const results = [];
+  for (const mod of modules) {
+    const blob = await renderAnnualModuleCanvas(designW, mod.type, mod.title, annualData, config, dpr);
+    if (blob) {
+      results.push({ moduleType: mod.type, moduleTitle: mod.title, blob });
     }
-    // ========== ✅补丁新增：有相关角色才显示对应单独开关（复用FavList逻辑） ==========
-    const rawCharList = gameInfo.charList || [];
-    const localSwitchVisibility = {
-        "#annual-modal-game-sub-char":   rawCharList.some(c => c.isSub === true),
-        "#annual-modal-game-hide-char":  rawCharList.some(c => c.isHidden === true),
-        "#annual-modal-game-fd-game":    rawCharList.some(c => c.isFD === true),
-        "#annual-modal-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
-    };
-    Object.entries(localSwitchVisibility).forEach(([sel, visible]) => {
-        const inputEl = modal.querySelector(sel);
-        if (!inputEl) return;
-        const switchWrap = inputEl.closest("label")?.parentElement;
-        if (switchWrap) switchWrap.style.display = visible ? "" : "none";
-    });
-    // ========== 补丁结束 ==========
-    // 复制一套getAllGameChar过滤逻辑，使用弹窗本地开关，不碰appData
-    let chars = [...rawCharList];
-    chars = chars.filter(c=>{
-        const isSub = c.isSub ?? false;
-        const isHidden = !!c.isHidden;
-        const isFD = !!c.isFD;
-        const isFdSub = !!c.isFdSub;
-        const showHide = charModalGlobal.hideChar || charModalLocal.hideChar;
-        const showFD = charModalGlobal.fdChar || charModalLocal.fdChar;
-        const showSub = charModalGlobal.subChar || charModalLocal.subChar;
-        const showFdSub = charModalGlobal.fdSubChar || charModalLocal.fdSubChar;
-        if (!isSub && !isHidden && !isFD && !isFdSub) return true;
-        return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
-    });
-    const { sortFilterOptionList } = window.Core || {};
-    let sortedChars = chars;
-    if (typeof sortFilterOptionList === 'function') {
-        const sortedNames = sortFilterOptionList(chars.map(c=>c.name));
-        sortedChars = sortedNames.map(name=>chars.find(c=>c.name===name)).filter(Boolean);
-    } else {
-        sortedChars = [...chars].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
-    }
-    sortedChars.forEach(char=>{
-        if(!char) return;
-        const div = document.createElement("div");
-        div.className = "char-item";
-        // ========== ✅补丁新增：多立绘切换逻辑（复用FavList char-switch-btn） ==========
-        const allSrc = getAnnualCharAvailImages(char);
-        const imgKey = `${charModalCurrentGameId}-${char.id}`;
-        if (!annualCharImgIndex.has(imgKey)) annualCharImgIndex.set(imgKey, 0);
-        let imgIdx = annualCharImgIndex.get(imgKey);
-        if (imgIdx >= allSrc.length) imgIdx = 0;
-        const hasMultiImg = allSrc.length > 1;
-        const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // ========== ✅补丁修改：角色列表卡片名字切换（隐藏或FD开关任一开启） ==========
-        const charListShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
-        const charNameList = getCharNameList(char, charListShowHide);
-        const charTotalNames = charNameList.length;
-        const charCanSwitchName = charTotalNames > 1;
-        if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
-        let charNameIdx = annualCharNameIndex.get(imgKey);
-        if (charNameIdx >= charTotalNames) charNameIdx = 0;
-        const charDisplayName = charNameList[charNameIdx] || char.name;
-        const charNameMultiCls = charCanSwitchName ? "char-name-multi" : "";
-        const charNameSwitchBtns = charCanSwitchName ? `
-            <button class="char-name-switch-btn char-name-switch-prev annual-char-name-prev" data-char-id="${char.id}">&lt;</button>
-            <button class="char-name-switch-btn char-name-switch-next annual-char-name-next" data-char-id="${char.id}">&gt;</button>
-        ` : "";
-        // ========== 补丁结束 ==========
-        div.innerHTML = `
-            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-char-img-prev" data-char-id="${char.id}">&lt;</button>` : ""}
-                <img src="${currentImgSrc}" alt="${charDisplayName}" decoding="async">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next annual-char-img-next" data-char-id="${char.id}">&gt;</button>` : ""}
-            </div>
-            <div class="char-card-name ${charNameMultiCls}">
-                ${charNameSwitchBtns}
-                <span class="char-name-text">${charDisplayName}</span>
-            </div>
-        `;
-        // 切换按钮事件（阻止冒泡，避免触发角色选中）
-        if (hasMultiImg) {
-            const imgEl = div.querySelector("img");
-            const prevBtn = div.querySelector(".annual-char-img-prev");
-            const nextBtn = div.querySelector(".annual-char-img-next");
-            prevBtn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                let idx = annualCharImgIndex.get(imgKey) ?? 0;
-                idx = idx - 1;
-                if (idx < 0) idx = allSrc.length - 1;
-                annualCharImgIndex.set(imgKey, idx);
-                const imgBox = imgEl.closest('.char-card-img-box');
-                if (imgBox) {
-                    await switchCharImageWithLoading(imgBox, getWebImageUrl(allSrc[idx] || ""));
-                } else {
-                    imgEl.src = getWebImageUrl(allSrc[idx] || "");
-                }
-            });
-            nextBtn.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                let idx = annualCharImgIndex.get(imgKey) ?? 0;
-                idx = idx + 1;
-                if (idx >= allSrc.length) idx = 0;
-                annualCharImgIndex.set(imgKey, idx);
-                const imgBox = imgEl.closest('.char-card-img-box');
-                if (imgBox) {
-                    await switchCharImageWithLoading(imgBox, getWebImageUrl(allSrc[idx] || ""));
-                } else {
-                    imgEl.src = getWebImageUrl(allSrc[idx] || "");
-                }
-            });
-        }
-        // ========== ✅补丁新增：角色列表名字切换事件 ==========
-        if (charCanSwitchName) {
-            const nameTextEl = div.querySelector(".char-name-text");
-            const namePrevBtn = div.querySelector(".annual-char-name-prev");
-            const nameNextBtn = div.querySelector(".annual-char-name-next");
-            namePrevBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                let idx = annualCharNameIndex.get(imgKey) ?? 0;
-                idx = (idx - 1 + charTotalNames) % charTotalNames;
-                annualCharNameIndex.set(imgKey, idx);
-                nameTextEl.textContent = charNameList[idx] || char.name;
-            });
-            nameNextBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                let idx = annualCharNameIndex.get(imgKey) ?? 0;
-                idx = (idx + 1) % charTotalNames;
-                annualCharNameIndex.set(imgKey, idx);
-                nameTextEl.textContent = charNameList[idx] || char.name;
-            });
-        }
-        // ========== 补丁结束 ==========
-        div.addEventListener("click",()=>{
-            // ===== 新增：其他-最喜欢的配角 =====
-            if (_activeModalContext === "otherFavSupport") {
-                const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
-                annualData.other.favSupport = {
-                    gameId: charModalCurrentGameId,
-                    charId: char.id,
-                    charName: charNameList[finalNameIdx] || char.name,
-                    coverSrc: allSrc[annualCharImgIndex.get(imgKey) ?? 0] || ""
-                };
-                saveAnnualData();
-                renderOtherFavSupport();
-                closeAnnualGlobalCharModal();
-                return;
-            }
-            // ===== 新增：角色宫格模块 =====
-            if (_activeModalContext === "charGrid" && _activeGridTarget) {
-                const t = _activeGridTarget;
-                const targetItem = (t.type === "fixed") ? annualData.charGrid.fixed[t.index] : annualData.charGrid.custom[t.index];
-                if (targetItem) {
-                    const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
-                    targetItem.gameId = charModalCurrentGameId;
-                    targetItem.charId = char.id;
-                    targetItem.charName = charNameList[finalNameIdx] || char.name;
-                    targetItem.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
-                }
-                if (t.type === "custom") {
-                    annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
-                }
-                saveAnnualData();
-                renderCharGrid();
-                closeAnnualGlobalCharModal();
-                return;
-            }
-            if(activeCharTopItemIndex === null) return;
-            const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
-            if(isDuplicate){
-                alert("该角色已经添加，不可重复添加");
-                return;
-            }
-            const targetItem = annualData.charTopList[activeCharTopItemIndex];
-            targetItem.gameId = charModalCurrentGameId;
-            targetItem.charId = char.id;
-            // ✅补丁新增：保存用户当前选择的名字及索引
-            const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
-            targetItem.nameIndex = finalNameIdx;
-            targetItem.charName = charNameList[finalNameIdx] || char.name;
-            // ✅使用当前选中的立绘索引，而非固定第一张
-            const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
-            targetItem.coverSrc = allSrc[finalIdx] || "";
-            const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
-            const targetDom = charItemDoms[activeCharTopItemIndex];
-            if(targetDom){
-                const nameEl = targetDom.querySelector(".annual-char-name-text");
-                const imgEl = targetDom.querySelector(".annual-char-cover");
-                nameEl.textContent = targetItem.charName;
-                imgEl.src = getWebImageUrl(targetItem.coverSrc);
-                refreshCharTopItemUi(targetDom, targetItem);
-            }
-            saveAnnualData();
-            closeAnnualGlobalCharModal();
-        });
-        charWrap.appendChild(div);
-    });
+  }
+  return results;
 }
 
-/**
- * 角色弹窗视图切换 gameList / charList
- * @param {string} mode
- */
-function switchCharModalView(mode){
-    charModalViewMode = mode;
-    const modal = document.getElementById("annual-global-char-modal");
-    const inner = modal.querySelector(".annual-global-modal-inner");
-    const backBtn = modal.querySelector(".annual-modal-back-btn");
-    // 清除旧视图class
-    inner.classList.remove("char-modal-gamelist-view", "char-modal-charlist-view");
-
-    if(mode === "gameList"){
-        inner.classList.add("char-modal-gamelist-view");
-        backBtn.style.display = "none";
-    }else if(mode === "charList"){
-        inner.classList.add("char-modal-charlist-view");
-        backBtn.style.display = "flex";
-    }
-}
-
-/**
- * 打开角色选择弹窗
- * @param {number} targetIndex charTopList下标 0/1/2
- */
-function openAnnualGlobalCharModal(targetIndex, context){
-    if(!_annualRealInitialized && isGameTemplateReady()){
-        realInitAnnualModule();
-    }
-    _activeModalContext = context || "charTop";
-    activeCharTopItemIndex = (_activeModalContext === "charTop") ? targetIndex : null;
-    const modal = document.getElementById("annual-global-char-modal");
-    if(!modal) return;
-    modal.classList.add("active");
-    // 初始化弹窗状态
-    charModalViewMode = "gameList";
-    charModalCurrentGameId = null;
-    charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    // ✅补丁新增：每次打开弹窗清空立绘索引缓存，避免上次选择残留
-    annualCharImgIndex.clear();
-    // ✅补丁新增：清空名字索引缓存
-    annualCharNameIndex.clear();
-    switchCharModalView("gameList");
-
-    const searchInput = modal.querySelector(".annual-global-char-search-input");
-    searchInput.value = "";
-    searchInput.focus();
-    // 重置开关DOM勾选（对齐HTML真实id）
-    modal.querySelector("#annual-modal-global-sub-char").checked = false;
-    modal.querySelector("#annual-modal-global-hide-char").checked = false;
-    modal.querySelector("#annual-modal-global-fd-game").checked = false;
-    const globalFdSubEl = modal.querySelector("#annual-modal-global-fd-sub-char");
-    if (globalFdSubEl) globalFdSubEl.checked = false;
-    modal.querySelector("#annual-modal-game-sub-char").checked = false;
-    modal.querySelector("#annual-modal-game-hide-char").checked = false;
-    modal.querySelector("#annual-modal-game-fd-game").checked = false;
-    const localFdSubEl = modal.querySelector("#annual-modal-game-fd-sub-char");
-    if (localFdSubEl) localFdSubEl.checked = false;
-
-    renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), "");
-}
-
-/**
- * 关闭角色弹窗
- */
-function closeAnnualGlobalCharModal(){
-    // 仅 charTop 模块需要清理空条目
-    if (_activeModalContext === "charTop" && activeCharTopItemIndex !== null) {
-        const item = annualData.charTopList[activeCharTopItemIndex];
-        if (item && !item.charId) {
-            annualData.charTopList.splice(activeCharTopItemIndex, 1);
-            rebuildCharTopDomAll();
-            bindCharTop3Items();
-            rerenderCharTopNoLabel();
-            saveAnnualData();
-        }
-    }
-    activeCharTopItemIndex = null;
-    _activeModalContext = null;
-    _activeGridTarget = null;
-    charModalViewMode = "gameList";
-    charModalCurrentGameId = null;
-    const modal = document.getElementById("annual-global-char-modal");
-    if(!modal) return;
-    modal.classList.remove("active");
-}
-
-/**
- * 打开年度全局游戏选择弹窗（游戏TOP3）
- */
-function openAnnualGlobalGameModal(targetIndex, context){
-    // 【修复】打开弹窗的时候再次尝试执行业务初始化，如果之前超时还没初始化完成
-    if(!_annualRealInitialized && isGameTemplateReady()){
-        realInitAnnualModule();
-    }
-    _activeModalContext = context || "gameTop";
-    activeTopItemIndex = (_activeModalContext === "gameTop") ? targetIndex : null;
-    const modal = document.getElementById("annual-global-game-modal");
-    if(!modal) return;
-    modal.classList.add("active");
-    const searchInput = modal.querySelector(".annual-global-search-input");
-    const listWrap = modal.querySelector(".annual-global-game-list");
-    searchInput.value = "";
-    searchInput.focus();
-    // 打开弹窗，再次校验模板状态
-    renderGameList(listWrap, "");
-}
-
-/**
- * 关闭年度全局游戏选择弹窗
- */
-function closeAnnualGlobalGameModal(){
-    // 仅 gameTop 模块需要清理空条目
-    if (_activeModalContext === "gameTop" && activeTopItemIndex !== null) {
-        const item = annualData.topList[activeTopItemIndex];
-        if (item && !item.gameId) {
-            annualData.topList.splice(activeTopItemIndex, 1);
-            rebuildGameTopDomAll();
-            bindTop3Items();
-            rerenderGameTopNoLabel();
-            saveAnnualData();
-        }
-    }
-    activeTopItemIndex = null;
-    _activeModalContext = null;
-    _activeGridTarget = null;
-    const modal = document.getElementById("annual-global-game-modal");
-    if(!modal) return;
-    modal.classList.remove("active");
-}
-
-function bindTop3Items() {
-    const topItems = document.querySelectorAll(".annual-top-item");
-    topItems.forEach((item, domIndex)=>{
-        // domIndex：DOM遍历顺序 = 数组真实下标，不再读取data-rank做索引
-        const dataItem = annualData.topList[domIndex];
-        const nameTextEl = item.querySelector(".annual-game-name-text");
-        const textarea = item.querySelector(".annual-top-textarea");
-        const coverImg = item.querySelector(".annual-top-cover");
-
-        nameTextEl.textContent = dataItem.gameName ?? "";
-        textarea.value = dataItem.text ?? "";
-        if(dataItem.coverSrc){
-            coverImg.src = getWebImageUrl(dataItem.coverSrc);
-        }
-        refreshTopItemUi(item, dataItem);
-
-        textarea.removeEventListener("input", textarea._inputHandler);
-        textarea._inputHandler = ()=>{
-            annualData.topList[domIndex].text = textarea.value;
-            saveAnnualData();
-        };
-        textarea.addEventListener("input", textarea._inputHandler);
-    });
-}
-
-function bindCharTop3Items() {
-    const charItems = document.querySelectorAll(".annual-char-top-item");
-    charItems.forEach((item, domIndex)=>{
-        const dataItem = annualData.charTopList[domIndex];
-        const nameTextEl = item.querySelector(".annual-char-name-text");
-        const textarea = item.querySelector(".annual-char-textarea");
-        const coverImg = item.querySelector(".annual-char-cover");
-
-        nameTextEl.textContent = dataItem.charName ?? "";
-        textarea.value = dataItem.text ?? "";
-        if(dataItem.coverSrc){
-            coverImg.src = getWebImageUrl(dataItem.coverSrc);
-        }
-        refreshCharTopItemUi(item, dataItem);
-
-        textarea.removeEventListener("input", textarea._charInputHandler);
-        textarea._charInputHandler = ()=>{
-            annualData.charTopList[domIndex].text = textarea.value;
-            saveAnnualData();
-        };
-        textarea.addEventListener("input", textarea._charInputHandler);
-    });
-}
-
-/**
- * ✅新增：绑定カップルTOP全部条目（名称、双封面、感想框）
- */
-function bindCpTop3Items() {
-    const cpItems = document.querySelectorAll(".annual-cp-top-item");
-    cpItems.forEach((item, domIndex)=>{
-        const dataItem = annualData.cpTopList[domIndex];
-        if(!dataItem) return;
-        const nameTextEl = item.querySelector(".annual-cp-name-text");
-        const textarea = item.querySelector(".annual-cp-textarea");
-        const femaleImg = item.querySelector(".annual-cp-female-cover");
-        const maleImg = item.querySelector(".annual-cp-male-cover");
-        // ✅修改点9a：名称显示为"女角色×男角色"
-        nameTextEl.textContent = `${dataItem.femaleName ?? ''}×${dataItem.maleName ?? ''}`;
-        textarea.value = dataItem.text ?? "";
-        if(dataItem.femaleCoverSrc) femaleImg.src = getWebImageUrl(dataItem.femaleCoverSrc);
-        if(dataItem.maleCoverSrc) maleImg.src = getWebImageUrl(dataItem.maleCoverSrc);
-        refreshCpTopItemUi(item, dataItem);
-        textarea.removeEventListener("input", textarea._cpInputHandler);
-        textarea._cpInputHandler = ()=>{
-            annualData.cpTopList[domIndex].text = textarea.value;
-            saveAnnualData();
-        };
-        textarea.addEventListener("input", textarea._cpInputHandler);
-    });
-}
-
-/**
- * ✅新增：拖拽后，刷新游戏TOP全部NO.N标签文本（根据数组真实下标，不依赖data-rank）
- */
-function rerenderGameTopNoLabel(){
-    const items = Array.from(document.querySelectorAll(".annual-top-item"));
-    items.forEach((dom, arrIdx)=>{
-        const labelEl = dom.querySelector(".annual-top-label");
-        labelEl.textContent = `NO.${arrIdx+1}`;
-        dom.dataset.rank = String(arrIdx + 1); // 同步更新属性
-    });
-}
-/**
- * ✅新增：拖拽后，刷新角色TOP全部NO.N标签文本
- */
-function rerenderCharTopNoLabel(){
-    const items = Array.from(document.querySelectorAll(".annual-char-top-item"));
-    items.forEach((dom, arrIdx)=>{
-        const labelEl = dom.querySelector(".annual-top-label");
-        labelEl.textContent = `NO.${arrIdx+1}`;
-        dom.dataset.rank = String(arrIdx + 1); //同步更新属性
-    });
-}
-
-function rerenderCpTopNoLabel(){
-    const items = Array.from(document.querySelectorAll(".annual-cp-top-item"));
-    items.forEach((dom, arrIdx)=>{
-        const labelEl = dom.querySelector(".annual-top-label");
-        labelEl.textContent = `NO.${arrIdx+1}`;
-        dom.dataset.rank = String(arrIdx + 1);
-    });
-}
-
-/**
- * 【问题②】动态追加游戏TOP DOM条目，不限数量
- */
-function appendNewGameTopDom(){
-    const container = document.getElementById("annual-game-top-drag-container");
-    const itemDom = document.createElement("div");
-    itemDom.className = "annual-top-item";
-    itemDom.dataset.dragType = "game-top";
-    // 不写死NO.xxx、不写死data-rank，全部交给rerenderGameTopNoLabel
-    itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty">
-            <div class="annual-top-label"></div>
-            <div class="annual-game-name-text"></div>
-            <button class="annual-item-delete-btn" data-type="game">×</button>
-        </div>
-        <div class="annual-top-content-row hidden-when-empty">
-            <div class="annual-top-cover-wrap">
-                <img class="annual-top-cover" alt="">
-            </div>
-            <div class="annual-top-text-wrap">
-                <div class="annual-custom-text-wrap">
-                    <textarea class="annual-top-textarea" placeholder="自定义文本"></textarea>
-                    <div class="resize-handle"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    container.appendChild(itemDom);
-    bindTop3Items();
-    rerenderGameTopNoLabel();
-}
-
-/**
- * 【问题②】动态追加角色TOP DOM条目，不限数量
- */
-function appendNewCharTopDom(){
-    const container = document.getElementById("annual-char-top-drag-container");
-    const itemDom = document.createElement("div");
-    itemDom.className = "annual-char-top-item";
-    itemDom.dataset.dragType = "char-top";
-    itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty">
-            <div class="annual-top-label"></div>
-            <div class="annual-char-name-text"></div>
-            <button class="annual-item-delete-btn" data-type="char">×</button>
-        </div>
-        <div class="annual-char-top-content-row hidden-when-empty">
-            <div class="annual-char-cover-wrap">
-                <img class="annual-char-cover" alt="">
-            </div>
-            <div class="annual-char-text-wrap">
-                <div class="annual-custom-text-wrap">
-                    <textarea class="annual-char-textarea" placeholder="自定义文本"></textarea>
-                    <div class="resize-handle"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    container.appendChild(itemDom);
-    bindCharTop3Items();
-    rerenderCharTopNoLabel();
-}
-
-/**
- * ✅新增：动态追加カップルTOP DOM条目
- */
-function appendNewCpTopDom(){
-    const container = document.getElementById("annual-cp-top-drag-container");
-    const itemDom = document.createElement("div");
-    itemDom.className = "annual-cp-top-item";
-    itemDom.dataset.dragType = "cp-top";
-    itemDom.innerHTML = `
-        <div class="annual-top-label-row hidden-when-empty">
-            <div class="annual-top-label"></div>
-            <div class="annual-cp-name-text"></div>
-            <button class="annual-item-delete-btn" data-type="cp">×</button>
-        </div>
-        <div class="annual-cp-top-content-row hidden-when-empty">
-            <div class="annual-cp-cover-wrap">
-                <img class="annual-cp-female-cover" alt="">
-                <img class="annual-cp-male-cover" alt="">
-            </div>
-            <div class="annual-cp-text-wrap">
-                <div class="annual-custom-text-wrap">
-                    <textarea class="annual-cp-textarea" placeholder="自定义文本"></textarea>
-                    <div class="resize-handle"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    container.appendChild(itemDom);
-    bindCpTop3Items();
-    rerenderCpTopNoLabel();
-}
-
-/**
- * 根据 topList 数组完整重建游戏TOP DOM，初始化使用
- */
-function rebuildGameTopDomAll(){
-    const container = document.getElementById("annual-game-top-drag-container");
-    container.innerHTML = "";
-    annualData.topList.forEach(()=>{
-        appendNewGameTopDom();
-    });
-}
-
-/**
- * 根据 charTopList 数组完整重建角色TOP DOM，初始化使用
- */
-function rebuildCharTopDomAll(){
-    const container = document.getElementById("annual-char-top-drag-container");
-    container.innerHTML = "";
-    annualData.charTopList.forEach(()=>{
-        appendNewCharTopDom();
-    });
-}
-
-function rebuildCpTopDomAll(){
-    const container = document.getElementById("annual-cp-top-drag-container");
-    if(!container) return;
-    container.innerHTML = "";
-    annualData.cpTopList.forEach(()=>{
-        appendNewCpTopDom();
-    });
-}
-
-// ===================== 五、其他 模块 =====================
-function renderOtherAlsoPlayed() {
-    const content = document.getElementById("annual-other-also-content");
-    if (!content) return;
-    const list = annualData.other.alsoPlayed || [];
-    if (list.length === 0) {
-        content.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addAlso">+</button>`;
-        return;
-    }
-    let html = `<div class="annual-other-also-list">`;
-    list.forEach((item, idx) => {
-        html += `
-            <div class="annual-other-also-item">
-                <img class="annual-other-also-cover" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}" data-other-also-index="${idx}">
-                <button class="annual-other-also-remove" data-other-also-remove="${idx}">×</button>
-            </div>`;
-    });
-    html += `</div><button class="annual-grid-add-btn annual-other-also-add-more" data-other-action="addAlso">+</button>`;
-    content.innerHTML = html;
-}
-
-function renderOtherFavCp() {
-    const body = document.getElementById("annual-other-favcp-body");
-    if (!body) return;
-    const cp = annualData.other.favCp;
-    if (!cp || !cp.femaleId || !cp.maleId) {
-        body.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>`;
-        return;
-    }
-    body.innerHTML = `
-        <div class="annual-other-cp-preview">
-            <img src="${getWebImageUrl(cp.femaleCoverSrc)}" alt="${cp.femaleName}">
-            <img src="${getWebImageUrl(cp.maleCoverSrc)}" alt="${cp.maleName}">
-        </div>
-        <button class="annual-other-mini-remove" data-other-action="removeFavCp">×</button>`;
-}
-
-function renderOtherFavSupport() {
-    const body = document.getElementById("annual-other-favsupport-body");
-    if (!body) return;
-    const sup = annualData.other.favSupport;
-    if (!sup || !sup.charId) {
-        body.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addFavSupport">+</button>`;
-        return;
-    }
-    body.innerHTML = `
-        <div class="annual-other-support-preview">
-            <img src="${getWebImageUrl(sup.coverSrc)}" alt="${sup.charName}">
-        </div>
-        <button class="annual-other-mini-remove" data-other-action="removeFavSupport">×</button>`;
-}
-
-function bindOtherTextareas() {
-    document.querySelectorAll('.annual-other-textarea[data-other-key]').forEach(ta => {
-        const key = ta.dataset.otherKey;
-        ta.value = annualData.other[key] ?? "";
-        ta.removeEventListener("input", ta._handler);
-        ta._handler = () => { annualData.other[key] = ta.value; saveAnnualData(); };
-        ta.addEventListener("input", ta._handler);
-    });
-    // 宫格底部文本框
-    const gameFooter = document.getElementById("annual-game-grid-footer-text");
-    if (gameFooter) {
-        gameFooter.value = annualData.gameGrid.nextYearExpect ?? "";
-        gameFooter.removeEventListener("input", gameFooter._handler);
-        gameFooter._handler = () => { annualData.gameGrid.nextYearExpect = gameFooter.value; saveAnnualData(); };
-        gameFooter.addEventListener("input", gameFooter._handler);
-    }
-    const charFooter = document.getElementById("annual-char-grid-footer-text");
-    if (charFooter) {
-        charFooter.value = annualData.charGrid.extraThoughts ?? "";
-        charFooter.removeEventListener("input", charFooter._handler);
-        charFooter._handler = () => { annualData.charGrid.extraThoughts = charFooter.value; saveAnnualData(); };
-        charFooter.addEventListener("input", charFooter._handler);
-    }
-}
-
-// ===== 新增：模块五末尾自定义卡片 =====
-function renderOtherCustomCards() {
-    const row = document.getElementById("annual-other-cards-row");
-    if (!row) return;
-    // 清理旧的自定义卡片（保留前6个静态框）
-    row.querySelectorAll('.annual-other-custom-card').forEach(el => el.remove());
-    // 至少保留一个空白自定义卡片
-    if (!annualData.other.customCards || annualData.other.customCards.length === 0) {
-        annualData.other.customCards = [{label: "", text: ""}];
-    }
-    annualData.other.customCards.forEach((card, idx) => {
-        const div = document.createElement("div");
-        div.className = "annual-other-card annual-other-custom-card";
-        div.innerHTML = `
-            <button class="annual-other-custom-remove" data-other-custom-remove="${idx}">×</button>
-            <input class="annual-other-custom-label" data-other-custom-label="${idx}" placeholder="自定义标签" value="${card.label ?? ''}">
-            <div class="annual-custom-text-wrap">
-                <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-custom-text="${idx}">${card.text ?? ''}</textarea>
-                <div class="resize-handle"></div>
-            </div>`;
-        row.appendChild(div);
-    });
-    // 绑定标签输入：填写后自动追加新空白卡片
-    row.querySelectorAll('.annual-other-custom-label').forEach(input => {
-        input.removeEventListener("input", input._handler);
-        input._handler = () => {
-            const idx = Number(input.dataset.otherCustomLabel);
-            annualData.other.customCards[idx].label = input.value;
-            // 如果是最后一个且标签非空，追加新空白卡片
-            if (idx === annualData.other.customCards.length - 1 && input.value.trim() !== "") {
-                annualData.other.customCards.push({label: "", text: ""});
-                saveAnnualData();
-                renderOtherCustomCards();
-                return;
-            }
-            saveAnnualData();
-        };
-        input.addEventListener("input", input._handler);
-    });
-    // 绑定文本输入
-    row.querySelectorAll('.annual-other-textarea[data-other-custom-text]').forEach(ta => {
-        ta.removeEventListener("input", ta._handler);
-        ta._handler = () => {
-            const idx = Number(ta.dataset.otherCustomText);
-            annualData.other.customCards[idx].text = ta.value;
-            saveAnnualData();
-        };
-        ta.addEventListener("input", ta._handler);
-    });
-}
-
-function rebuildOtherModule() {
-    renderOtherAlsoPlayed();
-    renderOtherFavCp();
-    renderOtherFavSupport();
-    renderOtherCustomCards();
-    bindOtherTextareas();
-}
-
-// ===================== 六、ゲーム宫格 模块 =====================
-function renderGameGrid() {
-    const container = document.getElementById("annual-game-grid-container");
-    if (!container) return;
-    let html = "";
-    // 固定项
-    annualData.gameGrid.fixed.forEach((item, idx) => {
-        html += renderGameGridItem(item, "fixed", idx);
-    });
-    // 自定义项（至少保留一个空白）
-    if (!annualData.gameGrid.custom || annualData.gameGrid.custom.length === 0) {
-        annualData.gameGrid.custom = [{label: "", gameId: "", gameName: "", coverSrc: ""}];
-    }
-    annualData.gameGrid.custom.forEach((item, idx) => {
-        html += renderGameGridItem(item, "custom", idx);
-    });
-    container.innerHTML = html;
-    // 绑定自定义标签输入
-    container.querySelectorAll('.annual-grid-custom-label').forEach(input => {
-        const type = input.dataset.gridType;
-        const idx = Number(input.dataset.gridIndex);
-        const item = (type === "fixed") ? annualData.gameGrid.fixed[idx] : annualData.gameGrid.custom[idx];
-        input.value = item?.label ?? "";
-        input.removeEventListener("input", input._handler);
-        input._handler = () => { if(item) { item.label = input.value; saveAnnualData(); } };
-        input.addEventListener("input", input._handler);
-    });
-}
-
-function renderGameGridItem(item, type, idx) {
-    const hasGame = !!(item && item.gameId);
-    // 有图时显示×（删图）；自定义框无图时也显示×（删整个框）；固定框无图时不显示×
-    const showRemoveBtn = hasGame || type === "custom";
-    const removeBtn = showRemoveBtn
-        ? `<button class="annual-grid-remove-btn" data-grid-remove="game" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
-        : "";
-    const coverBox = hasGame
-        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">${removeBtn}`
-        : `<button class="annual-grid-add-btn" data-grid-action="addGame" data-grid-type="${type}" data-grid-index="${idx}">+</button>${removeBtn}`;
-    const labelEl = (type === "custom")
-        ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
-        : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
-    return `
-        <div class="annual-grid-item ${hasGame ? 'has-cover' : ''}">
-            <div class="annual-grid-cover-box ${hasGame ? 'filled' : 'empty'}">
-                ${coverBox}
-            </div>
-            ${labelEl}
-        </div>`;
-}
-
-// ===================== 七、キャラ宫格 模块 =====================
-function renderCharGrid() {
-    const container = document.getElementById("annual-char-grid-container");
-    if (!container) return;
-    let html = "";
-    annualData.charGrid.fixed.forEach((item, idx) => {
-        html += renderCharGridItem(item, "fixed", idx);
-    });
-    if (!annualData.charGrid.custom || annualData.charGrid.custom.length === 0) {
-        annualData.charGrid.custom = [{label: "", gameId: "", charId: "", charName: "", coverSrc: ""}];
-    }
-    annualData.charGrid.custom.forEach((item, idx) => {
-        html += renderCharGridItem(item, "custom", idx);
-    });
-    container.innerHTML = html;
-    container.querySelectorAll('.annual-grid-custom-label').forEach(input => {
-        const type = input.dataset.gridType;
-        const idx = Number(input.dataset.gridIndex);
-        const item = (type === "fixed") ? annualData.charGrid.fixed[idx] : annualData.charGrid.custom[idx];
-        input.value = item?.label ?? "";
-        input.removeEventListener("input", input._handler);
-        input._handler = () => { if(item) { item.label = input.value; saveAnnualData(); } };
-        input.addEventListener("input", input._handler);
-    });
-}
-
-function renderCharGridItem(item, type, idx) {
-    const hasChar = !!(item && item.charId);
-    const showRemoveBtn = hasChar || type === "custom";
-    const removeBtn = showRemoveBtn
-        ? `<button class="annual-grid-remove-btn" data-grid-remove="char" data-grid-type="${type}" data-grid-index="${idx}">×</button>`
-        : "";
-    const coverBox = hasChar
-        ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">${removeBtn}`
-        : `<button class="annual-grid-add-btn" data-grid-action="addChar" data-grid-type="${type}" data-grid-index="${idx}">+</button>${removeBtn}`;
-    const labelEl = (type === "custom")
-        ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
-        : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
-    return `
-        <div class="annual-grid-item ${hasChar ? 'has-cover' : ''}">
-            <div class="annual-grid-cover-box ${hasChar ? 'filled' : 'empty'}">
-                ${coverBox}
-            </div>
-            ${labelEl}
-        </div>`;
-}
-// ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
-function bindTouchDrag(){
-    // 游戏TOP触摸拖拽
-    setupTouchSort("#annual-game-top-drag-container", annualData.topList, ()=>{
-        bindTop3Items();
-        rerenderGameTopNoLabel();
-        saveAnnualData();
-    });
-    // 角色TOP触摸拖拽
-    setupTouchSort("#annual-char-top-drag-container", annualData.charTopList, ()=>{
-        bindCharTop3Items();
-        rerenderCharTopNoLabel();
-        saveAnnualData();
-    });
-    // ✅新增：CP TOP触摸拖拽
-    setupTouchSort("#annual-cp-top-drag-container", annualData.cpTopList, ()=>{
-        bindCpTop3Items();
-        rerenderCpTopNoLabel();
-        saveAnnualData();
-    });
-}
-
-/**
- * 统一排序工具函数：PC鼠标 / Mobile触摸 共用
- * 行为：长按NO+名称行2000ms进入选中模式
- *  - 进入选中模式：源卡片外层卡片虚线#f6a5b8高亮；出现红色插入指示横线
- *  - 松手后可以自由滚动页面，鼠标hover卡片更新指示线位置，**第一次点击横线变色，第二次点击执行【移动插入splice】，不是交换**
- *  - 再次长按任意NO+名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑
- * @param {string} containerSel 容器选择器
- * @param {Array} dataArr 对应数据数组
- * @param {Function} afterSort 插入完成回调
- */
-function setupTouchSort(containerSel, dataArr, afterSort){
-    const container = document.querySelector(containerSel);
-    if (!container) return;
-    // -------- 内部状态 --------
-    let pressTimer = null;
-    let touchStartY = null;
-    let touchStartX = null;
-    // 选中锁定模式状态
-    let selectedItem = null;
-    let selectedIndex = null;
-    // PC鼠标按下临时变量
-    let mouseStartY = null;
-    let mouseStartX = null;
-    // ✅防止长按松手后立刻触发click误清除选中
-    let selectCoolDown = false;
-    let selectedFirstClickAfterEnter = false;
-
-    // 清除选中状态、**销毁全部**插入指示线DOM
-    function clearSelectState(){
-        if(selectedItem){
-            selectedItem.classList.remove("sort-selected-item");
-            selectedItem.classList.remove("sort-lock-layout");
-        }
-        selectedItem = null;
-        selectedIndex = null;
-        selectCoolDown = false;
-        selectedFirstClickAfterEnter = false;
-        // 删除容器内所有横线DOM
-        const allIndicators = Array.from(container.querySelectorAll(".sort-insert-indicator"));
-        allIndicators.forEach(el=>{
-            if(el.parentNode) el.parentNode.removeChild(el);
-        });
-    }
-
-    /**
-     * 进入排序模式：批量生成全部卡片之间的插入横线DOM
-     * 每条横线挂载 dataset.beforeIndex：代表插入到第beforeIndex条卡片之前
-     */
-    function renderAllInsertIndicators() {
-        if(!selectedItem) return;
-        const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
-        if(items.length === 0) return;
-        // 统一创建横线的工厂函数（避免前后两处重复写onclick逻辑）
-        function createIndicator(beforeIndex) {
-            const indicatorDom = document.createElement("div");
-            indicatorDom.className = "sort-insert-indicator";
-            indicatorDom.dataset.beforeIndex = String(beforeIndex);
-            indicatorDom.dataset.firstClick = "false";
-            indicatorDom.onclick = function(){
-                if(selectedIndex === null) return;
-                const bIndex = Number(indicatorDom.dataset.beforeIndex);
-                const isFirst = indicatorDom.dataset.firstClick === "true";
-                if(!isFirst){
-                    // 第一次点击：变红
-                    indicatorDom.classList.add("active-hit");
-                    indicatorDom.dataset.firstClick = "true";
-                    return;
-                }
-                // 第二次点击：执行插入
-                // 边界：选中条目已经就在目标位置，直接退出
-                if(selectedIndex === bIndex || selectedIndex === bIndex -1){
-                    clearSelectState();
-                    return;
-                }
-                const temp = dataArr.splice(selectedIndex, 1)[0];
-                const insertPos = (bIndex > selectedIndex) ? bIndex - 1 : bIndex;
-                dataArr.splice(insertPos, 0, temp);
-                afterSort();
-                // 插入完成自动退出排序模式
-                clearSelectState();
-            };
-            return indicatorDom;
-        }
-        // 循环：在每一个item前面插入指示线（beforeIndex = 0 ~ items.length-1）
-        items.forEach((beforeItemDom, beforeIndex)=>{
-            const indicatorDom = createIndicator(beforeIndex);
-            beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
-        });
-        // ✅新增：在最后一个item后面追加一条横线（beforeIndex = items.length），支持插入到最后一位
-        const lastIndicator = createIndicator(items.length);
-        container.appendChild(lastIndicator);
-    }
-
-    // 长按1000ms进入锁定选中模式
-    function enterSelectMode(itemDom, itemIndex){
-        // 如果长按当前已经选中的条目：直接退出选中模式（需求：再次长按NO/封面退出）
-        if(selectedItem === itemDom){
-            clearSelectState();
-            console.log("[sort] 退出选中模式");
-            return;
-        }
-        if(selectedItem !== null){
-            clearSelectState();
-        }
-        selectedItem = itemDom;
-        selectedIndex = itemIndex;
-        selectedItem.classList.add("sort-selected-item");
-        selectedItem.classList.add("sort-lock-layout");
-        console.log("[sort] 进入选中模式 index=", itemIndex);
-        selectedFirstClickAfterEnter = true;
-        selectCoolDown = true;
-        setTimeout(()=>{
-            selectCoolDown = false;
-        },300);
-        // ✅进入排序模式，批量生成全部卡片中间横线
-        renderAllInsertIndicators();
-    }
-
-    // ============ 移动端 touch 事件 ============
-    container.addEventListener("touchstart", (e) => {
-        if(pressTimer !== null){
-            clearTimeout(pressTimer);
-            pressTimer = null;
-        }
-        // 触发源：NO+名称行 / 内容封面区域
-        const targetRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row, .annual-cp-top-content-row");
-        if (!targetRow) {
-            return;
-        }
-        const itemDom = targetRow.closest(".annual-top-item,.annual-char-top-item,.annual-cp-top-item");
-        if (!itemDom) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            return;
-        }
-
-        // ========= 新增判断：只在 NO标签 / 名称文本 / 封面图片 才执行 preventDefault =========
-        const hitDragTrigger = !!e.target.closest(`
-            .annual-top-label,
-            .annual-game-name-text,
-            .annual-char-name-text,
-            .annual-cp-name-text,
-            .annual-top-cover,
-            .annual-char-cover,
-            .annual-cp-female-cover,
-            .annual-cp-male-cover
-        `);
-        // textarea、空白区域一律不阻止默认
-        if(hitDragTrigger){
-            e.preventDefault();
-        }
-
-        const touch = e.touches[0];
-        touchStartY = touch.clientY;
-        touchStartX = touch.clientX;
-        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
-        const idx = allItems.indexOf(itemDom);
-        pressTimer = setTimeout(() => {
-            enterSelectMode(itemDom, idx);
-        }, 1000);
-    }, {passive: false});
-
-    // ✅【重大修改】touchmove：**只处理还未触发长按阶段的移动阈值判断；进入选中模式后完全不操作指示线，删除updateIndicatorByPoint调用**
-    container.addEventListener("touchmove", (e) => {
-        if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
-            const touch = e.touches[0];
-            const deltaY = Math.abs(touch.clientY - touchStartY);
-            const deltaX = Math.abs(touch.clientX - touchStartX);
-            if(deltaY > 12 || deltaX >12){
-                clearTimeout(pressTimer);
-                pressTimer = null;
-            }
-        }
-        // 选中模式：不再做任何横线跟随移动逻辑；页面可以自由滑动
-    }, { passive: true });
-
-    container.addEventListener("touchend", () => {
-        if(pressTimer !== null){
-            clearTimeout(pressTimer);
-            pressTimer = null;
-        }
-        touchStartY = null;
-        touchStartX = null;
-    }, { passive: true });
-
-    container.addEventListener("touchcancel", () => {
-        if(pressTimer !== null){
-            clearTimeout(pressTimer);
-            pressTimer = null;
-        }
-        touchStartY = null;
-        touchStartX = null;
-    }, { passive: true });
-
-    // ============ PC鼠标 mousedown 长按1000ms逻辑 ============
-    container.addEventListener("mousedown", (e)=>{
-        const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row, .annual-cp-top-content-row");
-        if (!labelRow) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            return;
-        }
-        const itemDom = labelRow.closest(".annual-top-item,.annual-char-top-item,.annual-cp-top-item");
-        if (!itemDom) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            return;
-        }
-        // ✅关键修复：点击文本框/输入框/拖拽手柄/删除按钮时，直接放行，不阻止默认行为，不触发长按排序
-        if (e.target.closest("textarea, input, .resize-handle, .annual-item-delete-btn")) {
-            return;
-        }
-        // ✅只在 NO标签 / 名称文本 / 封面图片 上才阻止默认并进入长按排序（与移动端 touchstart 的 hitDragTrigger 完全对齐）
-        const hitDragTrigger = !!e.target.closest(`
-            .annual-top-label,
-            .annual-game-name-text,
-            .annual-char-name-text,
-            .annual-cp-name-text,
-            .annual-top-cover,
-            .annual-char-cover,
-            .annual-cp-female-cover,
-            .annual-cp-male-cover
-        `);
-        if (!hitDragTrigger) {
-            // 点击 content-row 空白区域（非封面非文本框），也不阻止，不触发排序
-            return;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-        mouseStartY = e.clientY;
-        mouseStartX = e.clientX;
-        const allItems = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
-        const idx = allItems.indexOf(itemDom);
-        pressTimer = setTimeout(()=>{
-            enterSelectMode(itemDom, idx);
-        },1000);
-
-        function onMouseMove(me){
-            // mousemove：仅长按未触发时判断移动阈值；进入排序模式**彻底删除更新指示线逻辑**
-            if(pressTimer !== null){
-                const deltaY = Math.abs(me.clientY - mouseStartY);
-                const deltaX = Math.abs(me.clientX - mouseStartX);
-                if(deltaY>12 || deltaX>12){
-                    clearTimeout(pressTimer);
-                    pressTimer = null;
-                }
-            }
-        }
-        function onMouseUp(){
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            mouseStartY = null;
-            mouseStartX = null;
-            document.removeEventListener("mousemove", onMouseMove);
-            document.removeEventListener("mouseup", onMouseUp);
-        }
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
-    });
-
-    // 容器内点击事件
-    container.addEventListener("click", (e)=>{
-        if(!selectedItem) return;
-        if(selectCoolDown) return;
-        // 如果点击对象是横线，onclick已经在DOM回调处理，此处直接return
-        const clickIndicator = e.target.closest(".sort-insert-indicator");
-        if(clickIndicator){
-            return;
-        }
-        const clickItem = e.target.closest(".annual-top-item,.annual-char-top-item,.annual-cp-top-item");
-        if(selectedFirstClickAfterEnter){
-            selectedFirstClickAfterEnter = false;
-            return;
-        }
-        // 点击空白 / 其他卡片，不会退出；只有再次长按NO/封面区域才退出（符合需求）
-    });
-}
-
-/**
- * 更新滑块进度百分比
- * @param {HTMLInputElement} sliderEl
- */
-function updateSliderProgress(sliderEl) {
-    const min = Number(sliderEl.min);
-    const max = Number(sliderEl.max);
-    const val = Number(sliderEl.value);
-    const percent = ((val - min) / (max - min)) * 100;
-    const rowWrap = sliderEl.closest('.font-size-set-row');
-    if(rowWrap){
-        rowWrap.style.setProperty('--annual-slider-progress', `${percent}%`);
-    }
-}
-
-/**
- * 从DOM读取年度报告各模块标题（去掉序号前缀）
- */
-function getAnnualModuleTitles() {
-    const cards = document.querySelectorAll('.mode-wrap[data-mode="annual"] .big-card');
-    const titles = { stats: '', gameTop: '', charTop: '', cpTop: '' };
-    const keys = ['stats', 'gameTop', 'charTop', 'cpTop'];
-    cards.forEach((card, i) => {
-        if (i >= keys.length) return;
-        const h2 = card.querySelector('h2');
-        if (!h2) return;
-        // 去掉"数字+顿号"前缀，如"二、TOP" → "TOP"
-        const raw = h2.textContent.trim();
-        const cleaned = raw.replace(/^[一二三四五六七八九十\d]+[、.]\s*/, '');
-        titles[keys[i]] = cleaned;
-    });
-    return titles;
-}
-
-/**
- * ✅新增：年度报告感想框垂直拖拽（PC鼠标+移动端touch兼容）
- * 对齐 script.js bindTextareaResizeHandler 逻辑
- */
-function bindAnnualTextareaResize() {
-    document.querySelectorAll('.annual-custom-text-wrap .resize-handle').forEach(handle => {
-        if (handle.dataset.resizeBinded === "1") return;
-        handle.dataset.resizeBinded = "1";
-        const wrap = handle.closest('.annual-custom-text-wrap');
-        const textarea = wrap.querySelector('textarea');
-        if (!textarea) return;
-        let startY = 0, startHeight = 0, isDragging = false;
-        function dragStart(y) {
-            isDragging = true;
-            startY = y;
-            startHeight = textarea.clientHeight;
-            document.body.style.cursor = "ns-resize";
-            document.body.style.touchAction = "none";
-        }
-        function dragMove(y) {
-            if (!isDragging) return;
-            const newHeight = Math.max(60, startHeight + (y - startY));
-            textarea.style.height = newHeight + "px";
-        }
-        function dragEnd() {
-            if (!isDragging) return;
-            isDragging = false;
-            document.body.style.cursor = "";
-            document.body.style.touchAction = "";
-        }
-        handle.addEventListener('mousedown', (e) => { e.preventDefault(); dragStart(e.clientY); });
-        handle.addEventListener('touchstart', (e) => { e.preventDefault(); dragStart(e.touches[0].clientY); }, {passive:false});
-        document.addEventListener('mousemove', (e) => dragMove(e.clientY));
-        document.addEventListener('mouseup', dragEnd);
-        document.addEventListener('touchmove', (e) => { if(isDragging) dragMove(e.touches[0].clientY); }, {passive:true});
-        document.addEventListener('touchend', dragEnd);
-    });
-}
-
-/**
- * ✅新增：将需要影响 mode-wrap 外部元素（整个页面背景、site-title大标题）的颜色同步到 .wrap
- * 因为 .site-title 和 .mode-switch-wrap 在 .mode-wrap 外面，继承不到 mode-wrap 上的变量
- */
-function applyAnnualPageColors() {
-    const wrapEl = document.querySelector('.wrap');
-    if (!wrapEl) return;
-    wrapEl.style.backgroundColor = annualExportConfig.bg;
-    wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
-    // ✅同步设置body背景色，让视口两侧（.wrap最大宽度之外的区域）也跟着变色
-    document.body.style.backgroundColor = annualExportConfig.bg;
-}
-
-/**
- * 年度报告导出面板绑定
- */
-function bindAnnualExportPanel() {
-    // ✅关键修复：CSS变量设在mode-wrap元素自身（内联样式覆盖CSS规则中的硬编码值），
-    // 不能设在body上——.mode-wrap[data-mode="annual"]规则中硬编码的变量会遮蔽body继承值
-    const annualWrap = document.querySelector('.mode-wrap[data-mode="annual"]') || document.body;
-    const btnResetColor = document.getElementById("annual-btn-reset-color");
-    const colorBg = document.getElementById("annual-color-bg");
-    const colorTitle = document.getElementById("annual-color-title");
-    const colorGamename = document.getElementById("annual-color-gamename");
-    const colorCustomtext = document.getElementById("annual-color-customtext");
-    const colorBorder = document.getElementById("annual-color-border");
-    // ✅新增4个颜色选择器元素
-    const colorSubtitle = document.getElementById("annual-color-subtitle");
-    const colorStattext = document.getElementById("annual-color-stattext");
-    const colorStatdata = document.getElementById("annual-color-statdata");
-    const colorCustomborder = document.getElementById("annual-color-customborder");
-    // ✅修改点8：新增四个控件元素引用
-    const colorLabelcolor = document.getElementById("annual-color-labelcolor");
-    const colorBoxbg = document.getElementById("annual-color-boxbg");
-    const colorReportercolor = document.getElementById("annual-color-reportercolor");
-    const reporterNameInput = document.getElementById("annual-reporter-name");
-    const sliderFont = document.getElementById("annual-slider-custom-text-font");
-    const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
-    const btnExportImage = document.getElementById("annual-btn-export-image");
-    const useSummaryTitleEl = document.getElementById("annual-use-summary-title");
-    const normalQualityEl = document.getElementById("annual-export-normal-quality");
-    const canvasEl = document.getElementById("annual-export-canvas");
-    const snapshotBox = document.getElementById("snapshot-container");
-
-    if (!btnResetColor || !colorBg || !colorTitle || !colorGamename || !colorCustomtext || !colorBorder || !sliderFont || !fontValueDisplay || !btnExportImage || !canvasEl || !snapshotBox) {
-        return;
-    }
-
-    colorBg.value = annualExportConfig.bg;
-    colorTitle.value = annualExportConfig.title;
-    colorGamename.value = annualExportConfig.gamename;
-    colorCustomtext.value = annualExportConfig.customtext;
-    colorBorder.value = annualExportConfig.border;
-    // ✅新增4个颜色初始化
-    colorSubtitle.value = annualExportConfig.subtitle;
-    colorStattext.value = annualExportConfig.stattext;
-    colorStatdata.value = annualExportConfig.statdata;
-    colorCustomborder.value = annualExportConfig.customborder;
-    // ✅修改点8：新字段初始化
-    if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
-    if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
-    if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
-    if (reporterNameInput) reporterNameInput.value = annualExportConfig.reporterName || "";
-    sliderFont.value = annualExportConfig.customTextFontSize;
-    fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
-    updateSliderProgress(sliderFont);
-    if (useSummaryTitleEl) useSummaryTitleEl.checked = !!annualExportConfig.useSummaryTitle;
-    if (normalQualityEl) normalQualityEl.checked = !!annualExportConfig.normalQuality;
-
-    annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-    annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
-    annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
-    annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-    annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
-    annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
-    annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-    annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
-    // ✅修改点8：新增CSS变量注入
-    annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
-    annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
-    annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
-    // ✅同步到 .wrap（控制整个页面背景 + site-title大标题颜色）
-    applyAnnualPageColors();
-
-    btnResetColor.removeEventListener("click", btnResetColor._handler);
-    btnResetColor._handler = () => {
-        annualExportConfig = {...annualExportDefault};
-        saveAnnualExportConfig();
-        colorBg.value = annualExportConfig.bg;
-        colorTitle.value = annualExportConfig.title;
-        colorGamename.value = annualExportConfig.gamename;
-        colorCustomtext.value = annualExportConfig.customtext;
-        colorBorder.value = annualExportConfig.border;
-        // ✅新增4个颜色重置
-        colorSubtitle.value = annualExportConfig.subtitle;
-        colorStattext.value = annualExportConfig.stattext;
-        colorStatdata.value = annualExportConfig.statdata;
-        colorCustomborder.value = annualExportConfig.customborder;
-        // ✅修改点9：重置按钮更新新字段
-        if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
-        if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
-        if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
-        if (reporterNameInput) reporterNameInput.value = annualExportConfig.reporterName || "";
-        sliderFont.value = annualExportConfig.customTextFontSize;
-        fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
-        if (useSummaryTitleEl) useSummaryTitleEl.checked = false;
-        annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-        annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
-        annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
-        annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-        annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
-        annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
-        annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-        annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
-        // ✅修改点9：重置按钮CSS变量重新注入
-        annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
-        annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
-        annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
-        // ✅同步到 .wrap
-        applyAnnualPageColors();
-        updateSliderProgress(sliderFont);
-    };
-    btnResetColor.addEventListener("click", btnResetColor._handler);
-
-    colorBg.oninput = () => {
-        annualExportConfig.bg = colorBg.value;
-        annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-        // ✅同步整个页面背景（.wrap内部 + body视口两侧）
-        const wrapEl = document.querySelector('.wrap');
-        if (wrapEl) wrapEl.style.backgroundColor = annualExportConfig.bg;
-        document.body.style.backgroundColor = annualExportConfig.bg;
-        saveAnnualExportConfig();
-    };
-    colorTitle.oninput = () => {
-        annualExportConfig.title = colorTitle.value;
-        annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
-        // ✅同步到 .wrap，让 mode-wrap 外面的 site-title 大标题也能继承到
-        const wrapEl = document.querySelector('.wrap');
-        if (wrapEl) wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
-        saveAnnualExportConfig();
-    };
-    colorGamename.oninput = () => {
-        annualExportConfig.gamename = colorGamename.value;
-        annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-        saveAnnualExportConfig();
-    };
-    colorCustomtext.oninput = () => {
-        annualExportConfig.customtext = colorCustomtext.value;
-        annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-        saveAnnualExportConfig();
-    };
-    colorBorder.oninput = () => {
-        annualExportConfig.border = colorBorder.value;
-        annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
-        saveAnnualExportConfig();
-    };
-    // ✅新增：小标题文字色（即时反应：模块标题+NO标签）
-    colorSubtitle.oninput = () => {
-        annualExportConfig.subtitle = colorSubtitle.value;
-        annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);
-        saveAnnualExportConfig();
-    };
-    // ✅新增：数据统计文字色（即时反应：统计标签文字）
-    colorStattext.oninput = () => {
-        annualExportConfig.stattext = colorStattext.value;
-        annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);
-        saveAnnualExportConfig();
-    };
-    // ✅新增：数据统计数据色（即时反应：用户填写的数字）
-    colorStatdata.oninput = () => {
-        annualExportConfig.statdata = colorStatdata.value;
-        annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);
-        saveAnnualExportConfig();
-    };
-    // ✅新增：自定义文本边框色（即时反应：所有文本框边框）
-    colorCustomborder.oninput = () => {
-        annualExportConfig.customborder = colorCustomborder.value;
-        annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder);
-        saveAnnualExportConfig();
-    };
-    // ✅修改点9：新增四个控件的事件绑定
-    if (colorLabelcolor) {
-        colorLabelcolor.oninput = () => {
-            annualExportConfig.labelColor = colorLabelcolor.value;
-            annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
-            saveAnnualExportConfig();
-        };
-    }
-    if (colorBoxbg) {
-        colorBoxbg.oninput = () => {
-            annualExportConfig.boxBgColor = colorBoxbg.value;
-            annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
-            saveAnnualExportConfig();
-        };
-    }
-    if (colorReportercolor) {
-        colorReportercolor.oninput = () => {
-            annualExportConfig.reporterColor = colorReportercolor.value;
-            saveAnnualExportConfig();
-        };
-    }
-    if (reporterNameInput) {
-        reporterNameInput.oninput = () => {
-            annualExportConfig.reporterName = reporterNameInput.value;
-            saveAnnualExportConfig();
-        };
-    }
-
-    sliderFont.oninput = () => {
-        const val = Number(sliderFont.value);
-        annualExportConfig.customTextFontSize = val;
-        fontValueDisplay.textContent = `${val}px`;
-        updateSliderProgress(sliderFont);
-        saveAnnualExportConfig();
-    };
-
-    // 导出标题开关
-    if (useSummaryTitleEl) {
-        useSummaryTitleEl.onchange = () => {
-            annualExportConfig.useSummaryTitle = useSummaryTitleEl.checked;
-            saveAnnualExportConfig();
-        };
-    }
-    // 导出普通画质开关
-    if (normalQualityEl) {
-        normalQualityEl.onchange = () => {
-            annualExportConfig.normalQuality = normalQualityEl.checked;
-            saveAnnualExportConfig();
-        };
-    }
-
-    // ========== 修改点3：导出按钮改为预览弹窗 ==========
-    btnExportImage.removeEventListener("click", btnExportImage._handler);
-    btnExportImage._handler = async () => {
-        if (btnExportImage.disabled || _annualIsRendering) return;  // ✅渲染锁
-        let unlockTimer = null;
-        _annualIsRendering = true;
-        unlockTimer = setTimeout(() => {  // ✅15秒超时强制解锁
-            _annualIsRendering = false;
-            console.warn("[annual]渲染超时，强制解除渲染锁");
-        }, 15000);
-        const originalText = btnExportImage.textContent;
-        btnExportImage.disabled = true;
-        btnExportImage.textContent = "生成中…";
-
-        const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
-        const sizeVal = sizeRadio?.value || 'long-810';
-        const selectedExportWidth = Number(sizeVal.replace('long-', ''));
-        // 修改点2：修复 designW 计算，不再除以 DPR
-        const designW = selectedExportWidth;
-        const titleMap = getAnnualModuleTitles();
-
-        // 打开预览弹窗，先显示loading（含预计时间+进度）
-        const modal = document.getElementById("export-preview-modal");
-        const scrollWrap = modal.querySelector(".preview-scroll-wrap");
-        const downloadBtn = document.getElementById("preview-download-btn");
-        modal.classList.add("active");
-        document.body.classList.add("modal-lock");
-        downloadBtn.disabled = true;
-        // ✅显示loading+预计时间+进度，获取进度监听器（finally中清理）
-        const progressHandler = showAnnualPreviewLoading(scrollWrap);
-        try {
-            const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
-            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
-            if (!results || results.length === 0) {
-                alert("没有可导出的内容，请先在各模块中添加数据。");
-                modal.classList.remove("active");
-                document.body.classList.remove("modal-lock");
-                return;
-            }
-            // 填充预览图 + 绑定按钮
-            showAnnualPreviewModal(results, selectedExportWidth);
-        } catch (err) {
-            console.error("年度报告导出失败", err);
-            alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情。");
-            modal.classList.remove("active");
-            document.body.classList.remove("modal-lock");
-        } finally {
-            if (typeof progressHandler !== 'undefined') {
-                window.removeEventListener('annual-canvas-progress', progressHandler);
-            }
-            if (unlockTimer) clearTimeout(unlockTimer);  // ✅清理超时计时器
-            _annualIsRendering = false;  // ✅释放渲染锁
-            btnExportImage.disabled = false;
-            btnExportImage.textContent = originalText;
-        }
-    };
-    btnExportImage.addEventListener("click", btnExportImage._handler);
-}
-// ===================== 第二部分：bindAnnualFloatScrollButtons ～ 文件末尾 =====================
-
-/**
- * ✅新增：annual模式悬浮滚动按钮逻辑
- * ▲：模块中间→滚到当前模块顶部；已在顶部→滚到上一个模块顶部
- * ▼：模块中间→滚到当前模块底部；已在底部→滚到下一个模块底部
- */
-function bindAnnualFloatScrollButtons() {
-    const upBtn = document.getElementById("annual-back-to-top-btn");
-    const downBtn = document.getElementById("annual-scroll-to-bottom-btn");
-    if(!upBtn || !downBtn) return;
-
-    const TOLERANCE = 30; // 容差像素，小于此值视为"已到达"
-
-    // 获取annual模式所有big-card模块（按DOM顺序）
-    function getAnnualModules() {
-        const wrap = document.querySelector('.mode-wrap[data-mode="annual"]');
-        if(!wrap) return [];
-        return Array.from(wrap.querySelectorAll('.big-card'));
-    }
-
-    // 根据视口垂直中心判断当前在哪个模块
-    function getCurrentModuleIndex() {
-        const modules = getAnnualModules();
-        if(modules.length === 0) return -1;
-        const viewCenter = window.scrollY + window.innerHeight / 2;
-        // 优先：视口中心落在某个模块范围内
-        for(let i = 0; i < modules.length; i++) {
-            const rect = modules[i].getBoundingClientRect();
-            const top = rect.top + window.scrollY;
-            const bottom = rect.bottom + window.scrollY;
-            if(viewCenter >= top && viewCenter <= bottom) return i;
-        }
-        // 兜底：视口中心在模块间隙中，找距离最近的模块
-        let closest = 0;
-        let minDist = Infinity;
-        for(let i = 0; i < modules.length; i++) {
-            const rect = modules[i].getBoundingClientRect();
-            const top = rect.top + window.scrollY;
-            const dist = Math.abs(viewCenter - top);
-            if(dist < minDist) { minDist = dist; closest = i; }
-        }
-        return closest;
-    }
-
-    // ▲按钮
-    upBtn.addEventListener("click", () => {
-        const modules = getAnnualModules();
-        if(modules.length === 0) return;
-        const idx = getCurrentModuleIndex();
-        if(idx < 0) return;
-        const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
-
-        if(window.scrollY > currentTop + TOLERANCE) {
-            // 在模块中间：滚动到当前模块顶部
-            modules[idx].scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-            // 已在当前模块顶部：滚动到上一个模块顶部
-            if(idx > 0) {
-                modules[idx - 1].scrollIntoView({ behavior: "smooth", block: "start" });
-            } else {
-                // 已是第一个模块：滚动到页面最顶
-                window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-        }
-    });
-
-    // ▼按钮
-    downBtn.addEventListener("click", () => {
-        const modules = getAnnualModules();
-        if(modules.length === 0) return;
-        const idx = getCurrentModuleIndex();
-        if(idx < 0) return;
-        const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
-        const viewBottom = window.scrollY + window.innerHeight;
-
-        if(viewBottom < currentBottom - TOLERANCE) {
-            // 在模块中间：滚动到当前模块底部（元素底部对齐视口底部）
-            modules[idx].scrollIntoView({ behavior: "smooth", block: "end" });
-        } else {
-            // 已在当前模块底部：滚动到下一个模块底部
-            if(idx < modules.length - 1) {
-                modules[idx + 1].scrollIntoView({ behavior: "smooth", block: "end" });
-            }
-            // 已是最后一个模块：不动作
-        }
-    });
-}
-
-/**
- * ✅新增：CP弹窗游戏列表（只搜索游戏名，不搜索角色名）
- */
-function renderCpModalGameList(wrap, keyword) {
-    wrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
-    const gameTemplateList = state.list;
-    if (!gameTemplateList || !isGameTemplateReady()) {
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
-        return;
-    }
-    const kw = (keyword ?? "").toLowerCase().trim();
-    const filtered = gameTemplateList.filter(g=> !kw || String(g.name).toLowerCase().includes(kw));
-    const { sortFilterOptionList } = window.Core || {};
-    let sorted;
-    if (typeof sortFilterOptionList === 'function') {
-        const sortedNames = sortFilterOptionList(filtered.map(g=>g.name));
-        sorted = sortedNames.map(name=>filtered.find(g=>g.name===name)).filter(Boolean);
-    } else {
-        sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
-    }
-    sorted.forEach((game) => {
-        if (!game) return;
-        const div = document.createElement("div");
-        div.className = "annual-cp-game-option-item";
-        div.innerHTML = renderGameSelectItem(game);
-        div.addEventListener("click", (e) => {
-            // ✅阻止同一元素上script.js设置的onclick，以及冒泡到document的事件委托
-            e.stopImmediatePropagation();
-            cpModalCurrentGameId = game.id;
-            cpModalCurrentFemaleId = null;
-            resetCpModalLocalSwitches();
-            switchCpModalView("femaleList");
-            renderCpModalFemaleList();
-        });
-        wrap.appendChild(div);
-    });
-    if(sorted.length === 0){
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏</div>`;
-    }
-}
-
-/**
- * ✅新增：CP弹窗女主列表（点击女主展开男主列表，点击男主保存并关闭弹窗）
- */
-function renderCpModalFemaleList() {
-    const modal = document.getElementById("annual-global-cp-modal");
-    const charWrap = modal.querySelector(".annual-global-cp-female-list");
-    charWrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
-    const gameInfo = state.list.find(g=>g.id === cpModalCurrentGameId);
-    if(!gameInfo){
-        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
-        return;
-    }
-    const rawCharList = gameInfo.charList || [];
-
-    // 局部开关显隐控制
-    const visMap = {
-        "#annual-modal-cp-game-sub-char":   rawCharList.some(c => c.isSub === true),
-        "#annual-modal-cp-game-hide-char":  rawCharList.some(c => c.isHidden === true),
-        "#annual-modal-cp-game-fd-game":    rawCharList.some(c => c.isFD === true),
-        "#annual-modal-cp-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
-    };
-    Object.entries(visMap).forEach(([sel, visible]) => {
-        const inputEl = modal.querySelector(sel);
-        if (!inputEl) return;
-        const sw = inputEl.closest("label")?.parentElement;
-        if (sw) sw.style.display = visible ? "" : "none";
-    });
-
-    // 过滤角色（同角色弹窗逻辑）
-    let chars = [...rawCharList].filter(c=>{
-        const isSub = c.isSub ?? false, isHidden = !!c.isHidden, isFD = !!c.isFD, isFdSub = !!c.isFdSub;
-        const showHide = cpModalGlobal.hideChar || cpModalLocal.hideChar;
-        const showFD = cpModalGlobal.fdChar || cpModalLocal.fdChar;
-        const showSub = cpModalGlobal.subChar || cpModalLocal.subChar;
-        const showFdSub = cpModalGlobal.fdSubChar || cpModalLocal.fdSubChar;
-        if (!isSub && !isHidden && !isFD && !isFdSub) return true;
-        return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
-    });
-    const femaleChars = chars.filter(c => c.gender === "female");
-    const maleChars = chars.filter(c => c.gender === "male");
-    const { sortFilterOptionList } = window.Core || {};
-    const sortByName = (arr) => {
-        if (typeof sortFilterOptionList === 'function') {
-            const sn = sortFilterOptionList(arr.map(c=>c.name));
-            return sn.map(name=>arr.find(c=>c.name===name)).filter(Boolean);
-        }
-        return [...arr].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
-    };
-    const sortedFemales = sortByName(femaleChars);
-    const sortedMales = sortByName(maleChars);
-
-    // 工具：渲染单个角色卡片HTML（女主/男主共用）
-    function renderCharCardHtml(char, imgKey, allSrc, nameList, totalNames, nameIdx, displayName,
-                                 imgPrevCls, imgNextCls, namePrevCls, nameNextCls, cardClass) {
-        const hasMultiImg = allSrc.length > 1;
-        const canSwitchName = totalNames > 1;
-        const nameMultiCls = canSwitchName ? "char-name-multi" : "";
-        const nameSwitchBtns = canSwitchName ? `
-            <button class="char-name-switch-btn char-name-switch-prev ${namePrevCls}" data-char-id="${char.id}">&lt;</button>
-            <button class="char-name-switch-btn char-name-switch-next ${nameNextCls}" data-char-id="${char.id}">&gt;</button>` : "";
-        return `
-            <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev ${imgPrevCls}" data-char-id="${char.id}">&lt;</button>` : ""}
-                <img src="${getWebImageUrl(allSrc[annualCpImgIndex.get(imgKey)] || "")}" alt="${displayName}" decoding="async">
-                ${hasMultiImg ? `<button class="char-switch-btn char-switch-next ${imgNextCls}" data-char-id="${char.id}">&gt;</button>` : ""}
-            </div>
-            <div class="char-card-name ${nameMultiCls}">
-                ${nameSwitchBtns}
-                <span class="char-name-text">${displayName}</span>
-            </div>`;
-    }
-
-    // 工具：绑定立绘切换
-    function bindImgSwitch(cardEl, imgKey, allSrc, prevSel, nextSel) {
-        const imgEl = cardEl.querySelector("img");
-        cardEl.querySelector(prevSel)?.addEventListener("click", async (e)=>{
-            e.stopPropagation();
-            let idx = annualCpImgIndex.get(imgKey) ?? 0;
-            idx = idx <= 0 ? allSrc.length - 1 : idx - 1;
-            annualCpImgIndex.set(imgKey, idx);
-            const imgBox = imgEl.closest('.char-card-img-box');
-            if (imgBox) {
-                await switchCharImageWithLoading(imgBox, getWebImageUrl(allSrc[idx] || ""));
-            } else {
-                imgEl.src = getWebImageUrl(allSrc[idx] || "");
-            }
-        });
-        cardEl.querySelector(nextSel)?.addEventListener("click", async (e)=>{
-            e.stopPropagation();
-            let idx = annualCpImgIndex.get(imgKey) ?? 0;
-            idx = idx >= allSrc.length - 1 ? 0 : idx + 1;
-            annualCpImgIndex.set(imgKey, idx);
-            const imgBox = imgEl.closest('.char-card-img-box');
-            if (imgBox) {
-                await switchCharImageWithLoading(imgBox, getWebImageUrl(allSrc[idx] || ""));
-            } else {
-                imgEl.src = getWebImageUrl(allSrc[idx] || "");
-            }
-        });
-    }
-
-    // 工具：绑定名字切换
-    function bindNameSwitch(cardEl, imgKey, nameList, totalNames, prevSel, nextSel) {
-        const nameEl = cardEl.querySelector(".char-name-text");
-        cardEl.querySelector(prevSel)?.addEventListener("click", (e)=>{
-            e.stopPropagation();
-            let idx = annualCpNameIndex.get(imgKey) ?? 0;
-            idx = (idx - 1 + totalNames) % totalNames;
-            annualCpNameIndex.set(imgKey, idx);
-            nameEl.textContent = nameList[idx] || "";
-        });
-        cardEl.querySelector(nextSel)?.addEventListener("click", (e)=>{
-            e.stopPropagation();
-            let idx = annualCpNameIndex.get(imgKey) ?? 0;
-            idx = (idx + 1) % totalNames;
-            annualCpNameIndex.set(imgKey, idx);
-            nameEl.textContent = nameList[idx] || "";
-        });
-    }
-
-    // 渲染每个女主
-    sortedFemales.forEach(fChar=>{
-        if(!fChar) return;
-        const fImgKey = `${cpModalCurrentGameId}-${fChar.id}`;
-        if (!annualCpImgIndex.has(fImgKey)) annualCpImgIndex.set(fImgKey, 0);
-        if (!annualCpNameIndex.has(fImgKey)) annualCpNameIndex.set(fImgKey, 0);
-        const fAllSrc = getAnnualCpAvailImages(fChar);
-        let fImgIdx = annualCpImgIndex.get(fImgKey);
-        if (fImgIdx >= fAllSrc.length) fImgIdx = 0;
-        const fShowHide = getCharShowHide(fChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
-        const fNameList = getCharNameList(fChar, fShowHide);
-        const fTotalNames = fNameList.length;
-        let fNameIdx = annualCpNameIndex.get(fImgKey);
-        if (fNameIdx >= fTotalNames) fNameIdx = 0;
-        const fDisplayName = fNameList[fNameIdx] || fChar.name;
-        const isFemaleSelected = cpModalCurrentFemaleId === fChar.id;
-
-        // ✅修改点8：blockDiv添加条件类，展开时使用annual-cp-female-block-expanded
-        const blockDiv = document.createElement("div");
-        blockDiv.className = `annual-cp-female-block ${isFemaleSelected ? 'annual-cp-female-block-expanded' : ''}`;
-        blockDiv.dataset.fid = fChar.id;
-
-        const femaleCard = document.createElement("div");
-        femaleCard.className = `char-item annual-cp-female-card ${isFemaleSelected ? 'selected' : ''}`;
-        femaleCard.dataset.fid = fChar.id;
-        femaleCard.dataset.charId = fChar.id;
-        femaleCard.dataset.gameId = cpModalCurrentGameId;
-        femaleCard.dataset.totalImg = fAllSrc.length;
-        femaleCard.innerHTML = renderCharCardHtml(fChar, fImgKey, fAllSrc, fNameList, fTotalNames, fNameIdx, fDisplayName,
-            "annual-cp-female-img-prev", "annual-cp-female-img-next",
-            "annual-cp-name-prev", "annual-cp-name-next", "female");
-        blockDiv.appendChild(femaleCard);
-
-        // 女主点击：展开/收起男主列表
-        femaleCard.addEventListener("click", (e)=>{
-            // ✅阻止冒泡到script.js的全局事件委托
-            e.stopPropagation();
-            if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
-            cpModalCurrentFemaleId = isFemaleSelected ? null : fChar.id;
-            renderCpModalFemaleList();
-        });
-        if(fAllSrc.length > 1) bindImgSwitch(femaleCard, fImgKey, fAllSrc, ".annual-cp-female-img-prev", ".annual-cp-female-img-next");
-        if(fTotalNames > 1) bindNameSwitch(femaleCard, fImgKey, fNameList, fTotalNames, ".annual-cp-name-prev", ".annual-cp-name-next");
-
-        // 选中女主时渲染男主列表
-        if(isFemaleSelected){
-            const maleWrap = document.createElement("div");
-            maleWrap.className = "annual-cp-male-select-wrap";
-            maleWrap.dataset.fid = fChar.id;
-            let maleListHtml = `<div class="annual-cp-male-title">为【${fChar.name}】选择角色</div><div class="annual-cp-male-list">`;
-            sortedMales.forEach(mChar=>{
-                if(!mChar) return;
-                const mImgKey = `${cpModalCurrentGameId}-${mChar.id}`;
-                if (!annualCpImgIndex.has(mImgKey)) annualCpImgIndex.set(mImgKey, 0);
-                if (!annualCpNameIndex.has(mImgKey)) annualCpNameIndex.set(mImgKey, 0);
-                const mAllSrc = getAnnualCpAvailImages(mChar);
-                let mImgIdx = annualCpImgIndex.get(mImgKey);
-                if (mImgIdx >= mAllSrc.length) mImgIdx = 0;
-                const mShowHide = getCharShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
-                const mNameList = getCharNameList(mChar, mShowHide);
-                const mTotalNames = mNameList.length;
-                let mNameIdx = annualCpNameIndex.get(mImgKey);
-                if (mNameIdx >= mTotalNames) mNameIdx = 0;
-                const mDisplayName = mNameList[mNameIdx] || mChar.name;
-                maleListHtml += `
-                <div class="char-item annual-cp-male-item" data-fid="${fChar.id}" data-mid="${mChar.id}"
-                     data-char-id="${mChar.id}" data-game-id="${cpModalCurrentGameId}" data-total-img="${mAllSrc.length}">
-                    ${renderCharCardHtml(mChar, mImgKey, mAllSrc, mNameList, mTotalNames, mNameIdx, mDisplayName,
-                        "annual-cp-male-img-prev", "annual-cp-male-img-next",
-                        "annual-cp-name-prev", "annual-cp-name-next", "male")}
-                </div>`;
-            });
-            maleListHtml += `</div>`;
-            maleWrap.innerHTML = maleListHtml;
-            blockDiv.appendChild(maleWrap);
-
-            // 绑定男主立绘/名字切换 + 点击保存
-            maleWrap.querySelectorAll(".annual-cp-male-item").forEach(maleItem=>{
-                const mCharId = maleItem.dataset.mid;
-                const mChar = sortedMales.find(c=>c.id === mCharId);
-                if(!mChar) return;
-                const mImgKey = `${cpModalCurrentGameId}-${mCharId}`;
-                const mAllSrc = getAnnualCpAvailImages(mChar);
-                const mShowHide = getCharShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
-                const mNameList = getCharNameList(mChar, mShowHide);
-                const mTotalNames = mNameList.length;
-                if(mAllSrc.length > 1) bindImgSwitch(maleItem, mImgKey, mAllSrc, ".annual-cp-male-img-prev", ".annual-cp-male-img-next");
-                if(mTotalNames > 1) bindNameSwitch(maleItem, mImgKey, mNameList, mTotalNames, ".annual-cp-name-prev", ".annual-cp-name-next");
-
-                // 男主点击：保存CP，关闭弹窗
-                maleItem.addEventListener("click", (e)=>{
-                    // ✅阻止冒泡到script.js的全局事件委托
-                    e.stopPropagation();
-                    if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
-                    // ===== 新增：其他-最喜欢的CP =====
-                    if (_activeModalContext === "otherFavCp") {
-                        annualData.other.favCp = {
-                            gameId: cpModalCurrentGameId,
-                            femaleId: fChar.id,
-                            maleId: mCharId,
-                            femaleName: fNameList[annualCpNameIndex.get(fImgKey) ?? 0] || fChar.name,
-                            maleName: mNameList[annualCpNameIndex.get(mImgKey) ?? 0] || mChar.name,
-                            femaleCoverSrc: fAllSrc[annualCpImgIndex.get(fImgKey) ?? 0] || "",
-                            maleCoverSrc: mAllSrc[annualCpImgIndex.get(mImgKey) ?? 0] || ""
-                        };
-                        saveAnnualData();
-                        renderOtherFavCp();
-                        closeAnnualGlobalCpModal();
-                        return;
-                    }
-                    if(activeCpTopItemIndex === null) return;
-                    const isDup = annualData.cpTopList.some((item,i)=>
-                        i !== activeCpTopItemIndex &&
-                        item.gameId === cpModalCurrentGameId &&
-                        item.femaleId === fChar.id &&
-                        item.maleId === mCharId);
-                    if(isDup){ alert("该CP已经添加，不可重复添加"); return; }
-                    const targetItem = annualData.cpTopList[activeCpTopItemIndex];
-                    targetItem.gameId = cpModalCurrentGameId;
-                    targetItem.gameName = gameInfo.name;
-                    targetItem.femaleId = fChar.id;
-                    targetItem.femaleName = fNameList[annualCpNameIndex.get(fImgKey) ?? 0] || fChar.name;
-                    targetItem.femaleCoverSrc = fAllSrc[annualCpImgIndex.get(fImgKey) ?? 0] || "";
-                    targetItem.maleId = mCharId;
-                    targetItem.maleName = mNameList[annualCpNameIndex.get(mImgKey) ?? 0] || mChar.name;
-                    targetItem.maleCoverSrc = mAllSrc[annualCpImgIndex.get(mImgKey) ?? 0] || "";
-                    const doms = Array.from(document.querySelectorAll(".annual-cp-top-item"));
-                    const targetDom = doms[activeCpTopItemIndex];
-                    if(targetDom){
-                        targetDom.querySelector(".annual-cp-name-text").textContent = `${targetItem.femaleName}×${targetItem.maleName}`; // ✅修改点9b
-                        targetDom.querySelector(".annual-cp-female-cover").src = getWebImageUrl(targetItem.femaleCoverSrc);
-                        targetDom.querySelector(".annual-cp-male-cover").src = getWebImageUrl(targetItem.maleCoverSrc);
-                        refreshCpTopItemUi(targetDom, targetItem);
-                    }
-                    saveAnnualData();
-                    closeAnnualGlobalCpModal();
-                });
-            });
-        }
-        charWrap.appendChild(blockDiv);
-    });
-
-    if(sortedFemales.length === 0){
-        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">该游戏暂无可用女主角</div>`;
-    }
-}
-
-function switchCpModalView(mode){
-    cpModalViewMode = mode;
-    const modal = document.getElementById("annual-global-cp-modal");
-    const inner = modal.querySelector(".annual-global-modal-inner");
-    const backBtn = modal.querySelector(".annual-cp-modal-back-btn");
-    inner.classList.remove("cp-modal-gamelist-view", "cp-modal-femalelist-view");
-    if(mode === "gameList"){
-        inner.classList.add("cp-modal-gamelist-view");
-        backBtn.style.display = "none";
-    }else{
-        inner.classList.add("cp-modal-femalelist-view");
-        backBtn.style.display = "flex";
-    }
-}
-
-function openAnnualGlobalCpModal(targetIndex, context){
-    if(!_annualRealInitialized && isGameTemplateReady()) realInitAnnualModule();
-    _activeModalContext = context || "cpTop";
-    activeCpTopItemIndex = (_activeModalContext === "cpTop") ? targetIndex : null;
-    const modal = document.getElementById("annual-global-cp-modal");
-    if(!modal) return;
-    modal.classList.add("active");
-    cpModalViewMode = "gameList";
-    cpModalCurrentGameId = null;
-    cpModalCurrentFemaleId = null;
-    cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    annualCpImgIndex.clear();
-    annualCpNameIndex.clear();
-    switchCpModalView("gameList");
-    const searchInput = modal.querySelector(".annual-global-cp-search-input");
-    searchInput.value = "";
-    searchInput.focus();
-    ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
-     "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
-     "#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
-     "#annual-modal-cp-game-fd-game","#annual-modal-cp-game-fd-sub-char"].forEach(sel=>{
-        const el = modal.querySelector(sel); if(el) el.checked = false;
-    });
-    renderCpModalGameList(modal.querySelector(".annual-global-cp-game-list"), "");
-}
-
-function closeAnnualGlobalCpModal(){
-    // 仅 cpTop 模块需要清理空条目
-    if (_activeModalContext === "cpTop" && activeCpTopItemIndex !== null) {
-        const item = annualData.cpTopList[activeCpTopItemIndex];
-        if (item && (!item.femaleId || !item.maleId)) {
-            annualData.cpTopList.splice(activeCpTopItemIndex, 1);
-            rebuildCpTopDomAll();
-            bindCpTop3Items();
-            rerenderCpTopNoLabel();
-            saveAnnualData();
-        }
-    }
-    activeCpTopItemIndex = null;
-    _activeModalContext = null;
-    _activeGridTarget = null;
-    cpModalViewMode = "gameList";
-    cpModalCurrentGameId = null;
-    cpModalCurrentFemaleId = null;
-    const modal = document.getElementById("annual-global-cp-modal");
-    if(!modal) return;
-    modal.classList.remove("active");
-}
-
-// ===================== ✅新增：年度报告导出预计耗时计算（对齐FavList逻辑） =====================
-function calcAnnualEstimateSec() {
-    const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isAndroid = /Android/.test(navigator.userAgent);
-    // 统计有效模块数和图片数
-    let moduleCount = 0;
-    let imgCount = 0;
-    // stats模块
-    const hasStats = ['reportYear','playCount','totalHours','likeCharCount','cpCount','buyCount','costMoney','finished','ongoing','notStart']
-        .some(k => annualData[k] !== undefined && annualData[k] !== null && String(annualData[k]).trim() !== '');
-    if (hasStats) moduleCount++;
-    // gameTop
-    const gameValid = (annualData.topList || []).filter(i => i && i.gameId);
-    if (gameValid.length) { moduleCount++; imgCount += gameValid.length; }
-    // charTop
-    const charValid = (annualData.charTopList || []).filter(i => i && i.charId);
-    if (charValid.length) { moduleCount++; imgCount += charValid.length; }
-    // cpTop（每对CP两张图）
-    const cpValid = (annualData.cpTopList || []).filter(i => i && i.femaleId && i.maleId);
-    if (cpValid.length) { moduleCount++; imgCount += cpValid.length * 2; }
-
-    // ✅对齐script.js：纳入降级概率+重试开销+圆角画布串行延时
-    let moduleCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
-    if (IS_IOS_WEBKIT) {
-        moduleCost = 1.10; imgCost = 0.85;
-        networkBufferSec = 4.8;
-        roundCanvasOverheadSec = Math.min(8, imgCount * 0.030);
-    } else if (isAndroid) {
-        moduleCost = 0.55; imgCost = 0.40;
-        networkBufferSec = 2.6;
-        roundCanvasOverheadSec = Math.min(4, imgCount * 0.012);
-    } else {
-        moduleCost = 0.35; imgCost = 0.25;
-        networkBufferSec = 1.8;
-        roundCanvasOverheadSec = Math.min(2.5, imgCount * 0.012);
-    }
-    const baseEstimate = moduleCount * moduleCost + imgCount * imgCost;
-    const fallbackProbability = 0.30;  // 30%图片触发jsdelivr超时降级
-    const fallbackPerImageSec = 0.6;   // 每次降级600ms
-    const fallbackEstimate = imgCount * fallbackProbability * fallbackPerImageSec;
-    let sec = Math.ceil(baseEstimate + networkBufferSec + roundCanvasOverheadSec + fallbackEstimate);
-    sec = IS_IOS_WEBKIT ? Math.max(2, Math.min(45, sec)) : Math.max(1, Math.min(35, sec));
-    return sec;
-}
-
-// ===================== ✅新增：在预览弹窗中显示loading+预计时间+进度，返回进度监听器 =====================
-function showAnnualPreviewLoading(scrollWrap) {
-    const estimateSec = calcAnnualEstimateSec();
-    // 完全对齐FavList loading UI结构
-    scrollWrap.innerHTML = `
-        <div class="preview-inner-loading">
-            <div class="loading-spinner"></div>
-            <p>正在生成预览，请稍候…<br>预计耗时：${estimateSec}s</p>
-            <p class="render-progress-text" style="margin-top:8px;font-size:14px;">进度：0%</p>
-        </div>
-    `;
-    // 监听 annual-canvas-render.js 发出的进度事件
-    const progressHandler = function(e) {
-        const p = e.detail.percent.toFixed(0);
-        const progressDom = scrollWrap.querySelector('.render-progress-text');
-        if (progressDom) progressDom.textContent = `进度：${p}%`;
-    };
-    window.addEventListener('annual-canvas-progress', progressHandler);
-    return progressHandler;
-}
-
-// ===================== 年度报告预览弹窗管理（复用 #export-preview-modal） =====================
-let _annualPreviewResults = [];
-let _annualPreviewUrls = [];
-let _annualPreviewWidth = 810;
-let _annualPreviewBound = false;
-let _annualCurrentPage = 0;  // ✅新增：当前预览页码（对齐FavList currentPreviewPage）
-
-function showAnnualPreviewModal(results, exportWidth) {
-    _annualPreviewResults = results;
-    _annualPreviewWidth = exportWidth;
-    _annualCurrentPage = 0;  // ✅重置到第1张
-    const downloadBtn = document.getElementById("preview-download-btn");
-    // 清理旧URL
-    _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
-    _annualPreviewUrls = results.map(r => URL.createObjectURL(r.blob));
-    // ✅渲染第1张（分页切换模式，对齐FavList renderPreviewPage）
-    renderAnnualPreviewPage(0);
-    downloadBtn.disabled = false;
-    // ✅每次Annual预览时用onclick赋值覆盖下载按钮，防止FavList的下载监听器同时触发
-    downloadBtn.onclick = () => {
-        _annualPreviewResults.forEach((r, i) => {
-            const url = URL.createObjectURL(r.blob);
-            const a = document.createElement("a");
-            a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
-            a.href = url;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
-        });
-    };
-    // 绑定弹窗按钮（只绑定一次）
-    if (!_annualPreviewBound) {
-        bindAnnualPreviewButtons();
-        _annualPreviewBound = true;
-    }
-}
-
-// ===================== ✅新增：渲染单张预览图 + 上一张/下一张切换控件（对齐FavList renderPreviewPage） =====================
-function renderAnnualPreviewPage(pageIndex) {
-    _annualCurrentPage = pageIndex;
-    const modal = document.getElementById("export-preview-modal");
-    const scrollWrap = modal.querySelector(".preview-scroll-wrap");
-    const totalPage = _annualPreviewResults.length;
-    const currentUrl = _annualPreviewUrls[pageIndex];
-    // 分页控件（仅当多于1张时显示）
-    let paginationHtml = "";
-    if (totalPage > 1) {
-        paginationHtml = `
-        <div class="preview-pagination-bar" style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:center;">
-            <button class="preview-prev-page" ${pageIndex <= 0 ? 'disabled' : ''}>上一张</button>
-            <span>第 ${pageIndex + 1} / ${totalPage} 张</span>
-            <button class="preview-next-page" ${pageIndex >= totalPage - 1 ? 'disabled' : ''}>下一张</button>
-        </div>`;
-    }
-    // 单张图片 + 分页控件（与FavList预览完全一致，仅用CSS类控制，无内联样式）
-    scrollWrap.innerHTML = `
-        <img class="preview-img-item" src="${currentUrl}" alt="年度报告预览">
-        ${paginationHtml}
-    `;
-    // 绑定上一张/下一张点击
-    const prevBtn = scrollWrap.querySelector(".preview-prev-page");
-    const nextBtn = scrollWrap.querySelector(".preview-next-page");
-    if (prevBtn) {
-        prevBtn.onclick = () => {
-            if (pageIndex > 0) renderAnnualPreviewPage(pageIndex - 1);
-        };
-    }
-    if (nextBtn) {
-        nextBtn.onclick = () => {
-            if (pageIndex < totalPage - 1) renderAnnualPreviewPage(pageIndex + 1);
-        };
-    }
-}
-
-function bindAnnualPreviewButtons() {
-    const closeBtn = document.getElementById("preview-close-btn");
-    const regenBtn = document.getElementById("preview-regen-btn");
-    const downloadBtn = document.getElementById("preview-download-btn");
-    const modal = document.getElementById("export-preview-modal");
-
-    // 关闭
-    closeBtn.addEventListener("click", () => {
-        modal.classList.remove("active");
-        document.body.classList.remove("modal-lock");
-        _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
-        _annualPreviewUrls = [];
-        _annualPreviewResults = [];
-    });
-
-    // 遮罩点击关闭
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeBtn.click();
-    });
-
-    // 重新生成（✅对齐FavList：loading含预计时间+进度）
-    regenBtn.addEventListener("click", async () => {
-        if (_annualIsRendering) return;
-        const scrollWrap = modal.querySelector(".preview-scroll-wrap");
-        downloadBtn.disabled = true;
-        // ✅显示loading+预计时间+进度
-        const progressHandler = showAnnualPreviewLoading(scrollWrap);
-        let unlockTimer = null;
-        _annualIsRendering = true;
-        unlockTimer = setTimeout(() => {
-            _annualIsRendering = false;
-            console.warn("[annual]重新生成超时，强制解除渲染锁");
-        }, 15000);
-        try {
-            const sizeRadio = document.querySelector('input[name="annual-export-size"]:checked');
-            const sizeVal = sizeRadio?.value || 'long-810';
-            const selectedExportWidth = Number(sizeVal.replace('long-', ''));
-            const designW = selectedExportWidth;
-            const titleMap = getAnnualModuleTitles();
-            const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
-            const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
-            if (!results || results.length === 0) {
-                alert("没有可导出的内容。");
-                return;
-            }
-            showAnnualPreviewModal(results, selectedExportWidth);
-        } catch (err) {
-            console.error("重新生成失败", err);
-            alert("重新生成失败：" + (err?.message || "未知错误"));
-        } finally {
-            // ✅清理进度监听
-            if (typeof progressHandler !== 'undefined') {
-                window.removeEventListener('annual-canvas-progress', progressHandler);
-            }
-            if (unlockTimer) clearTimeout(unlockTimer);
-            _annualIsRendering = false;
-        }
-    });
-
-    // 导出图片（下载所有模块）—— 已移至 showAnnualPreviewModal 中通过 onclick 赋值，
-    // 防止与FavList模式的下载监听器冲突导致同时导出两种图片
-}
-
-function bindAnnualExport() {
-    btnAnnualExport = document.getElementById("btn-annual-export");
-    if(!btnAnnualExport) return;
-    btnAnnualExport.removeEventListener("click", btnAnnualExport._clickHandler);
-    btnAnnualExport._clickHandler = async ()=>{
-        const snapshotBox = document.getElementById("snapshot-container");
-        const annualWrap = document.querySelector(".mode-wrap[data-mode='annual']");
-        snapshotBox.innerHTML = annualWrap.innerHTML;
-        snapshotBox.classList.add("export-snapshot");
-        try {
-            const canvas = await html2canvas(snapshotBox, {
-                useCORS:true,
-                scale:2,
-                backgroundColor: annualExportConfig.bg
-            });
-            const link = document.createElement("a");
-            link.download = "Otome-Annual-Report.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        } catch(err) {
-            console.error("Annual Report导出失败", err);
-        } finally {
-            snapshotBox.innerHTML = "";
-            snapshotBox.classList.remove("export-snapshot");
-        }
-    };
-    btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
-}
-
-/**
- * 真正执行年度模块业务初始化（必须等gameTemplateReady=true）
- */
-function realInitAnnualModule(){
-    if(_annualRealInitialized) return;
-    _annualRealInitialized = true;
-    console.log("✅[annual.js] realInitAnnualModule 游戏模板就绪，执行业务初始化");
-    loadAnnualData();
-    // 清理历史残留的空条目（修复旧数据导致的NO跳号、排序横线异常）
-    annualData.topList = (annualData.topList || []).filter(item => item && item.gameId);
-    annualData.charTopList = (annualData.charTopList || []).filter(item => item && item.charId);
-    annualData.cpTopList = (annualData.cpTopList || []).filter(item => item && item.femaleId && item.maleId);
-    saveAnnualData();
-    bindStatInputs();
-    // 从localStorage读取数据后，完全重建DOM，保证DOM数量与数组长度完全一致
-    rebuildGameTopDomAll();
-    rebuildCharTopDomAll();
-    rebuildCpTopDomAll();  // ✅新增
-    bindTop3Items();
-    bindCharTop3Items();
-    bindCpTop3Items();  // ✅新增
-    bindTouchDrag();
-    bindAnnualExport();
-    bindAnnualExportPanel();
-    bindAnnualFloatScrollButtons();  // ✅新增：悬浮滚动按钮
-    bindAnnualTextareaResize();  // ✅感想框拖拽手柄
-    // ===== 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 =====
-    rebuildOtherModule();
-    renderGameGrid();
-    renderCharGrid();
-    bindOtherTextareas();
-    // 如果游戏弹窗打开刷新列表
-    const modalGame = document.getElementById("annual-global-game-modal");
-    if(modalGame && modalGame.classList.contains("active")){
-        const listWrap = modalGame.querySelector(".annual-global-game-list");
-        const searchInput = modalGame.querySelector(".annual-global-search-input");
-        renderGameList(listWrap, searchInput?.value ?? "");
-    }
-    // 如果角色弹窗打开刷新
-    const modalChar = document.getElementById("annual-global-char-modal");
-    if(modalChar && modalChar.classList.contains("active")){
-        const gameWrap = modalChar.querySelector(".annual-global-char-game-list");
-        const searchInput = modalChar.querySelector(".annual-global-char-search-input");
-        renderCharModalGameList(gameWrap, searchInput?.value ?? "");
-    }
-}
-
-export function initAnnualModule(){
-    if(!window._annualPanelClickBound){
-        document.addEventListener("click",(e)=>{
-            // ========== 新增：五、其他 模块按钮 ==========
-            const alsoAddBtn = e.target.closest('[data-other-action="addAlso"]');
-            if (alsoAddBtn) { openAnnualGlobalGameModal(null, "otherAlso"); return; }
-
-            const favCpBtn = e.target.closest('[data-other-action="addFavCp"]');
-            if (favCpBtn) { openAnnualGlobalCpModal(null, "otherFavCp"); return; }
-
-            const favSupportBtn = e.target.closest('[data-other-action="addFavSupport"]');
-            if (favSupportBtn) { openAnnualGlobalCharModal(null, "otherFavSupport"); return; }
-
-            const removeFavCp = e.target.closest('[data-other-action="removeFavCp"]');
-            if (removeFavCp) { annualData.other.favCp = null; saveAnnualData(); renderOtherFavCp(); return; }
-
-            const removeFavSupport = e.target.closest('[data-other-action="removeFavSupport"]');
-            if (removeFavSupport) { annualData.other.favSupport = null; saveAnnualData(); renderOtherFavSupport(); return; }
-
-            const alsoRemoveBtn = e.target.closest('[data-other-also-remove]');
-            if (alsoRemoveBtn) {
-                const idx = Number(alsoRemoveBtn.dataset.otherAlsoRemove);
-                annualData.other.alsoPlayed.splice(idx, 1);
-                saveAnnualData();
-                renderOtherAlsoPlayed();
-                return;
-            }
-
-            // ========== 新增：模块五自定义卡片删除 ==========
-            const otherCustomRemove = e.target.closest('[data-other-custom-remove]');
-            if (otherCustomRemove) {
-                const idx = Number(otherCustomRemove.dataset.otherCustomRemove);
-                annualData.other.customCards.splice(idx, 1);
-                // 确保至少保留一个完全空白的可操作自定义框
-                const hasEmpty = annualData.other.customCards.some(c => !c.label.trim() && !c.text.trim());
-                if (!hasEmpty) {
-                    annualData.other.customCards.push({label: "", text: ""});
-                }
-                saveAnnualData();
-                renderOtherCustomCards();
-                return;
-            }
-
-            // ========== 新增：六、ゲーム宫格 按钮 ==========
-            const gridGameBtn = e.target.closest('[data-grid-action="addGame"]');
-            if (gridGameBtn) {
-                _activeGridTarget = {type: gridGameBtn.dataset.gridType, index: Number(gridGameBtn.dataset.gridIndex)};
-                openAnnualGlobalGameModal(null, "gameGrid");
-                return;
-            }
-
-            // ========== 新增：七、キャラ宫格 按钮 ==========
-            const gridCharBtn = e.target.closest('[data-grid-action="addChar"]');
-            if (gridCharBtn) {
-                _activeGridTarget = {type: gridCharBtn.dataset.gridType, index: Number(gridCharBtn.dataset.gridIndex)};
-                openAnnualGlobalCharModal(null, "charGrid");
-                return;
-            }
-
-            // ========== 新增：宫格删除按钮 ==========
-            const gridRemoveBtn = e.target.closest('[data-grid-remove]');
-            if (gridRemoveBtn) {
-                const kind = gridRemoveBtn.dataset.gridRemove; // "game" | "char"
-                const gType = gridRemoveBtn.dataset.gridType;   // "fixed" | "custom"
-                const gIdx = Number(gridRemoveBtn.dataset.gridIndex);
-                if (kind === "game") {
-                    if (gType === "fixed") {
-                        // 固定项：只清空图片
-                        const target = annualData.gameGrid.fixed[gIdx];
-                        if (target) { target.gameId = ""; target.gameName = ""; target.coverSrc = ""; }
-                    } else {
-                        const target = annualData.gameGrid.custom[gIdx];
-                        if (target && target.gameId) {
-                            // 有图片：只清空图片
-                            target.gameId = ""; target.gameName = ""; target.coverSrc = "";
-                        } else {
-                            // 无图片：删除整个自定义框
-                            annualData.gameGrid.custom.splice(gIdx, 1);
-                            const hasEmpty = annualData.gameGrid.custom.some(c => !c.gameId && !c.label.trim());
-                            if (!hasEmpty) {
-                                annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
-                            }
-                        }
-                    }
-                    saveAnnualData();
-                    renderGameGrid();
-                } else {
-                    if (gType === "fixed") {
-                        const target = annualData.charGrid.fixed[gIdx];
-                        if (target) { target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = ""; }
-                    } else {
-                        const target = annualData.charGrid.custom[gIdx];
-                        if (target && target.charId) {
-                            target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = "";
-                        } else {
-                            annualData.charGrid.custom.splice(gIdx, 1);
-                            const hasEmpty = annualData.charGrid.custom.some(c => !c.charId && !c.label.trim());
-                            if (!hasEmpty) {
-                                annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
-                            }
-                        }
-                    }
-                    saveAnnualData();
-                    renderCharGrid();
-                }
-                return;
-            }
-
-            // ========== ✅修改：全局板块添加游戏按钮，不再使用item内部按钮 ==========
-            const globalAddGameBtn = e.target.closest("#annual-global-add-game-btn");
-            if(globalAddGameBtn){
-                //【问题②】不限数量：直接push空对象，不再依赖固定3个数组空位；【问题①】彻底解决离散空位NO1/NO3有值NO2空
-                const newIndex = annualData.topList.length;
-                annualData.topList.push({ gameId: "", gameName: "", coverSrc: "", text: "" });
-                saveAnnualData();
-                // 新增DOM条目
-                appendNewGameTopDom();
-                openAnnualGlobalGameModal(newIndex);
-                return;
-            }
-            // ========== ✅修改：全局板块添加角色按钮 ==========
-            const globalAddCharBtn = e.target.closest("#annual-global-add-char-btn");
-            if(globalAddCharBtn){
-                const newIndex = annualData.charTopList.length;
-                annualData.charTopList.push({ gameId: "", charId: "", charName: "", coverSrc: "", text: "" });
-                saveAnnualData();
-                appendNewCharTopDom();
-                openAnnualGlobalCharModal(newIndex);
-                return;
-            }
-            // ========== ✅新增：全局板块添加CP按钮 ==========
-            const globalAddCpBtn = e.target.closest("#annual-global-add-cp-btn");
-            if(globalAddCpBtn){
-                const newIndex = annualData.cpTopList.length;
-                annualData.cpTopList.push({ gameId:"", gameName:"", femaleId:"", femaleName:"", femaleCoverSrc:"", maleId:"", maleName:"", maleCoverSrc:"", text:"" });
-                saveAnnualData();
-                appendNewCpTopDom();
-                openAnnualGlobalCpModal(newIndex);
-                return;
-            }
-            // ========== ✅新增：模块折叠/展开按钮 ==========
-            const foldBtn = e.target.closest(".annual-card-fold-btn");
-            if(foldBtn){
-                const card = foldBtn.closest(".big-card");
-                if(!card) return;
-                const isFolded = card.classList.toggle("annual-folded");
-                foldBtn.textContent = isFolded ? "▼" : "▲";
-                return;
-            }
-            // ========== 年度TOP条目删除按钮（游戏/角色） ==========
-            const delBtn = e.target.closest(".annual-item-delete-btn");
-            if(delBtn){
-                const itemDom = delBtn.closest(".annual-top-item, .annual-char-top-item, .annual-cp-top-item");
-                if(!itemDom) return;
-                const type = delBtn.dataset.type;
-                let dataIdx;
-                if(type === "game"){
-                    const all = Array.from(document.querySelectorAll(".annual-top-item"));
-                    dataIdx = all.indexOf(itemDom);
-                    annualData.topList.splice(dataIdx,1);
-                    itemDom.remove();
-                    bindTop3Items();
-                    rerenderGameTopNoLabel();
-                }else if(type === "char"){
-                    const all = Array.from(document.querySelectorAll(".annual-char-top-item"));
-                    dataIdx = all.indexOf(itemDom);
-                    annualData.charTopList.splice(dataIdx,1);
-                    itemDom.remove();
-                    bindCharTop3Items();
-                    rerenderCharTopNoLabel();
-                }else if(type === "cp"){  // ✅新增
-                    const all = Array.from(document.querySelectorAll(".annual-cp-top-item"));
-                    dataIdx = all.indexOf(itemDom);
-                    annualData.cpTopList.splice(dataIdx,1);
-                    itemDom.remove();
-                    bindCpTop3Items();
-                    rerenderCpTopNoLabel();
-                }
-                saveAnnualData();
-                return;
-            }
-
-            // ========== 游戏弹窗关闭按钮 ==========
-            const clickCloseBtn = e.target.closest("#annual-global-game-modal .annual-modal-close-btn");
-            if(clickCloseBtn){
-                closeAnnualGlobalGameModal();
-                return;
-            }
-
-            // ========== 角色弹窗关闭按钮 ==========
-            const charModalCloseBtn = e.target.closest("#annual-global-char-modal .annual-modal-close-btn");
-            if(charModalCloseBtn){
-                closeAnnualGlobalCharModal();
-                return;
-            }
-
-            // ========== ✅新增：CP弹窗关闭按钮 ==========
-            const cpModalCloseBtn = e.target.closest("#annual-global-cp-modal .annual-modal-close-btn");
-            if(cpModalCloseBtn){ closeAnnualGlobalCpModal(); return; }
-
-            // ========== 角色弹窗返回按钮 ==========
-            const charModalBackBtn = e.target.closest(".annual-modal-back-btn");
-            if(charModalBackBtn){
-                charModalCurrentGameId = null;
-                switchCharModalView("gameList");
-                const modal = document.getElementById("annual-global-char-modal");
-                const searchInput = modal.querySelector(".annual-global-char-search-input");
-                renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), searchInput.value);
-                return;
-            }
-
-            // ========== ✅新增：CP弹窗返回按钮（独立class，不与角色弹窗.annual-modal-back-btn冲突） ==========
-            const cpModalBackBtn = e.target.closest("#annual-global-cp-modal .annual-cp-modal-back-btn");
-            if(cpModalBackBtn){
-                cpModalCurrentGameId = null;
-                cpModalCurrentFemaleId = null;
-                switchCpModalView("gameList");
-                const modal = document.getElementById("annual-global-cp-modal");
-                const searchInput = modal.querySelector(".annual-global-cp-search-input");
-                renderCpModalGameList(modal.querySelector(".annual-global-cp-game-list"), searchInput.value);
-                return;
-            }
-
-            // ========== 游戏弹窗遮罩点击关闭 ==========
-            const modalGameEl = document.getElementById("annual-global-game-modal");
-            if(modalGameEl && modalGameEl.classList.contains("active")){
-                const insideModal = e.target.closest(".annual-global-modal-inner");
-                if(!insideModal){
-                    closeAnnualGlobalGameModal();
-                    return;
-                }
-            }
-
-            // ========== 角色弹窗遮罩点击关闭 ==========
-            const modalCharEl = document.getElementById("annual-global-char-modal");
-            if(modalCharEl && modalCharEl.classList.contains("active")){
-                const insideCharModal = e.target.closest(".annual-global-modal-inner");
-                if(!insideCharModal){
-                    closeAnnualGlobalCharModal();
-                    return;
-                }
-            }
-
-            // ========== ✅新增：CP弹窗遮罩点击关闭 ==========
-            const modalCpEl = document.getElementById("annual-global-cp-modal");
-            if(modalCpEl && modalCpEl.classList.contains("active")){
-                const insideCpModal = e.target.closest("#annual-global-cp-modal .annual-global-modal-inner");
-                if(!insideCpModal){ closeAnnualGlobalCpModal(); return; }
-            }
-
-            // -------- 弹窗开关点击事件委托（角色弹窗） --------
-            // 全局开关
-            if(e.target.closest("#annual-modal-global-sub-char")){
-                charModalGlobal.subChar = !charModalGlobal.subChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-global-hide-char")){
-                charModalGlobal.hideChar = !charModalGlobal.hideChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-global-fd-game")){
-                charModalGlobal.fdChar = !charModalGlobal.fdChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
-                return;
-            }
-            // ✅补丁新增：全局续作/FD次要角色开关
-            if(e.target.closest("#annual-modal-global-fd-sub-char")){
-                charModalGlobal.fdSubChar = !charModalGlobal.fdSubChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
-                return;
-            }
-            // 本游戏局部开关
-            if(e.target.closest("#annual-modal-game-sub-char")){
-                charModalLocal.subChar = !charModalLocal.subChar;
-                renderCharModalCharList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-game-hide-char")){
-                charModalLocal.hideChar = !charModalLocal.hideChar;
-                renderCharModalCharList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-game-fd-game")){
-                charModalLocal.fdChar = !charModalLocal.fdChar;
-                renderCharModalCharList();
-                return;
-            }
-            // ✅补丁新增：单游戏续作/FD次要角色开关
-            if(e.target.closest("#annual-modal-game-fd-sub-char")){
-                charModalLocal.fdSubChar = !charModalLocal.fdSubChar;
-                renderCharModalCharList();
-                return;
-            }
-
-            // ========== ✅新增：CP弹窗全局开关 ==========
-            if(e.target.closest("#annual-modal-cp-global-sub-char")){
-                cpModalGlobal.subChar = !cpModalGlobal.subChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-cp-global-hide-char")){
-                cpModalGlobal.hideChar = !cpModalGlobal.hideChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-cp-global-fd-game")){
-                cpModalGlobal.fdChar = !cpModalGlobal.fdChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-cp-global-fd-sub-char")){
-                cpModalGlobal.fdSubChar = !cpModalGlobal.fdSubChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
-                return;
-            }
-            // ========== ✅新增：CP弹窗局部开关 ==========
-            if(e.target.closest("#annual-modal-cp-game-sub-char")){
-                cpModalLocal.subChar = !cpModalLocal.subChar;
-                renderCpModalFemaleList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-cp-game-hide-char")){
-                cpModalLocal.hideChar = !cpModalLocal.hideChar;
-                renderCpModalFemaleList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-cp-game-fd-game")){
-                cpModalLocal.fdChar = !cpModalLocal.fdChar;
-                renderCpModalFemaleList();
-                return;
-            }
-            if(e.target.closest("#annual-modal-cp-game-fd-sub-char")){
-                cpModalLocal.fdSubChar = !cpModalLocal.fdSubChar;
-                renderCpModalFemaleList();
-                return;
-            }
-        });
-
-        // ========== 全局弹窗搜索input事件委托 ==========
-        document.addEventListener("input", (e)=>{
-            // 游戏TOP3搜索
-            const input = e.target.closest(".annual-global-search-input");
-            if(input){
-                const modal = document.getElementById("annual-global-game-modal");
-                const listWrap = modal?.querySelector(".annual-global-game-list");
-                if(listWrap){
-                    renderGameList(listWrap, input.value);
-                }
-                return;
-            }
-            // 角色弹窗搜索（游戏列表视图）
-            const charSearchInput = e.target.closest(".annual-global-char-search-input");
-            if(charSearchInput){
-                const modal = document.getElementById("annual-global-char-modal");
-                const wrap = modal?.querySelector(".annual-global-char-game-list");
-                if(wrap){
-                    renderCharModalGameList(wrap, charSearchInput.value);
-                }
-                return;
-            }
-            // ✅新增：CP弹窗搜索（只搜游戏名）
-            const cpSearchInput = e.target.closest(".annual-global-cp-search-input");
-            if(cpSearchInput){
-                const modal = document.getElementById("annual-global-cp-modal");
-                const wrap = modal?.querySelector(".annual-global-cp-game-list");
-                if(wrap){ renderCpModalGameList(wrap, cpSearchInput.value); }
-                return;
-            }
-        });
-
-        // ✅新增：模式切换监听——切回FavList时重置.wrap背景和标题变量，切回Annual时重新应用
-        document.querySelectorAll('.mode-switch-wrap .mode-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const wrapEl = document.querySelector('.wrap');
-                if (!wrapEl) return;
-                if (btn.dataset.mode === 'annual') {
-                    applyAnnualPageColors();
-                } else {
-                    // ✅切回FavList时重置.wrap和body的背景色，恢复原页面样式
-                    wrapEl.style.backgroundColor = '';
-                    wrapEl.style.removeProperty('--annual-export-title');
-                    document.body.style.backgroundColor = '';
-                }
-            });
-        });
-        window._annualPanelClickBound = true;
-    }
-
-    // 如果游戏模板已经就绪，直接执行真实初始化
-    if(isGameTemplateReady()){
-        realInitAnnualModule();
-    }else{
-        // 轮询等待 gameTemplateReady 变为true，最大等待2s
-        console.log("[annual.js] 游戏模板尚未就绪，等待加载完成");
-        let pollCount = 0;
-        const pollTimer = setInterval(()=>{
-            pollCount++;
-            if(isGameTemplateReady() || pollCount >= 40){
-                clearInterval(pollTimer);
-                if(isGameTemplateReady()){
-                    realInitAnnualModule();
-                }else{
-                    console.warn("[annual.js]等待游戏模板超时，将在打开弹窗时再次尝试初始化");
-                    // 【修复】超时不锁死，打开弹窗时重新尝试
-                    _annualRealInitialized = false;
-                }
-            }
-        }, 50);
-    }
-}
-
-if(typeof window !== "undefined"){
-    window.initAnnualModule = initAnnualModule;
+if (typeof window !== 'undefined') {
+  window.renderAnnualModuleCanvas = renderAnnualModuleCanvas;
+  window.renderAllAnnualModules = renderAllAnnualModules;
 }
