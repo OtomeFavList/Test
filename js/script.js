@@ -1202,6 +1202,24 @@ export function initPage(Core = {}) {
       }
     }
 
+    // ==========【新增】Annual模式专属描述文字：动态创建并插入到.site-title内，与.sub-desc同级别，位于使用指南按钮上方 ==========
+    (function initAnnualSubDesc() {
+        const siteTitle = document.querySelector('.site-title');
+        if (!siteTitle) return;
+        // 防止重复创建
+        if (siteTitle.querySelector('.annual-sub-desc')) return;
+        const descEl = document.createElement('div');
+        descEl.className = 'annual-sub-desc';
+        descEl.innerHTML = '日乙年度报告&总结报告<br>生成属于你的 Annual Report & Summary Report。';
+        // 插入到.sub-desc之后，保证两个描述元素相邻、位置一致
+        const subDesc = siteTitle.querySelector('.sub-desc');
+        if (subDesc) {
+            subDesc.parentNode.insertBefore(descEl, subDesc.nextSibling);
+        } else {
+            siteTitle.appendChild(descEl);
+        }
+    })();
+
     // ============修复：加上await================
     await loadData();
 
