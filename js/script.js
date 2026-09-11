@@ -1774,20 +1774,28 @@ export function initPage(Core = {}) {
 
                 if (downloadBtn) downloadBtn.disabled = false;
 
-                // === 重新绑定下载按钮，支持多页批量下载 ===
-                previewDownloadBtn.onclick = () => {
+                // === 重新绑定下载按钮，支持多页批量下载（移动端异步串行，间隔800ms） ===
+                previewDownloadBtn.onclick = async () => {
                     if (!blobList || blobList.length === 0) return;
                     const baseTime = new Date().getTime();
-                    blobList.forEach((blob, pageIdx) => {
+                    // 异步串行：每次下载间隔800ms，确保移动端浏览器逐个处理，
+                    // 避免同步forEach连续click导致只响应第一张
+                    for (let pageIdx = 0; pageIdx < blobList.length; pageIdx++) {
+                        const blob = blobList[pageIdx];
                         const link = document.createElement('a');
                         const pageSuffix = blobList.length > 1 ? `_page${pageIdx+1}` : "";
                         link.download = `Otome_FavList_${baseTime}${pageSuffix}.png`;
                         link.href = URL.createObjectURL(blob);
+                        document.body.appendChild(link);
                         link.click();
-                    });
+                        document.body.removeChild(link);
+                        // 非最后一张：等待800ms再触发下一张下载
+                        if (pageIdx < blobList.length - 1) {
+                            await new Promise(r => setTimeout(r, 800));
+                        }
+                    }
                     previewModal.classList.remove("active");
                     clearPreviewCacheResource();
-                    // 额外释放所有分页url资源（clear中已做）
                 };
 
             } catch (err) {
