@@ -1,4 +1,4 @@
-// ===================== script.js UI交互层（模块化导出） =====================
+// ================== script.js UI交互层（模块化导出） =====================
 // 【重要说明】剧透弹窗、全局开关click事件全部迁移至main.js，本文件不再处理全局开关点击逻辑
 // 游戏卡片动态生成的局部开关：使用事件委托对接main.js剧透弹窗逻辑
 // 改造：每个游戏卡片内部渲染两套独立滑出面板 char / cp；不再使用全局唯一char-slide-panel
@@ -1845,36 +1845,94 @@ export function initPage(Core = {}) {
         clearPreviewCacheResource(); // 文字变更，导出缓存失效
     });
 
-    // ========== 右下角悬浮按钮 - 滚动到【添加游戏按钮】&滚动到最后游戏卡片 ==========
+    // ========== 右下角悬浮按钮 - 模块级智能滚动 ==========
+    // ▲：模块中间→滚到当前模块顶部；已在顶部→滚到上一个模块顶部；第一个模块→滚到页面最顶
+    // ▼：模块中间→滚到当前模块底部；已在底部→滚到下一个模块底部；最后一个模块→不动作
     const backToAddBtn = document.getElementById('back-to-add-btn');
     const scrollToLastGameBtn = document.getElementById('scroll-to-last-game-btn');
-    const targetAddBtn = document.getElementById('btn-add-game');
-    const addedGameContainer = document.getElementById('added-game-container');
 
-    if (backToAddBtn && targetAddBtn) {
+    if (backToAddBtn && scrollToLastGameBtn) {
+        const TOLERANCE = 30; // 容差像素，小于此值视为"已到达"
+
+        // 获取FavList页面所有大模块（按DOM顺序：一设置、二基础信息、三游戏列表、四导出）
+        function getFavListModules() {
+            // 优先在当前激活的mode-wrap内查找big-card；兼容无data-mode的默认模式
+            const activeWrap = document.querySelector('.mode-wrap:not(.mode-hidden)') || document.querySelector('.mode-wrap');
+            if (activeWrap) {
+                const cards = activeWrap.querySelectorAll('.big-card');
+                if (cards.length > 0) return Array.from(cards);
+            }
+            // 兜底：全局查找
+            return Array.from(document.querySelectorAll('.big-card'));
+        }
+
+        // 根据视口垂直中心判断当前在哪个模块
+        function getCurrentModuleIndex() {
+            const modules = getFavListModules();
+            if (modules.length === 0) return -1;
+            const viewCenter = window.scrollY + window.innerHeight / 2;
+            // 优先：视口中心落在某个模块范围内
+            for (let i = 0; i < modules.length; i++) {
+                const rect = modules[i].getBoundingClientRect();
+                const top = rect.top + window.scrollY;
+                const bottom = rect.bottom + window.scrollY;
+                if (viewCenter >= top && viewCenter <= bottom) return i;
+            }
+            // 兜底：视口中心在模块间隙中，找距离最近的模块
+            let closest = 0;
+            let minDist = Infinity;
+            for (let i = 0; i < modules.length; i++) {
+                const rect = modules[i].getBoundingClientRect();
+                const top = rect.top + window.scrollY;
+                const dist = Math.abs(viewCenter - top);
+                if (dist < minDist) { minDist = dist; closest = i; }
+            }
+            return closest;
+        }
+
+        // ▲按钮
         backToAddBtn.addEventListener('click', function() {
-            targetAddBtn.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+            const modules = getFavListModules();
+            if (modules.length === 0) return;
+            const idx = getCurrentModuleIndex();
+            if (idx < 0) return;
+            const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
+            if (window.scrollY > currentTop + TOLERANCE) {
+                // 在模块中间：滚动到当前模块顶部
+                modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // 已在当前模块顶部：滚动到上一个模块顶部
+                if (idx > 0) {
+                    modules[idx - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    // 已是第一个模块：滚动到页面最顶
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
         });
-    }
 
-    if (scrollToLastGameBtn) {
-        // ▼按钮点击：滚动到最后一张游戏卡片
-        scrollToLastGameBtn.addEventListener('click', function () {
-            const lastGameCard = document.querySelector('.added-game-card:last-of-type');
-            if(lastGameCard){
-                lastGameCard.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+        // ▼按钮
+        scrollToLastGameBtn.addEventListener('click', function() {
+            const modules = getFavListModules();
+            if (modules.length === 0) return;
+            const idx = getCurrentModuleIndex();
+            if (idx < 0) return;
+            const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
+            const viewBottom = window.scrollY + window.innerHeight;
+            if (viewBottom < currentBottom - TOLERANCE) {
+                // 在模块中间：滚动到当前模块底部（元素底部对齐视口底部）
+                modules[idx].scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } else {
+                // 已在当前模块底部：滚动到下一个模块底部
+                if (idx < modules.length - 1) {
+                    modules[idx + 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+                // 已是最后一个模块：不动作
             }
         });
     }
 
-    /* 【补丁修改】移除滚动控制按钮显隐逻辑，两个按钮永久可见；保留原有点击逻辑不变 */
-    // 按钮点击逻辑完全保留不变，只删除显示隐藏相关代码
+    /* 【补丁修改】移除滚动控制按钮显隐逻辑，两个按钮永久可见 */
 
     // ==========【新增】自制textarea垂直拖拽逻辑（PC+移动端touch兼容） ==========
     function bindTextareaResizeHandler() {
