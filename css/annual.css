@@ -45,6 +45,15 @@
 .mode-wrap .big-card:first-child {
     margin-top: 0;
 }
+/* ✅补丁：Annual模式下 .annual-page-title(display:none) 占据了:first-child位置，
+   导致第一个真正的big-card回退到margin-top:30px，比FavList多30px。
+   此处强制：Annual模式第一个big-card margin-top:0，后续big-card用相邻兄弟选择器恢复30px */
+.mode-wrap[data-mode="annual"] .big-card {
+    margin-top: 0;
+}
+.mode-wrap[data-mode="annual"] .big-card + .big-card {
+    margin-top: 30px;
+}
 /* ========== site-title 年度报告覆盖样式 ========== */
 .site-title.annual-active h1 {
     font-size: 42px;
