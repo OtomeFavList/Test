@@ -34,7 +34,7 @@
     display: flex;
     flex-direction: column;
     /* ⚠️关键修复：mode-wrap 移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
-    big‑card之间的垂直间距，全部交给 .big-card { margin‑top } 来实现，不再使用容器gap */
+    big‑card之间的垂直间距，全部交给 .big‑card { margin‑top } 来实现，不再使用容器gap */
     gap: 0;
 }
 .mode-wrap.mode-hidden {
@@ -2005,24 +2005,29 @@
 .annual-other-custom-card {
     position: relative;
 }
-.annual-other-custom-card .annual-other-custom-remove,
-.annual-other-custom-char-card .annual-other-custom-remove {
+.annual-other-custom-remove {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #b33a3a;
     border-radius: 50%;
-    border: none;
-    background: rgba(0, 0, 0, 0.4);
-    color: #fff;
-    font-size: 14px;
-    line-height: 1;
+    background: #fff;
+    color: #b33a3a;
+    font-size: 13px;
     cursor: pointer;
+    padding: 0 0 2px 0;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    box-sizing: border-box;
+    z-index: 10;
+}
+.annual-other-custom-remove:hover {
+    background: #992e2e;
+    color: #fff;
 }
 
 /* ---------- 六、七：宫格通用 ---------- */
