@@ -538,14 +538,16 @@ function collectModuleImages(moduleType, annualData) {
       pushUrl(item.femaleCoverSrc); pushUrl(item.maleCoverSrc);
     });
   } else if (moduleType === 'other') {
-    // 还玩了
     safeEach(annualData.other?.alsoPlayed, item => pushUrl(item.coverSrc));
-    // 最喜欢的CP
     const cp = annualData.other?.favCp;
     if (cp && cp.femaleId && cp.maleId) { pushUrl(cp.femaleCoverSrc); pushUrl(cp.maleCoverSrc); }
-    // 最喜欢的配角
     const sup = annualData.other?.favSupport;
     if (sup && sup.charId) pushUrl(sup.coverSrc);
+    // 新增：最喜欢的女主
+    const heroine = annualData.other?.favHeroine;
+    if (heroine && heroine.charId) pushUrl(heroine.coverSrc);
+    // 新增：自定义角色卡片
+    safeEach(annualData.other?.customCharCards, item => { if (item && item.charId) pushUrl(item.coverSrc); });
   } else if (moduleType === 'gameGrid') {
     const g = annualData.gameGrid;
     safeEach(g?.fixed, item => { if (item.gameId) pushUrl(item.coverSrc); });
@@ -576,6 +578,9 @@ function hasOtherContent(annualData) {
   if ((o.alsoPlayed || []).length > 0) return true;
   if (o.favCp && o.favCp.femaleId && o.favCp.maleId) return true;
   if (o.favSupport && o.favSupport.charId) return true;
+  if (o.favHeroine && o.favHeroine.charId) return true;  // 新增
+  const customCharValid = (o.customCharCards || []).some(c => c && (c.charId || (c.label || '').trim()));
+  if (customCharValid) return true;  // 新增
   if ((o.favLine || '').trim()) return true;
   if ((o.favMusic || '').trim()) return true;
   if ((o.favHe || '').trim()) return true;
@@ -589,12 +594,22 @@ function hasOtherContent(annualData) {
 function getOtherCards(annualData) {
   const o = annualData.other || {};
   const cards = [];
-  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) {
-    cards.push({ type: 'cp', title: '最喜欢的CP', data: o.favCp });
+  // 新增：最喜欢的女主（顺序最前）
+  if (o.favHeroine && o.favHeroine.charId) {
+    cards.push({ type: 'heroine', title: '最喜欢的女主', data: o.favHeroine });
   }
   if (o.favSupport && o.favSupport.charId) {
     cards.push({ type: 'support', title: '最喜欢的配角', data: o.favSupport });
   }
+  if (o.favCp && o.favCp.femaleId && o.favCp.maleId) {
+    cards.push({ type: 'cp', title: '最喜欢的CP', data: o.favCp });
+  }
+  // 新增：自定义角色卡片
+  (o.customCharCards || []).forEach(c => {
+    if (c && (c.charId || (c.label || '').trim())) {
+      cards.push({ type: 'customChar', title: c.label || '自定义', data: c });
+    }
+  });
   if ((o.favLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的台词', text: o.favLine });
   if ((o.favMusic || '').trim()) cards.push({ type: 'text', title: '最喜欢的OP/ED/BGM', text: o.favMusic });
   if ((o.favHe || '').trim()) cards.push({ type: 'text', title: '最喜欢的HE', text: o.favHe });
@@ -763,7 +778,7 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
       let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
       if (card.type === 'cp') {
         ch += OTHER_CP_COVER_SIZE;
-      } else if (card.type === 'support') {
+      } else if (card.type === 'support' || card.type === 'heroine' || card.type === 'customChar') {
         ch += OTHER_SUPPORT_COVER_SIZE;
       } else {
         const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
@@ -1159,7 +1174,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const card = cards[idx];
         let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
         if (card.type === 'cp') ch += OTHER_CP_COVER_SIZE;
-        else if (card.type === 'support') ch += OTHER_SUPPORT_COVER_SIZE;
+        else if (card.type === 'support' || card.type === 'heroine' || card.type === 'customChar') ch += OTHER_SUPPORT_COVER_SIZE;
         else {
           const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, textSize * 1.55, textSize);
@@ -1195,7 +1210,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
           const startX = x + (OTHER_CARD_W - totalW) / 2;
           drawCoverCard(painter, startX, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, fImg, fSrc, 6);
           drawCoverCard(painter, startX + OTHER_CP_COVER_SIZE + CP_GAP, contentY, OTHER_CP_COVER_SIZE, OTHER_CP_COVER_SIZE, mImg, mSrc, 6);
-        } else if (card.type === 'support') {
+        } else if (card.type === 'support' || card.type === 'heroine' || card.type === 'customChar') {
           const src = toCanvasUrl(card.data.coverSrc);
           const img = src ? imageCache.get(src) : null;
           const sx = x + (OTHER_CARD_W - OTHER_SUPPORT_COVER_SIZE) / 2;
