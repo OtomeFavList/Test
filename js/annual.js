@@ -2857,8 +2857,10 @@ function showAnnualPreviewModal(results, exportWidth) {
     renderAnnualPreviewPage(0);
     downloadBtn.disabled = false;
     // ✅每次Annual预览时用onclick赋值覆盖下载按钮，防止FavList的下载监听器同时触发
-    downloadBtn.onclick = () => {
-        _annualPreviewResults.forEach((r, i) => {
+    // ✅移动端修复：异步串行下载，间隔800ms，revoke延迟延长到3000ms
+    downloadBtn.onclick = async () => {
+        for (let i = 0; i < _annualPreviewResults.length; i++) {
+            const r = _annualPreviewResults[i];
             const url = URL.createObjectURL(r.blob);
             const a = document.createElement("a");
             a.download = `Annual_${r.moduleType}_${_annualPreviewWidth}.png`;
@@ -2866,8 +2868,13 @@ function showAnnualPreviewModal(results, exportWidth) {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
-        });
+            // 非最后一张：等待800ms再触发下一张下载
+            if (i < _annualPreviewResults.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 800));
+            }
+            // revoke延迟延长到3000ms，确保移动端下载请求已发出
+            setTimeout(() => URL.revokeObjectURL(url), 3000);
+        }
     };
     // 绑定弹窗按钮（只绑定一次）
     if (!_annualPreviewBound) {
