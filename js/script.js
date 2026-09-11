@@ -1210,7 +1210,7 @@ export function initPage(Core = {}) {
         if (siteTitle.querySelector('.annual-sub-desc')) return;
         const descEl = document.createElement('div');
         descEl.className = 'annual-sub-desc';
-        descEl.innerHTML = '日乙年度报告&总结报告<br>生成属于你的 Annual Report & Summary Report。';
+        descEl.innerHTML = '日乙年度报告&总结报告<br>生成属于你的<br>Annual Report & Summary Report。';
         // 插入到.sub-desc之后，保证两个描述元素相邻、位置一致
         const subDesc = siteTitle.querySelector('.sub-desc');
         if (subDesc) {
