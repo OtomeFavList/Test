@@ -66,12 +66,30 @@ export function wrapText(ctx, text, x, y, maxWidth, lineHeight, fontSize, color,
   let line = '';
   let totalHeight = 0;
   for (let n = 0; n < chars.length; n++) {
-    const testLine = line + chars[n];
+    const ch = chars[n];
+    // ✅新增：遇到手动换行符 \n 时强制换行
+    if (ch === '\n') {
+      ctx.fillText(line, x, y + totalHeight);
+      line = '';
+      totalHeight += safeLineHeight;
+      continue;
+    }
+    // ✅新增：遇到 \r 时强制换行，兼容 \r\n（跳过紧随的 \n）
+    if (ch === '\r') {
+      if (chars[n + 1] === '\n') {
+        n++;
+      }
+      ctx.fillText(line, x, y + totalHeight);
+      line = '';
+      totalHeight += safeLineHeight;
+      continue;
+    }
+    const testLine = line + ch;
     const metrics = ctx.measureText(testLine);
     const mWidth = Number.isFinite(metrics.width) ? metrics.width : 0;
-    if (mWidth > maxWidth && n > 0) {
+    if (mWidth > maxWidth && line.length > 0) {
       ctx.fillText(line, x, y + totalHeight);
-      line = chars[n];
+      line = ch;
       totalHeight += safeLineHeight;
     } else {
       line = testLine;
@@ -95,12 +113,28 @@ export function measureWrappedHeight(ctx, text, maxWidth, lineHeight, fontSize, 
   let line = '';
   let lines = 1;
   for (let n = 0; n < chars.length; n++) {
-    const testLine = line + chars[n];
+    const ch = chars[n];
+    // ✅新增：遇到手动换行符 \n 时强制换行
+    if (ch === '\n') {
+      lines++;
+      line = '';
+      continue;
+    }
+    // ✅新增：遇到 \r 时强制换行，兼容 \r\n
+    if (ch === '\r') {
+      if (chars[n + 1] === '\n') {
+        n++;
+      }
+      lines++;
+      line = '';
+      continue;
+    }
+    const testLine = line + ch;
     const metrics = ctx.measureText(testLine);
     const mWidth = Number.isFinite(metrics.width) ? metrics.width : 0;
-    if (mWidth > maxWidth && n > 0) {
+    if (mWidth > maxWidth && line.length > 0) {
       lines++;
-      line = chars[n];
+      line = ch;
     } else {
       line = testLine;
     }
