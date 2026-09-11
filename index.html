@@ -393,12 +393,12 @@
                     <!-- 空状态＋按钮 / 已添加封面列表 由JS动态渲染 -->
                 </div>
             </div>
-            <!-- 六个圆角框 -->
+            <!-- 七个圆角框 -->
             <div class="annual-other-cards-row" id="annual-other-cards-row">
                 <div class="annual-other-card">
-                    <div class="annual-other-card-title">最喜欢的CP</div>
-                    <div class="annual-other-card-body" id="annual-other-favcp-body">
-                        <button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>
+                    <div class="annual-other-card-title">最喜欢的女主</div>
+                    <div class="annual-other-card-body" id="annual-other-favheroine-body">
+                        <button class="annual-grid-add-btn" data-other-action="addFavHeroine">+</button>
                     </div>
                 </div>
                 <div class="annual-other-card">
@@ -408,6 +408,13 @@
                     </div>
                 </div>
                 <div class="annual-other-card">
+                    <div class="annual-other-card-title">最喜欢的CP</div>
+                    <div class="annual-other-card-body" id="annual-other-favcp-body">
+                        <button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>
+                    </div>
+                </div>
+                <!-- ④自定义角色卡片由JS动态插入到此锚点之前 -->
+                <div class="annual-other-card" id="annual-other-first-text-card">
                     <div class="annual-other-card-title">最喜欢的台词</div>
                     <div class="annual-custom-text-wrap">
                         <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-key="favLine"></textarea>
