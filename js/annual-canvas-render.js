@@ -775,7 +775,10 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
     const rows = Math.ceil(cards.length / cols);
     const textSize = config.customTextFontSize || 16;
     const cardHeights = cards.map(card => {
-      let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+      // ✅修复：自定义标签过长时动态测量标题换行高度，避免固定高度导致下方内容遮住标题
+      const titleMaxW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
+      const titleActualH = measureCenteredTextHeight(ctx, card.title || '', titleMaxW, OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE);
+      let ch = OTHER_CARD_PAD * 2 + titleActualH + OTHER_CARD_TITLE_MB;
       if (card.type === 'cp') {
         ch += OTHER_CP_COVER_SIZE;
       } else if (card.type === 'support' || card.type === 'heroine' || card.type === 'customChar') {
@@ -1204,7 +1207,10 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const idx = r * cols + c;
         if (idx >= cards.length) continue;
         const card = cards[idx];
-        let ch = OTHER_CARD_PAD * 2 + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+        // ✅修复：与 calcOtherHeight 保持一致，标题高度动态测量
+        const titleMaxW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
+        const titleActualH = measureCenteredTextHeight(ctx, card.title || '', titleMaxW, OTHER_SECTION_TITLE_SIZE * 1.4, OTHER_SECTION_TITLE_SIZE);
+        let ch = OTHER_CARD_PAD * 2 + titleActualH + OTHER_CARD_TITLE_MB;
         if (card.type === 'cp') ch += OTHER_CP_COVER_SIZE;
         else if (card.type === 'support' || card.type === 'heroine' || card.type === 'customChar') ch += OTHER_SUPPORT_COVER_SIZE;
         else {
@@ -1229,10 +1235,11 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const y = painter.y;
         painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
         const titleY = y + OTHER_CARD_PAD;
-        drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
+        // ✅修复：drawCenteredText 返回实际绘制高度（含自动换行），下方内容从标题底部开始
+        const titleActualH = drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
           OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
           OTHER_SECTION_TITLE_SIZE, labelColor, true);
-        const contentY = titleY + OTHER_SECTION_TITLE_SIZE + OTHER_CARD_TITLE_MB;
+        const contentY = titleY + titleActualH + OTHER_CARD_TITLE_MB;
         if (card.type === 'cp') {
           const fSrc = toCanvasUrl(card.data.femaleCoverSrc);
           const mSrc = toCanvasUrl(card.data.maleCoverSrc);
