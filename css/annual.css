@@ -63,7 +63,7 @@
 .annual-page-title {
     display: none;
 }
-/* ========== ✅新增：Annual模式专属描述文字 ========== */
+/* ========== Annual模式专属描述文字 ========== */
 /* 默认隐藏，与.sub-desc同级别同在.site-title内；切换到Annual模式时由.site-title.annual-active控制显示 */
 .annual-sub-desc {
     display: none;
