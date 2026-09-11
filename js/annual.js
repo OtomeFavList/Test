@@ -113,7 +113,7 @@ const getDefaultAnnualData = () => ({
     },
     // ===== 新增：七、キャラ宫格 =====
     charGrid: {
-        fixed: CHAR_GRID_FIXED_LABELS.map(label => ({label, gameId, charId: "", charName: "", coverSrc: ""})),
+        fixed: CHAR_GRID_FIXED_LABELS.map(label => ({label, gameId: "", charId: "", charName: "", coverSrc: ""})),
         custom: [],                                        // [{label, gameId, charId, charName, coverSrc}]
         extraThoughts: ""
     }
