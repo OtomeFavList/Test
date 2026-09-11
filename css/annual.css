@@ -6,7 +6,7 @@
     /*
     拆解：
     margin‑top:8px → 实现【指南按钮块底部 到 mode‑switch‑wrap顶部】=8px（A距离，对齐h1→title‑sub‑cn的8px间距）
-    margin‑bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，对齐sub‑desc→指南按钮上端的30px）
+    margin-bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，对齐sub‑desc→指南按钮上端的30px）
     */
     margin: 8px 0 30px;
 }
@@ -1377,6 +1377,10 @@
     overflow: hidden;
     width: 100%;
     margin-top: 0;
+    /* ✅修复：填满卡片 flex 列剩余空间，卡片被同行拉长时文本框同步拉长 */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 .annual-custom-text-wrap textarea {
     width: 100%;
@@ -1390,6 +1394,9 @@
     color: var(--annual-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
+    /* ✅修复：flex 填满父容器高度，卡片拉长时 textarea 同步拉长 */
+    flex: 1;
+    min-height: 0;
 }
 .annual-custom-text-wrap textarea:focus {
     outline: none;
@@ -1947,6 +1954,14 @@
     min-height: 120px;
     position: relative;
 }
+
+/* ✅新增：固定文本卡片内的 textarea 垂直填满 body，卡片拉长时文本框同步拉长 */
+.annual-other-card-body > .annual-other-textarea {
+    align-self: stretch;
+    height: auto;
+    min-height: 80px;
+}
+
 .annual-other-cp-preview {
     display: flex;
     gap: 8px;
