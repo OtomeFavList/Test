@@ -543,6 +543,9 @@ function collectModuleImages(moduleType, annualData) {
     // 最喜欢的CP
     const cp = annualData.other?.favCp;
     if (cp && cp.femaleId && cp.maleId) { pushUrl(cp.femaleCoverSrc); pushUrl(cp.maleCoverSrc); }
+    // 最喜欢的女主
+    const favFemale = annualData.other?.favFemale;
+    if (favFemale && favFemale.charId) pushUrl(favFemale.coverSrc);
     // 最喜欢的配角
     const sup = annualData.other?.favSupport;
     if (sup && sup.charId) pushUrl(sup.coverSrc);
@@ -575,6 +578,7 @@ function hasOtherContent(annualData) {
   const o = annualData.other || {};
   if ((o.alsoPlayed || []).length > 0) return true;
   if (o.favCp && o.favCp.femaleId && o.favCp.maleId) return true;
+  if (o.favFemale && o.favFemale.charId) return true;
   if (o.favSupport && o.favSupport.charId) return true;
   if ((o.favLine || '').trim()) return true;
   if ((o.favMusic || '').trim()) return true;
@@ -591,6 +595,10 @@ function getOtherCards(annualData) {
   const cards = [];
   if (o.favCp && o.favCp.femaleId && o.favCp.maleId) {
     cards.push({ type: 'cp', title: '最喜欢的CP', data: o.favCp });
+  }
+  // ===== 新增：最喜欢的女主卡片 =====
+  if (o.favFemale && o.favFemale.charId) {
+    cards.push({ type: 'support', title: '最喜欢的女主', data: o.favFemale });
   }
   if (o.favSupport && o.favSupport.charId) {
     cards.push({ type: 'support', title: '最喜欢的配角', data: o.favSupport });
