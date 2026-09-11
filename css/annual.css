@@ -3,7 +3,9 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin: 16px 0 30px;
+    margin-top:8px
+    margin-bottom:30px
+    margin: 8px 0 16px;
 }
 .mode-switch-wrap .mode-btn {
     padding: 10px 22px;
