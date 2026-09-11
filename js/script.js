@@ -1866,86 +1866,125 @@ export function initPage(Core = {}) {
     // ========== 右下角悬浮按钮 - 模块级智能滚动 ==========
     // ▲：模块中间→滚到当前模块顶部；已在顶部→滚到上一个模块顶部；第一个模块→滚到页面最顶
     // ▼：模块中间→滚到当前模块底部；已在底部→滚到下一个模块底部；最后一个模块→不动作
+    // ✅补丁：空模块（高度<140px）自动跳过，避免模块三无游戏卡片时滚动目标近乎为0导致"没反应"
     const backToAddBtn = document.getElementById('back-to-add-btn');
     const scrollToLastGameBtn = document.getElementById('scroll-to-last-game-btn');
-
     if (backToAddBtn && scrollToLastGameBtn) {
-        const TOLERANCE = 30; // 容差像素，小于此值视为"已到达"
-
+        const TOLERANCE = 30;               // 容差像素，小于此值视为"已到达"
+        const EMPTY_MODULE_HEIGHT = 140;     // 空模块阈值：高度小于此值视为无内容模块，自动跳过
         // 获取FavList页面所有大模块（按DOM顺序：一设置、二基础信息、三游戏列表、四导出）
         function getFavListModules() {
-            // 优先在当前激活的mode-wrap内查找big-card；兼容无data-mode的默认模式
             const activeWrap = document.querySelector('.mode-wrap:not(.mode-hidden)') || document.querySelector('.mode-wrap');
             if (activeWrap) {
                 const cards = activeWrap.querySelectorAll('.big-card');
                 if (cards.length > 0) return Array.from(cards);
             }
-            // 兜底：全局查找
             return Array.from(document.querySelectorAll('.big-card'));
         }
-
-        // 根据视口垂直中心判断当前在哪个模块
+        // 判断模块是否为空（高度过小）
+        function isEmptyModule(moduleEl) {
+            if (!moduleEl) return true;
+            return moduleEl.getBoundingClientRect().height < EMPTY_MODULE_HEIGHT;
+        }
+        // 从指定索引向前找最近的非空模块（含自身）
+        function findPrevNonEmpty(modules, fromIdx) {
+            for (let i = fromIdx; i >= 0; i--) {
+                if (!isEmptyModule(modules[i])) return i;
+            }
+            return -1;
+        }
+        // 从指定索引向后找最近的非空模块（含自身）
+        function findNextNonEmpty(modules, fromIdx) {
+            for (let i = fromIdx; i < modules.length; i++) {
+                if (!isEmptyModule(modules[i])) return i;
+            }
+            return -1;
+        }
+        // 根据视口垂直中心判断当前在哪个模块（优先非空模块）
         function getCurrentModuleIndex() {
             const modules = getFavListModules();
             if (modules.length === 0) return -1;
             const viewCenter = window.scrollY + window.innerHeight / 2;
-            // 优先：视口中心落在某个模块范围内
+            // 优先：视口中心落在某个非空模块范围内
+            for (let i = 0; i < modules.length; i++) {
+                if (isEmptyModule(modules[i])) continue;
+                const rect = modules[i].getBoundingClientRect();
+                const top = rect.top + window.scrollY;
+                const bottom = rect.bottom + window.scrollY;
+                if (viewCenter >= top && viewCenter <= bottom) return i;
+            }
+            // 次优先：视口中心落在任意模块（含空模块）范围内
             for (let i = 0; i < modules.length; i++) {
                 const rect = modules[i].getBoundingClientRect();
                 const top = rect.top + window.scrollY;
                 const bottom = rect.bottom + window.scrollY;
                 if (viewCenter >= top && viewCenter <= bottom) return i;
             }
-            // 兜底：视口中心在模块间隙中，找距离最近的模块
-            let closest = 0;
+            // 兜底：视口中心在模块间隙中，找距离最近的非空模块（综合顶部和底部距离）
+            let closest = -1;
             let minDist = Infinity;
             for (let i = 0; i < modules.length; i++) {
+                if (isEmptyModule(modules[i])) continue;
                 const rect = modules[i].getBoundingClientRect();
                 const top = rect.top + window.scrollY;
-                const dist = Math.abs(viewCenter - top);
+                const bottom = rect.bottom + window.scrollY;
+                let dist;
+                if (viewCenter < top) dist = top - viewCenter;
+                else if (viewCenter > bottom) dist = viewCenter - bottom;
+                else dist = 0;
                 if (dist < minDist) { minDist = dist; closest = i; }
             }
-            return closest;
+            return closest >= 0 ? closest : 0;
         }
-
         // ▲按钮
         backToAddBtn.addEventListener('click', function() {
             const modules = getFavListModules();
             if (modules.length === 0) return;
-            const idx = getCurrentModuleIndex();
+            let idx = getCurrentModuleIndex();
             if (idx < 0) return;
+            // 当前命中空模块时，向前找到最近的非空模块作为"当前模块"
+            if (isEmptyModule(modules[idx])) {
+                const nonEmptyIdx = findPrevNonEmpty(modules, idx);
+                if (nonEmptyIdx >= 0) idx = nonEmptyIdx;
+            }
             const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
             if (window.scrollY > currentTop + TOLERANCE) {
                 // 在模块中间：滚动到当前模块顶部
                 modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
-                // 已在当前模块顶部：滚动到上一个模块顶部
-                if (idx > 0) {
-                    modules[idx - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // 已在当前模块顶部：滚动到上一个非空模块顶部
+                const prevIdx = findPrevNonEmpty(modules, idx - 1);
+                if (prevIdx >= 0) {
+                    modules[prevIdx].scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    // 已是第一个模块：滚动到页面最顶
+                    // 前面无非空模块：滚动到页面最顶
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             }
         });
-
         // ▼按钮
         scrollToLastGameBtn.addEventListener('click', function() {
             const modules = getFavListModules();
             if (modules.length === 0) return;
-            const idx = getCurrentModuleIndex();
+            let idx = getCurrentModuleIndex();
             if (idx < 0) return;
+            // 当前命中空模块时，向后找到最近的非空模块作为"当前模块"
+            if (isEmptyModule(modules[idx])) {
+                const nonEmptyIdx = findNextNonEmpty(modules, idx);
+                if (nonEmptyIdx >= 0) idx = nonEmptyIdx;
+            }
             const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
             const viewBottom = window.scrollY + window.innerHeight;
             if (viewBottom < currentBottom - TOLERANCE) {
                 // 在模块中间：滚动到当前模块底部（元素底部对齐视口底部）
                 modules[idx].scrollIntoView({ behavior: 'smooth', block: 'end' });
             } else {
-                // 已在当前模块底部：滚动到下一个模块底部
-                if (idx < modules.length - 1) {
-                    modules[idx + 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+                // 已在当前模块底部：滚动到下一个非空模块底部
+                const nextIdx = findNextNonEmpty(modules, idx + 1);
+                if (nextIdx >= 0) {
+                    modules[nextIdx].scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }
-                // 已是最后一个模块：不动作
+                // 后面无非空模块：不动作
             }
         });
     }
