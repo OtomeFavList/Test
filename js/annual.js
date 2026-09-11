@@ -1435,6 +1435,18 @@ function bindOtherTextareas() {
     }
 }
 
+/**
+ * ✅新增：自定义标签 textarea 自动调整高度（随内容换行自动增高）
+ * 解决 input 单行无法换行、长标签被截断看不到的问题
+ */
+function autoResizeCustomLabel(textarea) {
+    if (!textarea) return;
+    textarea.style.resize = 'none';
+    textarea.style.overflow = 'hidden';
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
+
 // ===== 新增：模块五末尾自定义卡片 =====
 function renderOtherCustomCards() {
     const row = document.getElementById("annual-other-cards-row");
@@ -1450,21 +1462,23 @@ function renderOtherCustomCards() {
         div.className = "annual-other-card annual-other-custom-card";
         div.innerHTML = `
             <button class="annual-other-custom-remove" data-other-custom-remove="${idx}">×</button>
-            <input class="annual-other-custom-label" data-other-custom-label="${idx}" placeholder="自定义标签" value="${card.label ?? ''}">
+            <textarea class="annual-other-custom-label" data-other-custom-label="${idx}" placeholder="自定义标签" rows="1">${card.label ?? ''}</textarea>
             <div class="annual-custom-text-wrap">
                 <textarea class="annual-other-textarea" placeholder="自定义文本" data-other-custom-text="${idx}">${card.text ?? ''}</textarea>
                 <div class="resize-handle"></div>
             </div>`;
         row.appendChild(div);
     });
-    // 绑定标签输入：填写后自动追加新空白卡片
-    row.querySelectorAll('.annual-other-custom-label').forEach(input => {
-        input.removeEventListener("input", input._handler);
-        input._handler = () => {
-            const idx = Number(input.dataset.otherCustomLabel);
-            annualData.other.customCards[idx].label = input.value;
+    // 绑定标签输入：填写后自动追加新空白卡片 + textarea 随内容自动换行增高
+    row.querySelectorAll('.annual-other-custom-label').forEach(ta => {
+        autoResizeCustomLabel(ta);  // 初始化高度
+        ta.removeEventListener("input", ta._handler);
+        ta._handler = () => {
+            autoResizeCustomLabel(ta);  // 输入时实时调整高度
+            const idx = Number(ta.dataset.otherCustomLabel);
+            annualData.other.customCards[idx].label = ta.value;
             // 如果是最后一个且标签非空，追加新空白卡片
-            if (idx === annualData.other.customCards.length - 1 && input.value.trim() !== "") {
+            if (idx === annualData.other.customCards.length - 1 && ta.value.trim() !== "") {
                 annualData.other.customCards.push({label: "", text: ""});
                 saveAnnualData();
                 renderOtherCustomCards();
@@ -1472,7 +1486,7 @@ function renderOtherCustomCards() {
             }
             saveAnnualData();
         };
-        input.addEventListener("input", input._handler);
+        ta.addEventListener("input", ta._handler);
     });
     // 绑定文本输入
     row.querySelectorAll('.annual-other-textarea[data-other-custom-text]').forEach(ta => {
@@ -1513,7 +1527,7 @@ function renderOtherCustomCharCards() {
         }
         div.innerHTML = `
             <button class="annual-other-custom-remove" data-other-custom-char-card-remove="${idx}">×</button>
-            <input class="annual-other-custom-label" data-other-custom-char-label="${idx}" placeholder="自定义标签" value="${card.label ?? ''}">
+            <textarea class="annual-other-custom-label" data-other-custom-char-label="${idx}" placeholder="自定义标签" rows="1">${card.label ?? ''}</textarea>
             <div class="annual-other-card-body">${bodyHtml}</div>`;
         if (anchor) {
             row.insertBefore(div, anchor);
@@ -1521,13 +1535,15 @@ function renderOtherCustomCharCards() {
             row.appendChild(div);
         }
     });
-    // 绑定自定义标签输入：填写后自动追加新空白卡片（对齐customCards逻辑）
-    row.querySelectorAll('[data-other-custom-char-label]').forEach(input => {
-        input.removeEventListener("input", input._handler);
-        input._handler = () => {
-            const idx = Number(input.dataset.otherCustomCharLabel);
-            annualData.other.customCharCards[idx].label = input.value;
-            if (idx === annualData.other.customCharCards.length - 1 && input.value.trim() !== "") {
+    // 绑定自定义标签输入：填写后自动追加新空白卡片 + textarea 随内容自动换行增高
+    row.querySelectorAll('[data-other-custom-char-label]').forEach(ta => {
+        autoResizeCustomLabel(ta);  // 初始化高度
+        ta.removeEventListener("input", ta._handler);
+        ta._handler = () => {
+            autoResizeCustomLabel(ta);  // 输入时实时调整高度
+            const idx = Number(ta.dataset.otherCustomCharLabel);
+            annualData.other.customCharCards[idx].label = ta.value;
+            if (idx === annualData.other.customCharCards.length - 1 && ta.value.trim() !== "") {
                 annualData.other.customCharCards.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
                 saveAnnualData();
                 renderOtherCustomCharCards();
@@ -1535,7 +1551,7 @@ function renderOtherCustomCharCards() {
             }
             saveAnnualData();
         };
-        input.addEventListener("input", input._handler);
+        ta.addEventListener("input", ta._handler);
     });
 }
 
