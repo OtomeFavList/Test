@@ -139,11 +139,7 @@ body{
     margin:0 auto;
     display:flex;
     flex-direction:column;
-    /* ✅补丁：gap从30px改为0，消除flex子元素之间的默认30px间距。
-       根因：.site-title、.mode-switch-wrap、.mode-wrap都是.wrap的直接子元素，
-       flex gap会在它们之间强制产生30px间距；且Annual模式下隐藏的favlist mode-wrap
-       仍占据gap位置，导致Annual比FavList多出整整30px。
-       改为0后，间距完全由各元素自身的margin精确控制，两模式天然一致。 */
+    /* ✅补丁：gap从30px改为0，消除flex子元素之间的默认30px间距。*/
     gap:0;
 }
 
