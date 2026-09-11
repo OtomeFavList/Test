@@ -94,14 +94,16 @@ const getDefaultAnnualData = () => ({
     cpTopList: [],
     // ===== 新增：五、其他 =====
     other: {
-        alsoPlayed: [],                                    // [{gameId, gameName, coverSrc}]
-        favCp: null,                                       // {gameId, femaleId, maleId, femaleName, maleName, femaleCoverSrc, maleCoverSrc}
-        favSupport: null,                                  // {gameId, charId, charName, coverSrc}
+        alsoPlayed: [],
+        favHeroine: null,       // 新增：最喜欢的女主 {gameId, charId, charName, coverSrc}
+        favCp: null,
+        favSupport: null,
         favLine: "",
         favMusic: "",
         favHe: "",
         favBe: "",
-        customCards: []                                    // [{label, text}] 模块五末尾自定义框
+        customCards: [],
+        customCharCards: []     // 新增：自定义角色卡片 [{label, gameId, charId, charName, coverSrc}]
     },
     // ===== 新增：六、ゲーム宫格 =====
     gameGrid: {
@@ -133,6 +135,7 @@ let activeCpTopItemIndex = null;
 // ===== 新增：弹窗上下文标记，区分当前弹窗服务于哪个模块 =====
 let _activeModalContext = null;   // "gameTop"|"charTop"|"cpTop"|"otherAlso"|"otherFavCp"|"otherFavSupport"|"gameGrid"|"charGrid"
 let _activeGridTarget = null;     // {type:"fixed"|"custom", index:number}  宫格模块当前操作目标
+let _activeOtherCustomCharIndex = null;  // 新增：当前操作的自定义角色卡片下标
 let cpModalViewMode = "gameList";       // gameList / femaleList
 let cpModalCurrentGameId = null;
 let cpModalCurrentFemaleId = null;      // 展开男主列表时记录当前女主
@@ -878,7 +881,7 @@ function renderCharModalCharList() {
         }
         // ========== 补丁结束 ==========
         div.addEventListener("click",()=>{
-            // ===== 新增：其他-最喜欢的配角 =====
+            // ===== 其他-最喜欢的配角 =====
             if (_activeModalContext === "otherFavSupport") {
                 const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
                 annualData.other.favSupport = {
@@ -892,7 +895,37 @@ function renderCharModalCharList() {
                 closeAnnualGlobalCharModal();
                 return;
             }
-            // ===== 新增：角色宫格模块 =====
+            // ===== 新增：其他-最喜欢的女主 =====
+            if (_activeModalContext === "otherFavHeroine") {
+                const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+                annualData.other.favHeroine = {
+                    gameId: charModalCurrentGameId,
+                    charId: char.id,
+                    charName: charNameList[finalNameIdx] || char.name,
+                    coverSrc: allSrc[annualCharImgIndex.get(imgKey) ?? 0] || ""
+                };
+                saveAnnualData();
+                renderOtherFavHeroine();
+                closeAnnualGlobalCharModal();
+                return;
+            }
+            // ===== 新增：其他-自定义角色卡片 =====
+            if (_activeModalContext === "otherCustomChar" && _activeOtherCustomCharIndex !== null) {
+                const idx = _activeOtherCustomCharIndex;
+                const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+                const target = annualData.other.customCharCards[idx];
+                if (target) {
+                    target.gameId = charModalCurrentGameId;
+                    target.charId = char.id;
+                    target.charName = charNameList[finalNameIdx] || char.name;
+                    target.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
+                }
+                saveAnnualData();
+                renderOtherCustomCharCards();
+                closeAnnualGlobalCharModal();
+                return;
+            }
+            // ===== 角色宫格模块 =====
             if (_activeModalContext === "charGrid" && _activeGridTarget) {
                 const t = _activeGridTarget;
                 const targetItem = (t.type === "fixed") ? annualData.charGrid.fixed[t.index] : annualData.charGrid.custom[t.index];
@@ -1024,6 +1057,7 @@ function closeAnnualGlobalCharModal(){
     activeCharTopItemIndex = null;
     _activeModalContext = null;
     _activeGridTarget = null;
+    _activeOtherCustomCharIndex = null;  // 新增：清理自定义角色卡片索引
     charModalViewMode = "gameList";
     charModalCurrentGameId = null;
     const modal = document.getElementById("annual-global-char-modal");
@@ -1361,6 +1395,21 @@ function renderOtherFavSupport() {
         <button class="annual-other-mini-remove" data-other-action="removeFavSupport">×</button>`;
 }
 
+function renderOtherFavHeroine() {
+    const body = document.getElementById("annual-other-favheroine-body");
+    if (!body) return;
+    const heroine = annualData.other.favHeroine;
+    if (!heroine || !heroine.charId) {
+        body.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addFavHeroine">+</button>`;
+        return;
+    }
+    body.innerHTML = `
+        <div class="annual-other-support-preview">
+            <img src="${getWebImageUrl(heroine.coverSrc)}" alt="${heroine.charName}">
+        </div>
+        <button class="annual-other-mini-remove" data-other-action="removeFavHeroine">×</button>`;
+}
+
 function bindOtherTextareas() {
     document.querySelectorAll('.annual-other-textarea[data-other-key]').forEach(ta => {
         const key = ta.dataset.otherKey;
@@ -1437,10 +1486,65 @@ function renderOtherCustomCards() {
     });
 }
 
+function renderOtherCustomCharCards() {
+    const row = document.getElementById("annual-other-cards-row");
+    if (!row) return;
+    // 清理旧的自定义角色卡片
+    row.querySelectorAll('.annual-other-custom-char-card').forEach(el => el.remove());
+    // 至少保留一个空白卡片
+    if (!annualData.other.customCharCards || annualData.other.customCharCards.length === 0) {
+        annualData.other.customCharCards = [{label: "", gameId: "", charId: "", charName: "", coverSrc: ""}];
+    }
+    // 插入锚点：台词卡片
+    const anchor = document.getElementById("annual-other-first-text-card");
+    annualData.other.customCharCards.forEach((card, idx) => {
+        const div = document.createElement("div");
+        div.className = "annual-other-card annual-other-custom-char-card";
+        // 卡片body：有角色显示图片+删除，无角色显示＋按钮
+        let bodyHtml;
+        if (card.charId) {
+            bodyHtml = `
+                <div class="annual-other-support-preview">
+                    <img src="${getWebImageUrl(card.coverSrc)}" alt="${card.charName}">
+                </div>
+                <button class="annual-other-mini-remove" data-other-custom-char-clear="${idx}">×</button>`;
+        } else {
+            bodyHtml = `<button class="annual-grid-add-btn" data-other-action="addOtherCustomChar" data-other-custom-char-index="${idx}">+</button>`;
+        }
+        div.innerHTML = `
+            <button class="annual-other-custom-remove" data-other-custom-char-card-remove="${idx}">×</button>
+            <input class="annual-other-custom-label" data-other-custom-char-label="${idx}" placeholder="自定义标签" value="${card.label ?? ''}">
+            <div class="annual-other-card-body">${bodyHtml}</div>`;
+        if (anchor) {
+            row.insertBefore(div, anchor);
+        } else {
+            row.appendChild(div);
+        }
+    });
+    // 绑定自定义标签输入：填写后自动追加新空白卡片（对齐customCards逻辑）
+    row.querySelectorAll('[data-other-custom-char-label]').forEach(input => {
+        input.removeEventListener("input", input._handler);
+        input._handler = () => {
+            const idx = Number(input.dataset.otherCustomCharLabel);
+            annualData.other.customCharCards[idx].label = input.value;
+            if (idx === annualData.other.customCharCards.length - 1 && input.value.trim() !== "") {
+                annualData.other.customCharCards.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                saveAnnualData();
+                renderOtherCustomCharCards();
+                return;
+            }
+            saveAnnualData();
+        };
+        input.addEventListener("input", input._handler);
+    });
+}
+
 function rebuildOtherModule() {
     renderOtherAlsoPlayed();
+    renderOtherFavHeroine();      // 新增
     renderOtherFavCp();
     renderOtherFavSupport();
+    renderOtherCustomCharCards(); // 新增（必须在customCards之前，确保插入位置正确）
     renderOtherCustomCards();
     bindOtherTextareas();
 }
@@ -2966,6 +3070,41 @@ export function initAnnualModule(){
 
             const removeFavSupport = e.target.closest('[data-other-action="removeFavSupport"]');
             if (removeFavSupport) { annualData.other.favSupport = null; saveAnnualData(); renderOtherFavSupport(); return; }
+            // ===== 新增：最喜欢的女主 =====
+            const addFavHeroineBtn = e.target.closest('[data-other-action="addFavHeroine"]');
+            if (addFavHeroineBtn) { openAnnualGlobalCharModal(null, "otherFavHeroine"); return; }
+            const removeFavHeroine = e.target.closest('[data-other-action="removeFavHeroine"]');
+            if (removeFavHeroine) { annualData.other.favHeroine = null; saveAnnualData(); renderOtherFavHeroine(); return; }
+            // ===== 新增：自定义角色卡片＋按钮 =====
+            const addOtherCustomCharBtn = e.target.closest('[data-other-action="addOtherCustomChar"]');
+            if (addOtherCustomCharBtn) {
+                _activeOtherCustomCharIndex = Number(addOtherCustomCharBtn.dataset.otherCustomCharIndex);
+                openAnnualGlobalCharModal(null, "otherCustomChar");
+                return;
+            }
+            // ===== 新增：自定义角色卡片 图片清除× =====
+            const customCharClear = e.target.closest('[data-other-custom-char-clear]');
+            if (customCharClear) {
+                const idx = Number(customCharClear.dataset.otherCustomCharClear);
+                const target = annualData.other.customCharCards[idx];
+                if (target) { target.gameId = ""; target.charId = ""; target.charName = ""; target.coverSrc = ""; }
+                saveAnnualData();
+                renderOtherCustomCharCards();
+                return;
+            }
+            // ===== 新增：自定义角色卡片 整卡删除× =====
+            const customCharCardRemove = e.target.closest('[data-other-custom-char-card-remove]');
+            if (customCharCardRemove) {
+                const idx = Number(customCharCardRemove.dataset.otherCustomCharCardRemove);
+                annualData.other.customCharCards.splice(idx, 1);
+                const hasEmpty = annualData.other.customCharCards.some(c => !c.label.trim() && !c.charId);
+                if (!hasEmpty) {
+                    annualData.other.customCharCards.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                }
+                saveAnnualData();
+                renderOtherCustomCharCards();
+                return;
+            }
 
             const alsoRemoveBtn = e.target.closest('[data-other-also-remove]');
             if (alsoRemoveBtn) {
