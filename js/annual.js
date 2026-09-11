@@ -1045,7 +1045,7 @@ function openAnnualGlobalCharModal(targetIndex, context){
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
-    searchInput.focus();
+    // ✅修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     // 重置开关DOM勾选（对齐HTML真实id）
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
     modal.querySelector("#annual-modal-global-hide-char").checked = false;
@@ -1103,7 +1103,7 @@ function openAnnualGlobalGameModal(targetIndex, context){
     const searchInput = modal.querySelector(".annual-global-search-input");
     const listWrap = modal.querySelector(".annual-global-game-list");
     searchInput.value = "";
-    searchInput.focus();
+    // ✅修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     // 打开弹窗，再次校验模板状态
     renderGameList(listWrap, "");
 }
@@ -2786,7 +2786,7 @@ function openAnnualGlobalCpModal(targetIndex, context){
     switchCpModalView("gameList");
     const searchInput = modal.querySelector(".annual-global-cp-search-input");
     searchInput.value = "";
-    searchInput.focus();
+    // ✅修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
      "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
      "#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
