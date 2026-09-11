@@ -6,7 +6,7 @@
     /*
     拆解：
     margin‑top:8px → 实现【指南按钮块底部 到 mode‑switch‑wrap顶部】=8px（A距离，对齐h1→title‑sub‑cn的8px间距）
-    margin‑bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，对齐sub‑desc→指南按钮上端的30px）
+    margin-bottom:30px → 实现【mode‑switch‑wrap底部 到第一个big‑card上边框】=30px（B距离，对齐sub‑desc→指南按钮上端的30px）
     */
     margin: 8px 0 30px;
 }
@@ -590,10 +590,15 @@
         padding: 11px 12px; /* 左右12px，和开关组对齐 */
         font-size: 14px;
     }
-    /* ===== ①移动端开关组同步缩小gap，并保持12px左右边距，与搜索框对齐 ===== */
+    /* ===== ①移动端开关组：移除左右padding，与搜索框、游戏列表左右边距完全一致（都只有scroll-wrap的12px） ===== */
     .annual-modal-global-switch-group {
         gap: 12px;
-        padding: 0 12px 8px 12px;
+        padding: 0 0 8px 0;
+    }
+    /* ✅新增：CP弹窗全局开关组同步对齐 */
+    .annual-cp-global-switch-group {
+        gap: 12px;
+        padding: 0 0 8px 0;
     }
     .annual-modal-game-switch-group {
         gap: 12px;
@@ -837,6 +842,10 @@
     .annual-modal-global-switch-group {
         gap: 12px;
     }
+    /* ✅新增：CP弹窗全局开关组同步 */
+    .annual-cp-global-switch-group {
+        gap: 12px;
+    }
     .annual-modal-game-switch-group {
         gap: 12px;
     }
@@ -1038,6 +1047,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
+    padding: 0 20px 8px 20px;
+}
+/* ✅新增：CP弹窗全局开关组复用同样式，确保与搜索框/游戏列表左右对齐 */
+.annual-cp-global-switch-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     padding: 0 20px 8px 20px;
 }
 /* 消除switch-row在弹窗开关组内的垂直margin，避免横向折行时产生额外间隙 */
@@ -2098,6 +2114,11 @@
     box-sizing: border-box;
     background: #fcfcfc;
     color: var(--annual-export-labelcolor, #b85878);  /* 修改点5：标签文字色接入CSS变量 */
+    /* ✅修复：从 input 改为 textarea，支持多行自动换行，禁止手动拖拽和滚动条 */
+    resize: none;
+    overflow: hidden;
+    line-height: 1.4;
+    display: block;
 }
 .annual-grid-custom-label:focus { outline: none; border-color: #f6a5b8; }
 
