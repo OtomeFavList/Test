@@ -1257,7 +1257,10 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         } else {
           const textAreaW = OTHER_CARD_W - OTHER_CARD_PAD * 2;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize);
-          const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+          // ✅修复：白框高度填满卡片剩余空间（从contentY到卡片底部内边距），
+          // 当同行卡片因自定义标签换行而拉长对齐时，白框也相应拉长，避免底部留白
+          const availableH = (y + rowH - OTHER_CARD_PAD) - contentY;
+          const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2, availableH);
           drawTextBox(painter, x + OTHER_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true, true);
         }
       }
