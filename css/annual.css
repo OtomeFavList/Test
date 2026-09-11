@@ -34,7 +34,7 @@
     display: flex;
     flex-direction: column;
     /* ⚠️关键修复：mode-wrap 移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
-    big‑card之间的垂直间距，全部交给 .big‑card { margin‑top } 来实现，不再使用容器gap */
+    big‑card之间的垂直间距，全部交给 .big-card { margin‑top } 来实现，不再使用容器gap */
     gap: 0;
 }
 .mode-wrap.mode-hidden {
@@ -2005,6 +2005,12 @@
 .annual-other-custom-card {
     position: relative;
 }
+
+/* 新增：自定义角色卡片同样需要 relative，供右上角×删除按钮 absolute 定位 */
+.annual-other-custom-char-card {
+    position: relative;
+}
+
 .annual-other-custom-remove {
     position: absolute;
     top: -8px;
