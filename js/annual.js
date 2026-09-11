@@ -96,7 +96,8 @@ const getDefaultAnnualData = () => ({
     other: {
         alsoPlayed: [],                                    // [{gameId, gameName, coverSrc}]
         favCp: null,                                       // {gameId, femaleId, maleId, femaleName, maleName, femaleCoverSrc, maleCoverSrc}
-        favSupport: null,                                  // {gameId, charId, charName, coverSrc}
+        favFemale: null,                                   // {gameId, charId, charName, coverSrc} 最喜欢的女主
+        favSupport: null,                                  // {gameId, charId, charName, coverSrc} 最喜欢的配角
         favLine: "",
         favMusic: "",
         favHe: "",
@@ -878,6 +879,20 @@ function renderCharModalCharList() {
         }
         // ========== 补丁结束 ==========
         div.addEventListener("click",()=>{
+            // ===== 新增：其他-最喜欢的女主 =====
+            if (_activeModalContext === "otherFavFemale") {
+                const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+                annualData.other.favFemale = {
+                    gameId: charModalCurrentGameId,
+                    charId: char.id,
+                    charName: charNameList[finalNameIdx] || char.name,
+                    coverSrc: allSrc[annualCharImgIndex.get(imgKey) ?? 0] || ""
+                };
+                saveAnnualData();
+                renderOtherFavFemale();
+                closeAnnualGlobalCharModal();
+                return;
+            }
             // ===== 新增：其他-最喜欢的配角 =====
             if (_activeModalContext === "otherFavSupport") {
                 const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
@@ -1346,6 +1361,21 @@ function renderOtherFavCp() {
         <button class="annual-other-mini-remove" data-other-action="removeFavCp">×</button>`;
 }
 
+function renderOtherFavFemale() {
+    const body = document.getElementById("annual-other-favfemale-body");
+    if (!body) return;
+    const sup = annualData.other.favFemale;
+    if (!sup || !sup.charId) {
+        body.innerHTML = `<button class="annual-grid-add-btn" data-other-action="addFavFemale">+</button>`;
+        return;
+    }
+    body.innerHTML = `
+        <div class="annual-other-support-preview">
+            <img src="${getWebImageUrl(sup.coverSrc)}" alt="${sup.charName}">
+        </div>
+        <button class="annual-other-mini-remove" data-other-action="removeFavFemale">×</button>`;
+}
+
 function renderOtherFavSupport() {
     const body = document.getElementById("annual-other-favsupport-body");
     if (!body) return;
@@ -1440,6 +1470,7 @@ function renderOtherCustomCards() {
 function rebuildOtherModule() {
     renderOtherAlsoPlayed();
     renderOtherFavCp();
+    renderOtherFavFemale();   // 新增：最喜欢的女主渲染
     renderOtherFavSupport();
     renderOtherCustomCards();
     bindOtherTextareas();
@@ -2957,6 +2988,12 @@ export function initAnnualModule(){
 
             const favCpBtn = e.target.closest('[data-other-action="addFavCp"]');
             if (favCpBtn) { openAnnualGlobalCpModal(null, "otherFavCp"); return; }
+
+            // 最喜欢的女主
+            const favFemaleBtn = e.target.closest('[data-other-action="addFavFemale"]');
+            if (favFemaleBtn) { openAnnualGlobalCharModal(null, "otherFavFemale"); return; }
+            const removeFavFemale = e.target.closest('[data-other-action="removeFavFemale"]');
+            if (removeFavFemale) { annualData.other.favFemale = null; saveAnnualData(); renderOtherFavFemale(); return; }
 
             const favSupportBtn = e.target.closest('[data-other-action="addFavSupport"]');
             if (favSupportBtn) { openAnnualGlobalCharModal(null, "otherFavSupport"); return; }
