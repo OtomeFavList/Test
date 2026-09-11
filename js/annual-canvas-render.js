@@ -936,6 +936,9 @@ function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize,
   if (!text) return 0;
   ctx.font = `${bold ? 'bold ' : ''}${fontSize}px ${FONT_SIYUAN}`;
   ctx.fillStyle = color;
+  // ✅修复：与 wrapText 保持一致，行空隙上限12px，避免调大字号后模块五行间距与其他模块不一致
+  const gap = Math.min(lineHeight - fontSize, 12);
+  const safeLineHeight = fontSize + gap;
   const chars = Array.from(text);
   let line = '';
   const lines = [];
@@ -966,14 +969,17 @@ function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize,
   if (line) lines.push(line);
   lines.forEach((l, i) => {
     const w = ctx.measureText(l).width;
-    ctx.fillText(l, centerX - w / 2, y + i * lineHeight);
+    ctx.fillText(l, centerX - w / 2, y + i * safeLineHeight);
   });
-  return lines.length * lineHeight;
+  return lines.length * safeLineHeight;
 }
 
 function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
   if (!text) return 0;
   ctx.font = `bold ${fontSize}px ${FONT_SIYUAN}`;
+  // ✅修复：与 measureWrappedHeight 保持一致，行空隙上限12px，确保测高与绘制行数一致
+  const gap = Math.min(lineHeight - fontSize, 12);
+  const safeLineHeight = fontSize + gap;
   const chars = Array.from(text);
   let line = '';
   let lines = 1;
@@ -1001,7 +1007,7 @@ function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
       line += ch;
     }
   }
-  return lines * lineHeight;
+  return lines * safeLineHeight;
 }
 
 function getGridCoverW(gridKind) {
