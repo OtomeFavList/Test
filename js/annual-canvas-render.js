@@ -936,7 +936,23 @@ function drawCenteredText(ctx, text, centerX, y, maxWidth, lineHeight, fontSize,
   const chars = Array.from(text);
   let line = '';
   const lines = [];
-  for (const ch of chars) {
+  for (let n = 0; n < chars.length; n++) {
+    const ch = chars[n];
+    // ✅新增：遇到手动换行符 \n 时强制换行
+    if (ch === '\n') {
+      lines.push(line);
+      line = '';
+      continue;
+    }
+    // ✅新增：遇到 \r 时强制换行，兼容 \r\n
+    if (ch === '\r') {
+      if (chars[n + 1] === '\n') {
+        n++;
+      }
+      lines.push(line);
+      line = '';
+      continue;
+    }
     if (line && ctx.measureText(line + ch).width > maxWidth) {
       lines.push(line);
       line = ch;
@@ -958,7 +974,23 @@ function measureCenteredTextHeight(ctx, text, maxWidth, lineHeight, fontSize) {
   const chars = Array.from(text);
   let line = '';
   let lines = 1;
-  for (const ch of chars) {
+  for (let n = 0; n < chars.length; n++) {
+    const ch = chars[n];
+    // ✅新增：遇到手动换行符 \n 时强制换行
+    if (ch === '\n') {
+      lines++;
+      line = '';
+      continue;
+    }
+    // ✅新增：遇到 \r 时强制换行，兼容 \r\n
+    if (ch === '\r') {
+      if (chars[n + 1] === '\n') {
+        n++;
+      }
+      lines++;
+      line = '';
+      continue;
+    }
     if (line && ctx.measureText(line + ch).width > maxWidth) {
       lines++;
       line = ch;
