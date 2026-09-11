@@ -1269,6 +1269,8 @@ function appendNewGameTopDom(){
     container.appendChild(itemDom);
     bindTop3Items();
     rerenderGameTopNoLabel();
+    // ✅修复：动态追加条目后重新绑定文本框拖拽手柄
+    bindAnnualTextareaResize();
 }
 
 /**
@@ -1300,6 +1302,8 @@ function appendNewCharTopDom(){
     container.appendChild(itemDom);
     bindCharTop3Items();
     rerenderCharTopNoLabel();
+    // ✅修复：动态追加条目后重新绑定文本框拖拽手柄
+    bindAnnualTextareaResize();
 }
 
 /**
@@ -1332,6 +1336,8 @@ function appendNewCpTopDom(){
     container.appendChild(itemDom);
     bindCpTop3Items();
     rerenderCpTopNoLabel();
+    // ✅修复：动态追加条目后重新绑定文本框拖拽手柄
+    bindAnnualTextareaResize();
 }
 
 /**
@@ -1516,14 +1522,27 @@ function renderOtherCustomCards() {
     });
     // 绑定文本输入
     row.querySelectorAll('.annual-other-textarea[data-other-custom-text]').forEach(ta => {
-        ta.removeEventListener("input", ta._handler);
-        ta._handler = () => {
+        ta.removeEventListener("input", ta._inputHandler);
+        ta._inputHandler = () => {
             const idx = Number(ta.dataset.otherCustomText);
             annualData.other.customCards[idx].text = ta.value;
             saveAnnualData();
         };
-        ta.addEventListener("input", ta._handler);
+        ta.addEventListener("input", ta._inputHandler);
+        // ✅新增：失焦时如果是最后一个卡片且文本非空，追加新空白卡片
+        ta.removeEventListener("blur", ta._blurHandler);
+        ta._blurHandler = () => {
+            const idx = Number(ta.dataset.otherCustomText);
+            if (idx === annualData.other.customCards.length - 1 && ta.value.trim() !== "") {
+                annualData.other.customCards.push({label: "", text: ""});
+                saveAnnualData();
+                renderOtherCustomCards();
+            }
+        };
+        ta.addEventListener("blur", ta._blurHandler);
     });
+    // ✅修复：动态渲染后重新绑定文本框拖拽手柄
+    bindAnnualTextareaResize();
 }
 
 function renderOtherCustomCharCards() {
@@ -1613,15 +1632,32 @@ function renderGameGrid() {
         html += renderGameGridItem(item, "custom", idx);
     });
     container.innerHTML = html;
-    // 绑定自定义标签输入
-    container.querySelectorAll('.annual-grid-custom-label').forEach(input => {
-        const type = input.dataset.gridType;
-        const idx = Number(input.dataset.gridIndex);
+    // 绑定自定义标签输入：input 存数据+调高度，blur 时检查是否追加新卡片
+    container.querySelectorAll('.annual-grid-custom-label').forEach(ta => {
+        const type = ta.dataset.gridType;
+        const idx = Number(ta.dataset.gridIndex);
         const item = (type === "fixed") ? annualData.gameGrid.fixed[idx] : annualData.gameGrid.custom[idx];
-        input.value = item?.label ?? "";
-        input.removeEventListener("input", input._handler);
-        input._handler = () => { if(item) { item.label = input.value; saveAnnualData(); } };
-        input.addEventListener("input", input._handler);
+        ta.value = item?.label ?? "";
+        autoResizeCustomLabel(ta);
+        ta.removeEventListener("input", ta._inputHandler);
+        ta._inputHandler = () => {
+            autoResizeCustomLabel(ta);
+            if(item) { item.label = ta.value; saveAnnualData(); }
+        };
+        ta.addEventListener("input", ta._inputHandler);
+        // ✅新增：失焦时如果是最后一个自定义卡片且标签非空，追加新空白卡片
+        ta.removeEventListener("blur", ta._blurHandler);
+        ta._blurHandler = () => {
+            if (type === "custom" && item && ta.value.trim() !== "") {
+                const isLast = idx === annualData.gameGrid.custom.length - 1;
+                if (isLast) {
+                    annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
+                    saveAnnualData();
+                    renderGameGrid();
+                }
+            }
+        };
+        ta.addEventListener("blur", ta._blurHandler);
     });
 }
 
@@ -1636,7 +1672,7 @@ function renderGameGridItem(item, type, idx) {
         ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.gameName}">${removeBtn}`
         : `<button class="annual-grid-add-btn" data-grid-action="addGame" data-grid-type="${type}" data-grid-index="${idx}">+</button>${removeBtn}`;
     const labelEl = (type === "custom")
-        ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
+        ? `<textarea class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" rows="1">${item?.label ?? ''}</textarea>`
         : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
     return `
         <div class="annual-grid-item ${hasGame ? 'has-cover' : ''}">
@@ -1662,14 +1698,32 @@ function renderCharGrid() {
         html += renderCharGridItem(item, "custom", idx);
     });
     container.innerHTML = html;
-    container.querySelectorAll('.annual-grid-custom-label').forEach(input => {
-        const type = input.dataset.gridType;
-        const idx = Number(input.dataset.gridIndex);
+    // 绑定自定义标签输入：input 存数据+调高度，blur 时检查是否追加新卡片
+    container.querySelectorAll('.annual-grid-custom-label').forEach(ta => {
+        const type = ta.dataset.gridType;
+        const idx = Number(ta.dataset.gridIndex);
         const item = (type === "fixed") ? annualData.charGrid.fixed[idx] : annualData.charGrid.custom[idx];
-        input.value = item?.label ?? "";
-        input.removeEventListener("input", input._handler);
-        input._handler = () => { if(item) { item.label = input.value; saveAnnualData(); } };
-        input.addEventListener("input", input._handler);
+        ta.value = item?.label ?? "";
+        autoResizeCustomLabel(ta);
+        ta.removeEventListener("input", ta._inputHandler);
+        ta._inputHandler = () => {
+            autoResizeCustomLabel(ta);
+            if(item) { item.label = ta.value; saveAnnualData(); }
+        };
+        ta.addEventListener("input", ta._inputHandler);
+        // ✅新增：失焦时如果是最后一个自定义卡片且标签非空，追加新空白卡片
+        ta.removeEventListener("blur", ta._blurHandler);
+        ta._blurHandler = () => {
+            if (type === "custom" && item && ta.value.trim() !== "") {
+                const isLast = idx === annualData.charGrid.custom.length - 1;
+                if (isLast) {
+                    annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                    saveAnnualData();
+                    renderCharGrid();
+                }
+            }
+        };
+        ta.addEventListener("blur", ta._blurHandler);
     });
 }
 
@@ -1683,7 +1737,7 @@ function renderCharGridItem(item, type, idx) {
         ? `<img class="annual-grid-cover-img" src="${getWebImageUrl(item.coverSrc)}" alt="${item.charName}">${removeBtn}`
         : `<button class="annual-grid-add-btn" data-grid-action="addChar" data-grid-type="${type}" data-grid-index="${idx}">+</button>${removeBtn}`;
     const labelEl = (type === "custom")
-        ? `<input class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" value="${item?.label ?? ''}">`
+        ? `<textarea class="annual-grid-custom-label" data-grid-type="${type}" data-grid-index="${idx}" placeholder="自定义标签" rows="1">${item?.label ?? ''}</textarea>`
         : `<div class="annual-grid-label">${item?.label ?? ''}</div>`;
     return `
         <div class="annual-grid-item ${hasChar ? 'has-cover' : ''}">
