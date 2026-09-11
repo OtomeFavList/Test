@@ -1295,11 +1295,13 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
       const rowTotalW = rowCount * coverW + (rowCount - 1) * GRID_GAP;
       const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
       let rowMaxH = 0;
+      let rowMaxCoverH = 0;  // ✅新增：记录该行最大封面高度，用于标签位置统一对齐
       const cellHeights = [];
       for (let c = 0; c < rowCount; c++) {
         const idx = rowStart + c;
         const item = items[idx];
         const covH = getGridCoverH(item, gridKind, imageCache);
+        rowMaxCoverH = Math.max(rowMaxCoverH, covH);
         const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
         const labH = measureCenteredTextHeight(ctx, labelText, coverW, labelLineH, GRID_LABEL_SIZE);
         const cellH = covH + GRID_LABEL_GAP + Math.max(labH, labelLineH);
@@ -1316,7 +1318,8 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
         const img = src ? imageCache.get(src) : null;
         drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
         const labelText = item.label || (gridKind === 'game' ? (item.gameName || '') : (item.charName || ''));
-        const labelY = y + covH + GRID_LABEL_GAP;
+        // ✅修复：标签Y坐标统一对齐到该行最高封面底部，而非各自封面底部
+        const labelY = y + rowMaxCoverH + GRID_LABEL_GAP;
         drawCenteredText(ctx, labelText, x + coverW / 2, labelY, coverW,
           labelLineH, GRID_LABEL_SIZE, labelColor, true);
       }
