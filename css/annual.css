@@ -548,8 +548,11 @@
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
         min-height:260px;
-        max-height:42vh !important; /* ✅新增移动端卡片容器最大高度 */
-        overflow-y:auto !important; /* ✅新增移动端独立滚动 */
+        max-height:42vh !important;
+        overflow-y:auto !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        border: none !important;
     }
     .annual-global-char-game-list .game-option-item img,
     .annual-global-cp-game-list .game-option-item img,
@@ -583,22 +586,40 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* ===== ④角色弹窗搜索框与开关组完全对齐游戏弹窗 ===== */
+    /* ===== ④角色弹窗搜索框：外框宽度与游戏列表外框完全对齐（margin:0 + width:100%，由scroll-wrap统一12px缩进） ===== */
     .annual-global-char-search-input {
-        width: 100%;
-        margin: 0;
-        padding: 11px 12px; /* 左右12px，和开关组对齐 */
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 11px 12px;
         font-size: 14px;
+        box-sizing: border-box !important;
     }
-    /* ===== ①移动端开关组：移除左右padding，与搜索框、游戏列表左右边距完全一致（都只有scroll-wrap的12px） ===== */
+    /* ✅新增：CP弹窗搜索框同步对齐 */
+    .annual-global-cp-search-input {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 11px 12px;
+        font-size: 14px;
+        box-sizing: border-box !important;
+    }
+    /* ===== ①移动端开关组：外框宽度与搜索框、游戏列表完全一致（左右padding/margin均为0，由scroll-wrap统一12px缩进） ===== */
     .annual-modal-global-switch-group {
         gap: 12px;
-        padding: 0 0 8px 0;
+        padding: 0 0 8px 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
-    /* ✅新增：CP弹窗全局开关组同步对齐 */
+
+    /* ✅CP弹窗全局开关组同步对齐 */
     .annual-cp-global-switch-group {
         gap: 12px;
-        padding: 0 0 8px 0;
+        padding: 0 0 8px 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex;
+        flex-wrap: wrap;
     }
     .annual-modal-game-switch-group {
         gap: 12px;
@@ -611,9 +632,12 @@
         height:26px;
         font-size:18px;
     }
-    /* ==========④关键：视图容器顶部增加padding‑top，把搜索栏与游戏卡片框隔开，同时左右内边距归零，由子元素控制 ========== */
+    /* ==========④视图容器：上下padding分隔元素，左右严格为0，所有左右缩进统一由scroll-wrap的12px控制 ========== */
     .annual-modal-view-container {
-        padding:12px 0 12px 0;
+        padding: 12px 0 12px 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     /* ===== 防止开关文字被挤压 ===== */
     .annual-modal-global-switch-group label,
@@ -1049,12 +1073,20 @@
     gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
     padding: 0 20px 8px 20px;
 }
-/* ✅新增：CP弹窗全局开关组复用同样式，确保与搜索框/游戏列表左右对齐 */
+/* ✅CP弹窗全局开关组：与角色弹窗全局开关组完全一致，左右padding 20px 对齐搜索框 margin 20px */
 .annual-cp-global-switch-group {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
     padding: 0 20px 8px 20px;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 消除switch-row在CP弹窗开关组内的垂直margin */
+.annual-cp-global-switch-group > .switch-row {
+    margin: 0;
 }
 /* 消除switch-row在弹窗开关组内的垂直margin，避免横向折行时产生额外间隙 */
 .annual-modal-global-switch-group > .switch-row {
@@ -1077,6 +1109,18 @@
 }
 
 .annual-global-char-search-input {
+    width:calc(100% - 40px);
+    margin:0 20px 10px 20px;
+    padding:11px 14px;
+    border:1px solid #ddd;
+    border-radius: 10px;
+    background:#fcfcfc;
+    font-size:15px;
+    box-sizing: border-box;
+}
+
+/* ✅新增：CP弹窗搜索框PC端与角色弹窗完全一致 */
+.annual-global-cp-search-input {
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
     padding:11px 14px;
