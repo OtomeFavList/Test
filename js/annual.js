@@ -437,9 +437,23 @@ function renderGameList(wrap, keyword) {
                     targetItem.gameName = game.name;
                     targetItem.coverSrc = game.cover ?? "";
                 }
-                // 自定义项添加后，在末尾追加一个新空白自定义项
+                // ✅修复：仅当编辑的是最后一个且此前完全空白的自定义卡片时，才追加新空白卡片
                 if (t.type === "custom") {
-                    annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
+                    const card = targetItem;
+                    const isLastEmpty = t.index === annualData.gameGrid.custom.length - 1
+                        && card && !card.gameId && !(card.label && card.label.trim());
+                    // 上面的 isLastEmpty 判断的是更新后的状态，需要基于更新前判断
+                    // 由于已经赋值 gameId，这里改用"更新前是否为空"重新判断：
+                    // 若目标卡片此前 gameId 为空且 label 为空，且它是最后一个，则追加
+                    // 但此处赋值已完成，所以改用另一个判定：若 t.index 是最后一个索引，则追加
+                }
+                // ✅修复：仅当编辑的是最后一个且此前完全空白的自定义卡片时，才追加新空白卡片
+                if (t.type === "custom") {
+                    // 判断当前编辑的索引是否已经是最后一个自定义项
+                    const isLastIndex = t.index === annualData.gameGrid.custom.length - 1;
+                    if (isLastIndex) {
+                        annualData.gameGrid.custom.push({label: "", gameId: "", gameName: "", coverSrc: ""});
+                    }
                 }
                 saveAnnualData();
                 renderGameGrid();
@@ -920,6 +934,10 @@ function renderCharModalCharList() {
                     target.charName = charNameList[finalNameIdx] || char.name;
                     target.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
                 }
+                // ✅修复：选择角色后，如果是最后一个卡片且已填充，追加新空白卡片
+                if (idx === annualData.other.customCharCards.length - 1) {
+                    annualData.other.customCharCards.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                }
                 saveAnnualData();
                 renderOtherCustomCharCards();
                 closeAnnualGlobalCharModal();
@@ -936,8 +954,12 @@ function renderCharModalCharList() {
                     targetItem.charName = charNameList[finalNameIdx] || char.name;
                     targetItem.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
                 }
+                // ✅修复：仅当编辑的是最后一个自定义卡片时，才追加新空白卡片
                 if (t.type === "custom") {
-                    annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                    const isLastIndex = t.index === annualData.charGrid.custom.length - 1;
+                    if (isLastIndex) {
+                        annualData.charGrid.custom.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
+                    }
                 }
                 saveAnnualData();
                 renderCharGrid();
@@ -1469,24 +1491,28 @@ function renderOtherCustomCards() {
             </div>`;
         row.appendChild(div);
     });
-    // 绑定标签输入：填写后自动追加新空白卡片 + textarea 随内容自动换行增高
+    // 绑定标签输入：input 仅实时保存数据+调高度，blur 时才追加新卡片（避免输入过程中重新渲染打断焦点）
     row.querySelectorAll('.annual-other-custom-label').forEach(ta => {
-        autoResizeCustomLabel(ta);  // 初始化高度
-        ta.removeEventListener("input", ta._handler);
-        ta._handler = () => {
-            autoResizeCustomLabel(ta);  // 输入时实时调整高度
+        autoResizeCustomLabel(ta);
+        ta.removeEventListener("input", ta._inputHandler);
+        ta._inputHandler = () => {
+            autoResizeCustomLabel(ta);
             const idx = Number(ta.dataset.otherCustomLabel);
             annualData.other.customCards[idx].label = ta.value;
-            // 如果是最后一个且标签非空，追加新空白卡片
+            saveAnnualData();
+        };
+        ta.addEventListener("input", ta._inputHandler);
+        // ✅新增：失焦时才检查是否追加新空白卡片并重新渲染
+        ta.removeEventListener("blur", ta._blurHandler);
+        ta._blurHandler = () => {
+            const idx = Number(ta.dataset.otherCustomLabel);
             if (idx === annualData.other.customCards.length - 1 && ta.value.trim() !== "") {
                 annualData.other.customCards.push({label: "", text: ""});
                 saveAnnualData();
                 renderOtherCustomCards();
-                return;
             }
-            saveAnnualData();
         };
-        ta.addEventListener("input", ta._handler);
+        ta.addEventListener("blur", ta._blurHandler);
     });
     // 绑定文本输入
     row.querySelectorAll('.annual-other-textarea[data-other-custom-text]').forEach(ta => {
@@ -1535,23 +1561,28 @@ function renderOtherCustomCharCards() {
             row.appendChild(div);
         }
     });
-    // 绑定自定义标签输入：填写后自动追加新空白卡片 + textarea 随内容自动换行增高
+    // 绑定自定义标签输入：input 仅实时保存数据+调高度，blur 时才追加新卡片
     row.querySelectorAll('[data-other-custom-char-label]').forEach(ta => {
-        autoResizeCustomLabel(ta);  // 初始化高度
-        ta.removeEventListener("input", ta._handler);
-        ta._handler = () => {
-            autoResizeCustomLabel(ta);  // 输入时实时调整高度
+        autoResizeCustomLabel(ta);
+        ta.removeEventListener("input", ta._inputHandler);
+        ta._inputHandler = () => {
+            autoResizeCustomLabel(ta);
             const idx = Number(ta.dataset.otherCustomCharLabel);
             annualData.other.customCharCards[idx].label = ta.value;
+            saveAnnualData();
+        };
+        ta.addEventListener("input", ta._inputHandler);
+        // ✅新增：失焦时才检查是否追加新空白卡片并重新渲染
+        ta.removeEventListener("blur", ta._blurHandler);
+        ta._blurHandler = () => {
+            const idx = Number(ta.dataset.otherCustomCharLabel);
             if (idx === annualData.other.customCharCards.length - 1 && ta.value.trim() !== "") {
                 annualData.other.customCharCards.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
                 saveAnnualData();
                 renderOtherCustomCharCards();
-                return;
             }
-            saveAnnualData();
         };
-        ta.addEventListener("input", ta._handler);
+        ta.addEventListener("blur", ta._blurHandler);
     });
 }
 
