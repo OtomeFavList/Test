@@ -699,7 +699,7 @@ export function initPage(Core = {}) {
                     <input type="checkbox" class="game-hide-char" data-gameidx="${index}" ${(gameItem.localHideChar ?? false) ? 'checked' : ''}>
                     <span class="slider"></span>
                 </label>
-                <span>单独显示本游戏隐藏角色</span>
+                <span>单独显示本游戏隐藏图片、角色</span>
             </div>`;
         }
         if(hasLocalFDChar){
@@ -709,7 +709,7 @@ export function initPage(Core = {}) {
                     <input type="checkbox" class="game-fd-switch" data-gameidx="${index}" ${(gameItem.localFD ?? false) ? 'checked' : ''}>
                     <span class="slider"></span>
                 </label>
-                <span>单独显示本游戏续作/FD角色</span>
+                <span>单独显示本游戏续作/FD图片、角色</span>
             </div>`;
         }
         const switchRowHtml = switchRowInnerHtml ? `<div class="game-switch-row">${switchRowInnerHtml}</div>` : "";
