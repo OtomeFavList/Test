@@ -292,6 +292,44 @@ function getAnnualCpAvailImages(char) {
 }
 
 /**
+ * ✅补丁新增：统计角色在指定开关状态下的可用图片总数
+ * 复用 main.js getAvailableCharImages，通过比较开关开/关时的图片数量差，
+ * 判断角色是否有隐藏图片或FD图片，无需硬编码图片属性名。
+ */
+function countCharImages(char, hideOn, fdOn) {
+    if (!char) return 0;
+    const units = getAvailableCharImages(char, hideOn, fdOn, false, false);
+    let count = 0;
+    units.forEach(u => {
+        if (Array.isArray(u.srcList)) count += u.srcList.length;
+    });
+    return count;
+}
+
+/**
+ * ✅补丁新增：判断角色是否有"隐藏内容"（隐藏角色标记 / 隐藏姓名 / 隐藏图片）
+ * 用于局部隐藏开关的显隐判断，解决"有隐藏图片/姓名但无isHidden标记时开关不显示"的问题
+ */
+function charHasHiddenContent(char) {
+    if (!char) return false;
+    if (char.isHidden === true) return true;
+    if (char.hiddenName) return true;
+    // 开启隐藏开关后图片数量增加 → 角色有隐藏图片
+    return countCharImages(char, true, false) > countCharImages(char, false, false);
+}
+
+/**
+ * ✅补丁新增：判断角色是否有"FD内容"（FD角色标记 / FD图片）
+ * 用于局部FD开关的显隐判断
+ */
+function charHasFdContent(char) {
+    if (!char) return false;
+    if (char.isFD === true) return true;
+    // 开启FD开关后图片数量增加 → 角色有FD图片
+    return countCharImages(char, false, true) > countCharImages(char, false, false);
+}
+
+/**
  * 更新单个TOP条目UI显隐状态（游戏）
  * @param {HTMLElement} itemDom annual-top-item
  * @param {Object} dataItem topList单条数据
@@ -770,8 +808,10 @@ function renderCharModalCharList() {
     const rawCharList = gameInfo.charList || [];
     const localSwitchVisibility = {
         "#annual-modal-game-sub-char":   rawCharList.some(c => c.isSub === true),
-        "#annual-modal-game-hide-char":  rawCharList.some(c => c.isHidden === true),
-        "#annual-modal-game-fd-game":    rawCharList.some(c => c.isFD === true),
+        // ✅修复：隐藏开关不仅看isHidden标记，还要看是否有隐藏姓名或隐藏图片
+        "#annual-modal-game-hide-char":  rawCharList.some(c => charHasHiddenContent(c)),
+        // ✅修复：FD开关不仅看isFD标记，还要看是否有FD图片
+        "#annual-modal-game-fd-game":    rawCharList.some(c => charHasFdContent(c)),
         "#annual-modal-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
     };
     Object.entries(localSwitchVisibility).forEach(([sel, visible]) => {
@@ -2597,8 +2637,10 @@ function renderCpModalFemaleList() {
     // 局部开关显隐控制
     const visMap = {
         "#annual-modal-cp-game-sub-char":   rawCharList.some(c => c.isSub === true),
-        "#annual-modal-cp-game-hide-char":  rawCharList.some(c => c.isHidden === true),
-        "#annual-modal-cp-game-fd-game":    rawCharList.some(c => c.isFD === true),
+        // ✅修复：隐藏开关不仅看isHidden标记，还要看是否有隐藏姓名或隐藏图片
+        "#annual-modal-cp-game-hide-char":  rawCharList.some(c => charHasHiddenContent(c)),
+        // ✅修复：FD开关不仅看isFD标记，还要看是否有FD图片
+        "#annual-modal-cp-game-fd-game":    rawCharList.some(c => charHasFdContent(c)),
         "#annual-modal-cp-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
     };
     Object.entries(visMap).forEach(([sel, visible]) => {
