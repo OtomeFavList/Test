@@ -251,7 +251,6 @@ button:hover{
 .btn-fold:hover{
     background:#666 !important;
 }
-/* 删除按钮统一灰色 */
 .btn-del.del-game {
     background-color:#888 !important;
     color:#fff;
@@ -415,7 +414,7 @@ button:hover{
 .game-switch-row{
     display: flex;
     align-items: flex-start;
-    gap: 12px;  /* 16 → 12，两块开关之间距离 */
+    gap: 12px;  /* 修改：16 改为 12 */
     margin: 10px 0 16px;
     flex-wrap: wrap;
 }
@@ -425,7 +424,7 @@ button:hover{
     align-items: flex-start;
     gap:12px;
     flex: 0 1 auto;
-    min-width:180px; /* 280 → 180，允许单元收缩，清除多余空白 */
+    min-width:180px; /* 修改：280 改为 180，允许单元收缩，清除多余空白 */
 }
 .game-switch-row span {
     font-size: 14px;
@@ -481,7 +480,7 @@ button:hover{
     margin-bottom:12px;
     flex-wrap:wrap;
     gap:10px;
-    /* 删除 padding-left:34px，不再内部缩进，按钮向外凸出 */
+    /* 删除 padding-left:34px，不再内部缩进 */
     overflow: visible !important;
 }
 .heart-rate{
@@ -673,7 +672,7 @@ button:hover{
 .char-switch-btn:hover{
     background:rgba(0,0,0,0.65);
 }
-/* 无多立绘时隐藏图片切换按钮，仅 char-has-multi-img 才显示 */
+/* 无多立绘时隐藏图片切换按钮 */
 .char-card-img-box .char-switch-prev,
 .char-card-img-box .char-switch-next {
     display: none;
@@ -682,7 +681,7 @@ button:hover{
 .char-card-img-box.char-multi-img .char-switch-next {
     display: flex;
 }
-/* 选中预览区卡片内按钮，白色半透，同步缩小 */
+/* 选中预览区卡片内按钮 */
 .char-selected-row .char-switch-btn {
     position: absolute;
     top: 50%;
@@ -706,7 +705,7 @@ button:hover{
     background:rgba(255,255,255,0.9);
 }
 
-/* 补丁：角色名切换按钮，复用 char-switch-btn 视觉，尺寸适配名字框 */
+/* 补丁：角色名切换按钮，复用 char-switch-btn */
 .char-card-name,
 .cp-female-name {
     position: relative;
@@ -931,7 +930,7 @@ input[type="checkbox"] {
     border:none;
     cursor:pointer;
 }
-/* Firefox 原生轨道置透明 */
+/* Firefox 原生轨道透明 */
 .font-size-set-row input[type="range"]::-moz-range-track {
     height:6px;
     background: transparent;
@@ -976,7 +975,7 @@ input[type="checkbox"] {
     }
 }
 
-/* 导出尺寸选择 size-select */
+/* 导出尺寸选择 */
 .size-select{
     margin:16px 0;
     display:flex;
@@ -987,7 +986,7 @@ input[type="checkbox"] {
     color:#c98fac;
 }
 
-/* About 模块 about-block */
+/* About 模块 */
 .about-block{
     text-align:center;
     margin-top:50px;
@@ -1006,7 +1005,7 @@ input[type="checkbox"] {
     color:#222222;
 }
 
-/* 文本颜色公共类 */
+/* 公共文本颜色 */
 h1{
     color: var(--export-title, #b33a3a);
 }
@@ -1061,7 +1060,7 @@ h2{
     background-color: #992e2e;
 }
 
-/* 游戏卡片头部 PC 端同一行布局 */
+/* 游戏卡片头部 */
 .added-game-card {
     padding:16px;
     margin-bottom:14px;
@@ -1076,7 +1075,6 @@ h2{
     flex-wrap:wrap;
     margin-bottom:12px;
 }
-/* 卡片底部按钮区域，放在 CP 下方 */
 .card-bottom-buttons {
     margin-top:14px;
     display:flex;
@@ -1085,7 +1083,7 @@ h2{
 
 /* 手机端适配已移除并合并到下方统一的 @media (max-width:900px) */
 
-/* 角色选择面板 item，和游戏选择 item 统一风格，旧废弃面板，保留类备用 */
+/* 角色选择面板 item，和游戏选择 item 统一，旧废弃面板，保留 */
 .char-select-item{
     display:flex;
     flex-direction:column;
@@ -1119,7 +1117,7 @@ h2{
     text-align:center;
 }
 
-/* 双列表表单 form-row-double */
+/* 双列表表单 */
 .form-row-double {
     display: flex;
     gap: 2rem;
@@ -1132,14 +1130,14 @@ h2{
     max-width: unset;
 }
 
-/* CP 面板方案 C 布局样式，修复后完整版本 */
+/* CP 面板 */
 .cp-female-block{
     margin:12px 0;
     display:flex;
     flex-direction:column;
     gap:8px;
 }
-/* 待选女主：完全复制 char-item 样式，增加 flex 纵向布局修复高度 */
+/* 待选女主：完复用 char-item 样式，增加 flex 修复纵向布局高度 */
 .cp-female-card-btn{
     width: 120px;
     min-height:168px;
@@ -1212,7 +1210,7 @@ h2{
     gap:12px;
     align-items:stretch;
 }
-/* 待选男主 cp-male-item：复用 char-item，flex 纵向布局修复高度 */
+/* 待选男主 cp-male-item：复用 char-item，flex 修复纵向布局高度 */
 .cp-male-item{
     width: 120px;
     min-height:168px;
@@ -1264,7 +1262,7 @@ h2{
     justify-content:center;
     word-break:break-word;
 }
-/* 新增：CP 已选角色卡片，已选女主、已选男主，完全对齐 char-card-item */
+/* 新增：CP 已选角色卡片，已选女主、已选男主，对齐 char-card-item */
 .cp-selected-card-item{
     width:120px;
     min-height:168px;
@@ -1311,7 +1309,7 @@ h2{
     justify-content:center;
     word-break:break-word;
 }
-/* CP 待选卡片图片切换按钮，复用 char-switch-btn 基础类 */
+/* CP 待选卡片图片切换按钮，复用 char-switch-btn */
 .cp-female-card-btn .char-card-img-box,
 .cp-male-item .char-card-img-box {
     position: relative !important;
@@ -1395,7 +1393,7 @@ h2{
     font-size: 20px;
     color: #b33a3a;
     cursor: pointer;
-    padding: 0 !important;        /* 清除全局 button 默认 padding */
+    padding: 0 !important;  /* 清除全局 button 默认 padding */
     line-height: 1;
     width: 28px;
     height: 28px;
@@ -1420,18 +1418,17 @@ h2{
 .added-game-card[data-fold="false"] .game-fold-icon-expand {
     display: none;
 }
-
 /* 卡片折叠整体隐藏内容 */
 .added-game-card[data-fold="true"] .game-card-block-item,
 .added-game-card[data-fold="true"] .card-bottom-buttons,
-/* 新增：折叠时隐藏两个单独显示开关 */
+/* 新增：折叠时隐藏单独开关 */
 .added-game-card[data-fold="true"] .game-switch-row,
-/* 折叠时同时隐藏独立的自定义文本框 */
+/* 折叠时隐藏自定义文本框 */
 .added-game-card[data-fold="true"] .game-custom-text-wrap {
     display: none !important;
 }
 
-/* 导出图片快照模式：自定义配色，仅生成图片时生效，普通页面不受影响 */
+/* 导出图片快照模式 */
 .snapshot-container.export-snapshot {
     --export-bg: #fff7f9;
     --export-title: #b33a3a;
@@ -1459,7 +1456,7 @@ h2{
 .snapshot-container.export-snapshot .added-game-card > .game-card-head .game-card-head-title-wrap h3 {
     color: var(--export-gamename) !important;
 }
-/* 游戏卡片用户自定义文本，严格限定：只作用三处自定义输出文本 */
+/* 游戏卡片用户自定义文本 */
 .snapshot-container.export-snapshot .game-head-text-output,
 .snapshot-container.export-snapshot .game-char-text-output,
 .snapshot-container.export-snapshot .game-cp-text-output {
@@ -1499,14 +1496,14 @@ h2{
 .snapshot-container.export-snapshot .game-fold-icon-expand {
     display: none !important;
 }
-/* 2. 快照强制所有游戏卡片展开，无视 data-fold 折叠属性 */
+/* 2. 强制所有游戏卡片展开，无视 data-fold 折叠属性 */
 .snapshot-container.export-snapshot .added-game-card[data-fold] {
     display: block !important;
 }
 .snapshot-container.export-snapshot .added-game-card .game-card-block-item {
     display: block !important;
 }
-/* 3. 滑出面板 char-slide-panel 在快照模式全部隐藏，只保留最终渲染结果区域 */
+/* 3. 滑出面板 char-slide-panel 全部隐藏，只保留最终渲染结果区域 */
 .snapshot-container.export-snapshot .char-slide-panel-char,
 .snapshot-container.export-snapshot .char-slide-panel-cp {
     display: none !important;
@@ -1553,7 +1550,7 @@ h2{
     color:#b33a3a;
     margin:0;
 }
-/* 滚动容器：承载预览图片，纵向滚动 */
+/* 滚动容器 */
 .preview-scroll-wrap {
     flex:1;
     padding:16px;
@@ -1630,7 +1627,6 @@ h2{
     /* 最小高度保证弹窗不会被压缩到过低 */
     min-height: 420px;
 }
-
 /* 加载状态下，滚动容器强制分配足够高度，防止内容被截断 */
 .preview-scroll-wrap {
     flex:1;
@@ -1747,7 +1743,6 @@ h2{
 /* 统一移动端适配 ≤1200px */
 /* 所有移动端设备（手机、平板、折叠屏）共享的排版、尺寸、防溢出 */
 @media (max-width:1200px) {
-    /* 防溢出 */
     .big-card,
     .game-card,
     .char-slide-panel-char,
@@ -1757,11 +1752,9 @@ h2{
         max-width: 100%;
         overflow-x: hidden;
     }
-    /* 游戏封面缩小 */
     .game-option-item img {
         width: 80px !important;
     }
-    /* 角色卡片缩小 */
     .char-item,
     .char-card-item,
     .cp-female-card-btn,
@@ -1770,14 +1763,12 @@ h2{
         width: 100px !important;
         min-height: 132px !important;
     }
-    /* 角色池网格缩小 */
     .char-pool {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
     }
     .game-search-box .char-pool {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
     }
-    /* CP 布局弹性换行 */
     .cp-layout-row {
         flex-direction: row !important;
         flex-wrap: wrap !important;
@@ -1792,7 +1783,6 @@ h2{
         flex-wrap: wrap !important;
         gap: 10px;
     }
-    /* 移动端待选游戏卡片内容防裁切 */
     .game-option-item {
         display: flex !important;
         gap: 10px !important;
@@ -1815,7 +1805,7 @@ h2{
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* 其他移动端视觉微调，原 900px 中保留的 */
+    /* 其他移动端视觉微调，原 900px，保留 */
     .char-selected-row .char-card-item {
         width: 90px;
         min-height: 150px;
@@ -1855,24 +1845,20 @@ h2{
         padding: 6px !important;
     }
     /* 修复：游戏列表区域全部组件缩减左右 padding，扩大内容可用宽度 */
-    /* 搜索面板整体：上下保留，缩小左右 */
     .game-search-box {
         padding: 10px 6px !important;
     }
-    /* char / cp 滑出选择面板，展开待选角色框 */
     .char-slide-panel-char,
     .char-slide-panel-cp {
         padding: 10px 6px !important;
     }
-    /* 单张已添加游戏卡片，缩小左右 */
     .game-card {
         padding: 14px 8px !important;
     }
-    /* 游戏卡片内部自定义文本框外层容器，缩小左右 */
     .game-custom-text-wrap {
         padding: 0 !important;
     }
-    /* 筛选 select 容器，缩小左右，允许 select 尽量占满宽度 */
+    /* 允许 select 尽量占满宽度 */
     .filter-group {
         gap: 6px !important;
     }
@@ -1880,7 +1866,6 @@ h2{
         flex: 1;
         min-width: 90px;
     }
-    /* 游戏搜索面板内单项游戏选项，缩小内部 padding */
     .game-option-item {
         padding: 10px 6px !important;
     }
@@ -1925,12 +1910,12 @@ h2{
   outline: none;
   border-color: #f6a5b8;
 }
-/* 关掉原生 resize，自制垂直拖拽控件 */
+/* 关闭原生 resize，自制垂直拖拽控件 */
 .game-custom-text-wrap {
     position: relative;
     overflow: hidden;
 }
-/* 关掉浏览器原生拖拽，根源解决拖拽失效 */
+/* 关闭浏览器原生拖拽 */
 .game-custom-text-wrap textarea {
     resize: none !important;
     overflow: auto;
@@ -1967,7 +1952,7 @@ h2{
 .game-custom-text-wrap .resize-handle:active::after {
     opacity: 0.7;
 }
-/* 快照模式统一隐藏拖拽控件 */
+/* 快照模式隐藏拖拽控件 */
 .snapshot-container.export-snapshot .resize-handle {
     display: none !important;
 }
@@ -2109,7 +2094,6 @@ textarea {
 
 /* 增加 background-image 渐变 */
 .font-size-set-row input[type="range"] {
-    /* 新增这两行，其余保留原有 */
     background-image: linear-gradient(#e895a8, #e895a8);
     background-size: var(--slider-progress, 0%) 100%;
     background-repeat: no-repeat;
