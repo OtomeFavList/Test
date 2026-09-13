@@ -8,21 +8,21 @@
     <link rel="stylesheet" href="./css/annual.css">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
     </script>
-    <!-- games.js 里用了动态 import，type="module" 不能删 -->
+    <!-- games.js 使用动态 import，type="module" 不能删除 -->
     <!-- 用绝对路径 /data/games.js，从网站根目录加载 -->
     <script type="module" src="/data/games.js">
     </script>
-    <!-- 弹窗时锁滚动，annual 模式隐藏副标题 -->
+    <!-- 标题切换 -->
     <style>
         body.modal-lock {
             overflow: hidden;
         }
-        /* annual 模式隐藏副标题 */
+        /* annual 模式夏隐藏副标题 */
         .site-title.annual-active .title-sub-cn,
         .site-title.annual-active .sub-desc {
             display: none;
         }
-        /* NO. 颜色用变量控制，去掉 !important 才能实时变色 */
+        /* NO. 颜色用变量控制，移除 !important */
         .annual-top-label {
             color: var(--annual-export-subtitle, #b85878);
         }
@@ -140,7 +140,7 @@
         <div class="center-btn-block">
             <button id="btn-add-game">+ 添加游戏</button>
         </div>
-        <!-- 搜索面板：默认隐藏，JS 用 .active 控制显示 -->
+        <!-- 搜索面板：默认隐藏，JS 通过 .active 控制显示 -->
         <div class="game-search-box" id="search-panel">
             <input type="text" id="game-search-input" placeholder="搜索游戏名称">
             <div class="filter-group">
@@ -310,7 +310,7 @@
             <button class="annual-card-fold-btn">▲</button>
         </div>
         <div class="annual-card-body">
-        <!-- 游戏按钮放板块顶部，不再放每个 item 内部 -->
+        <!-- 游戏按钮放在板块顶部，移除每个 item 内部按钮 -->
         <div class="annual-global-add-game-btn-wrap center-btn-block">
             <button id="annual-global-add-game-btn" class="annual-add-game-btn">+ 添加游戏</button>
         </div>
@@ -325,7 +325,7 @@
             <button class="annual-card-fold-btn">▲</button>
         </div>
         <div class="annual-card-body">
-        <!-- 角色按钮放板块顶部，不再放每个 item 内部 -->
+        <!-- 角色按钮放在板块顶部，移除每个 item 内部按钮 -->
         <div class="annual-global-add-char-btn-wrap center-btn-block">
             <button id="annual-global-add-char-btn" class="annual-add-char-btn">+ 添加角色</button>
         </div>
@@ -377,7 +377,7 @@
                         <button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>
                     </div>
                 </div>
-                <!-- 自定义角色卡片由 JS 动态插到这个锚点之前 -->
+                <!-- 自定义角色卡片由 JS 动态插到此锚点之前 -->
                 <div class="annual-other-card" id="annual-other-first-text-card">
                     <div class="annual-other-card-title">最喜欢的台词</div>
                     <div class="annual-custom-text-wrap">
@@ -774,7 +774,7 @@ z-index: -999;
     </blockquote>
 </div>
             
-<!-- Annual Report 模式使用指南，默认隐藏，切到 annual 模式时显示 -->
+<!-- Annual Report 模式使用指南，默认隐藏，切换到 annual 模式时显示 -->
 <div id="annual-intro-content" style="margin-top: 16px; display: none;">
     <p style="font-size: 17px; line-height: 1.8; color: #333; margin-bottom: 20px;">
         <strong style="font-size: 18px; color: #b33a3a;">日乙年度报告 & 总结报告生成工具</strong>
@@ -915,7 +915,7 @@ z-index: -999;
 </div>
 </div>
 
-<!-- 全局独立 Loading 遮罩已删，所有加载状态移到预览弹窗内部 -->
+<!-- 全局独立 Loading 遮罩已删除，所有加载状态移到预览弹窗内部 -->
 
 <script type="module">
     import { bootstrapCore } from "./js/main.js";
@@ -926,7 +926,7 @@ z-index: -999;
         const loadModal = document.getElementById("game-load-modal");
         const progressText = document.getElementById("load-progress-text");
         const loadConfirmBtn = document.getElementById("load-modal-confirm");
-        // 初始先锁页面，显示加载弹窗
+        // 页面初始锁定，显示加载弹窗
         loadModal.classList.add("active");
         document.body.classList.add("modal-lock");
         // 监听游戏加载进度，进度由 data/games.js 回调
@@ -938,9 +938,9 @@ z-index: -999;
         if (typeof window.loadAllGames === "function") {
             await window.loadAllGames();
         }
-        // 加载完成，确认按钮可用
+        // 加载完成，启用确认按钮
         loadConfirmBtn.disabled = false;
-        // 点确认关弹窗，继续初始化
+        // 点击确认关闭弹窗，继续初始化
         loadConfirmBtn.onclick = async () => {
             loadModal.classList.remove("active");
             document.body.classList.remove("modal-lock");
@@ -951,7 +951,7 @@ z-index: -999;
                 await window.uiBootstrap();
             }
 
-            // 修复：等 annual.js 挂到 window，解决 ES Module 加载时序竞争
+            // 修复：等待 annual.js 挂载到 window，解决 ES Module 加载时序竞争
             async function safeInitAnnual(){
                 let retry = 0;
                 while(typeof window.initAnnualModule !== "function" && retry < 20){
@@ -967,7 +967,7 @@ z-index: -999;
             }
             await safeInitAnnual();
 
-            // 清掉进度回调，防内存残留
+            // 清掉进度回调，防止内存残留
             window.onGameLoadProgress = null;
         };
     })();
@@ -979,14 +979,14 @@ z-index: -999;
         const guideModal = document.getElementById('guide-modal');
         const openBtn = document.getElementById('open-guide-btn');
         const closeBtn = document.getElementById('guide-close-btn');
-        // 打开
+        // 打开弹窗
         if (openBtn) {
             openBtn.addEventListener('click', () => {
                 guideModal.classList.add('active');
                 document.body.classList.add("modal-lock");
             });
         }
-        // 关闭
+        // 关闭弹窗
         function closeGuideModal() {
             guideModal.classList.remove('active');
             document.body.classList.remove("modal-lock");
@@ -994,7 +994,7 @@ z-index: -999;
         if (closeBtn) {
             closeBtn.addEventListener('click', closeGuideModal);
         }
-        // 点遮罩关闭
+        // 点击遮罩关闭
         if (guideModal) {
             guideModal.addEventListener('click', (e) => {
                 if (e.target === guideModal) {
@@ -1008,7 +1008,7 @@ z-index: -999;
 <!-- 防图片保存 JS 防护 -->
 <script>
 (function(){
-    // 1. 拦右键菜单，输入框/文本域放行
+    // 1. 拦截右键菜单，输入框/文本域放行
     document.addEventListener('contextmenu', function(e){
         const tag = e.target.tagName;
         if(tag === 'INPUT' || tag === 'TEXTAREA'){
@@ -1017,14 +1017,14 @@ z-index: -999;
         e.preventDefault();
         return false;
     });
-    // 2. 拦图片拖拽
+    // 2. 拦截图片拖拽
     document.addEventListener('dragstart', function(e){
         if(e.target.tagName === 'IMG'){
             e.preventDefault();
             return false;
         }
     });
-    // 3. 移动端长按菜单禁止
+    // 3. 禁止移动端长按菜单
     document.addEventListener('touchstart', function(e){
         // 输入框放行
         const tag = e.target.tagName;
@@ -1032,7 +1032,7 @@ z-index: -999;
             return;
         }
     }, {passive:true});
-    // 禁图片长按系统菜单，webkit 内核：Safari、微信、华为浏览器
+    // 禁止图片长按菜单，webkit 内核：Safari、微信、华为浏览器
     document.documentElement.style.webkitTouchCallout = 'none';
 })();
 </script>
@@ -1047,7 +1047,7 @@ z-index: -999;
     const wraps = document.querySelectorAll('.mode-wrap');
     const siteTitleDom = document.querySelector('.site-title h1');
     const siteTitleWrap = document.querySelector('.site-title');
-    // 存原始标题
+    // 保存原始标题
     const originalTitleText = siteTitleDom.innerText;
     const annualTitleText = "Otome Annual Report";
 
@@ -1091,7 +1091,7 @@ z-index: -999;
 <!-- 新增：年度报告脚本 -->
 <script type="module" src="./js/annual.js"></script>
 
-<!-- 改：年度报告全局游戏选择弹窗，body 直接子节点 -->
+<!-- 修改：年度报告全局游戏选择弹窗，body 直接子节点 -->
 <div id="annual-global-game-modal">
     <div class="annual-global-modal-inner">
         <!-- 弹窗头部，不参与滚动 -->
