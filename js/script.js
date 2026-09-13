@@ -1,7 +1,7 @@
 // script.js UI交互层（模块化导出）
 // 重要说明：剧透弹窗、全局开关 click 事件全部迁移至 main.js，本文件不再处理全局开关点击逻辑
 // 游戏卡片动态生成的局部开关：使用事件委托对接 main.js 剧透弹窗逻辑
-// 改造：每个游戏卡片内部渲染两套独立滑出面板 char / cp；不再使用全局唯一 char-slide-panel
+// 修改：每个游戏卡片内部渲染两套独立滑出面板 char / cp；不再使用全局唯一 char-slide-panel
 // 注意：main.js 禁止 import 本文件，避免循环依赖
 import {
   appData,
@@ -53,8 +53,7 @@ export function initPage(Core = {}) {
   Core = Core || {};
   /**
    * 补丁：统计角色在指定开关状态下的可用图片总数
-   * 复用 main.js getAvailableCharImages，通过比较开关开/关时的图片数量差，
-   * 判断角色是否有隐藏图片或 FD 图片，无需硬编码图片属性名。
+   * 复用 main.js getAvailableCharImages，通过比较开关开/关时的图片数量差，判断角色是否有隐藏图片或 FD 图片
    */
   function countCharImages(char, hideOn, fdOn) {
     if (!char) return 0;
@@ -119,7 +118,7 @@ export function initPage(Core = {}) {
     const maleChars = allChars.filter(c => c.gender === "male");
 
     if(mode === "char"){
-        // Character 模式：改为草稿临时勾选，确认才写入真实数据
+        // 修改：Character 模式，草稿临时勾选，确认才写入真实数据
         // 临时草稿集合，只在本次面板生命周期有效 Set<string>
         const tempCharDraftSet = new Set(gameItem.selectChars);
 
@@ -302,7 +301,7 @@ export function initPage(Core = {}) {
             }
         });
 
-        // 渲染 CP 面板 HTML：每一位女主作为可点击按钮；展开则下方显示该女主专属男主选择区，自动换行
+        // 渲染 CP 面板 HTML
         let cpPanelHtml = "";
         femaleChars.forEach(fChar=>{
             const state = gameItem.cpEditState.find(s=>s.femaleId === fChar.id);
@@ -373,7 +372,7 @@ export function initPage(Core = {}) {
                         <span class="char-name-text">${fDispNm}</span>
                     </div>
                 </div>
-                <!-- 如果 openMalePanel=true，渲染该女主对应的男主候选列表 -->
+                <!-- openMalePanel=true 渲染该女主对应的男主候选列表 -->
                 ${state.openMalePanel ? `
                 <div class="cp-male-select-wrap" data-fid="${fChar.id}">
                     <div class="cp-male-title">为【${fChar.name}】选择角色</div>
@@ -478,7 +477,7 @@ export function initPage(Core = {}) {
 
     // 渲染 HTML 全部完成后，执行空闲预加载
     if(Core && typeof Core.preloadImagesInIdle === "function" && preloadSrcList.length > 0){
-        // 去重：避免同一个图片 url 多次传入
+        // 去重，避免同一个图片 url 多次传入
         const uniqueSrc = [...new Set(preloadSrcList)];
         Core.preloadImagesInIdle(uniqueSrc);
     }
@@ -577,7 +576,6 @@ export function initPage(Core = {}) {
         if (previewRegenBtn) {
             previewRegenBtn.addEventListener("click", () => {
                 previewModal.classList.remove("active");
-                // 触发重新生成
                 if (el.exportBtn) el.exportBtn.click();
             });
         }
@@ -612,7 +610,7 @@ export function initPage(Core = {}) {
 
       document.querySelectorAll(".modal-trigger").forEach(dom => dom.classList.remove("modal-trigger"));
 
-      // 修复：第一步：预处理所有游戏数据，先补全 cpEditState / cpList，不操作 DOM
+      // 修复：预处理所有游戏数据，先补全 cpEditState / cpList，不操作 DOM
       appData.gameList?.forEach((gameItem) => {
         if (!gameItem) return;
         const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
@@ -714,7 +712,7 @@ export function initPage(Core = {}) {
         // 新增结束
 
         // 新增三个自定义文本区域的 HTML，已消除换行空白
-        // 修改：统一 placeholder 为 "自定义文本"，并在 textarea 后追加 <span class="resize-handle"></span>
+        // 修改：在 textarea 后追加 <span class="resize-handle"></span>
         const headTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-head-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.gameHeadText || ''}</textarea><span class="resize-handle"></span></div>`;
         const charTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-char-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.charSectionText || ''}</textarea><span class="resize-handle"></span></div>`;
         const cpTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-cp-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.cpSectionText || ''}</textarea><span class="resize-handle"></span></div>`;
@@ -765,7 +763,7 @@ export function initPage(Core = {}) {
         const charPanel = cardDom.querySelector(".char-slide-panel-char");
         const cpPanel = cardDom.querySelector(".char-slide-panel-cp");
 
-        // DOM 面板填充，只负责渲染滑出面板内部 HTML，数据已经预处理完毕
+        // 1. DOM 面板填充，只负责渲染滑出面板内部 HTML，数据已经预处理完毕
         if(charPanel) renderCharSelectPanel(cardDom, gid, "char", charPanel);
         if(cpPanel) renderCharSelectPanel(cardDom, gid, "cp", cpPanel);
 
@@ -793,14 +791,13 @@ export function initPage(Core = {}) {
           // 允许事件向上冒泡至父级 char-item / cp-male-item，不拦截
       }
 
-      // 新增：折叠状态：游戏标题旁图标展开按钮
+      // 新增：折叠时游戏标题旁的展开按钮
       const iconExpandBtn = e.target.closest(".game-fold-icon-expand");
       if (iconExpandBtn) {
           e.stopPropagation();
           const gid = iconExpandBtn.dataset.gid;
           const gameItem = appData.gameList?.find(g => g.gameId === gid);
           if (!gameItem) return;
-          // 图标按钮只做展开，只把 fold 置 false
           gameItem.fold = false;
           saveData();
           clearPreviewCacheResource(); // 缓存失效
@@ -998,7 +995,7 @@ export function initPage(Core = {}) {
       // 修改：cpMaleItem 点击逻辑，对齐 Character 面板交互
       const cpMaleItem = e.target.closest(".char-slide-panel-cp .cp-male-item");
       if(cpMaleItem){
-          // 交互规则对齐 character 面板：点击切换按钮，仅切换立绘，不选中角色
+          // 交互规则对齐 character 面板
           const switchBtn = e.target.closest(".char-switch-btn");
           if (switchBtn) {
               return;
@@ -1154,7 +1151,7 @@ export function initPage(Core = {}) {
           return;
       }
 
-      // char 面板取消按钮：丢弃草稿，直接关闭面板，不做任何修改
+      // char 面板取消按钮：丢弃草稿，直接关闭面板
       const charCancelBtn = e.target.closest(".char-panel-cancel-btn");
       if(charCancelBtn){
           e.stopPropagation();
@@ -1391,7 +1388,6 @@ export function initPage(Core = {}) {
             clearPreviewCacheResource();
         });
     }
-
     // 新增：导出普通画质开关事件
     if (el.exportNormalQualitySwitch) {
         el.exportNormalQualitySwitch.addEventListener("change", function() {
@@ -1686,7 +1682,7 @@ export function initPage(Core = {}) {
                 let baseEstimate = validGameCount * gameCardCost + totalImageCount * imgCost;
 
                 // 重点：叠加图片重试降级开销：每张图片理论最大会经历 jsdelivr 超时(600ms) + COS 请求
-                // 不按全部图片都降级来计算，取 30% 图片触发降级作为现实网络场景的经验值
+                // 不按全部图片都降级计算，取 30% 图片触发降级
                 const fallbackProbability = 0.30;
                 const fallbackPerImageSec = 0.6;
                 let fallbackEstimate = totalImageCount * fallbackProbability * fallbackPerImageSec;
@@ -1882,7 +1878,7 @@ export function initPage(Core = {}) {
     const backToAddBtn = document.getElementById('back-to-add-btn');
     const scrollToLastGameBtn = document.getElementById('scroll-to-last-game-btn');
     if (backToAddBtn && scrollToLastGameBtn) {
-        const TOLERANCE = 30;               // 容差像素，小于此值视为已滚动到
+        const TOLERANCE = 30;               // 容差像素，视为已滚动到
         const EMPTY_MODULE_HEIGHT = 140;     // 空模块阈值：高度小于此值视为无内容模块，自动跳过
         // 获取 FavList 页面所有大模块，按 DOM 顺序
         function getFavListModules() {
