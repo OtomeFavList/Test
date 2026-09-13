@@ -1,5 +1,5 @@
-// ===================== main.js 【数据层、公共工具函数】 =====================
-// 🚨【新增游戏请在此数组添加编号！】请勿改动其他位置
+// main.js 数据层、公共工具函数
+// 新增游戏请在此数组添加编号！请勿改动其他位置
 const gameIdList = [
     "001", "002", "003", "004", "005", "006", "007", "008", "009", "010",
     "011", "012", "013", "014", "015", "016", "017", "018", "019", "020",
@@ -18,9 +18,9 @@ const gameIdList = [
     //新增游戏在这里追加
 ];
 
-// ===================== 全局存储key【不再随意修改！】 =====================
+// 全局存储 key（不再随意修改！）
 export const STORE_KEY = "otome-favlist-data";               // 主存储键，永不改变
-export const DATA_VERSION = 3;                              // 数据版本号，用于迁移（2→3：新增globalSubChar / localSubChar字段）
+export const DATA_VERSION = 3;                              // 数据版本号，用于迁移（2→3：新增 globalSubChar / localSubChar 字段）
 export const OLD_STORE_KEYS = [                               // 历史遗留 key，用于自动迁移
     "otome-favlist-data-v1",
     "otome-favlist-data-v1.1"
@@ -28,20 +28,20 @@ export const OLD_STORE_KEYS = [                               // 历史遗留 ke
 export const SPOILER_DATE_KEY = "spoiler-confirm-date";       // 全局剧透确认日期
 export const SPOILER_LOCAL_SWITCH_KEY = "local-switch-spoiler-date"; // 局部开关确认日期
 
-// ===================== 图片URL域名配置 =====================
+// 图片 URL 域名配置
 export const R2_BASE_URL = "https://pub-7fe3cf5d6e78426b988975ff957a6ee9.r2.dev";
-// 【修复】移除 @main，避免 301 重定向
+// 修复：移除 @main，避免 301 重定向
 export const JSD_BASE_URL = "https://cdn.jsdelivr.net/gh/OtomeFavList/OtomeFavList.github.io/img";
 
-// 腾讯云COS备用源，仅jsd超时/请求失败才使用
+// 腾讯云 COS 备用源，仅 jsd 超时/请求失败才使用
 export const TENCENT_COS_BASE_URL = "https://otome-images-1471675741.cos.ap-guangzhou.myqcloud.com";
-// jsd请求超时阈值(毫秒)，超时触发COS降级，4500ms兼顾跨境网络与用户体验
+// jsd 请求超时阈值(毫秒)，超时触发 COS 降级，4500ms 兼顾跨境网络与用户体验
 export const JSD_FALLBACK_TIMEOUT = 4500;
 
-// ===================== 路径标准化工具（根治 URL 二次拼接） =====================
+// 路径标准化工具（根治 URL 二次拼接）
 /**
  * 清洗旧版带 @main 的 jsDelivr 地址（向后兼容）
- * 优化：使用更通用的正则，兼容URL中间出现@main
+ * 优化：使用更通用的正则，兼容 URL 中间出现 @main
  */
 export function cleanOldJsdUrl(url) {
     if (!url || typeof url !== "string") return url;
@@ -52,8 +52,8 @@ export function cleanOldJsdUrl(url) {
  * 路径标准化：统一输出相对路径
  * 支持：
  * 1. 相对路径 char/xxx.jpg → 直接返回
- * 2. R2完整URL → 提取相对路径
- * 3. jsDelivr完整URL → 提取相对路径
+ * 2. R2 完整 URL → 提取相对路径
+ * 3. jsDelivr 完整 URL → 提取相对路径
  * @param {string} src
  * @returns {string|null} 清洗后的相对路径
  */
@@ -65,15 +65,15 @@ export function normalizeImageRelPath(src) {
         console.error("❌ normalizeImageRelPath 检测到 raw.githubusercontent.com 地址，已丢弃", src, new Error().stack);
         return null;
     }
-    // 已经是相对路径，不含http
+    // 已经是相对路径，不含 http
     if (!s.startsWith("http")) {
         return s;
     }
-    // R2链接提取路径
+    // R2 链接提取路径
     if (s.startsWith(R2_BASE_URL + "/")) {
         return s.slice(R2_BASE_URL.length + 1);
     }
-    // jsDelivr链接提取路径（兼容旧版带@main的地址）
+    // jsDelivr 链接提取路径（兼容旧版带 @main 的地址）
     const cleaned = cleanOldJsdUrl(s);
     if (cleaned.startsWith(JSD_BASE_URL + "/")) {
         return cleaned.slice(JSD_BASE_URL.length + 1);
@@ -84,25 +84,25 @@ export function normalizeImageRelPath(src) {
 }
 
 /**
- * 安全生成页面展示R2地址（自动兼容旧数据完整URL）
- * @param {string} relPath 相对路径或完整URL
- * @returns {string} 可用的图片URL
+ * 安全生成页面展示 R2 地址（自动兼容旧数据完整 URL）
+ * @param {string} relPath 相对路径或完整 URL
+ * @returns {string} 可用的图片 URL
  */
 export function getWebImageUrl(relPath) {
     // 清洗可能的旧地址
     const cleaned = cleanOldJsdUrl(relPath);
     const cleanPath = normalizeImageRelPath(cleaned);
     if (!cleanPath) return "";
-    // 如果清洗后仍然是完整http链接，直接返回（外部图兜底）
+    // 如果清洗后仍然是完整 http 链接，直接返回（外部图兜底）
     if (cleanPath.startsWith("http")) return cleanPath;
     return `${R2_BASE_URL}/${cleanPath}`;
 }
 
 /**
- * 安全生成Canvas jsDelivr地址（自动兼容旧数据完整URL）
- * 统一使用jsDelivr，禁止Canvas直接读取GitHub Pages源文件
- * @param {string} relPath 相对路径或完整URL
- * @returns {string} 可用的图片URL
+ * 安全生成 Canvas jsDelivr 地址（自动兼容旧数据完整 URL）
+ * 统一使用 jsDelivr，禁止 Canvas 直接读取 GitHub Pages 源文件
+ * @param {string} relPath 相对路径或完整 URL
+ * @returns {string} 可用的图片 URL
  */
 export function getCanvasImageUrl(relPath) {
     // 清洗可能的旧地址
@@ -110,32 +110,32 @@ export function getCanvasImageUrl(relPath) {
     const cleanPath = normalizeImageRelPath(cleaned);
     if (!cleanPath) return "";
     if (cleanPath.startsWith("http")) return cleanPath;
-    // 统一使用jsDelivr，规避跨域
+    // 统一使用 jsDelivr，规避跨域
     return `${JSD_BASE_URL}/${cleanPath}`;
 }
 
 /**
- * R2完整链接 → jsDelivr链接（专供Canvas导出模块转换）
- * 增强版：增加强校验，彻底杜绝R2地址泄漏
- * @param {string} path 相对路径或完整URL
+ * R2 完整链接 → jsDelivr 链接（专供 Canvas 导出模块转换）
+ * 增强版：增加强校验，彻底杜绝 R2 地址泄漏
+ * @param {string} path 相对路径或完整 URL
  * @returns {string}
  */
 export function convertR2ToJsDelivr(path) {
     if (!path) return "";
-    // 拦截raw地址流入转换函数，便于定位异常数据源
+    // 拦截 raw 地址流入转换函数，便于定位异常数据源
     if (path.includes("raw.githubusercontent.com")) {
         console.error("❌ convertR2ToJsDelivr 检测到raw地址流入！", path);
         return "";
     }
     // 标准化提取相对路径
     const rel = normalizeImageRelPath(path);
-    // 标准化后如果依然是http链接，代表无法识别，非法链接，告警
+    // 标准化后如果依然是 http 链接，代表无法识别，非法链接，告警
     if (rel && rel.startsWith("http")) {
         console.error("❌ convertR2ToJsDelivr 无法转换的外部图片地址:", path);
         return "";
     }
     const jsdUrl = getCanvasImageUrl(rel);
-    // 二次防御：确保输出绝对不能是R2域名
+    // 二次防御：确保输出绝对不能是 R2 域名
     if (jsdUrl.startsWith(R2_BASE_URL)) {
         console.error("❌ 转换函数异常，输出R2地址！原始path:", path);
         return "";
@@ -143,32 +143,32 @@ export function convertR2ToJsDelivr(path) {
     return jsdUrl;
 }
 
-// ===================== 全局应用数据对象 =====================
+// 全局应用数据对象
 export let appData = {
     globalHideChar: false,
     globalFD: false,
-    globalSubChar: false, // ✅新增：全局次要角色开关，默认关闭
-    globalFdSubChar: false, // ✅补丁新增：全局显示续作/FD次要角色开关，默认关闭
-    // ==========新增==========
+    globalSubChar: false, // 新增：全局次要角色开关，默认关闭
+    globalFdSubChar: false, // 新增：全局显示续作/FD次要角色开关，默认关闭
+    // 新增
     exportFoldContent: true,
     gameSpoilerRecord: {},
     baseInfo: { nick: "", count: "", story: "", firstgame: "" },
     gameList: [],
-    // ========= 修改：新增 subTitle、gameName，设置默认值 =========
+    // 修改：新增 subTitle、gameName，设置默认值
     exportColor: {
         bg: "#fff7f9",
         title: "#b33a3a",
         subTitle: "#b85878",
         baseInfoText: "#c98fac",
         customText: "#c98fac",
-        gameName: "#000000",   // ✅ 修改为黑色，用户仍可自定义
+        gameName: "#000000",   // 修改为黑色，用户仍可自定义
         border: "#f6a5b8"
     },
     charImageSelect: {}, // 持久存储角色选中立绘索引 key:"char-img-gameId-charId"
-    charNameSelect: {}   // ✅补丁新增：持久存储角色选中名字索引 key:"char-name-gameId-charId"，0=正常名 1=隐藏名
+    charNameSelect: {}   // 新增：持久存储角色选中名字索引 key:"char-name-gameId-charId"，0=正常名 1=隐藏名
 };
 
-// ===================== 导出画布 全局间距常量【严格匹配结构图px规范】 =====================
+// 导出画布 全局间距常量（严格匹配结构图 px 规范）
 export const LAYOUT_SPACE = {
   BODY_PADDING: 20,
   WRAP_GAP: 30,
@@ -222,7 +222,7 @@ export const LAYOUT_SPACE = {
   CHAR_CARD_INNER_PADDING: 8
 };
 
-// 样式常量（导出配色、圆角、边框宽度，同步appData.exportColor）
+// 样式常量（导出配色、圆角、边框宽度，同步 appData.exportColor）
 export const LAYOUT_STYLE = {
   BIG_CARD_BORDER_WIDTH: 2,
   CARD_BORDER_WIDTH: 1,
@@ -232,39 +232,39 @@ export const LAYOUT_STYLE = {
   CHAR_IMG_RADIUS: 8
 };
 
-// ===================== 游戏模板数据兜底变量 =====================
-// 兜底：游戏数据模块加载失败时赋值空数组，彻底解决undefined报错
+// 游戏模板数据兜底变量
+// 兜底：游戏数据模块加载失败时赋值空数组，彻底解决 undefined 报错
 export let gameTemplateList = [];
-// 【新增】游戏模板加载就绪标记
+// 新增：游戏模板加载就绪标记
 export let gameTemplateReady = false;
 
-// ===================== 角色编辑弹窗全局状态变量 =====================
+// 角色编辑弹窗全局状态变量
 export let currentEditGameId = null;
-export let charPoolMode = "char"; // char = 单选角色, cp = CP搭配
+export let charPoolMode = "char"; // char = 单选角色, cp = CP 搭配
 
-// ===================== 剧透弹窗临时待处理标记 =====================
+// 剧透弹窗临时待处理标记
 // 可选值：hideChar / fdGame / localHide / localFD
 window.pendingGlobalSwitch = null;
 
 // 动态游戏卡片待操作标记
 window.pendingGameOp = null;
 
-// ===================== 本地存储读写工具函数 =====================
+// 本地存储读写工具函数
 /**
- * 将appData完整保存到localStorage
+ * 将 appData 完整保存到 localStorage
  */
 export function saveData() {
     localStorage.setItem(STORE_KEY, JSON.stringify(appData));
 }
 
 // ============================================================
-// 【重构】loadData：隔离旧数据、独立迁移区块、深度合并、自动清理缓存
+// 重构 loadData：隔离旧数据、独立迁移区块、深度合并、自动清理缓存
 // ============================================================
 export function loadData() {
     try {
         let raw = localStorage.getItem(STORE_KEY);
         let migrateFromOldKey = false;
-        // 主key无数据，尝试迁移所有旧版本key
+        // 主 key 无数据，尝试迁移所有旧版本 key
         if (!raw) {
             for (const oldKey of OLD_STORE_KEYS) {
                 const oldRaw = localStorage.getItem(oldKey);
@@ -278,23 +278,23 @@ export function loadData() {
             }
         }
 
-        // 临时对象隔离原始存储数据，不直接污染全局appData
+        // 临时对象隔离原始存储数据，不直接污染全局 appData
         let loadedRaw = null;
         if (raw) loadedRaw = JSON.parse(raw);
 
-        // 【1】基础合并：先复制默认模板，再融合用户数据（规避顶层浅覆盖嵌套对象）
+        // 基础合并：先复制默认模板，再融合用户数据（规避顶层浅覆盖嵌套对象）
         const tempData = structuredClone(appData);
         if (loadedRaw && typeof loadedRaw === "object") {
             // 顶层键覆盖，嵌套对象后续单独兼容补齐
             Object.assign(tempData, loadedRaw);
         }
 
-        // ========== 【独立版本迁移区块】未来所有版本升级逻辑写在这里 ==========
+        // 独立版本迁移区块：未来所有版本升级逻辑写在这里
         let needSaveAfterMigrate = false;
         if (tempData._version === undefined || tempData._version < DATA_VERSION) {
             console.log("📌执行数据结构升级迁移", tempData._version ?? "无版本号", "→", DATA_VERSION);
-            // ===== 增量版本迁移分支，按版本从小到大依次编写 =====
-            // 1.1 → 2 迁移：charImageSelect key改名 gameId-charId → char-img-gameId-charId
+            // 增量版本迁移分支，按版本从小到大依次编写
+            // 1.1 → 2 迁移：charImageSelect key 改名 gameId-charId → char-img-gameId-charId
             if (tempData._version < 2) {
                 console.log("🔧执行 1.1 → 2 迁移：转换charImageSelect存储键名");
                 if (tempData.charImageSelect) {
@@ -311,10 +311,10 @@ export function loadData() {
                 }
                 needSaveAfterMigrate = true;
             }
-            // ===== 2 → 3 迁移：新增 globalSubChar / localSubChar 字段 =====
+            // 2 → 3 迁移：新增 globalSubChar / localSubChar 字段
             if (tempData._version < 3) {
                 console.log("🔧执行 2 → 3 迁移：新增次要角色开关字段");
-                // 标记：从旧版本升级到ver3，下一次模板就绪后强制完整清洗图片脏链接
+                // 标记：从旧版本升级到 ver3，下一次模板就绪后强制完整清洗图片脏链接
                 tempData._triggerImageCleanOnce = true;
                 needSaveAfterMigrate = true;
             }
@@ -322,7 +322,7 @@ export function loadData() {
             tempData._version = DATA_VERSION;
         }
 
-        // ===================== 【新增：存量脏图片链接一次性清洗迁移逻辑】 =====================
+        // 新增：存量脏图片链接一次性清洗迁移逻辑
         if (Array.isArray(tempData.gameList)) {
             // 防护兜底：如果游戏模板还未就绪，直接跳过清洗，避免脏链接残留
             if (!gameTemplateReady || !Array.isArray(gameTemplateList) || gameTemplateList.length === 0) {
@@ -332,14 +332,14 @@ export function loadData() {
                 // 遍历每条游戏记录
                 tempData.gameList.forEach(gameItem => {
                     if (!Array.isArray(gameItem.selectCharItems)) return;
-                    // 遍历选中角色条目，只处理图片相关索引，不改动charId等业务数据
+                    // 遍历选中角色条目，只处理图片相关索引，不改动 charId 等业务数据
                     gameItem.selectCharItems.forEach(charItem => {
                         const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
                         if (!gameInfo?.charList || !charItem?.charId) return;
                         const targetChar = gameInfo.charList.find(c => c.id === charItem.charId);
                         if (!targetChar?.images || !Array.isArray(targetChar.images)) return;
 
-                        // 获取该角色全部可用图片src列表
+                        // 获取该角色全部可用图片 src 列表
                         let allSrcList = [];
                         targetChar.images.forEach(imgUnit => {
                             if (Array.isArray(imgUnit.srcList)) {
@@ -350,12 +350,12 @@ export function loadData() {
                         // 校验当前存储索引是否越界，同时清洗源数据里残留脏链接（持久层清理）
                         const cleanSrcList = allSrcList
                             .map(src => normalizeImageRelPath(src))
-                            .filter(Boolean); // normalize返回null代表非法链接，直接剔除
+                            .filter(Boolean); // normalize 返回 null 代表非法链接，直接剔除
 
                         if (cleanSrcList.length === 0) {
                             return;
                         }
-                        // 索引超出范围则重置为0
+                        // 索引超出范围则重置为 0
                         if (typeof charItem.imgIndex !== "number" || charItem.imgIndex >= cleanSrcList.length) {
                             charItem.imgIndex = 0;
                             hasDirtyUrl = true;
@@ -363,7 +363,7 @@ export function loadData() {
                     });
                 });
 
-                // 额外兜底：遍历cp内女主、男主立绘索引（CP模块同样清理脏路径风险）
+                // 额外兜底：遍历 cp 内女主、男主立绘索引（CP 模块同样清理脏路径风险）
                 tempData.gameList.forEach(gameItem => {
                     if (!Array.isArray(gameItem.cpList)) return;
                     gameItem.cpList.forEach(cp => {
@@ -405,15 +405,15 @@ export function loadData() {
                 }
             }
         }
-        // ===================== 【清洗迁移逻辑结束】 =====================
+        // 清洗迁移逻辑结束
 
-        // ==========【补丁1：浅层内存拦截，模板未就绪也阻断raw地址，防止直接渲染raw请求】==========
+        // 补丁1：浅层内存拦截，模板未就绪也阻断 raw 地址，防止直接渲染 raw 请求
         if(Array.isArray(tempData.gameList)){
             tempData.gameList.forEach(gameItem=>{
                 // selectCharItems
                 if(Array.isArray(gameItem.selectCharItems)){
                     gameItem.selectCharItems.forEach(s=>{
-                        // 这里只拦截url字符串出现在对象字段；本项目imgIndex是数字，这里仅防御扩展
+                        // 这里只拦截 url 字符串出现在对象字段；本项目 imgIndex 是数字，这里仅防御扩展
                         for(const key in s){
                             const val = s[key];
                             if(typeof val === "string" && val.includes("raw.githubusercontent.com")){
@@ -448,9 +448,9 @@ export function loadData() {
                 }
             })
         }
-        // ==========【补丁1结束】==========
+        // 补丁1结束
 
-        // ========== 全局字段兜底（统一放在迁移完成后） ==========
+        // 全局字段兜底（统一放在迁移完成后）
         if (typeof tempData.exportFoldContent !== "boolean") {
             tempData.exportFoldContent = true;
         }
@@ -466,18 +466,18 @@ export function loadData() {
         tempData.exportColor.gameName = tempData.exportColor.gameName ?? "#000000";
         tempData.exportColor.border = tempData.exportColor.border ?? "#f6a5b8";
 
-        // ✅补丁新增：charNameSelect 兜底
+        // 新增：charNameSelect 兜底
         if (!tempData.charNameSelect || typeof tempData.charNameSelect !== "object") {
             tempData.charNameSelect = {};
         }
 
-        // gameList成员兜底
+        // gameList 成员兜底
         if (Array.isArray(tempData.gameList)) {
             tempData.gameList.forEach(g => {
                 if (typeof g.localHideChar !== "boolean") g.localHideChar = false;
                 if (typeof g.localFD !== "boolean") g.localFD = false;
-                if (typeof g.localSubChar !== "boolean") g.localSubChar = false; // ✅新增兜底，旧存档自动补false
-                if (typeof g.localFdSubChar !== "boolean") g.localFdSubChar = false; // ✅补丁新增：单游戏续作/FD次要角色开关兜底
+                if (typeof g.localSubChar !== "boolean") g.localSubChar = false; // 新增兜底，旧存档自动补 false
+                if (typeof g.localFdSubChar !== "boolean") g.localFdSubChar = false; // 新增：单游戏续作/FD次要角色开关兜底
                 if (typeof g.charPanelOpen !== "boolean") g.charPanelOpen = false;
                 if (typeof g.cpPanelOpen !== "boolean") g.cpPanelOpen = false;
                 if (typeof g.isFav !== "boolean") g.isFav = false;
@@ -485,7 +485,7 @@ export function loadData() {
                 if (!Array.isArray(g.selectChars)) g.selectChars = [];
                 if (!Array.isArray(g.cpSelectIds)) g.cpSelectIds = [];
                 if (!Array.isArray(g.selectCharItems)) g.selectCharItems = [];
-                // ✅补丁新增：selectCharItems 每项兜底 nameIndex
+                // 新增：selectCharItems 每项兜底 nameIndex
                 g.selectCharItems.forEach(item => {
                     if (typeof item.nameIndex !== "number") item.nameIndex = 0;
                 });
@@ -498,7 +498,7 @@ export function loadData() {
             });
         }
 
-        // 迁移完成，写入全局appData
+        // 迁移完成，写入全局 appData
         appData = tempData;
 
         // 迁移产生变更才持久化
@@ -506,7 +506,7 @@ export function loadData() {
             saveData();
         }
 
-        // ✅ 数据重载时清空图片缓存，防止旧URL缓存阻塞Canvas渲染
+        // 数据重载时清空图片缓存，防止旧 URL 缓存阻塞 Canvas 渲染
         imgCacheMap.clear();
 
     } catch (e) {
@@ -527,7 +527,7 @@ export function getTodayDateStr() {
 }
 
 /**
- * 判断今天是否已经确认过【全局】剧透
+ * 判断今天是否已经确认过全局剧透
  * @returns {boolean}
  */
 export function isTodayConfirmed() {
@@ -536,14 +536,14 @@ export function isTodayConfirmed() {
 }
 
 /**
- * 保存今日【全局】确认标记到本地存储
+ * 保存今日全局确认标记到本地存储
  */
 export function saveConfirmDate() {
     localStorage.setItem(SPOILER_DATE_KEY, getTodayDateStr());
 }
 
 /**
- * 局部开关单日确认标记（兼容旧script.js解构）
+ * 局部开关单日确认标记（兼容旧 script.js 解构）
  */
 export function localSwitchIsConfirmedToday() {
     const saved = localStorage.getItem(SPOILER_LOCAL_SWITCH_KEY);
@@ -553,14 +553,14 @@ export function saveLocalSwitchConfirmDate() {
     localStorage.setItem(SPOILER_LOCAL_SWITCH_KEY, getTodayDateStr());
 }
 
-// ===================== 角色图片过滤工具函数 =====================
+// 角色图片过滤工具函数
 /**
- * 获取角色可用图片组（适配你项目 srcList 格式）
+ * 获取角色可用图片组（适配项目 srcList 格式）
  * @param {Object} char 角色对象
  * @param {boolean} globalHideSwitch 全局隐藏角色开关
- * @param {boolean} globalFDSwitch 全局FD开关
+ * @param {boolean} globalFDSwitch 全局 FD 开关
  * @param {boolean} localHideSwitch 当前游戏隐藏角色开关
- * @param {boolean} localFDSwitch 当前游戏FD开关
+ * @param {boolean} localFDSwitch 当前游戏 FD 开关
  * @returns Array 过滤后可用图片单元，每个单元包含 srcList + type
  */
 export function getAvailableCharImages(char, globalHideSwitch, globalFDSwitch, localHideSwitch, localFDSwitch) {
@@ -579,7 +579,7 @@ export function getAvailableCharImages(char, globalHideSwitch, globalFDSwitch, l
                 return enableHidden;
             case "fd":
                 return enableFD;
-            case "hidden-fd":  // ✅补丁新增：隐藏和FD共用图片，任一开关开启即显示
+            case "hidden-fd":  // 新增：隐藏和 FD 共用图片，任一开关开启即显示
                 return enableHidden || enableFD;
             default:
                 return false;
@@ -588,13 +588,13 @@ export function getAvailableCharImages(char, globalHideSwitch, globalFDSwitch, l
 }
 
 /**
- * ✅补丁新增：判断角色是否应显示隐藏名
- * 规则：隐藏开关开启 OR（角色isFD=true 且 FD开关开启），任一满足即显示
+ * 新增：判断角色是否应显示隐藏名
+ * 规则：隐藏开关开启 OR（角色 isFD=true 且 FD 开关开启），任一满足即显示
  * @param {Object} char 角色对象
  * @param {boolean} globalHide 全局隐藏开关
  * @param {boolean} localHide 单游戏隐藏开关
- * @param {boolean} globalFD 全局FD开关
- * @param {boolean} localFD 单游戏FD开关
+ * @param {boolean} globalFD 全局 FD 开关
+ * @param {boolean} localFD 单游戏 FD 开关
  * @returns {boolean}
  */
 export function getCharShowHide(char, globalHide, localHide, globalFD, localFD) {
@@ -605,7 +605,7 @@ export function getCharShowHide(char, globalHide, localHide, globalFD, localFD) 
 }
 
 /**
- * ✅补丁新增：获取角色可用名字列表（正常名 + 隐藏名数组）
+ * 新增：获取角色可用名字列表（正常名 + 隐藏名数组）
  * 兼容 hiddenName 为字符串或数组；showHide=false 时只返回正常名
  * @param {Object} char
  * @param {boolean} showHide
@@ -640,13 +640,13 @@ export function getCharDisplayName(char, nameIndex, showHide) {
 }
 
 /**
- * 全局图片缓存Map：key=图片url，value=Promise<HTMLImageElement>
- * 避免同一个url重复创建Image对象、重复请求
+ * 全局图片缓存 Map：key=图片 url，value=Promise<HTMLImageElement>
+ * 避免同一个 url 重复创建 Image 对象、重复请求
  */
 export const imgCacheMap = new Map();
 
 // ============================================================
-// ① preloadAndDecodeImage 修改后（带腾讯云COS降级）
+// preloadAndDecodeImage 修改后（带腾讯云 COS 降级）
 // ============================================================
 export function preloadAndDecodeImage(src) {
     if (!src) {
@@ -656,7 +656,7 @@ export function preloadAndDecodeImage(src) {
         return imgCacheMap.get(src);
     }
 
-    // 提取相对路径，用于构造腾讯云COS降级地址
+    // 提取相对路径，用于构造腾讯云 COS 降级地址
     const relPath = normalizeImageRelPath(src);
     const cosFallbackUrl = relPath ? `${TENCENT_COS_BASE_URL}/${relPath}` : null;
 
@@ -698,7 +698,7 @@ export function preloadAndDecodeImage(src) {
                 return;
             }
 
-            // 发起腾讯云COS备用源请求
+            // 发起腾讯云 COS 备用源请求
             const cosImg = new Image();
             cosImg.crossOrigin = "anonymous";
             cosImg.decoding = "async";
@@ -717,7 +717,7 @@ export function preloadAndDecodeImage(src) {
             triggerFallback("onerror");
         };
 
-        // 设置jsd超时计时器
+        // 设置 jsd 超时计时器
         timeoutTimer = setTimeout(()=>{
             triggerFallback("timeout");
         }, JSD_FALLBACK_TIMEOUT);
@@ -730,12 +730,12 @@ export function preloadAndDecodeImage(src) {
 }
 
 // ============================================================
-// 新增 preloadImageBitmap（专供Canvas导出使用，启用高质量缩放 + 降级兜底）
+// 新增 preloadImageBitmap（专供 Canvas 导出使用，启用高质量缩放 + 降级兜底）
 // ============================================================
 /**
- * 预加载图片并生成高质量 createImageBitmap（专供Canvas导出使用）
- * 解决Chrome PNG缩小插值模糊问题，启用 resizeQuality:"high"
- * 增加降级兜底，当createImageBitmap失败时返回原始HTMLImageElement
+ * 预加载图片并生成高质量 createImageBitmap（专供 Canvas 导出使用）
+ * 解决 Chrome PNG 缩小插值模糊问题，启用 resizeQuality:"high"
+ * 增加降级兜底，当 createImageBitmap 失败时返回原始 HTMLImageElement
  * @param {string} src 图片地址
  * @returns {Promise<ImageBitmap|HTMLImageElement|null>}
  */
@@ -757,7 +757,7 @@ export function preloadImageBitmap(src) {
                 try {
                     return await createImageBitmap(img);
                 } catch {
-                    // iOS Safari终极兜底：返回原始Image，不再强制bitmap
+                    // iOS Safari 终极兜底：返回原始 Image，不再强制 bitmap
                     return img;
                 }
             }
@@ -783,7 +783,7 @@ export function preloadImageBitmap(src) {
 }
 
 // ============================================================
-// ② preloadImagesInIdle 修改后
+// preloadImagesInIdle 修改后
 // ============================================================
 export function preloadImagesInIdle(list, batchSize = 2) {
     if (!Array.isArray(list) || !list.length) return;
@@ -824,8 +824,8 @@ export function preloadImagesInIdle(list, batchSize = 2) {
 }
 
 /**
- * 安全切换角色立绘：后台预解码完成再更新DOM
- * @param {HTMLImageElement} domImg 页面真实img DOM
+ * 安全切换角色立绘：后台预解码完成再更新 DOM
+ * @param {HTMLImageElement} domImg 页面真实 img DOM
  * @param {string} nextSrc 新图片地址
  */
 export async function switchCharImage(domImg, nextSrc) {
@@ -834,13 +834,13 @@ export async function switchCharImage(domImg, nextSrc) {
         domImg.src = nextSrc;
     } catch (err) {
         console.error("图片切换失败", err);
-        // 降级：直接赋值src保证可用性
+        // 降级：直接赋值 src 保证可用性
         domImg.src = nextSrc;
     }
 }
 
 // ============================================================
-// ③ switchCharImageWithLoading 修改后
+// switchCharImageWithLoading 修改后
 // ============================================================
 export async function switchCharImageWithLoading(wrap, nextSrc) {
     if (!wrap || !nextSrc) {
@@ -908,7 +908,7 @@ export async function switchCharImageWithLoading(wrap, nextSrc) {
 }
 
 // ============================================================
-// ④ 新增 preloadAdjacentImages（保留供按需调用）
+// 新增 preloadAdjacentImages（保留供按需调用）
 // ============================================================
 export function preloadAdjacentImages(srcList, index) {
     if (
@@ -939,11 +939,11 @@ export function preloadAdjacentImages(srcList, index) {
     );
 }
 
-// ===================== 游戏模板加载模块（不再import游戏，读取全局已加载数据） =====================
+// 游戏模板加载模块（不再 import 游戏，读取全局已加载数据）
 export async function loadAllGameTemplates() {
-    // ==========【补丁新增：独立加载FD/续作游戏，不混入主gameDataList】==========
+    // 补丁新增：独立加载 FD/续作游戏，不混入主 gameDataList
     try {
-        // 动态导入fd-games模块，执行FD游戏加载
+        // 动态导入 fd-games 模块，执行 FD 游戏加载
         const fdModule = await import("../data/fd-games.js");
         if(typeof fdModule.loadAllFDGames === "function"){
             await fdModule.loadAllFDGames();
@@ -951,16 +951,16 @@ export async function loadAllGameTemplates() {
     } catch(e){
         console.warn("⚠️FD游戏模块加载失败，FD续作游戏将不可用", e);
     }
-    // 将FD列表挂载到window兜底变量，仅annual读取；main自身gameTemplateList不包含FD，保护FavList
+    // 将 FD 列表挂载到 window 兜底变量，仅 annual 读取；main 自身 gameTemplateList 不包含 FD，保护 FavList
     window.__fdGameTemplateList = Array.isArray(window.fdGameList) ? [...window.fdGameList] : [];
-    // ==========【补丁结束；下面原有代码完全不动】==========
+    // 补丁结束；下面原有代码完全不动
 
-    // 等待全局window.gameDataList就绪（data/games.js已经完成全部import）
+    // 等待全局 window.gameDataList 就绪（data/games.js 已经完成全部 import）
     if (!Array.isArray(window.gameDataList)) {
         gameTemplateList = [];
         gameTemplateReady = false;
         console.warn("window.gameDataList不存在，游戏模板为空");
-        // 同步到window兜底变量
+        // 同步到 window 兜底变量
         window.__gameTemplateList = gameTemplateList;
         window.__gameTemplateReady = gameTemplateReady;
         return;
@@ -969,24 +969,24 @@ export async function loadAllGameTemplates() {
     gameTemplateList = [...window.gameDataList];
     gameTemplateReady = true;
     console.log("✅main.js读取全局游戏模板，数量：", gameTemplateList.length);
-    // =========【新增】同步更新window的兜底变量，给annual.js使用 =========
+    // 新增：同步更新 window 的兜底变量，给 annual.js 使用
     window.__gameTemplateList = gameTemplateList;
     window.__gameTemplateReady = gameTemplateReady;
 }
 
 /**
- * 同步游戏内全局开关状态【⚠️禁止调用！需求变更：全局与局部开关互相独立】
+ * 同步游戏内全局开关状态（禁止调用！需求变更：全局与局部开关互相独立）
  * @param {string} type 开关类型 hideChar / fd
  * @param {boolean} status 开关布尔状态
  */
 export function syncSingleGameSwitch(type, status) {
-    // 保留导出防止import报错，业务逻辑不再执行
+    // 保留导出防止 import 报错，业务逻辑不再执行
     console.warn("syncSingleGameSwitch 已废弃，请勿调用");
     return;
 }
 
 /**
- * 筛选下拉排序：中文拼音A-Z → 英文A-Z(忽略大小写) → 日文五十音(平假名优先，片假名转平假名)
+ * 筛选下拉排序：中文拼音 A-Z → 英文 A-Z(忽略大小写) → 日文五十音(平假名优先，片假名转平假名)
  * @param {string[]} arr 原始字符串数组
  * @returns {string[]} 排好序的数组
  */
@@ -1038,8 +1038,8 @@ export function sortFilterOptionList(arr) {
 }
 
 /**
- * staff人员对象数组排序：lang zh>ja>en；同lang内部localeCompare
- * en规则：首字母相同时小写排在大写前面
+ * staff 人员对象数组排序：lang zh>ja>en；同 lang 内部 localeCompare
+ * en 规则：首字母相同时小写排在大写前面
  * @param {Array<{name:string,lang:string}>} list
  * @returns {Array<{name:string,lang:string}>}
  */
@@ -1049,7 +1049,7 @@ export function sortStaffByLang(list) {
     return [...list].sort((a, b) => {
         const oA = langOrder[a.lang] ?? 99;
         const oB = langOrder[b.lang] ?? 99;
-        //第一层 lang优先级 zh-ja-en
+        // 第一层 lang 优先级 zh-ja-en
         if (oA !== oB) return oA - oB;
 
         const nameA = a.name;
@@ -1065,7 +1065,7 @@ export function sortStaffByLang(list) {
             if (lowerA !== lowerB) {
                 return lowerA.localeCompare(lowerB, "en");
             } else {
-                //小写charCode更小，a在A前面
+                // 小写 charCode 更小，a 在 A 前面
                 return nameA.localeCompare(nameB, "en");
             }
         }
@@ -1073,10 +1073,10 @@ export function sortStaffByLang(list) {
     });
 }
 
-// ===================== 筛选下拉菜单填充函数 =====================
+// 筛选下拉菜单填充函数
 /**
- * 【修复】筛选下拉填充：保留HTML原生顶部placeholder option，只追加数据选项，不再覆盖HTML提示文字
- * 排序规则：中文A-Z →英文A-Z →日文五十音；发售年份数字降序
+ * 修复：筛选下拉填充：保留 HTML 原生顶部 placeholder option，只追加数据选项，不再覆盖 HTML 提示文字
+ * 排序规则：中文 A-Z →英文 A-Z →日文五十音；发售年份数字降序
  * @param {Array} gameList 游戏模板数组
  */
 export function fillFilterOptions(gameList) {
@@ -1110,7 +1110,7 @@ export function fillFilterOptions(gameList) {
         }
     });
 
-    // =========新增：人员对象数组按name去重，消除下拉重复项=========
+    // 新增：人员对象数组按 name 去重，消除下拉重复项
     function uniqueStaffByName(list) {
         const seen = new Set();
         return list.filter(item => {
@@ -1121,7 +1121,7 @@ export function fillFilterOptions(gameList) {
         });
     }
 
-    // 对象数组先去重，再按lang规则排序，再提取name字符串
+    // 对象数组先去重，再按 lang 规则排序，再提取 name 字符串
     const writerSortedObjs = sortStaffByLang(uniqueStaffByName(writerObjList));
     const artSortedObjs = sortStaffByLang(uniqueStaffByName(artObjList));
     const writerSorted = writerSortedObjs.map(o => o.name);
@@ -1153,17 +1153,17 @@ export function fillFilterOptions(gameList) {
     fillSelect("filter-cn", cnSorted);
 }
 
-// ===================== HTML模板渲染函数 =====================
+// HTML 模板渲染函数
 /**
  * 渲染游戏选择列表卡片模板
- * 【修复】硬编码输出顺序，不再依赖对象key顺序：编剧→画师→发售年份→发行厂商→汉化厂商
+ * 修复：硬编码输出顺序，不再依赖对象 key 顺序：编剧→画师→发售年份→发行厂商→汉化厂商
  * 布局：左侧封面，右侧竖排信息，移除名称旁发售年份
  * @param {Object} game 游戏模板对象
- * @param {number} index 在列表中的索引（用于控制loading策略）
+ * @param {number} index 在列表中的索引（用于控制 loading 策略）
  * @returns {string} html字符串
  */
 // ============================================================
-// ⑤ renderGameSelectItem 修改后（增加index参数，前6张eager）
+// renderGameSelectItem 修改后（增加 index 参数，前 6 张 eager）
 // ============================================================
 export function renderGameSelectItem(game, index) {
     if (!game) return "";
@@ -1190,7 +1190,7 @@ export function renderGameSelectItem(game, index) {
         pubText = game.publisher.join("、");
     }
 
-    // 【硬编码固定输出顺序，不受对象属性顺序干扰】
+    // 硬编码固定输出顺序，不受对象属性顺序干扰
     const lines = [];
     lines.push(`编剧：${writerText}`);
     lines.push(`画师：${artText}`);
@@ -1203,7 +1203,7 @@ export function renderGameSelectItem(game, index) {
         infoHtml += `<div>${t}</div>`;
     }
 
-    // 前6张 eager，其余 lazy
+    // 前 6 张 eager，其余 lazy
     const loadingMode = (index < 6) ? "eager" : "lazy";
 
     return `
@@ -1216,7 +1216,7 @@ export function renderGameSelectItem(game, index) {
 }
 
 // ============================================================
-// ⑥ renderSelectedChar 修改后（移除 preloadAdjacentImages 调用，img loading 改为 eager）
+// renderSelectedChar 修改后（移除 preloadAdjacentImages 调用，img loading 改为 eager）
 // ============================================================
 export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
     if (!gameInfo?.charList || !gameItem) return `<div class="empty-hint">暂未添加角色</div>`;
@@ -1247,7 +1247,7 @@ export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
         if (imgIndex >= allSrc.length) imgIndex = 0;
         const targetSrc = allSrc[imgIndex];
 
-        // ========== ✅补丁修改：角色名多名字循环切换 ==========
+        // ========== 补丁：角色名多名字循环切换 ==========
         const showHide = getCharShowHide(char, globalHide, localHide, globalFD, localFD);
         const nameList = getCharNameList(char, showHide);
         const totalNames = nameList.length;
@@ -1279,7 +1279,7 @@ export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
 }
 
 // ============================================================
-// ⑦ renderCP 修改后（img loading 改为 eager）
+// renderCP 修改后（img loading 改为 eager）
 // ============================================================
 export function renderCP(gameItem, gameInfo, isSnapshot = false) {
     if (!gameInfo?.charList || !gameItem) return `<div class="empty-hint">暂未添加角色</div>`;
@@ -1303,11 +1303,11 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
         fAvailUnits.forEach(u => fAllSrc.push(...u.srcList));
         if (fAllSrc.length === 0) return;
 
-        // ✅修复：从cp自身存储取女主imgIndex
+        // 修复：从cp自身存储取女主imgIndex
         let fIndex = Number(cp.femaleImgIndex ?? 0);
         if (fIndex >= fAllSrc.length) fIndex = 0;
         const fTargetSrc = fAllSrc[fIndex];
-        // ========== ✅补丁修改：女主多名字循环切换 ==========
+        // ========== 补丁：女主多名字循环切换 ==========
         const fShowHide = getCharShowHide(fChar, globalHide, localHide, globalFD, localFD);
         const fNameList = getCharNameList(fChar, fShowHide);
         const fTotalNames = fNameList.length;
@@ -1336,7 +1336,7 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
             let mIndex = Number(mi.imgIndex ?? 0);
             if (mIndex >= mAllSrc.length) mIndex = 0;
             const mTargetSrc = mAllSrc[mIndex];
-            // ========== ✅补丁修改：男主多名字循环切换 ==========
+            // ========== 补丁：男主多名字循环切换 ==========
             const mShowHide = getCharShowHide(mChar, globalHide, localHide, globalFD, localFD);
             const mNameList = getCharNameList(mChar, mShowHide);
             const mTotalNames = mNameList.length;
@@ -1401,7 +1401,7 @@ export function getAllGameChar(gameInfo) {
     const showHide = appData.globalHideChar || gameItem?.localHideChar;
     const showFD = appData.globalFD || gameItem?.localFD;
     const showSub = appData.globalSubChar || (gameItem?.localSubChar ?? false);
-    // ✅补丁新增：续作/FD次要角色显示开关（全局 || 单游戏）
+    // 新增：续作/FD次要角色显示开关（全局 || 单游戏）
     const showFdSub = appData.globalFdSubChar || (gameItem?.localFdSubChar ?? false);
     chars = chars.filter(c => {
         if (!c) return false;
@@ -1411,7 +1411,7 @@ export function getAllGameChar(gameInfo) {
         const isFdSub = !!c.isFdSub;
         // 普通角色（无任何特殊标记）：始终显示
         if (!isSub && !isHidden && !isFD && !isFdSub) return true;
-        // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
+        // 改为 OR 逻辑：角色有多个状态 true 时任一对应开关开启即显示
         return (isSub && showSub) || (isHidden && showHide) || (isFD && showFD) || (isFdSub && showFdSub);
     });
 
@@ -1420,12 +1420,12 @@ export function getAllGameChar(gameInfo) {
     return [...female, ...male];
 }
 
-// ===================== 角色/CP待选勾选切换工具【新增】 =====================
+// 角色/CP 待选勾选切换工具（新增）
 /**
- * 单人Character面板勾选切换 → 操作 gameItem.selectChars
- * @param {Object} gameItem appData.gameList内的游戏条目
+ * 单人 Character 面板勾选切换 → 操作 gameItem.selectChars
+ * @param {Object} gameItem appData.gameList 内的游戏条目
  * @param {string} charId 角色id
- * @param {string} gameId 当前游戏ID（用于正确读取立绘索引）
+ * @param {string} gameId 当前游戏 ID（用于正确读取立绘索引）
  */
 export function toggleCharItemSelect(gameItem, charId, gameId) {
     if (!Array.isArray(gameItem.selectChars)) gameItem.selectChars = [];
@@ -1452,8 +1452,8 @@ export function toggleCharItemSelect(gameItem, charId, gameId) {
 }
 
 /**
- * CP Couple面板待选勾选切换 → 独立操作 gameItem.cpSelectIds
- * @param {Object} gameItem appData.gameList内的游戏条目
+ * CP Couple 面板待选勾选切换 → 独立操作 gameItem.cpSelectIds
+ * @param {Object} gameItem appData.gameList 内的游戏条目
  * @param {string} charId 角色id
  */
 export function toggleCpItemSelect(gameItem, charId) {
@@ -1467,14 +1467,14 @@ export function toggleCpItemSelect(gameItem, charId) {
     saveData();
 }
 
-// ===================== 页面启动入口模块 =====================
-// 【新增：给annual.js时序兜底，挂载原始游戏模板状态到window】
+// 页面启动入口模块
+// 新增：给 annual.js 时序兜底，挂载原始游戏模板状态到 window
 window.__gameTemplateList = gameTemplateList;
 window.__gameTemplateReady = gameTemplateReady;
 
 /**
- * 组装Core上下文对象，统一供给UI层script.js
- * @returns {Object} Core对象，所有核心方法对外暴露
+ * 组装 Core 上下文对象，统一供给 UI 层 script.js
+ * @returns {Object} Core 对象，所有核心方法对外暴露
  */
 function buildCoreContext() {
     const Core = {
@@ -1496,7 +1496,7 @@ function buildCoreContext() {
         getAvailableCharImages,
         getCharDisplayName,
         getCharNameList,
-        getCharShowHide,  // ✅补丁新增
+        getCharShowHide,  // 新增
         preloadAndDecodeImage,
         preloadImageBitmap,
         preloadImagesInIdle,
@@ -1516,22 +1516,22 @@ function buildCoreContext() {
 }
 
 /**
- * 【渲染全局开关复选框状态】
- * 根据appData数据，更新页面上两个全局滑块勾选状态
+ * 渲染全局开关复选框状态
+ * 根据 appData 数据，更新页面上两个全局滑块勾选状态
  */
 function renderGlobalSwitchDom() {
     const hideCharInput = document.getElementById("global-hide-char");
     const fdInput = document.getElementById("global-fd-game");
-    const subCharInput = document.getElementById("global-sub-char"); // ✅新增
-    const fdSubCharInput = document.getElementById("global-fd-sub-char"); // ✅补丁新增
-    // 加固：严格读取appData，不读取DOM旧状态
+    const subCharInput = document.getElementById("global-sub-char"); // 新增
+    const fdSubCharInput = document.getElementById("global-fd-sub-char"); // 新增
+    // 加固：严格读取 appData，不读取 DOM 旧状态
     if (hideCharInput) hideCharInput.checked = !!appData.globalHideChar;
     if (fdInput) fdInput.checked = !!appData.globalFD;
-    if (subCharInput) subCharInput.checked = !!appData.globalSubChar; // ✅新增
-    if (fdSubCharInput) fdSubCharInput.checked = !!appData.globalFdSubChar; // ✅补丁新增
+    if (subCharInput) subCharInput.checked = !!appData.globalSubChar; // 新增
+    if (fdSubCharInput) fdSubCharInput.checked = !!appData.globalFdSubChar; // 新增
 }
 
-// 模块顶层事件处理函数，解决removeEventListener无效
+// 模块顶层事件处理函数，解决 removeEventListener 无效
 function wrapClickHandler(e) {
     const spoilerModal = document.getElementById("spoiler-modal");
     if (!spoilerModal) return;
@@ -1539,7 +1539,7 @@ function wrapClickHandler(e) {
     // -------- 游戏局部开关处理 --------
     const targetInput = e.target.closest(".game-hide-char,.game-fd-switch,.game-sub-switch,.game-fd-sub-switch,.modal-local-hide-char,.modal-local-fd");
     if (targetInput) {
-        // ✅新增：局部次要角色开关，无剧透弹窗，直接切换
+        // 新增：局部次要角色开关，无剧透弹窗，直接切换
         if (targetInput.classList.contains("game-sub-switch")) {
             e.preventDefault();
             const idx = Number(targetInput.dataset.gameidx);
@@ -1550,7 +1550,7 @@ function wrapClickHandler(e) {
             if (window.refreshGameCardUi) window.refreshGameCardUi();
             return;
         }
-        // ✅补丁新增：局部续作/FD次要角色开关，无剧透弹窗，直接切换（完全复用 game-sub-switch 逻辑）
+        // 新增：局部续作/FD次要角色开关，无剧透弹窗，直接切换（完全复用 game-sub-switch 逻辑）
         if (targetInput.classList.contains("game-fd-sub-switch")) {
             e.preventDefault();
             const idx = Number(targetInput.dataset.gameidx);
@@ -1562,7 +1562,7 @@ function wrapClickHandler(e) {
             return;
         }
 
-        // ✅修复：只要命中局部开关，直接阻止浏览器原生checkbox切换，全部JS接管
+        // 修复：只要命中局部开关，直接阻止浏览器原生 checkbox 切换，全部 JS 接管
         e.preventDefault();
 
         let idx;
@@ -1615,7 +1615,7 @@ function wrapClickHandler(e) {
         const gameId = cardEl.dataset.gameId;
         const charId = cardEl.dataset.charId;
         const totalImg = Number(cardEl.dataset.totalImg) || 1;
-        // ★★★ 修改点：统一使用 char-img- 前缀 ★★★
+        // 修改：统一使用 char-img- 前缀
         const saveKey = `char-img-${gameId}-${charId}`;
         let currentIdx = Number(appData.charImageSelect[saveKey] ?? 0);
 
@@ -1633,7 +1633,7 @@ function wrapClickHandler(e) {
         return;
     }
 
-    // -------- ✅补丁修改：已选角色卡片 角色名切换按钮处理（多名字循环） --------
+    // -------- 补丁：已选角色卡片 角色名切换按钮处理（多名字循环） --------
     const nameSwitchBtn = e.target.closest(".char-name-switch-prev,.char-name-switch-next");
     if (nameSwitchBtn) {
         const cardEl = nameSwitchBtn.closest(".char-card-item, .cp-selected-card-item");
@@ -1644,10 +1644,10 @@ function wrapClickHandler(e) {
         const gameItem = appData.gameList.find(g => g.gameId === gameId);
         if (!gameItem) return;
 
-        // ✅补丁修改：多名字循环切换，统一计算 totalNames
+        // 补丁：多名字循环切换，统一计算 totalNames
         const charGameInfo = gameTemplateList.find(g => g.id === gameId);
         const charObj = charGameInfo?.charList?.find(c => c.id === charId);
-        // ✅补丁修改：隐藏开关或FD开关（角色isFD时）任一开启即显示隐藏名
+        // 补丁：隐藏开关或 FD 开关（角色 isFD 时）任一开启即显示隐藏名
         const nmShowHide = getCharShowHide(
             charObj,
             appData.globalHideChar,
@@ -1706,7 +1706,7 @@ function wrapClickHandler(e) {
         if (window.refreshGameCardUi) window.refreshGameCardUi();
         return;
     }
-    // -------- 补丁结束 --------
+    // 补丁结束
 
     // 点击遮罩空白关闭弹窗
     if (e.target === spoilerModal) {
@@ -1718,7 +1718,7 @@ function wrapClickHandler(e) {
 
 /**
  * 事件委托：处理动态渲染游戏卡片内部开关 + 角色图片切换按钮
- * 改为click委托，不再监听change；导出，由script.js渲染完列表后调用
+ * 改为 click 委托，不再监听 change；导出，由 script.js 渲染完列表后调用
  */
 export function bindDynamicGameCardSwitchEvents() {
     const wrap = document.querySelector(".wrap");
@@ -1733,17 +1733,17 @@ export function bindDynamicGameCardSwitchEvents() {
 }
 
 /**
- * 【绑定全局开关 click事件 + 剧透弹窗逻辑】
- * 改用label click，阻止默认，不再使用change，规避label包裹checkbox时序bug
- * 1.想要打开：阻止原生勾选，弹出弹窗；确认后才改为true
- * 2.想要关闭：直接修改数据，保存，更新UI，不弹窗
+ * 绑定全局开关 click 事件 + 剧透弹窗逻辑
+ * 改用 label click，阻止默认，不再使用 change，规避 label 包裹 checkbox 时序 bug
+ * 1.想要打开：阻止原生勾选，弹出弹窗；确认后才改为 true
+ * 2.想要关闭：直接修改数据，保存，更新 UI，不弹窗
  * 恢复取消按钮完整逻辑
  */
 function bindGlobalSwitchSpoilerEvents() {
     const hideCharInput = document.getElementById("global-hide-char");
     const fdInput = document.getElementById("global-fd-game");
-    const subCharInput = document.getElementById("global-sub-char"); // ✅新增
-    const fdSubCharInput = document.getElementById("global-fd-sub-char"); // ✅补丁新增
+    const subCharInput = document.getElementById("global-sub-char"); // 新增
+    const fdSubCharInput = document.getElementById("global-fd-sub-char"); // 新增
     const spoilerModal = document.getElementById("spoiler-modal");
     const spoilerConfirmBtn = document.getElementById("spoiler-confirm");
     const spoilerCancelBtn = document.getElementById("spoiler-cancel");
@@ -1756,9 +1756,9 @@ function bindGlobalSwitchSpoilerEvents() {
     const labelHideChar = hideCharInput.closest("label.switch");
     const labelFD = fdInput.closest("label.switch");
     const labelSubChar = subCharInput.closest("label.switch");
-    const labelFdSubChar = fdSubCharInput ? fdSubCharInput.closest("label.switch") : null; // ✅补丁新增
+    const labelFdSubChar = fdSubCharInput ? fdSubCharInput.closest("label.switch") : null; // 新增
 
-    // --------全局隐藏角色开关 使用label click，阻止默认行为--------
+    // --------全局隐藏角色开关 使用 label click，阻止默认行为--------
     labelHideChar.addEventListener("click", function (e) {
         e.preventDefault(); // 禁止浏览器原生切换checkbox！全部交给JS控制
         // 当前实际状态
@@ -1801,7 +1801,7 @@ function bindGlobalSwitchSpoilerEvents() {
         renderGlobalSwitchDom();
         if (window.refreshGameCardUi) window.refreshGameCardUi();
     });
-    // --------✅补丁新增：全局续作/FD次要角色开关（无剧透弹窗，直接切换，完全复用上面逻辑）--------
+    // --------新增：全局续作/FD次要角色开关（无剧透弹窗，直接切换，完全复用上面逻辑）--------
     if (labelFdSubChar) {
         labelFdSubChar.addEventListener("click", function (e) {
             e.preventDefault();
@@ -1812,7 +1812,7 @@ function bindGlobalSwitchSpoilerEvents() {
         });
     }
 
-    // 弹窗确认【扩展：同时处理全局 / 动态卡片局部】
+    // 弹窗确认（扩展：同时处理全局 / 动态卡片局部）
     spoilerConfirmBtn.onclick = null;
     spoilerConfirmBtn.addEventListener("click", function () {
         // 优先处理动态游戏卡片操作（含弹窗内modal-local-*开关）
@@ -1855,7 +1855,7 @@ function bindGlobalSwitchSpoilerEvents() {
         }
     });
 
-    // 弹窗取消：关闭弹窗，清空全部待处理标记，**不修改任何开关状态**
+    // 弹窗取消：关闭弹窗，清空全部待处理标记，不修改任何开关状态
     spoilerCancelBtn.onclick = null;
     spoilerCancelBtn.addEventListener("click", function () {
         spoilerModal.classList.remove("active");
@@ -1865,12 +1865,12 @@ function bindGlobalSwitchSpoilerEvents() {
 }
 
 /**
- * 禁止移动端长按图片呼出系统菜单（iOS/安卓/鸿蒙，兼容动态img）
+ * 禁止移动端长按图片呼出系统菜单（iOS/安卓/鸿蒙，兼容动态 img）
  */
 function disableImageLongPressMenu() {
   // 1. 拦截右键 / 移动端长按弹出系统菜单（contextmenu）
   document.addEventListener('contextmenu', function (e) {
-    // 向上查找，判断点击元素或者祖先是不是img（处理img被包裹的场景）
+    // 向上查找，判断点击元素或者祖先是不是 img（处理 img 被包裹的场景）
     const imgEl = e.target.closest('img');
     if (imgEl) {
       e.preventDefault();
@@ -1913,24 +1913,24 @@ function disableImageLongPressMenu() {
 }
 
 /**
- * 对外暴露启动入口，供index.html调用
+ * 对外暴露启动入口，供 index.html 调用
  */
 export async function bootstrapCore() {
-    // 【修复时序BUG】先加载游戏模板，再执行loadData，保证loadData内部脏url清洗可以拿到gameTemplateList
+    // 修复时序 BUG：先加载游戏模板，再执行 loadData，保证 loadData 内部脏 url 清洗可以拿到 gameTemplateList
     await loadAllGameTemplates();
     // 1.读取本地存储数据 + 执行存量脏图片链接清洗迁移
     loadData();
 
-    // ==========【补丁2】模板加载完成后，二次补执行脏数据清洗，解决第一次loadData时模板未就绪跳过清洗的时序竞争 ==========
+    // 补丁2：模板加载完成后，二次补执行脏数据清洗，解决第一次 loadData 时模板未就绪跳过清洗的时序竞争
     if(gameTemplateReady && Array.isArray(gameTemplateList) && gameTemplateList.length>0){
         console.log("🔧 二次补跑存量图片脏链接清洗");
         let hasDirtyUrl = false;
-        // ver3升级一次性强制清洗标记
+        // ver3 升级一次性强制清洗标记
         const forceCleanAll = !!appData._triggerImageCleanOnce;
 
         if(Array.isArray(appData.gameList)){
             appData.gameList.forEach(gameItem => {
-                // ==========新增：清理对象内raw字符串（永久清除localStorage脏数据）==========
+                // 新增：清理对象内 raw 字符串（永久清除 localStorage 脏数据）
                 if(Array.isArray(gameItem.selectCharItems)){
                     gameItem.selectCharItems.forEach(s=>{
                         for(const key in s){
@@ -1967,7 +1967,7 @@ export async function bootstrapCore() {
                         }
                     })
                 }
-                // ==========以上新增raw字符串清理，下面原有索引校验逻辑完全保留==========
+                // 以上新增 raw 字符串清理，下面原有索引校验逻辑完全保留
                 if (!Array.isArray(gameItem.selectCharItems)) return;
                 const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
                 if (!gameInfo?.charList || !gameItem?.charId) return;
@@ -1989,7 +1989,7 @@ export async function bootstrapCore() {
                         hasDirtyUrl = true;
                     }
                 });
-                // cp女主男主索引校验
+                // cp 女主男主索引校验
                 if(Array.isArray(gameItem.cpList)){
                     gameItem.cpList.forEach(cp=>{
                         const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
@@ -2023,7 +2023,7 @@ export async function bootstrapCore() {
             })
         }
 
-        // ver3升级标记消费，只执行一次
+        // ver3 升级标记消费，只执行一次
         if(forceCleanAll){
             console.log("🔧 ver3版本升级，执行一次性全量图片脏数据清洗");
             appData._triggerImageCleanOnce = false;
@@ -2036,18 +2036,18 @@ export async function bootstrapCore() {
             imgCacheMap.clear();
         }
     }
-    // ==========【补丁2结束】==========
+    // 补丁2结束
 
-    // 2.组装核心上下文对象，传给UI层script.js
+    // 2.组装核心上下文对象，传给 UI 层 script.js
     const Core = buildCoreContext();
-    // 3.动态导入，消除顶层import循环依赖
+    // 3.动态导入，消除顶层 import 循环依赖
     const { initPage } = await import("./script.js");
     initPage(Core);
     // 4.渲染全局开关初始勾选状态
     renderGlobalSwitchDom();
-    // 5.绑定全局开关+剧透弹窗事件（确认+取消双按钮）
+    // 5.绑定全局开关 + 剧透弹窗事件（确认 + 取消双按钮）
     bindGlobalSwitchSpoilerEvents();
-    // ⚠️移除bindDynamicGameCardSwitchEvents()调用，放到script.js渲染完列表后执行
+    // 移除 bindDynamicGameCardSwitchEvents() 调用，放到 script.js 渲染完列表后执行
 
     // 页面初始化完成后执行禁用长按图片菜单
     disableImageLongPressMenu();
