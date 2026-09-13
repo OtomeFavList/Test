@@ -1137,7 +1137,7 @@ h2{
     flex-direction:column;
     gap:8px;
 }
-/* 待选女主：完复用 char-item 样式，增加 flex 修复纵向布局高度 */
+/* 待选女主：复用 char-item 样式，增加 flex 修复纵向布局高度 */
 .cp-female-card-btn{
     width: 120px;
     min-height:168px;
