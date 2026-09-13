@@ -431,7 +431,6 @@ button:hover{
     color: #666;
     line-height: 1.6;
 }
-
 .game-card-buttons{
     display:flex;
     gap:10px;
