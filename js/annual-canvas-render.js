@@ -1,8 +1,6 @@
-// ================================================================
-// annual-canvas-render.js
+// ===================== annual-canvas-render.js =====================
 // 年度报告模式 纯Canvas绘制导出（对齐 export-canvas-render.js 视觉风格）
 // 每个模块单独生成一张图，固定尺寸 + DPR×2 高清输出
-// ================================================================
 import {
   getWebImageUrl,
   preloadImageBitmap,
@@ -590,7 +588,7 @@ function hasOtherContent(annualData) {
   return false;
 }
 
-// 收集五模块中有内容的卡片列表（不含"还玩了"区域）
+// 收集五模块中有内容的卡片列表（不含还玩了区域）
 function getOtherCards(annualData) {
   const o = annualData.other || {};
   const cards = [];
