@@ -1527,14 +1527,17 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
 
 // ===================== 批量导出所有模块 =====================
 export async function renderAllAnnualModules(designW, annualData, config, titleMap, dpr) {
+  // ✅新增：推し标题开关——开启时模块六/七小标题为推しゲーム / 推しキャラ，关闭则默认ゲーム宫格 / キャラ宫格
+  const gameGridTitle = config.useOshiTitle ? '推しゲーム' : (titleMap?.gameGrid || 'ゲーム宫格');
+  const charGridTitle = config.useOshiTitle ? '推しキャラ' : (titleMap?.charGrid || 'キャラ宫格');
   const modules = [
     { type: 'stats', title: titleMap?.stats || '' },
     { type: 'gameTop', title: titleMap?.gameTop || 'ゲームTOP' },
     { type: 'charTop', title: titleMap?.charTop || 'キャラTOP' },
     { type: 'cpTop', title: titleMap?.cpTop || 'カップルTOP' },
     { type: 'other', title: '' },
-    { type: 'gameGrid', title: titleMap?.gameGrid || 'ゲーム宫格' },
-    { type: 'charGrid', title: titleMap?.charGrid || 'キャラ宫格' },
+    { type: 'gameGrid', title: gameGridTitle },
+    { type: 'charGrid', title: charGridTitle },
   ];
   const results = [];
   for (const mod of modules) {
