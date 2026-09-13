@@ -444,7 +444,7 @@
         align-items: flex-start;
         flex-wrap: wrap;
     }
-    /* ✅添加游戏封面：严格等于弹窗待选游戏item图片80px */
+    /* 添加游戏封面：严格等于弹窗待选游戏item图片80px */
     .annual-top-cover-wrap {
         width: 80px;
     }
@@ -453,7 +453,7 @@
         height: auto;
         object-fit: cover;
     }
-    /* ✅添加角色封面：严格等于二级待选角色卡片图片90px，强制正方形 */
+    /* 添加角色封面：严格等于二级待选角色卡片图片90px，强制正方形 */
     .annual-char-top-content-row {
         flex-direction: row;
         align-items: flex-start;
@@ -626,7 +626,7 @@
         width: 100% !important;
         box-sizing: border-box !important;
     }
-    /* ✅CP弹窗全局开关组同步对齐 */
+    /* CP弹窗全局开关组同步对齐 */
     .annual-cp-global-switch-group {
         gap: 12px;
         padding: 0 0 8px 0 !important;
@@ -1261,7 +1261,7 @@
     text-align:center;
     word-break: break-word;
     line-height:1.4;
-    width: 100%;  /* ✅补丁新增：撑满容器宽度，切换按钮落在名字框左右两端 */
+    width: 100%;  /* ✅补丁：撑满容器宽度，切换按钮落在名字框左右两端 */
     display: flex;
     align-items: center;
     justify-content: center;
