@@ -394,6 +394,7 @@ button:hover{
     display: flex;
     gap: 6px;
 }
+
 .btn-fav {
     background:transparent;
     color:#ccc;
@@ -1075,7 +1076,6 @@ h2{
     flex-wrap:wrap;
     margin-bottom:12px;
 }
-
 /* 卡片底部按钮区域，放在 CP 下方 */
 .card-bottom-buttons {
     margin-top:14px;
@@ -1616,6 +1616,7 @@ h2{
     color:#444;
     font-size:16px;
 }
+
 /* 修复：导出预览弹窗加载状态高度不足 */
 .modal-preview-box {
     background:#ffffff;
@@ -1844,7 +1845,7 @@ h2{
 /* 列数控制，分层 */
 /* 普通手机 ≤768px：强制单列 */
 @media (max-width:768px) {
-    /* 关键：外层 big-card 缩减内边距，消除第一层挤压 */
+    /* 修复：外层 big-card 缩减内边距，消除挤压 */
     .big-card {
         padding: 16px 12px !important;
     }
@@ -1853,8 +1854,8 @@ h2{
         gap: 10px !important;
         padding: 6px !important;
     }
-    /* 核心修复：游戏列表区域全部组件缩减左右 padding，扩大内容可用宽度 */
-    /* 搜索面板整体：上下保留，进一步压缩左右 */
+    /* 修复：游戏列表区域全部组件缩减左右 padding，扩大内容可用宽度 */
+    /* 搜索面板整体：上下保留，缩小左右 */
     .game-search-box {
         padding: 10px 6px !important;
     }
@@ -1863,15 +1864,15 @@ h2{
     .char-slide-panel-cp {
         padding: 10px 6px !important;
     }
-    /* 单张已添加游戏卡片 game-card，进一步减少左右留白 */
+    /* 单张已添加游戏卡片，缩小左右 */
     .game-card {
         padding: 14px 8px !important;
     }
-    /* 游戏卡片内部自定义文本框外层容器，消除多余横向留白 */
+    /* 游戏卡片内部自定义文本框外层容器，缩小左右 */
     .game-custom-text-wrap {
         padding: 0 !important;
     }
-    /* 筛选 select 容器，消除多余横向间隙，允许 select 尽量占满宽度 */
+    /* 筛选 select 容器，缩小左右，允许 select 尽量占满宽度 */
     .filter-group {
         gap: 6px !important;
     }
@@ -1924,7 +1925,6 @@ h2{
   outline: none;
   border-color: #f6a5b8;
 }
-
 /* 关掉原生 resize，自制垂直拖拽控件 */
 .game-custom-text-wrap {
     position: relative;
@@ -2055,7 +2055,7 @@ h2{
 .snapshot-container.export-snapshot .float-scroll-btn {
     display: none !important;
 }
-/* 移动端微调位置，避免被底部遮挡 */
+/* 移动端避免被底部遮挡 */
 @media (max-width:768px) {
     .float-scroll-btn.back-to-add {
         right: 16px;
