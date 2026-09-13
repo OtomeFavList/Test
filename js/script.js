@@ -33,13 +33,11 @@ import {
 
 // 导入原生 Canvas 绘制导出模块
 import { renderExportCanvas } from './export-canvas-render.js';
-
 // 导出预览全局状态锁与缓存
 let isRendering = false;
 let snapshotBlobCache = null;
 // 新增：全局保存所有预览页面 url 列表，用于多页预览
 let previewPageUrlList = [];
-
 // 缓存使用完毕后释放资源的公共函数
 function clearPreviewCacheResource() {
     // 释放所有分页图片资源
@@ -54,7 +52,7 @@ export function initPage(Core = {}) {
   // 安全兜底，防止不传 Core 报错
   Core = Core || {};
   /**
-   * 新增：统计角色在指定开关状态下的可用图片总数
+   * 补丁：统计角色在指定开关状态下的可用图片总数
    * 复用 main.js getAvailableCharImages，通过比较开关开/关时的图片数量差，
    * 判断角色是否有隐藏图片或 FD 图片，无需硬编码图片属性名。
    */
@@ -68,8 +66,8 @@ export function initPage(Core = {}) {
     return count;
   }
   /**
-   * 新增：判断角色是否有“隐藏内容”（隐藏角色标记 / 隐藏姓名 / 隐藏图片）
-   * 用于局部隐藏开关的显隐判断，解决“有隐藏图片/姓名但无 isHidden 标记时开关不显示”的问题
+   * 补丁：判断角色是否有隐藏内容（隐藏角色标记 / 隐藏姓名 / 隐藏图片）
+   * 用于局部隐藏开关的显隐判断，解决有隐藏图片/姓名但无 isHidden 标记时开关不显示的问题
    */
   function charHasHiddenContent(char) {
     if (!char) return false;
@@ -79,13 +77,13 @@ export function initPage(Core = {}) {
     return countCharImages(char, true, false) > countCharImages(char, false, false);
   }
   /**
-   * 新增：判断角色是否有“FD 内容”（FD 角色标记 / FD 图片）
+   * 补丁：判断角色是否有FD 内容（FD 角色标记 / FD 图片）
    * 用于局部 FD 开关的显隐判断
    */
   function charHasFdContent(char) {
     if (!char) return false;
     if (char.isFD === true) return true;
-    // 开启 FD 开关后图片数量增加 → 角色有 FD 图片
+    // 开启 FD 开关后图片数量增加，角色有 FD 图片
     return countCharImages(char, false, true) > countCharImages(char, false, false);
   }
   /**
@@ -154,7 +152,7 @@ export function initPage(Core = {}) {
                 }
             }
 
-            // 修改点：将 saveKey 改为带 char-img- 前缀
+            // 修改：将 saveKey 改为带 char-img- 前缀
             const saveKey = `char-img-${gameId}-${char.id}`;
             if(!appData.charImageSelect) appData.charImageSelect = {};
             let imgIndex = Number(appData.charImageSelect?.[saveKey] ?? 0);
@@ -163,7 +161,7 @@ export function initPage(Core = {}) {
             // 重点：selected 来自临时草稿，不再读取 gameItem.selectChars
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
-            // 修改：待选角色多名字循环切换
+            // 补丁：待选角色多名字循环切换
             const showHideChar = getCharShowHide(char, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             const nmList = getCharNameList(char, showHideChar);
             const nmTotal = nmList.length;
@@ -224,7 +222,7 @@ export function initPage(Core = {}) {
                 }
             }
 
-            // 修改点：将 saveKey 改为带 char-img- 前缀
+            // 修改：将 saveKey 改为带 char-img- 前缀
             const saveKey = `char-img-${gameId}-${char.id}`;
             if(!appData.charImageSelect) appData.charImageSelect = {};
             let imgIndex = Number(appData.charImageSelect?.[saveKey] ?? 0);
@@ -233,7 +231,7 @@ export function initPage(Core = {}) {
             // 重点：selected 来自临时草稿
             let selected = tempCharDraftSet.has(char.id) ? "selected" : "";
 
-            // 修改：待选角色多名字循环切换
+            // 补丁：待选角色多名字循环切换
             const showHideChar = getCharShowHide(char, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             const nmList = getCharNameList(char, showHideChar);
             const nmTotal = nmList.length;
@@ -277,7 +275,7 @@ export function initPage(Core = {}) {
         panelDom._tempCharDraftSet = tempCharDraftSet;
     }else{
         // mode === "cp" 全新草稿模式逻辑
-        // 兜底：旧存档没有 cpEditState 则自动生成（修改点 1：增加 femaleImgIndex:0）
+        // 兜底：旧存档没有 cpEditState 则自动生成（修改：增加 femaleImgIndex:0）
         if(!Array.isArray(gameItem.cpEditState) || gameItem.cpEditState.length ===0){
             gameItem.cpEditState = femaleChars.map(f=>({
                 femaleId: f.id,
@@ -334,12 +332,12 @@ export function initPage(Core = {}) {
                 }
             }
 
-            // 修改点 2：从 cpEditState 读取女主立绘下标，不再读 appData.charImageSelect
+            // 修改：从 cpEditState 读取女主立绘下标，不再读 appData.charImageSelect
             let imgIndex = Number(state.femaleImgIndex ?? 0);
             if(imgIndex >= allSrc.length) imgIndex = 0;
             const showSrc = allSrc[imgIndex];
 
-            // 修改：CP 女主待选多名字循环切换
+            // 补丁：CP 女主待选多名字循环切换
             const fShowHideNm = getCharShowHide(fChar, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
             const fNmList = getCharNameList(fChar, fShowHideNm);
             const fNmTotal = fNmList.length;
@@ -355,7 +353,7 @@ export function initPage(Core = {}) {
             // 补丁结束
 
             // 女主卡片：增加 data-char-id，多立绘渲染切换按钮，标记 panel-mode="cp"
-            // 修复点：为 cp-female-card-btn 添加 data-game-id 属性
+            // 修复：为 cp-female-card-btn 添加 data-game-id 属性
             cpPanelHtml += `
             <div class="cp-female-block" data-fid="${fChar.id}" data-gid="${gameId}">
                 <!-- 女主点击按钮 -->
@@ -412,7 +410,7 @@ export function initPage(Core = {}) {
                             const mShowSrc = mSrcArr[mImgIndex];
                             const mSel = draftMap.has(mChar.id) ? "selected" : "";
 
-                            // 修改：CP 男主待选多名字循环切换
+                            // 补丁：CP 男主待选多名字循环切换
                             const mShowHideNm = getCharShowHide(mChar, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
                             const mNmList = getCharNameList(mChar, mShowHideNm);
                             const mNmTotal = mNmList.length;
@@ -464,7 +462,7 @@ export function initPage(Core = {}) {
         heroineBox.innerHTML = "";
         heroListBox.innerHTML = cpPanelHtml;
 
-        // 修改点 5：cpList 带上 femaleImgIndex
+        // 修改：cpList 带上 femaleImgIndex
         gameItem.cpList = gameItem.cpEditState
             .filter(st=> Array.isArray(st.maleItems) && st.maleItems.length>0)
             .map(st=>({
@@ -584,11 +582,11 @@ export function initPage(Core = {}) {
             });
         }
 
-        // 导出按钮（默认行为，会被导出逻辑覆盖）
-        // 注意：这里使用 addEventListener，但在导出逻辑中会重新赋值 onclick 以支持多页
+        // 导出按钮
+        // 使用 addEventListener，但在导出逻辑中会重新赋值 onclick 以支持多页
         if (previewDownloadBtn) {
             previewDownloadBtn.addEventListener("click", () => {
-                // 这个监听器会被导出逻辑中的 onclick 覆盖，但保留以防万一
+                // 这个监听器会被导出逻辑中的 onclick 覆盖，但保留
                 if (!snapshotBlobCache) return;
                 const link = document.createElement('a');
                 link.download = `Otome_FavList_${new Date().getTime()}.png`;
@@ -623,7 +621,7 @@ export function initPage(Core = {}) {
         const allChars = getAllGameChar(gameInfo);
         const femaleChars = allChars.filter(c => c.gender === "female");
 
-        // 修改点 1：初始化增加 femaleImgIndex:0
+        // 修改：初始化增加 femaleImgIndex:0
         if(!Array.isArray(gameItem.cpEditState) || gameItem.cpEditState.length ===0){
             gameItem.cpEditState = femaleChars.map(f=>({
                 femaleId: f.id,
@@ -634,7 +632,7 @@ export function initPage(Core = {}) {
                 femaleNameIndex: 0  // 补丁新增
             }));
         }
-        // 预生成 cpList，保证 renderCP 拿到最新数据（修改点 5 带上 femaleImgIndex）
+        // 预生成 cpList，保证 renderCP 拿到最新数据（修改：带上 femaleImgIndex）
         gameItem.cpList = gameItem.cpEditState
             .filter(st=> Array.isArray(st.maleItems) && st.maleItems.length>0)
             .map(st=>({
@@ -715,8 +713,8 @@ export function initPage(Core = {}) {
         const switchRowHtml = switchRowInnerHtml ? `<div class="game-switch-row">${switchRowInnerHtml}</div>` : "";
         // 新增结束
 
-        // 新增三个自定义文本区域的 HTML（已消除换行空白）
-        // 修改点 1：统一 placeholder 为 "自定义文本"，并在 textarea 后追加 <span class="resize-handle"></span>
+        // 新增三个自定义文本区域的 HTML，已消除换行空白
+        // 修改：统一 placeholder 为 "自定义文本"，并在 textarea 后追加 <span class="resize-handle"></span>
         const headTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-head-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.gameHeadText || ''}</textarea><span class="resize-handle"></span></div>`;
         const charTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-char-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.charSectionText || ''}</textarea><span class="resize-handle"></span></div>`;
         const cpTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-cp-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.cpSectionText || ''}</textarea><span class="resize-handle"></span></div>`;
@@ -767,7 +765,7 @@ export function initPage(Core = {}) {
         const charPanel = cardDom.querySelector(".char-slide-panel-char");
         const cpPanel = cardDom.querySelector(".char-slide-panel-cp");
 
-        // DOM 面板填充（只负责渲染滑出面板内部 HTML，数据已经预处理完毕）
+        // DOM 面板填充，只负责渲染滑出面板内部 HTML，数据已经预处理完毕
         if(charPanel) renderCharSelectPanel(cardDom, gid, "char", charPanel);
         if(cpPanel) renderCharSelectPanel(cardDom, gid, "cp", cpPanel);
 
@@ -900,7 +898,7 @@ export function initPage(Core = {}) {
             // 修复：将相对路径转为完整 R2 URL
             const fullUrl = getWebImageUrl(allSrc[currentIndex]);
             await switchCharImageWithLoading(imgBox, fullUrl);
-            // 后备：强制更新图片 src
+            // 强制更新图片 src
             const imgDom = imgBox.querySelector("img");
             if (imgDom && imgDom.src !== fullUrl) {
                 imgDom.src = fullUrl;
@@ -911,7 +909,7 @@ export function initPage(Core = {}) {
         return; //处理完图片切换直接 return，不再往下执行 cp 逻辑
       }
 
-      // 修改：待选面板角色名切换按钮（多名字循环）
+      // 补丁：待选面板角色名切换按钮
       const nameSwitchBtn = e.target.closest(".char-name-switch-btn");
       if (nameSwitchBtn) {
         e.stopPropagation();
@@ -955,7 +953,7 @@ export function initPage(Core = {}) {
           appData.charNameSelect[saveKey] = newIdx;
         }
         saveData();
-        // 直接更新 DOM 文字，不整卡重渲染（避免面板状态丢失）
+        // 直接更新 DOM 文字，不整卡重渲染，免面板状态丢失
         const nameBox = charCard.querySelector(".char-card-name, .cp-female-name");
         const nameTextEl = nameBox?.querySelector(".char-name-text");
         if (nameTextEl && gameId) {
@@ -976,7 +974,7 @@ export function initPage(Core = {}) {
       }
       // 补丁结束
 
-      // 下面全部是原来 CP 事件逻辑（移到此处）
+      // 原 CP 事件逻辑，移到此处
       const cpFemaleBtn = e.target.closest(".cp-female-card-btn");
       if(cpFemaleBtn){
           e.stopPropagation();
@@ -997,10 +995,10 @@ export function initPage(Core = {}) {
           return;
       }
 
-      // 修改点：cpMaleItem 点击逻辑（对齐 Character 面板交互）
+      // 修改：cpMaleItem 点击逻辑，对齐 Character 面板交互
       const cpMaleItem = e.target.closest(".char-slide-panel-cp .cp-male-item");
       if(cpMaleItem){
-          // 交互规则对齐 character 面板：点击切换按钮 → 仅切换立绘，不选中角色
+          // 交互规则对齐 character 面板：点击切换按钮，仅切换立绘，不选中角色
           const switchBtn = e.target.closest(".char-switch-btn");
           if (switchBtn) {
               return;
@@ -1025,7 +1023,7 @@ export function initPage(Core = {}) {
           return;
       }
 
-      // 修改点 5：确认按钮：写入 maleItems，保留 maleIds 兼容旧存档
+      // 修改：确认按钮：写入 maleItems，保留 maleIds 兼容旧存档
       const cpConfirmBtn = e.target.closest(".cp-confirm-btn");
       if(cpConfirmBtn){
           e.stopPropagation();
@@ -1255,7 +1253,7 @@ export function initPage(Core = {}) {
     if (el.inputStory) el.inputStory.value = appData.baseInfo?.story ?? "";
     if (el.inputFirstgame) el.inputFirstgame.value = appData.baseInfo?.firstgame ?? "";
 
-    // 扩展颜色绑定：7 项（增加 CSS 变量支持）
+    // 扩展颜色绑定：增加 CSS 变量支持
     const colorBindList = [
       {dom: el.colorBg, dataKey: "bg", cssVar: "--export-bg", default:"#fff7f9"},
       {dom: el.colorTitle, dataKey: "title", cssVar: "--export-title", default:"#b33a3a"},
@@ -1299,7 +1297,7 @@ export function initPage(Core = {}) {
             appData.exportCustomTextFontSize = defaultFs;
             el.sliderCustomTextFont.value = defaultFs;
             el.customTextFontValueDisplay.textContent = `${defaultFs}px`;
-            // 必须调用，刷新 --slider-progress CSS 变量，修复轨道颜色残留粉色
+            // 必须调用，刷新 slider-progress CSS 变量，修复轨道颜色残留粉色
             updateSliderProgress(el.sliderCustomTextFont);
         }
         saveData();
@@ -1403,7 +1401,7 @@ export function initPage(Core = {}) {
         });
     }
 
-    // 已修改：添加游戏按钮，支持再次点击关闭搜索面板
+    // 修改：添加游戏按钮，支持再次点击关闭搜索面板
     if (el.addGameBtn) {
       el.addGameBtn.onclick = function () {
         renderGameSelectList();
@@ -1444,7 +1442,6 @@ export function initPage(Core = {}) {
       const filterWriter = document.getElementById("filter-writer")?.value || "";
       const filterArt = document.getElementById("filter-art")?.value || "";
 
-      // 修复：把 zh-CN（软连字符）改为标准 zh-CN
       const sortedGames = [...gameTemplateList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
       let html = "";
 
@@ -1486,7 +1483,6 @@ export function initPage(Core = {}) {
 
         if (keyword && !game.name?.toLowerCase().includes(keyword)) match = false;
         if (filterYear && game.year != filterYear) match = false;
-        // 发行厂商筛选：数组包含匹配，对齐编剧、画师筛选逻辑
         if (filterPub && (!Array.isArray(game.publisher) || !game.publisher.includes(filterPub))) match = false;
         if (filterCn && game.cnStudio != filterCn) match = false;
 
@@ -1609,7 +1605,7 @@ export function initPage(Core = {}) {
       })
     }
 
-    // 导出按钮：先弹窗后渲染（原生 Canvas 绘制，无 DOM 捕获，支持分页）
+    // 导出按钮：先弹窗后渲染，原生 Canvas 绘制，无 DOM 捕获，支持分页
     if (el.exportBtn) {
         el.exportBtn.addEventListener('click', async () => {
             let unlockTimer = null;
@@ -1635,7 +1631,7 @@ export function initPage(Core = {}) {
                 previewModal.classList.add("active");
 
                 // 新增：渲染耗时预估计算
-                // 1. 判断是否 IOS WebKit（与 export-canvas-render.js 保持完全一致检测逻辑）
+                // 1. 判断是否 IOS WebKit（对齐 export-canvas-render.js 检测逻辑）
                 const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const isAndroid = /Android/.test(navigator.userAgent);
 
@@ -1663,7 +1659,7 @@ export function initPage(Core = {}) {
                     totalImageCount += imgCnt;
                 });
 
-                // 修改后：预估计算纳入图源降级、重试、圆角画布串行开销
+                // 修改：预估计算纳入图源降级、重试、圆角画布串行开销
                 // 3. 分平台设置耗时系数，纳入：jsdelivr 超时降级 COS、单图最多 2 次重试、圆角画布串行延时、IOS 离屏画布 sleep 开销
                 let gameCardCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
                 if(IS_IOS_WEBKIT){
@@ -1690,7 +1686,7 @@ export function initPage(Core = {}) {
                 let baseEstimate = validGameCount * gameCardCost + totalImageCount * imgCost;
 
                 // 重点：叠加图片重试降级开销：每张图片理论最大会经历 jsdelivr 超时(600ms) + COS 请求
-                // 不按全部图片都降级来算，取 30% 图片触发降级作为现实网络场景的经验值
+                // 不按全部图片都降级来计算，取 30% 图片触发降级作为现实网络场景的经验值
                 const fallbackProbability = 0.30;
                 const fallbackPerImageSec = 0.6;
                 let fallbackEstimate = totalImageCount * fallbackProbability * fallbackPerImageSec;
@@ -1808,7 +1804,7 @@ export function initPage(Core = {}) {
 
                 if (downloadBtn) downloadBtn.disabled = false;
 
-                // 重新绑定下载按钮，支持多页批量下载（移动端异步串行，间隔 1500ms）
+                // 补丁：重新绑定下载按钮，支持多页批量下载（移动端异步串行，间隔 1500ms）
                 previewDownloadBtn.onclick = async () => {
                     if (!blobList || blobList.length === 0) return;
                     const baseTime = new Date().getTime();
@@ -1879,16 +1875,16 @@ export function initPage(Core = {}) {
         clearPreviewCacheResource(); // 文字变更，导出缓存失效
     });
 
-    // 右下角悬浮按钮 - 模块级智能滚动
-    // ▲：模块中间→滚到当前模块顶部；已在顶部→滚到上一个模块顶部；第一个模块→滚到页面最顶
-    // ▼：模块中间→滚到当前模块底部；已在底部→滚到下一个模块底部；最后一个模块→不动作
-    // 补丁：空模块（高度 <140px）自动跳过，避免模块三无游戏卡片时滚动目标近乎为 0 导致“没反应”
+    // 悬浮按钮
+    // ▲：模块中间滚动到当前模块顶部；已在顶部滚动到上一个模块顶部；第一个模块滚动到页面最顶
+    // ▼：模块中间滚动到当前模块底部；已在底部滚动到下一个模块底部；最后一个模块不动作
+    // 补丁：空模块（高度 <140px）自动跳过，避免模块三无游戏卡片时滚动目标近乎为 0 导致没反应
     const backToAddBtn = document.getElementById('back-to-add-btn');
     const scrollToLastGameBtn = document.getElementById('scroll-to-last-game-btn');
     if (backToAddBtn && scrollToLastGameBtn) {
-        const TOLERANCE = 30;               // 容差像素，小于此值视为"已到达"
+        const TOLERANCE = 30;               // 容差像素，小于此值视为已滚动到
         const EMPTY_MODULE_HEIGHT = 140;     // 空模块阈值：高度小于此值视为无内容模块，自动跳过
-        // 获取 FavList 页面所有大模块（按 DOM 顺序：一设置、二基础信息、三游戏列表、四导出）
+        // 获取 FavList 页面所有大模块，按 DOM 顺序
         function getFavListModules() {
             const activeWrap = document.querySelector('.mode-wrap:not(.mode-hidden)') || document.querySelector('.mode-wrap');
             if (activeWrap) {
@@ -1958,7 +1954,7 @@ export function initPage(Core = {}) {
             if (modules.length === 0) return;
             let idx = getCurrentModuleIndex();
             if (idx < 0) return;
-            // 当前命中空模块时，向前找到最近的非空模块作为“当前模块”
+            // 当前命中空模块时，向前找到最近的非空模块作为当前模块
             if (isEmptyModule(modules[idx])) {
                 const nonEmptyIdx = findPrevNonEmpty(modules, idx);
                 if (nonEmptyIdx >= 0) idx = nonEmptyIdx;
@@ -1984,7 +1980,7 @@ export function initPage(Core = {}) {
             if (modules.length === 0) return;
             let idx = getCurrentModuleIndex();
             if (idx < 0) return;
-            // 当前命中空模块时，向后找到最近的非空模块作为“当前模块”
+            // 当前命中空模块时，向后找到最近的非空模块作为当前模块
             if (isEmptyModule(modules[idx])) {
                 const nonEmptyIdx = findNextNonEmpty(modules, idx);
                 if (nonEmptyIdx >= 0) idx = nonEmptyIdx;
