@@ -95,7 +95,7 @@ body{
     transition:background 0.2s;
 }
 
-/* 页面标题区域 site-title */
+/* 页面标题区域 */
 .site-title{
     text-align:center;
     margin:30px 0 0;
@@ -134,7 +134,7 @@ body{
     gap:12px;
 }
 
-/* 外层容器 wrap */
+/* 外层容器 */
 .wrap{
     max-width:1200px;
     margin:0 auto;
@@ -144,7 +144,7 @@ body{
     gap:0;
 }
 
-/* 大卡片 big-card */
+/* 大卡片 */
 .big-card{
     background:#ffffff;
     border:2px solid var(--export-border, #f6a5b8);
@@ -161,7 +161,7 @@ body{
     font-weight:bold;
 }
 
-/* 设置页开关 switch-row / switch / slider */
+/* 设置页开关 */
 .switch-row{
     display:flex;
     align-items:center;
@@ -215,7 +215,7 @@ input:checked + .slider:before{
     transform:translateX(24px);
 }
 
-/* 表单输入 form-row */
+/* 表单输入 */
 .form-row{
     margin:16px 0;
     display:flex;
@@ -269,7 +269,7 @@ button:hover{
     font-size:18px;
 }
 
-/* 居中按钮块 center-btn-block */
+/* 居中按钮 */
 .center-btn-block{
     display:flex;
     justify-content:center;
@@ -277,7 +277,7 @@ button:hover{
     gap:12px;
 }
 
-/* 核心修复：游戏搜索面板 game-search-box */
+/* 核心修复：游戏搜索面板 */
 .game-search-box{
     margin:16px 0;
     display:none; /* 默认隐藏 */
@@ -311,7 +311,7 @@ button:hover{
     background:#fcfcfc;
 }
 
-/* 游戏选择列表 game-list-select */
+/* 游戏选择列表 */
 .game-list-select{
     max-height:320px;
     overflow-y:auto;
@@ -325,7 +325,7 @@ button:hover{
     background:#fff;
 }
 
-/* 游戏选项单项 game-option-item */
+/* 游戏选项单项 */
 .game-option-item{
     border:1px solid #eee;
     border-radius:10px;
@@ -361,7 +361,7 @@ button:hover{
     color:#333;
 }
 
-/* 已添加游戏卡片 game-card */
+/* 已添加游戏卡片 */
 .game-card{
     background:#ffffff;
     border:1px solid #f6a5b8;
@@ -474,7 +474,7 @@ button:hover{
     margin:10px 0;
 }
 
-/* 修改后：移除 justify-content: space-between */
+/* 修改：移除 justify-content: space-between */
 .game-card-head{
     display:flex;
     align-items:center;
@@ -845,7 +845,7 @@ input[type="checkbox"] {
     background:#992e2e;
 }
 
-/* 导出颜色设置 color-set-row */
+/* 导出颜色设置 */
 .color-set-row{
     display:flex;
     gap:20px;
@@ -1406,7 +1406,6 @@ h2{
     background: #992e2e !important;
     color: #b33a3a !important;
 }
-
 /* 标题容器：展开按钮已移到爱心右边，不再需要相对定位做参照 */
 .game-card-head-title-wrap {
     display: flex;
