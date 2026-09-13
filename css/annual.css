@@ -1,4 +1,4 @@
-/* ========== 模式切换按钮组（顶部，site-title下方） ========== */
+/* 模式切换按钮组，放 site-title 下面 */
 .mode-switch-wrap {
     display: flex;
     justify-content: center;
@@ -23,13 +23,14 @@
     background: #f6a5b8;
     color: #ffffff;
 }
-/* ========== 模式容器：解决CLS，占位隐藏，不使用display:none ========== */
+
+/* 模式容器，占位隐藏，别用 display:none，避免 CLS */
 .mode-wrap {
     width: 100%;
     display: flex;
     flex-direction: column;
-    /* ⚠️关键修复：mode-wrap 移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
-    big‑card之间的垂直间距，全部交给 .big-card { margin‑top } 来实现，不再使用容器gap */
+    /* 修复：mode-wrap 去掉 gap。gap 在 mode-hidden 和普通模式下剩余空间不一致，切模式会跳。
+       卡片间距统一交给 .big-card margin-top，不再用容器 gap */
     gap: 0;
 }
 .mode-wrap.mode-hidden {
@@ -38,7 +39,8 @@
     overflow: hidden;
     pointer-events: none;
 }
-/* 【新增】所有mode-wrap内部的第一个big‑card清除上边距，其余big‑card统一用margin‑top实现卡片之间间距，替代原来gap:30px */
+
+/* 新增：mode-wrap 内第一个 big-card 清上边距，其余用 margin-top 撑间距，替代原来的 gap:30px */
 .mode-wrap .big-card {
     margin-top: 30px;
 }
@@ -51,7 +53,8 @@
 .mode-wrap[data-mode="annual"] .big-card + .big-card {
     margin-top: 30px;
 }
-/* ========== site-title 年度报告覆盖样式 ========== */
+
+/* site-title 年度报告覆盖样式 */
 .site-title.annual-active h1 {
     font-size: 42px;
     color: var(--annual-export-title, #b33a3a);
@@ -60,16 +63,19 @@
 .site-title.annual-active .sub-desc {
     display: none !important;
 }
-/* ========== 年度报告页面大标题（隐藏，改用site-title位置输出） ========== */
+
+/* 年度报告页面大标题，隐藏，改用 site-title 位置输出 */
 .annual-page-title {
     display: none;
 }
-/* Annual模式激活时显示，与FavList的.sub-desc位置、样式完全一致 */
+
+/* Annual 模式激活时显示，和 FavList 的 .sub-desc 位置样式一致 */
 .site-title.annual-active .annual-sub-desc {
     display: block;
 }
-/* ========== 年度报告模式描述文字 ========== */
-/* 默认隐藏，与.sub-desc同级别同在.site-title内；切换到Annual模式时由.site-title.annual-active控制显示 */
+
+/* 年度报告模式描述文字 */
+/* 默认隐藏，和 .sub-desc 同级同在 .site-title 内；切到 Annual 模式由 .site-title.annual-active 控制显示 */
 .annual-sub-desc {
     display: none;
     text-align: center;
@@ -78,14 +84,16 @@
     margin: 8px 0 0 0;
     line-height: 1.6;
 }
-/* ========== 统计行：整段居中、字号16px，颜色变量控制 ========== */
+
+/* 统计行：整段居中，字号 16px，颜色变量控制 */
 .annual-stat-line {
     font-size: 16px;
     line-height: 2.2;
     text-align: center;
-    /* ✅移除统一color，改为span和input分别控制 */
+    /* 删：不再统一 color，改由 span 和 input 分别控制 */
 }
-/* 新增：统计标签文字（"年度/游玩总数/小时"等）用数据统计文字色 */
+
+/* 新增：统计标签文字用数据统计文字色 */
 .annual-stat-line span {
     color: var(--annual-export-stattext, #b85878);
 }
@@ -97,29 +105,33 @@
     font-size: 16px;
     background: #fcfcfc;
     margin: 0 4px;
-    color: var(--annual-export-statdata, #b33a3a);  /* 用户填写的数字用数据统计数据色 */
+    color: var(--annual-export-statdata, #b33a3a);  /* 用户填的数字用数据色 */
 }
-/* ========== TOP3 NO.1 NO.2 NO.3 标签 ========== */
+
+/* TOP3 NO.1 NO.2 NO.3 标签 */
 .annual-top-label {
     font-size: 22px;
     font-weight: bold;
     color: var(--annual-export-subtitle, #b85878);
     margin-bottom: 10px;
 }
-/* 游戏名称显示：黑色22px，自动换行 */
+
+/* 游戏名称显示：黑色 22px，自动换行 */
 .annual-game-name-text {
     font-size: 22px;
     color: var(--annual-export-gamename, #000000);
     word-break: break-all;
     margin: 8px 0 12px;
 }
-/* ========== TOP游戏条目 ========== */
+
+/* TOP 游戏条目 */
 .annual-top-item {
     margin-bottom: 24px;
 }
 .annual-search-row {
     display: none !important;
 }
+
 /* +添加游戏按钮，居中 */
 .annual-add-game-btn-wrap {
     text-align: center;
@@ -139,7 +151,8 @@
 .annual-add-game-btn:hover {
     background-color: #992e2e;
 }
-/* ==========【修复】年度报告全局居中游戏选择模态弹窗（body直接子节点）全部半角符号 ========== */
+
+/* 修复：年度报告全局居中游戏选择弹窗，body 直接子节点，全用半角符号 */
 #annual-global-game-modal {
     position: fixed;
     inset: 0;
@@ -158,7 +171,7 @@
     width: min(92vw, 1200px);
     max-height: 80vh;
     min-height: 420px;
-    height: 80vh; /* 新增，和角色弹窗对齐 */
+    height: 80vh; /* 新增：和角色弹窗对齐 */
     background:#ffffff;
     border-radius:14px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.18);
@@ -171,7 +184,8 @@
 #annual-global-game-modal .annual-modal-header {
     flex-shrink: 0;
 }
-/* ==========【新增】游戏弹窗搜索框外层固定容器，不参与滚动 ========== */
+
+/* 新增：游戏弹窗搜索框外层固定容器，不参与滚动 */
 #annual-global-game-modal .annual-modal-search-bar-wrap {
     flex-shrink: 0;
     padding: 0 12px 8px 12px;
@@ -181,7 +195,8 @@
     overflow-y: auto;
     padding: 0 12px 12px 12px;
 }
-/* ========== 【新增】弹窗头部 ========== */
+
+/* 新增：弹窗头部 */
 .annual-modal-header {
     display:flex;
     align-items:center;
@@ -194,7 +209,8 @@
     font-weight:bold;
     color:#b33a3a;
 }
-/* 关闭按钮：1:1复刻 .game‑fold‑icon‑expand 样式 */
+
+/* 关闭按钮：照抄 .game-fold-icon-expand 样式 */
 .annual-modal-close-btn {
     position:absolute;
     right:20px;
@@ -218,10 +234,11 @@
     background: #992e2e !important;
     color: #b33a3a !important;
 }
-/* input与列表容器，补回原来的padding */
+
+/* input 和列表容器，补回原来的 padding */
 .annual-global-search-input {
     width:calc(100% - 40px);
-    margin:0 20px 0 20px; /* 删除底部margin，交给外层search-bar-wrap */
+    margin:0 20px 0 20px; /* 删底部 margin，交给外层 search-bar-wrap */
     padding:11px 14px;
     border:1px solid #ddd;
     border-radius: 10px;
@@ -229,12 +246,13 @@
     font-size:15px;
     box-sizing: border-box;
 }
-/* ✅游戏列表容器 完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
+
+/* 游戏列表容器，对齐 main.css game-list-select，去掉多余限制，PC 一行 3 个 */
 .annual-global-game-list {
-    /* 恢复滚动，复刻FavList搜索行为 */
+    /* 恢复滚动，照 FavList 搜索行为 */
     min-height:260px;
-    /* ❌删除 max-height: 42vh; */
-    /* ❌删除 overflow-y: auto; */
+    /* 删：max-height: 42vh; */
+    /* 删：overflow-y: auto; */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -243,7 +261,8 @@
     border-radius:10px;
     margin:0 20px 20px 20px;
 }
-/* 弹窗内游戏选项 1:1复刻FavList .game-option-item */
+
+/* 弹窗内游戏选项，照 FavList .game-option-item */
 .annual-global-game-list .game-option-item{
     border:1px solid #eee;
     border-radius:10px;
@@ -268,7 +287,7 @@
 }
 .annual-global-game-list .game-option-info{
     flex:1;
-    min-width: 0; /* 新增，防止长文本挤压 */
+    min-width: 0; /* 新增：防长文本挤压 */
 }
 .annual-global-game-list .game-option-name{
     font-weight:bold;
@@ -280,7 +299,8 @@
     line-height:1.6;
     color:#333;
 }
-/* ========== TOP内容行：左侧封面，右侧文本域 ========== */
+
+/* TOP 内容行：左封面，右文本域 */
 .annual-top-content-row {
     display:flex;
     gap:16px;
@@ -313,16 +333,18 @@
     color: var(--annual-export-customtext, #c98fac);
     resize: vertical;
 }
-/* ========== 快照导出模式：年度报告内部交互控件全部隐藏 ========== */
+
+/* 快照导出模式：年度报告内部交互控件全隐藏 */
 .snapshot-container.export-snapshot .annual-add-game-btn,
 .snapshot-container.export-snapshot #btn-annual-export {
     display:none !important;
 }
-/* ==========【修复权重BUG】hidden-when-empty，降低!important权重，快照可以覆盖 ========== */
+
+/* 修复权重 BUG：hidden-when-empty 降低 !important，快照可以覆盖 */
 .hidden-when-empty {
     display: none;
 }
-/* ✅移除!important，让DOM初始状态真正隐藏；只在JS添加render‑visible才显示 */
+/* 删 !important，让 DOM 初始真正隐藏；只在 JS 加 render-visible 才显示 */
 .mode-wrap[data-mode="annual"] .hidden-when-empty{
     display:none;
 }
@@ -333,7 +355,7 @@
 .mode-wrap[data-mode="annual"] .hidden-when-empty.render-visible.annual-char-name-text {
     display: block;
 }
-/* 快照模式保持原有逻辑不变 */
+/* 快照模式保持原逻辑 */
 .snapshot-container.export-snapshot .hidden-when-empty.render-visible {
     display: flex !important;
 }
@@ -341,7 +363,8 @@
 .snapshot-container.export-snapshot .hidden-when-empty.render-visible.annual-char-name-text {
     display: block !important;
 }
-/* ========== 年度报告快照配色变量 ========== */
+
+/* 年度报告快照配色变量 */
 .snapshot-container.export-snapshot.annual-mode {
     --annual-export-bg: #fff7f9;
     --annual-export-title: #b33a3a;
@@ -355,7 +378,8 @@
     --annual-export-boxbg: #fff7f9;
     --annual-export-labelcolor: #b85878;
 }
-/* ========== 【修复滑块百分比轨道不变化】年度报告字号滑块轨道 ========== */
+
+/* 修复：滑块百分比轨道不变化，年度报告字号滑块轨道 */
 .mode-wrap[data-mode="annual"] .font-size-set-row input[type="range"] {
     background:transparent;
     -webkit-appearance:none;
@@ -410,7 +434,8 @@
         z-index:-1;
     }
 }
-/* ========== 年度报告页面常态配色变量绑定 ========== */
+
+/* 年度报告页面常态配色变量绑定 */
 .mode-wrap[data-mode="annual"] {
     --annual-export-bg:#fff7f9;
     --annual-export-title:#b33a3a;
@@ -425,18 +450,20 @@
     --annual-export-labelcolor:#b85878;
     background-color: var(--annual-export-bg, #fff7f9);
 }
+
 /* 新增：年度报告模块标题由小标题文字色控制，含左侧竖线 */
 .mode-wrap[data-mode="annual"] .big-card h2 {
     color: var(--annual-export-subtitle, #b85878);
     border-left-color: var(--annual-export-subtitle, #b85878);
 }
-/* 新增：卡片边框色由卡片边框色控制，覆盖main.css中的硬编码 */
+
+/* 新增：卡片边框色由卡片边框色控制，覆盖 main.css 硬编码 */
 .mode-wrap[data-mode="annual"] .big-card {
     border-color: var(--annual-export-border, #f6a5b8);
 }
 
-/* ========== 三套断点完全复制main.css game-list-select列数逻辑 ========== */
-/* 普通手机（≤768px）：强制单列 */
+/* 三套断点照 main.css game-list-select 列数逻辑 */
+/* 普通手机 ≤768px：强制单列 */
 @media (max-width: 768px) {
     /* 移动端：图片+文本框横向并排，不再纵向堆叠 */
     .annual-top-content-row {
@@ -444,7 +471,7 @@
         align-items: flex-start;
         flex-wrap: wrap;
     }
-    /* 添加游戏封面：严格等于弹窗待选游戏item图片80px */
+    /* 添加游戏封面：严格等于弹窗待选游戏 item 图片 80px */
     .annual-top-cover-wrap {
         width: 80px;
     }
@@ -453,7 +480,7 @@
         height: auto;
         object-fit: cover;
     }
-    /* 添加角色封面：严格等于二级待选角色卡片图片90px，强制正方形 */
+    /* 添加角色封面：严格等于二级待选角色卡片图片 90px，强制正方形 */
     .annual-char-top-content-row {
         flex-direction: row;
         align-items: flex-start;
@@ -470,7 +497,7 @@
         border-radius:6px !important;
         border:1px solid #eee;
     }
-    /* 保证移动端：游戏、角色文本框宽度规则完全一致 */
+    /* 保证移动端：游戏、角色文本框宽度规则一致 */
     .annual-top-text-wrap,
     .annual-char-text-wrap {
         flex: 1;
@@ -491,7 +518,7 @@
         height:26px;
         font-size:18px;
     }
-    /* ✅新增：折叠按钮移动端同步缩小 */
+    /* 新增：折叠按钮移动端同步缩小 */
     .annual-card-fold-btn {
         width: 26px;
         height: 26px;
@@ -523,14 +550,14 @@
         height: 26px;
         font-size: 18px;
     }
-    /* ===== 【修改】移动端游戏弹窗input边距由外层scroll-wrap控制 ===== */
+    /* 改：移动端游戏弹窗 input 边距由外层 scroll-wrap 控制 */
     .annual-global-search-input {
         width: 100%;
         margin: 0;
-        padding: 11px 14px; /* ⑤统一高度与角色弹窗一致 */
+        padding: 11px 14px; /* 统一高度，和角色弹窗一致 */
         font-size: 14px;
     }
-    /* ✅同步main.css手机端game-option-item布局，解决卡片高度不足、文字裁切 */
+    /* 同步 main.css 手机端 game-option-item 布局，解决卡片高度不足、文字裁切 */
     .annual-global-game-list .game-option-item {
         display: flex !important;
         gap: 10px !important;
@@ -553,7 +580,7 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* ========== 角色弹窗游戏列表与滚动外壳调整 ========== */
+    /* 角色弹窗游戏列表与滚动外壳调整 */
     .char-list-inner-scroll-wrap {
         max-height: 55vh;
     }
@@ -602,7 +629,7 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* ===== 角色弹窗搜索框：外框宽度与游戏列表外框完全对齐（margin:0 + width:100%，由scroll-wrap统一12px缩进） ===== */
+    /* 角色弹窗搜索框：外框宽度与游戏列表外框对齐，margin:0 + width:100%，由 scroll-wrap 统一 12px 缩进 */
     .annual-global-char-search-input {
         width: 100% !important;
         margin: 0 !important;
@@ -610,7 +637,7 @@
         font-size: 14px;
         box-sizing: border-box !important;
     }
-    /* ✅新增：CP弹窗搜索框同步对齐 */
+    /* 新增：CP 弹窗搜索框同步对齐 */
     .annual-global-cp-search-input {
         width: 100% !important;
         margin: 0 !important;
@@ -618,7 +645,7 @@
         font-size: 14px;
         box-sizing: border-box !important;
     }
-    /* ===== 移动端开关组：外框宽度与搜索框、游戏列表完全一致（左右padding/margin均为0，由scroll-wrap统一12px缩进） ===== */
+    /* 移动端开关组：外框宽度与搜索框、游戏列表一致，左右 padding/margin 为 0，由 scroll-wrap 统一 12px 缩进 */
     .annual-modal-global-switch-group {
         gap: 12px;
         padding: 0 0 8px 0 !important;
@@ -626,7 +653,7 @@
         width: 100% !important;
         box-sizing: border-box !important;
     }
-    /* CP弹窗全局开关组同步对齐 */
+    /* CP 弹窗全局开关组同步对齐 */
     .annual-cp-global-switch-group {
         gap: 12px;
         padding: 0 0 8px 0 !important;
@@ -640,26 +667,26 @@
         gap: 12px;
         padding: 0 0 8px 0;
     }
-    /* ===== 角色弹窗头部返回按钮左距调整 ===== */
+    /* 角色弹窗头部返回按钮左距调整 */
     .annual-modal-back-btn {
         left:12px;
         width: 26px;
         height:26px;
         font-size:18px;
     }
-    /* ========== 视图容器：上下padding分隔元素，左右严格为0，所有左右缩进统一由scroll-wrap的12px控制 ========== */
+    /* 视图容器：上下 padding 分隔元素，左右严格为 0，左右缩进统一由 scroll-wrap 的 12px 控制 */
     .annual-modal-view-container {
         padding: 12px 0 12px 0 !important;
         margin: 0 !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
-    /* ===== 防止开关文字被挤压 ===== */
+    /* 防止开关文字被挤压 */
     .annual-modal-global-switch-group label,
     .annual-modal-game-switch-group label {
         flex-shrink: 0;
     }
-    /* ========== 原480px断点迁移（保持） ========== */
+    /* 原 480px 断点迁移，保持 */
     .annual-modal-header {
         padding: 12px 14px;
     }
@@ -668,7 +695,7 @@
         height: 24px;
         font-size: 16px;
     }
-    /* ========== ✅新增：角色弹窗角色列表移动端适配，对齐FavList主站========== */
+    /* 新增：角色弹窗角色列表移动端适配，对齐 FavList 主站 */
     .annual-global-char-char-list {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
         gap: 10px !important;
@@ -679,33 +706,33 @@
         width: 100% !important;
         min-height: 132px !important;
     }
-    /* CP弹窗二级页面对齐角色弹窗移动端适配 */
+    /* CP 弹窗二级页面对齐角色弹窗移动端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定90px→弹性minmax，与角色列表完全一致 */
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* 改：固定 90px 改弹性 minmax，和角色列表一致 */
         justify-content: start !important;
         gap: 10px !important;
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
-        width: 100% !important;       /* ✅新增：确保容器撑满 */
-        box-sizing: border-box !important;  /* ✅新增 */
+        width: 100% !important;       /* 新增：确保容器撑满 */
+        box-sizing: border-box !important;  /* 新增 */
     }
     .annual-global-cp-female-list .char-item,
     .annual-cp-male-list .char-item {
         width: 100% !important;
         min-height: 132px !important;
-        /* ✅移除 padding:10px 和 gap:6px 的 !important 覆盖，
-           让卡片完全继承 main.css .char-item 的默认内边距和间距，
-           与角色弹窗 .annual-global-char-char-list .char-item 保持100%一致 */
+        /* 删 padding:10px 和 gap:6px 的 !important 覆盖，
+           让卡片继承 main.css .char-item 默认内边距和间距，
+           和角色弹窗 .annual-global-char-char-list .char-item 保持一致 */
     }
-    /* CP男主列表grid移动端对齐角色列表 */
+    /* CP 男主列表 grid 移动端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* ✅固定→弹性，与角色列表一致 */
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* 改：固定改弹性，和角色列表一致 */
         justify-content: start !important;
         gap: 10px !important;
-        width: 100% !important;              /* ✅新增：撑满父容器 */
-        box-sizing: border-box !important;   /* ✅新增 */
-        padding: 10px 0 10px 0 !important;   /* ✅新增：与角色列表padding一致 */
-        margin: 0 !important;                /* ✅新增：清除默认margin */
+        width: 100% !important;              /* 新增：撑满父容器 */
+        box-sizing: border-box !important;   /* 新增 */
+        padding: 10px 0 10px 0 !important;   /* 新增：和角色列表 padding 一致 */
+        margin: 0 !important;                /* 新增：清默认 margin */
     }
     .annual-cp-modal-back-btn {
         left: 12px;
@@ -713,8 +740,8 @@
         height: 26px;
         font-size: 18px;
     }
-    /* ✅移动端选中女主后保持原尺寸：block改用grid，列宽与外部grid完全一致，
-       女主卡片作为grid item自动占一列，宽度=未选中时的列宽，不放大也不缩小 */
+    /* 移动端选中女主后保持原尺寸：block 改用 grid，列宽与外部 grid 一致，
+       女主卡片作为 grid item 自动占一列，宽度等于未选中时列宽，不放大也不缩小 */
     .annual-cp-female-block-expanded {
         display: grid !important;
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
@@ -725,7 +752,7 @@
     .annual-cp-female-block-expanded .annual-cp-male-select-wrap {
         grid-column: 1 / -1 !important;
     }
-    /* 搜索结果角色卡片移动端复刻待选角色样式 */
+    /* 搜索结果角色卡片移动端照待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
         padding: 10px !important;
         gap:6px !important;
@@ -740,14 +767,14 @@
         grid-column: 1 / -1 !important;
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
         gap: 10px !important;
-        /* ✅删除 margin-bottom:16px !important; */
+        /* 删 margin-bottom:16px !important; */
     }
     .annual-global-char-game-list .search-game-result-wrap {
         grid-column: 1 / -1 !important;
         grid-template-columns:1fr !important;
         gap:10px !important;
     }
-    /* CP TOP移动端封面尺寸（修改点6） */
+    /* CP TOP 移动端封面尺寸，修改点 6 */
     .annual-cp-female-cover,
     .annual-cp-male-cover {
         width:90px !important;
@@ -757,21 +784,21 @@
     .annual-cp-name-text {
         font-size:18px;
     }
-    /* ✅新增：CP男主选择面板外层撑满 + 间距与角色弹窗一致 */
+    /* 新增：CP 男主选择面板外层撑满 + 间距和角色弹窗一致 */
     .annual-cp-male-select-wrap {
         width: 100% !important;
         box-sizing: border-box !important;
-        margin-top: 14px !important;   /* PC端16px，手机端收紧到14px */
+        margin-top: 14px !important;   /* PC 16px，手机收紧到 14px */
         margin-bottom: 4px !important;
         padding: 0 !important;
     }
-    /* ✅新增：CP男主标题间距与角色弹窗局部开关组一致 */
+    /* 新增：CP 男主标题间距和角色弹窗局部开关组一致 */
     .annual-cp-male-title {
         margin-top: 0 !important;
-        margin-bottom: 12px !important;  /* PC端14px，手机端12px */
+        margin-bottom: 12px !important;  /* PC 14px，手机 12px */
         font-size: 14px !important;
     }
-    /* ✅新增：选中女主展开后，block跨全列且不压缩卡片尺寸 */
+    /* 新增：选中女主展开后，block 跨全列且不压缩卡片尺寸 */
     .annual-cp-female-block-expanded {
         width: 100% !important;
         grid-column: 1 / -1 !important;
@@ -780,7 +807,7 @@
     #annual-game-grid-container .annual-grid-cover-box {
         height: 120px !important;
     }
-    /* 模块五自定义卡片移动端字号统一15px */
+    /* 模块五自定义卡片移动端字号统一 15px */
     .annual-other-custom-label {
         font-size: 15px;
         padding: 3px 6px;
@@ -796,9 +823,10 @@
         right: -6px;
     }
 }
-/* 折叠屏+平板（769px~1200px）：弹性多列 */
+
+/* 折叠屏+平板 769px~1200px：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
-    /* 从原1024断点迁移 */
+    /* 从原 1024 断点迁移 */
     .annual-global-modal-inner {
         width: min(95vw, 1000px);
     }
@@ -810,7 +838,7 @@
     .annual-global-game-list .game-option-item img {
         width: 80px !important;
     }
-    /* ✅平板端同步main.css卡片防裁切 */
+    /* 平板端同步 main.css 卡片防裁切 */
     .annual-global-game-list .game-option-item {
         display: flex !important;
         gap: 10px !important;
@@ -833,7 +861,7 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* ========== 【修改】角色弹窗游戏列表 平板端完全复刻游戏弹窗 ========== */
+    /* 改：角色弹窗游戏列表平板端照游戏弹窗 */
     .annual-global-char-game-list,
     .annual-global-cp-game-list {
         display: grid !important;
@@ -841,8 +869,8 @@
         gap: 14px !important;
         padding: 10px 0 20px 0 !important;
         margin: 0 !important;
-        max-height:48vh !important; /* ✅平板端卡片容器最大高度 */
-        overflow-y:auto !important; /* ✅平板端独立滚动 */
+        max-height:48vh !important; /* 平板端卡片容器最大高度 */
+        overflow-y:auto !important; /* 平板端独立滚动 */
     }
     .annual-global-char-game-list .game-option-item img,
     .annual-global-cp-game-list .game-option-item img,
@@ -876,18 +904,18 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* 平板开关组gap与主站保持一致 */
+    /* 平板开关组 gap 和主站保持一致 */
     .annual-modal-global-switch-group {
         gap: 12px;
     }
-    /* ✅新增：CP弹窗全局开关组同步 */
+    /* 新增：CP 弹窗全局开关组同步 */
     .annual-cp-global-switch-group {
         gap: 12px;
     }
     .annual-modal-game-switch-group {
         gap: 12px;
     }
-    /* ========== 新增：角色弹窗角色网格平板适配 ========== */
+    /* 新增：角色弹窗角色网格平板适配 */
     .annual-global-char-char-list {
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
         gap: 12px !important;
@@ -898,9 +926,9 @@
         width: 100% !important;
         min-height: 148px !important;
     }
-    /* CP弹窗二级页面对齐角色弹窗平板端适配 */
+    /* CP 弹窗二级页面对齐角色弹窗平板端适配 */
     .annual-global-cp-female-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* 改：固定改弹性 */
         justify-content: start !important;
         gap: 12px !important;
         padding: 10px 0 10px 0 !important;
@@ -912,11 +940,11 @@
     .annual-cp-male-list .char-item {
         width: 100% !important;
         min-height: 148px !important;
-        /* ✅不覆盖padding/gap，继承main.css默认值 */
+        /* 不覆盖 padding/gap，继承 main.css 默认值 */
     }
-    /* CP男主列表grid平板端对齐角色列表 */
+    /* CP 男主列表 grid 平板端对齐角色列表 */
     .annual-cp-male-list {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* ✅固定→弹性 */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;  /* 改：固定改弹性 */
         justify-content: start !important;
         gap: 12px !important;
         width: 100% !important;
@@ -924,7 +952,7 @@
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
     }
-    /* 平板端选中女主后保持原尺寸：block改用grid，列宽与外部grid一致 */
+    /* 平板端选中女主后保持原尺寸：block 改用 grid，列宽和外部 grid 一致 */
     .annual-cp-female-block-expanded {
         display: grid !important;
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
@@ -934,7 +962,7 @@
     .annual-cp-female-block-expanded .annual-cp-male-select-wrap {
         grid-column: 1 / -1 !important;
     }
-    /* 搜索结果角色卡片平板端复刻待选角色样式 */
+    /* 搜索结果角色卡片平板端照待选角色样式 */
     .annual-global-char-game-list .search-result-char-item {
         padding: 10px !important;
         gap:7px !important;
@@ -949,7 +977,7 @@
         grid-column: 1 / -1 !important;
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
         gap: 12px !important;
-        /* ✅删除 margin-bottom:18px !important; */
+        /* 删 margin-bottom:18px !important; */
     }
     .annual-global-char-game-list .search-game-result-wrap {
         grid-column: 1 / -1 !important;
@@ -957,9 +985,9 @@
         gap:14px !important;
     }
 }
-/* 桌面（>1200px）：直接使用外层默认grid-template-columns，不再写死，自动一行3个 */
+/* 桌面 >1200px：直接用外层默认 grid-template-columns，不写死，自动一行 3 个 */
 
-/* ========== 三、キャラTOP ========== */
+/* 三、キャラTOP */
 .annual-char-top-item {
     margin-bottom: 24px;
 }
@@ -1019,7 +1047,8 @@
     color: var(--annual-export-customtext, #c98fac);
     resize: vertical;
 }
-/* ========== 年度报告全局角色弹窗 #annual‑global‑char-modal ========== */
+
+/* 年度报告全局角色弹窗 #annual-global-char-modal */
 #annual-global-char-modal,
 #annual-global-cp-modal {
     position: fixed;
@@ -1056,7 +1085,7 @@
 #annual-global-cp-modal .annual-modal-header {
     flex-shrink: 0;
 }
-/* 返回按钮 ←，完全复刻关闭×按钮样式 */
+/* 返回按钮 ←，照关闭 × 按钮样式 */
 .annual-modal-back-btn {
     position:absolute;
     left:20px;
@@ -1084,10 +1113,10 @@
 .annual-modal-global-switch-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
+    gap: 12px;  /* 和 FavList 主页面 switch-row gap 一致 */
     padding: 0 20px 8px 20px;
 }
-/* CP弹窗全局开关组：与角色弹窗全局开关组完全一致，左右padding 20px 对齐搜索框 margin 20px */
+/* CP 弹窗全局开关组：和角色弹窗全局开关组一致，左右 padding 20px 对齐搜索框 margin 20px */
 .annual-cp-global-switch-group {
     display: flex;
     flex-wrap: wrap;
@@ -1097,26 +1126,26 @@
     width: 100%;
     box-sizing: border-box;
 }
-/* 消除switch-row在CP弹窗开关组内的垂直margin */
+/* 去掉 switch-row 在 CP 弹窗开关组内的垂直 margin */
 .annual-cp-global-switch-group > .switch-row {
     margin: 0;
 }
-/* 消除switch-row在弹窗开关组内的垂直margin，避免横向折行时产生额外间隙 */
+/* 去掉 switch-row 在弹窗开关组内的垂直 margin，避免横向折行多出间隙 */
 .annual-modal-global-switch-group > .switch-row {
     margin: 0;
 }
 
-/* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
+/* 单游戏开关组，默认隐藏；进角色列表视图才显示 */
 .annual-modal-game-switch-group {
     display: none;
     flex-wrap: wrap;
-    gap: 12px;  /* 和FavList主页面switch‑row gap保持一致 */
-    padding: 0 0 8px 0; /* 左右边距由外层滚动容器提供，避免双重边距 */
+    gap: 12px;  /* 和 FavList 主页面 switch-row gap 一致 */
+    padding: 0 0 8px 0; /* 左右边距由外层滚动容器给，避免双重边距 */
 }
 .annual-modal-game-switch-group.active {
     display: flex;
 }
-/* 单游戏开关组内部同样清除switch-row上下margin */
+/* 单游戏开关组内部同样清 switch-row 上下 margin */
 .annual-modal-game-switch-group > .switch-row {
     margin: 0;
 }
@@ -1130,7 +1159,7 @@
     font-size:15px;
     box-sizing: border-box;
 }
-/* ✅新增：CP弹窗搜索框PC端与角色弹窗完全一致 */
+/* 新增：CP 弹窗搜索框 PC 端和角色弹窗一致 */
 .annual-global-cp-search-input {
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
@@ -1148,13 +1177,14 @@
     display:flex;
     flex-direction:column;
     padding:0;
-    /* 删除 overflow:hidden; */
+    /* 删 overflow:hidden; */
 }
-/* ========== ✅角色弹窗游戏列表：独立滚动 ========== */
+
+/* 角色弹窗游戏列表：独立滚动 */
 .annual-global-char-game-list {
     min-height:260px;
-    max-height: 52vh;  /* ✅新增：卡片容器最大高度，超出出现内部滚动 */
-    overflow-y: auto;   /* ✅新增：仅游戏卡片列表独立滚动 */
+    max-height: 52vh;  /* 新增：卡片容器最大高度，超出内部滚动 */
+    overflow-y: auto;   /* 新增：仅游戏卡片列表独立滚动 */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:14px;
@@ -1188,7 +1218,7 @@
 }
 .annual-global-char-game-list .game-option-info{
     flex:1;
-    min-width: 0; /* 新增，防止长文本挤压 */
+    min-width: 0; /* 新增：防长文本挤压 */
 }
 .annual-global-char-game-list .game-option-name{
     font-weight:bold;
@@ -1200,15 +1230,16 @@
     line-height:1.6;
     color:#333;
 }
-/* ========== 搜索命中角色卡片（直接搜索角色名结果），完全复刻二级角色待选char-item布局 ========== */
-/* 【新增：搜索结果双层子容器：角色结果块、游戏结果块，实现上下分开排布，互不干扰】 */
+
+/* 搜索命中角色卡片，直接搜索角色名结果，照二级角色待选 char-item 布局 */
+/* 新增：搜索结果双层子容器：角色结果块、游戏结果块，上下分开排布，互不干扰 */
 .annual-global-char-game-list .search-char-result-wrap {
     grid-column: 1 / -1;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
     gap:14px;
     width:100%;
-    /* ✅移除margin‑bottom:20px，块间距交给父容器grid gap统一控制，与普通游戏卡片间距一致 */
+    /* 删 margin-bottom:20px，块间距交给父容器 grid gap 统一控制，和普通游戏卡片间距一致 */
 }
 .annual-global-char-game-list .search-game-result-wrap {
     grid-column: 1 / -1;
@@ -1217,7 +1248,7 @@
     gap:14px;
     width:100%;
 }
-/* 角色搜索结果卡片，完全复用二级待选char-item样式 */
+/* 角色搜索结果卡片，复用二级待选 char-item 样式 */
 .annual-global-char-game-list .search-result-char-item {
     border:1px solid #eee;
     border-radius:10px;
@@ -1229,7 +1260,7 @@
     display: flex;
     flex-direction: column;
     gap:8px;
-    min-height: 148px; /* 和主站char-item保持一致高度，复刻二级角色选择页面设置 */
+    min-height: 148px; /* 和主站 char-item 高度一致，照二级角色选择页面设置 */
 }
 .annual-global-char-game-list .search-result-char-item:hover{
     background:#fff0f3;
@@ -1237,7 +1268,7 @@
 }
 .annual-global-char-game-list .search-result-char-item .char-card-img-box {
     width:100%;
-    aspect-ratio: 1 / 1; /* ✅修复：强制正方形，不再拉长 */
+    aspect-ratio: 1 / 1; /* 修复：强制正方形，不再拉长 */
     overflow:hidden;
     border-radius:6px;
 }
@@ -1246,7 +1277,7 @@
     height:100%;
     object-fit:cover;
 }
-/* ✅修复：垂直+水平全部居中，移除自定义flex扩容，复用原生char-item行为 */
+/* 修复：垂直+水平全部居中，去掉自定义 flex 扩容，复用原生 char-item 行为 */
 .annual-global-char-game-list .search-result-char-item .char-card-name-wrap {
     display:flex;
     flex-direction:column;
@@ -1261,7 +1292,7 @@
     text-align:center;
     word-break: break-word;
     line-height:1.4;
-    width: 100%;  /* ✅补丁：撑满容器宽度，切换按钮落在名字框左右两端 */
+    width: 100%;  /* 补丁：撑满容器宽度，切换按钮落在名字框左右两端 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1280,7 +1311,7 @@
     gap:14px;
     padding:10px;
     display:none;
-    /* ❌列表本身不写overflow，滚动交给外层 annual‑modal‑scroll‑wrap */
+    /* 列表本身不写 overflow，滚动交给外层 annual-modal-scroll-wrap */
 }
 .annual-global-char-char-list.active {
     display:grid;
@@ -1288,14 +1319,16 @@
 .annual-global-char-game-list.hidden-view {
     display:none;
 }
-/* 弹窗内游戏item直接复用已有的.game-option-item，角色item直接复用.char-item */
-/* ========== 快照模式隐藏角色TOP3交互控件 ========== */
+/* 弹窗内游戏 item 直接复用已有 .game-option-item，角色 item 直接复用 .char-item */
+
+/* 快照模式隐藏角色 TOP3 交互控件 */
 .snapshot-container.export-snapshot .annual-add-char-btn,
 .snapshot-container.export-snapshot .annual-add-cp-btn {
     display:none !important;
 }
-/* ========== 新增：角色弹窗大滚动容器和视图切换 ========== */
-/* ✅修改：inner高度与header防压缩规则同时覆盖CP弹窗，确保双滚动条结构一致 */
+
+/* 新增：角色弹窗大滚动容器和视图切换 */
+/* 改：inner 高度和 header 防压缩规则同时覆盖 CP 弹窗，确保双滚动条结构一致 */
 #annual-global-char-modal .annual-global-modal-inner,
 #annual-global-cp-modal .annual-global-modal-inner {
     display: flex;
@@ -1324,7 +1357,7 @@
 .char-modal-charlist-view .annual-global-char-game-list { display:none; }
 .char-modal-charlist-view .annual-global-char-char-list { display:grid; }
 
-/* ========== ✅新增：CP弹窗视图切换 ========== */
+/* 新增：CP 弹窗视图切换 */
 .cp-modal-gamelist-view .annual-cp-global-switch-group { display:flex; }
 .cp-modal-gamelist-view .annual-global-cp-search-input { display:block; }
 .cp-modal-gamelist-view .annual-cp-game-switch-group { display:none; }
@@ -1337,10 +1370,10 @@
 .cp-modal-femalelist-view .annual-global-cp-female-list { display:grid; }
 
 /* ================================================================ */
-/* ========== 新增修改：修复 TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 ========== */
+/* 本次调整：TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 */
 /* ================================================================ */
 
-/* ========== NO.x + 名称 + ×按钮 严格垂直中线对齐 ========== */
+/* NO.x + 名称 + ×按钮 严格垂直中线对齐 */
 .annual-top-label-row {
     display: flex;
     align-items: center !important;
@@ -1348,7 +1381,7 @@
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 12px;
-    /* ==========修复：关闭整行文本选择，阻止iOS原生长按文本菜单抢占手势========== */
+    /* 修复：关闭整行文本选择，阻止 iOS 原生长按文本菜单抢手势 */
     user-select: none;
     -webkit-user-select: none;
 }
@@ -1356,7 +1389,7 @@
     flex-shrink: 0;
     align-self: center;
     margin: 0;
-    line-height: 1; /* 消除行盒基线偏移 */
+    line-height: 1; /* 消掉行盒基线偏移 */
     user-select: none;
     -webkit-user-select: none;
 }
@@ -1378,7 +1411,7 @@
     align-self: center;
     margin:0;
 }
-/* 删除按钮完整样式（复用弹窗关闭按钮） */
+/* 删除按钮完整样式，复用弹窗关闭按钮 */
 .annual-item-delete-btn {
     flex-shrink: 0;
     width: 28px;
@@ -1399,7 +1432,8 @@
     background: #992e2e !important;
     color: #ffffff !important;
 }
-/* ========== ✅新增：模块折叠头部与按钮 ========== */
+
+/* 新增：模块折叠头部与按钮 */
 .annual-card-header {
     display: flex;
     align-items: center;
@@ -1407,11 +1441,11 @@
     gap: 12px;
     margin-bottom: 20px;
 }
-/* 覆盖.big-card h2原有的margin-bottom:20px，由header统一控制间距 */
+/* 覆盖 .big-card h2 原有的 margin-bottom:20px，由 header 统一控制间距 */
 .annual-card-header h2 {
     margin-bottom: 0;
 }
-/* 折叠按钮：1:1复用.annual-item-delete-btn全部样式 */
+/* 折叠按钮：复用 .annual-item-delete-btn 全部样式 */
 .annual-card-fold-btn {
     flex-shrink: 0;
     width: 28px;
@@ -1432,11 +1466,11 @@
     background: #992e2e !important;
     color: #ffffff !important;
 }
-/* 折叠状态：隐藏内容区，仅保留header */
+/* 折叠状态：隐藏内容区，仅保留 header */
 .big-card.annual-folded .annual-card-body {
     display: none;
 }
-/* 年度报告自定义文本框（含拖拽手柄） */
+/* 年度报告自定义文本框，含拖拽手柄 */
 .annual-custom-text-wrap {
     position: relative;
     overflow: hidden;
@@ -1500,7 +1534,7 @@
         height: 16px;
     }
 }
-/* 全局板块添加按钮容器（替换原item内部wrap） */
+/* 全局板块添加按钮容器，替换原 item 内部 wrap */
 .annual-global-add-game-btn-wrap,
 .annual-global-add-char-btn-wrap {
     text-align: center;
@@ -1535,13 +1569,13 @@
     background-color: #992e2e;
 }
 
-/* ========== 【新增】三、キャラTOP3 ========== */
+/* 新增：三、キャラTOP3 */
 .annual-char-top-item {
     margin-bottom: 24px;
 }
 
-/* ========== 【重写】选中排序模式样式 ========== */
-/* 全部设备移除原生拖拽光标，不再使用浏览器draggable拖拽 */
+/* 重写：选中排序模式样式 */
+/* 全部设备移除原生拖拽光标，不再用浏览器 draggable 拖拽 */
 .annual-top-label-row,
 .annual-top-label-row *,
 .annual-top-label,
@@ -1554,10 +1588,10 @@
     -webkit-touch-callout: none !important;
     cursor: default;
 }
-/* 插入指示线：排序模式下批量生成在每两个卡片中间；常态无DOM */
+/* 插入指示线：排序模式下批量生成在每两个卡片中间；常态无 DOM */
 .sort-insert-indicator {
     height: 4px;
-    /* 宽度对齐选中卡片虚线框，不占满父容器；左右margin模拟向内缩进，匹配outline-offset:2px */
+    /* 宽度对齐选中卡片虚线框，不占满父容器；左右 margin 模拟向内缩进，匹配 outline-offset:2px */
     width: calc(100% - 16px);
     margin: 14px auto;
     background-color: #f6a5b8;
@@ -1566,12 +1600,12 @@
     cursor: pointer;
     transition: background-color 0.15s;
 }
-/* 第一次点击激活状态：#b33a3a深红色 */
+/* 第一次点击激活状态：#b33a3a 深红色 */
 .sort-insert-indicator.active-hit {
     background-color: #b33a3a;
     height:4px;
 }
-/* 选中排序模式：外层卡片虚线 #f6a5b8；解决①下陷缩小：使用outline代替border，outline不占用盒模型空间！！ */
+/* 选中排序模式：外层卡片虚线 #f6a5b8；解决下陷缩小：用 outline 代替 border，outline 不占盒模型 */
 .annual-top-item.sort-selected-item,
 .annual-char-top-item.sort-selected-item {
     outline: 2px dashed #f6a5b8;
@@ -1580,22 +1614,22 @@
     opacity: 1;
     transform: none !important;
     scale: 1 !important;
-    /* 重要：不改动原有border，改用outline，不会挤压内部内容，不会改变卡片布局尺寸 */
+    /* 重要：不改原有 border，改用 outline，不会挤压内部内容，不会改卡片布局尺寸 */
     box-sizing: border-box;
 }
-/* 选中模式布局锁定，禁止浏览器手势触发的位移偏移 */
+/* 选中模式布局锁定，禁止浏览器手势触发位移偏移 */
 .annual-top-item.sort-lock-layout,
 .annual-char-top-item.sort-lock-layout {
     transform: none !important;
     translate: none !important;
     position: relative;
 }
-/* 内部label-row清除outline，不再高亮内部行 */
+/* 内部 label-row 清 outline，不再高亮内部行 */
 .annual-top-item.sort-selected-item > .annual-top-label-row,
 .annual-char-top-item.sort-selected-item > .annual-top-label-row {
     outline: none;
 }
-/* 封面图片区域禁止系统长按菜单（iOS） */
+/* 封面图片区域禁止系统长按菜单，iOS */
 .annual-top-cover,
 .annual-char-cover {
     -webkit-touch-callout: none;
@@ -1616,7 +1650,7 @@
     user-select: none;
     -webkit-user-select: none;
 }
-/* ✅关键修复：文本框/输入框恢复文字选择和输入能力，不被父级 user-select:none 连带禁止 */
+/* 修复：文本框/输入框恢复文字选择和输入能力，不被父级 user-select:none 连带禁掉 */
 .annual-top-item textarea,
 .annual-char-top-item textarea,
 .annual-cp-top-item textarea,
@@ -1628,7 +1662,7 @@
     pointer-events: auto;
 }
 
-/* ========== 新增：CP弹窗游戏列表（样式对齐角色弹窗） ========== */
+/* 新增：CP 弹窗游戏列表，样式对齐角色弹窗 */
 .annual-global-cp-game-list {
     min-height:260px;
     max-height: 52vh;
@@ -1660,10 +1694,10 @@
     font-size:15px;
     box-sizing: border-box;
 }
-/* CP弹窗女主列表容器：1:1对齐.annual-global-char-char-list */
+/* CP 弹窗女主列表容器：对齐 .annual-global-char-char-list */
 .annual-global-cp-female-list {
     display:none;
-    grid-template-columns: repeat(auto-fill, 130px);  /* minmax→固定130px，与角色弹窗实际列宽一致 */
+    grid-template-columns: repeat(auto-fill, 130px);  /* minmax 改固定 130px，和角色弹窗实际列宽一致 */
     justify-content: start;                           /* 新增：左对齐，不拉伸 */
     gap:14px;
     padding:10px;
@@ -1674,7 +1708,7 @@
     background:#fff0f3;
 }
 
-/* ========== 新增：カップルTOP ========== */
+/* 新增：カップルTOP */
 .annual-cp-top-item {
     margin-bottom: 24px;
 }
@@ -1695,7 +1729,7 @@
     display:flex;
     gap:10px;
 }
-/* PC端CP封面尺寸140px */
+/* PC 端 CP 封面尺寸 140px */
 .annual-cp-female-cover,
 .annual-cp-male-cover {
     width:140px;
@@ -1741,10 +1775,10 @@
 }
 
 /* ================================================================ */
-/* ========== CP弹窗独立class样式（视觉1:1复刻角色弹窗.char-item） ========== */
+/* CP 弹窗独立 class 样式，视觉照角色弹窗 .char-item */
 /* ================================================================ */
 
-/* 独立返回按钮：复用.annual-modal-back-btn的视觉 */
+/* 独立返回按钮：复用 .annual-modal-back-btn 视觉 */
 .annual-cp-modal-back-btn {
     position: absolute;
     left: 20px;
@@ -1768,7 +1802,7 @@
     background: #992e2e !important;
     color: #b33a3a !important;
 }
-/* 游戏列表卡片：对齐.annual-global-cp-game-list .game-option-item */
+/* 游戏列表卡片：对齐 .annual-global-cp-game-list .game-option-item */
 .annual-global-cp-game-list .annual-cp-game-option-item {
     border: 1px solid #eee;
     border-radius: 10px;
@@ -1793,23 +1827,23 @@
     flex-shrink: 0;
 }
 
-/* ---------- 女主block：纯包裹容器，无边框无间距，由grid gap控制 ---------- */
+/* ---------- 女主 block：纯包裹容器，无边框无间距，由 grid gap 控制 ---------- */
 .annual-cp-female-block {
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
     gap: 0;
 }
-/* 选中女主时block跨全列 */
+/* 选中女主时 block 跨全列 */
 .annual-cp-female-block-expanded {
     grid-column: 1 / -1;
     width: 100%;
 }
-/* 选中女主后不再放大：用max-width锁定与grid列宽一致，卡片保持原尺寸 */
+/* 选中女主后不再放大：用 max-width 锁定和 grid 列宽一致，卡片保持原尺寸 */
 .annual-cp-female-block-expanded .char-item {
     max-width: 130px;
 }
-/* ---------- 女主block内部男主选择面板 ---------- */
+/* ---------- 女主 block 内部男主选择面板 ---------- */
 .annual-cp-male-select-wrap {
     margin-top: 16px;
     margin-bottom: 4px;
@@ -1838,10 +1872,10 @@
 }
 
 /* ================================================================ */
-/* ========== 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 ========== */
+/* 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 */
 /* ================================================================ */
 
-/* ---------- 通用＋按钮（复用×按钮视觉，符号为+） ---------- */
+/* ---------- 通用 + 按钮，复用 × 按钮视觉，符号为 + ---------- */
 .annual-grid-add-btn {
     width: 28px;
     height: 28px;
@@ -1903,9 +1937,9 @@
 }
 .annual-other-also-title {
     text-align: center;
-    font-size: 16px;  /* 字号从15px改为16px */
+    font-size: 16px;  /* 字号从 15px 改为 16px */
     font-weight: bold;
-    color: var(--annual-export-labelcolor, #b85878);  /* 改用labelcolor */
+    color: var(--annual-export-labelcolor, #b85878);  /* 改用 labelcolor */
     margin-bottom: 12px;
 }
 .annual-other-also-content {
@@ -1951,6 +1985,7 @@
     box-sizing: border-box;
 }
 .annual-other-also-remove:hover { background: #992e2e; color: #fff; }
+
 /* ---------- 五、其他：小圆角框 ---------- */
 .annual-other-cards-row {
     display: grid;
@@ -1958,7 +1993,7 @@
     gap: 16px;
 }
 .annual-other-card {
-    background: var(--annual-export-boxbg, #fff7f9);  /* 背景色接入CSS变量 */
+    background: var(--annual-export-boxbg, #fff7f9);  /* 背景色接入 CSS 变量 */
     border: 1px solid #eee;
     border-radius: 12px;
     padding: 14px;
@@ -1970,9 +2005,9 @@
     text-align: center;
     font-size: 15px;
     font-weight: bold;
-    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入CSS变量 */
+    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入 CSS 变量 */
 }
-/* 模块五自定义卡片标签（可编辑输入框） */
+/* 模块五自定义卡片标签，可编辑输入框 */
 .annual-other-custom-label {
     width: 100%;
     font-size: 15px;
@@ -1983,7 +2018,7 @@
     padding: 4px 8px;
     box-sizing: border-box;
     background: #fff;
-    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入CSS变量 */
+    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入 CSS 变量 */
 }
 .annual-other-custom-label:focus {
     outline: none;
@@ -2054,7 +2089,7 @@
 .annual-other-custom-card {
     position: relative;
 }
-/* 新增：自定义角色卡片同样需要 relative，供右上角×删除按钮 absolute 定位 */
+/* 新增：自定义角色卡片同样需要 relative，供右上角 × 删除按钮 absolute 定位 */
 .annual-other-custom-char-card {
     position: relative;
 }
@@ -2129,7 +2164,7 @@
     font-size: 15px;
     font-weight: bold;
     text-align: center;
-    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入CSS变量 */
+    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入 CSS 变量 */
     word-break: break-word;
     line-height: 1.4;
     width: 100%;
@@ -2144,17 +2179,18 @@
     padding: 4px 6px;
     box-sizing: border-box;
     background: #fcfcfc;
-    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入CSS变量 */
-    /* ✅修复：从 input 改为 textarea，支持多行自动换行，禁止手动拖拽和滚动条 */
+    color: var(--annual-export-labelcolor, #b85878);  /* 标签文字色接入 CSS 变量 */
+    /* 修复：从 input 改为 textarea，支持多行自动换行，禁止手动拖拽和滚动条 */
     resize: none;
     overflow: hidden;
     line-height: 1.4;
     display: block;
 }
 .annual-grid-custom-label:focus { outline: none; border-color: #f6a5b8; }
+
 /* ---------- 宫格底部长文本框 ---------- */
 .annual-grid-footer-text {
-    background: var(--annual-export-boxbg, #fff7f9);  /* 背景色接入CSS变量 */
+    background: var(--annual-export-boxbg, #fff7f9);  /* 背景色接入 CSS 变量 */
     border: 1px solid #eee;
     border-radius: 12px;
     padding: 14px;
@@ -2198,7 +2234,7 @@
     #annual-game-grid-container .annual-grid-cover-box {
         height: 120px !important;
     }
-    /* 模块五自定义卡片移动端字号统一15px */
+    /* 模块五自定义卡片移动端字号统一 15px */
     .annual-other-custom-label {
         font-size: 15px;
         padding: 3px 6px;
@@ -2242,7 +2278,7 @@
     border-color: #f6a5b8;
 }
 
-/* ========== 修复：Annual模式About区块底部间距与FavList模式一致 ========== */
+/* 修复：Annual 模式 About 区块底部间距和 FavList 模式一致 */
 .mode-wrap[data-mode="annual"] .about-block {
     margin-bottom: 30px;
 }
