@@ -30,7 +30,7 @@
     display: flex;
     flex-direction: column;
     /* 修复：移除 gap。移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
-       卡片间距统一交给 .big-card margin-top，不再用容器 gap */
+       卡片间距统一交给 .big-card margin-top，不再使用容器 gap */
     gap: 0;
 }
 .mode-wrap.mode-hidden {
@@ -53,7 +53,7 @@
     margin-top: 30px;
 }
 
-/* site-title 年度报告覆盖样式 */
+/* 年度报告覆盖样式 */
 .site-title.annual-active h1 {
     font-size: 42px;
     color: var(--annual-export-title, #b33a3a);
@@ -66,7 +66,7 @@
 .annual-page-title {
     display: none;
 }
-/* Annual 模式激活时显示，和 FavList 的 .sub-desc 位置样式一致 */
+/* Annual 模式激活时显示，和 FavList .sub-desc 一致 */
 .site-title.annual-active .annual-sub-desc {
     display: block;
 }
@@ -81,7 +81,7 @@
     line-height: 1.6;
 }
 
-/* 统计行：整段居中，字号 16px，颜色变量控制 */
+/* 统计行 */
 .annual-stat-line {
     font-size: 16px;
     line-height: 2.2;
@@ -111,7 +111,7 @@
     margin-bottom: 10px;
 }
 
-/* 游戏名称显示：黑色 22px，自动换行 */
+/* 游戏名称 */
 .annual-game-name-text {
     font-size: 22px;
     color: var(--annual-export-gamename, #000000);
@@ -127,7 +127,7 @@
     display: none !important;
 }
 
-/* +添加游戏按钮，居中 */
+/* + 添加游戏按钮，居中 */
 .annual-add-game-btn-wrap {
     text-align: center;
     margin: 8px 0 14px;
@@ -241,7 +241,7 @@
     box-sizing: border-box;
 }
 
-/* 游戏列表容器，完全对齐main.css game-list-select，移除多余限制，PC端自动一行3个 */
+/* 游戏列表容器，对齐 main.css game-list-select */
 .annual-global-game-list {
     /* 恢复滚动，复用 FavList 搜索行为 */
     min-height:260px;
@@ -328,7 +328,7 @@
     resize: vertical;
 }
 
-/* 快照导出模式：年度报告内部交互控件全部隐藏 */
+/* 快照导出模式，交互控件全部隐藏 */
 .snapshot-container.export-snapshot .annual-add-game-btn,
 .snapshot-container.export-snapshot #btn-annual-export {
     display:none !important;
@@ -457,13 +457,11 @@
 /* 三套断点完全复用 main.css game-list-select 列数逻辑 */
 /* 普通手机 ≤768px：强制单列 */
 @media (max-width: 768px) {
-    /* 移动端：图片+文本框横向并排，不再纵向堆叠 */
     .annual-top-content-row {
         flex-direction: row;
         align-items: flex-start;
         flex-wrap: wrap;
     }
-    /* 添加游戏封面：严格等于弹窗待选游戏 item 图片 80px */
     .annual-top-cover-wrap {
         width: 80px;
     }
@@ -472,7 +470,6 @@
         height: auto;
         object-fit: cover;
     }
-    /* 添加角色封面：严格等于二级待选角色卡片图片 90px，强制正方形 */
     .annual-char-top-content-row {
         flex-direction: row;
         align-items: flex-start;
@@ -489,7 +486,6 @@
         border-radius:6px !important;
         border:1px solid #eee;
     }
-    /* 保证移动端：游戏、角色文本框宽度规则一致 */
     .annual-top-text-wrap,
     .annual-char-text-wrap {
         flex: 1;
@@ -504,13 +500,13 @@
     .annual-char-name-text{
         font-size:18px;
     }
-    /* 删除按钮移动端缩小 */
+    /* 删除按钮缩小 */
     .annual-item-delete-btn{
         width:26px;
         height:26px;
         font-size:18px;
     }
-    /* 新增：折叠按钮移动端同步缩小 */
+    /* 新增：折叠按钮移缩小 */
     .annual-card-fold-btn {
         width: 26px;
         height: 26px;
@@ -546,10 +542,10 @@
     .annual-global-search-input {
         width: 100%;
         margin: 0;
-        padding: 11px 14px; /* 统一高度，和角色弹窗一致 */
+        padding: 11px 14px; /* 高度和角色弹窗一致 */
         font-size: 14px;
     }
-    /* 同步 main.css 手机端 game-option-item 布局，解决卡片高度不足、文字裁切 */
+    /* 复用 main.css 手机端 game-option-item 布局 */
     .annual-global-game-list .game-option-item {
         display: flex !important;
         gap: 10px !important;
@@ -637,7 +633,7 @@
         font-size: 14px;
         box-sizing: border-box !important;
     }
-    /* 移动端开关组：外框宽度与搜索框、游戏列表一致，左右 padding/margin 为 0，由 scroll-wrap 统一 12px 缩进 */
+    /* 开关：外框宽度与搜索框、游戏列表一致，左右 padding/margin 为 0，由 scroll-wrap 统一 12px 缩进 */
     .annual-modal-global-switch-group {
         gap: 12px;
         padding: 0 0 8px 0 !important;
@@ -645,7 +641,7 @@
         width: 100% !important;
         box-sizing: border-box !important;
     }
-    /* CP 弹窗全局开关组同步对齐 */
+    /* CP 弹窗全局开关 */
     .annual-cp-global-switch-group {
         gap: 12px;
         padding: 0 0 8px 0 !important;
@@ -659,7 +655,7 @@
         gap: 12px;
         padding: 0 0 8px 0;
     }
-    /* 角色弹窗头部返回按钮左距调整 */
+    /* 调整角色弹窗头部返回按钮左距 */
     .annual-modal-back-btn {
         left:12px;
         width: 26px;
@@ -678,7 +674,7 @@
     .annual-modal-game-switch-group label {
         flex-shrink: 0;
     }
-    /* 原 480px 断点迁移，保持 */
+    /* 原 480px 断点迁移 */
     .annual-modal-header {
         padding: 12px 14px;
     }
@@ -687,7 +683,7 @@
         height: 24px;
         font-size: 16px;
     }
-    /* 新增：角色弹窗角色列表移动端适配，对齐 FavList 主站 */
+    /* 新增：角色弹窗角色列表 */
     .annual-global-char-char-list {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
         gap: 10px !important;
@@ -698,7 +694,7 @@
         width: 100% !important;
         min-height: 132px !important;
     }
-    /* CP 弹窗二级页面对齐角色弹窗移动端适配 */
+    /* CP 弹窗二级页面对齐角色弹窗 */
     .annual-global-cp-female-list {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* 修改：固定 90px 改为弹性 minmax，和角色列表一致 */
         justify-content: start !important;
@@ -716,7 +712,7 @@
            让卡片继承 main.css .char-item 默认内边距和间距，
            和角色弹窗 .annual-global-char-char-list .char-item 保持一致 */
     }
-    /* CP 男主列表 grid 移动端对齐角色列表 */
+    /* CP 男主列表 grid 对齐角色列表 */
     .annual-cp-male-list {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;  /* 修改：固定改为弹性，和角色列表一致 */
         justify-content: start !important;
@@ -733,7 +729,7 @@
         font-size: 18px;
     }
     /* 移动端选中女主后保持原尺寸：block 改用 grid，列宽与外部 grid 一致，
-       女主卡片作为 grid item 自动占一列，宽度等于未选中时列宽，不放大也不缩小 */
+       女主卡片作为 grid item 自动占一列 */
     .annual-cp-female-block-expanded {
         display: grid !important;
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
@@ -795,16 +791,15 @@
         width: 100% !important;
         grid-column: 1 / -1 !important;
     }
-    /* 游戏宫格移动端封面高度同步改高 */
+    /* 游戏宫格增加封面高度 */
     #annual-game-grid-container .annual-grid-cover-box {
         height: 120px !important;
     }
-    /* 模块五自定义卡片移动端字号统一 15px */
     .annual-other-custom-label {
         font-size: 15px;
         padding: 3px 6px;
     }
-    /* 宫格删除按钮移动端缩小 */
+    /* 宫格删除按钮缩小 */
     .annual-grid-remove-btn {
         width: 20px;
         height: 20px;
@@ -830,7 +825,7 @@
     .annual-global-game-list .game-option-item img {
         width: 80px !important;
     }
-    /* 平板端同步 main.css 卡片防裁切 */
+    /* 平板端同步 main.css */
     .annual-global-game-list .game-option-item {
         display: flex !important;
         gap: 10px !important;
@@ -896,11 +891,9 @@
         word-break: break-all !important;
         white-space: normal !important;
     }
-    /* 平板开关组 gap 和主站保持一致 */
     .annual-modal-global-switch-group {
         gap: 12px;
     }
-    /* 新增：CP 弹窗全局开关组同步 */
     .annual-cp-global-switch-group {
         gap: 12px;
     }
@@ -1057,7 +1050,7 @@
 #annual-global-cp-modal.active {
     display: flex;
 }
-/* 角色弹窗内层容器：对齐游戏弹窗样式 */
+/* 角色弹窗内层容器 */
 #annual-global-char-modal .annual-global-modal-inner,
 #annual-global-cp-modal .annual-global-modal-inner {
     width: min(92vw, 1200px);
@@ -1077,7 +1070,7 @@
 #annual-global-cp-modal .annual-modal-header {
     flex-shrink: 0;
 }
-/* 返回按钮 ←，复用关闭 × 按钮样式 */
+/* 返回按钮，复用关闭按钮样式 */
 .annual-modal-back-btn {
     position:absolute;
     left:20px;
@@ -1105,7 +1098,7 @@
 .annual-modal-global-switch-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;  /* 和 FavList 主页面 switch-row gap 一致 */
+    gap: 12px;
     padding: 0 20px 8px 20px;
 }
 /* CP 弹窗全局开关：和角色弹窗全局开关组一致，左右 padding 20px 对齐搜索框 margin 20px */
@@ -1130,7 +1123,7 @@
 .annual-modal-game-switch-group {
     display: none;
     flex-wrap: wrap;
-    gap: 12px;  /* 和 FavList 主页面 switch-row gap 一致 */
+    gap: 12px;
     padding: 0 0 8px 0; /* 左右边距由外层滚动容器提供，避免双重边距 */
 }
 .annual-modal-game-switch-group.active {
@@ -1174,7 +1167,7 @@
 /* 角色弹窗游戏列表：独立滚动 */
 .annual-global-char-game-list {
     min-height:260px;
-    max-height: 52vh;  /* 新增：卡片容器最大高度，超出内部滚动 */
+    max-height: 52vh;  /* 新增：卡片容器最大高度，超出则内部滚动 */
     overflow-y: auto;   /* 新增：仅游戏卡片列表独立滚动 */
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
@@ -1250,7 +1243,7 @@
     display: flex;
     flex-direction: column;
     gap:8px;
-    min-height: 148px; /* 和主站 char-item 高度一致，复用二级角色选择页面设置 */
+    min-height: 148px;
 }
 .annual-global-char-game-list .search-result-char-item:hover{
     background:#fff0f3;
@@ -1275,7 +1268,7 @@
     justify-content: center;
     align-items: center; /* 新增：垂直居中，解决上方空、下方贴边框 */
 }
-/* 角色名：居中，允许多行自动换行 */
+/* 角色名 */
 .annual-global-char-game-list .search-result-char-item .char-card-name {
     font-weight:bold;
     font-size:15px;
@@ -1287,7 +1280,7 @@
     align-items: center;
     justify-content: center;
 }
-/* 游戏名：灰色小字，居中，自动换行 */
+/* 游戏名 */
 .annual-global-char-game-list .search-result-char-item .char-card-game-sub {
     font-size:11px;
     color:#888;
@@ -1359,7 +1352,7 @@
 .cp-modal-femalelist-view .annual-global-cp-female-list { display:grid; }
 
 /* 修复：TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 */
-/* NO.x + 名称 + ×按钮 严格垂直中线对齐 */
+/* NO. + 名称 + ×按钮 严格垂直中线对齐 */
 .annual-top-label-row {
     display: flex;
     align-items: center !important;
@@ -1588,12 +1581,12 @@
     cursor: pointer;
     transition: background-color 0.15s;
 }
-/* 第一次点击激活状态：#b33a3a 深红色 */
+/* 第一次点击激活状态 */
 .sort-insert-indicator.active-hit {
     background-color: #b33a3a;
     height:4px;
 }
-/* 选中排序模式：外层卡片虚线 #f6a5b8；解决下陷缩小：使用 outline 代替 border，outline 不占用盒模型空间 */
+/* 修复：选中排序模式，解决下陷缩小：使用 outline 代替 border，outline 不占用盒模型空间 */
 .annual-top-item.sort-selected-item,
 .annual-char-top-item.sort-selected-item {
     outline: 2px dashed #f6a5b8;
@@ -1617,7 +1610,7 @@
 .annual-char-top-item.sort-selected-item > .annual-top-label-row {
     outline: none;
 }
-/* 封面图片区域禁止系统长按菜单，iOS */
+/* iOS 封面图片区域禁止系统长按菜单 */
 .annual-top-cover,
 .annual-char-cover {
     -webkit-touch-callout: none;
@@ -1717,7 +1710,6 @@
     display:flex;
     gap:10px;
 }
-/* PC 端 CP 封面尺寸 140px */
 .annual-cp-female-cover,
 .annual-cp-male-cover {
     width:140px;
@@ -1857,7 +1849,7 @@
 }
 
 /* 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 */
-/* ---------- 通用 + 按钮，复用 × 按钮视觉，符号为 + ---------- */
+/* 通用 + 按钮，复用 × 按钮 */
 .annual-grid-add-btn {
     width: 28px;
     height: 28px;
@@ -1918,7 +1910,7 @@
 }
 .annual-other-also-title {
     text-align: center;
-    font-size: 16px;  /* 字号从 15px 改为 16px */
+    font-size: 16px;
     font-weight: bold;
     color: var(--annual-export-labelcolor, #b85878);  /* 改用 labelcolor */
     margin-bottom: 12px;
@@ -2209,16 +2201,13 @@
         width: 70px;
         height: 70px;
     }
-    /* 游戏宫格移动端封面高度同步改高 */
     #annual-game-grid-container .annual-grid-cover-box {
         height: 120px !important;
     }
-    /* 模块五自定义卡片移动端字号统一 15px */
     .annual-other-custom-label {
         font-size: 15px;
         padding: 3px 6px;
     }
-    /* 宫格删除按钮移动端缩小 */
     .annual-grid-remove-btn {
         width: 20px;
         height: 20px;
