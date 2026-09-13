@@ -5,16 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Otome FavList</title>
     <link rel="stylesheet" href="./css/main.css">
-    <!-- 新增年度报告样式 -->
     <link rel="stylesheet" href="./css/annual.css">
-    <!-- html2canvas CDN（第三方库，保留全局引入） -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
     </script>
     <!-- 必须 type="module"，games.js内部使用动态import，不能去掉module属性 -->
     <!-- 使用绝对路径 /data/games.js 确保从网站根目录加载 -->
     <script type="module" src="/data/games.js">
     </script>
-    <!-- ==========【新增】弹窗锁定 + 年度报告标题切换 ========== -->
+    <!-- ========== 弹窗锁定年度报告标题切换 ========== -->
     <style>
         body.modal-lock {
             overflow: hidden;
@@ -24,11 +22,10 @@
         .site-title.annual-active .sub-desc {
             display: none;
         }
-        /* NO.1/NO.2/NO.3 颜色由小标题文字色CSS变量控制，移除!important否则无法实时变色 */
+        /* NO.颜色由小标题文字色CSS变量控制，移除!important否则无法实时变色 */
         .annual-top-label {
             color: var(--annual-export-subtitle, #b85878);
         }
-        /* 移动端标题字号调整（保留原样） */
         @media (max-width: 768px) {
             .site-title h1 {
                 font-size: 30px;
@@ -38,13 +35,13 @@
 </head>
 <body>
 
-    <!-- ========== 交互页面（用户操作） ========== -->
+    <!-- ========== 交互页面 ========== -->
     <div class="wrap">
         <div class="site-title">
             <h1>Otome FavList</h1>
             <p class="title-sub-cn">日乙个人喜好表</p>
             <p class="sub-desc text-gray-desc">选择你喜欢的角色，生成属于你的FavList</p>
-            <!-- ===== 新增：使用指南按钮 ===== -->
+            <!-- ===== 使用指南按钮 ===== -->
             <div class="center-btn-block guide-btn-block">
                 <button id="open-guide-btn" style="
                 padding: 8px 22px;
@@ -83,7 +80,6 @@
                 <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
             </div>
         </div>
-        <!-- ✅补丁新增：全局显示续作/FD次要角色开关 -->
         <div class="switch-row">
             <label class="switch">
                 <input type="checkbox" id="global-fd-sub-char">
@@ -149,7 +145,6 @@
         <div class="game-search-box" id="search-panel">
             <input type="text" id="game-search-input" placeholder="搜索游戏名称">
             <div class="filter-group">
-                <!-- 筛选顺序：编剧 → 画师 → 发售年份 → 开发厂商 → 汉化厂商 -->
                 <select id="filter-writer">
                     <option value="">筛选编剧</option>
                 </select>
@@ -168,13 +163,11 @@
             </div>
             <div class="game-list-select" id="game-select-list"></div>
         </div>
-
         <div id="added-game-container"></div>
     </div>
 
     <div class="big-card" id="card-export">
         <h2>四、导出</h2>
-        <!-- ==========【新增】导出折叠内容开关 ========== -->
         <div class="switch-row">
             <label class="switch">
                 <input type="checkbox" id="export-fold-content">
@@ -185,7 +178,6 @@
                 <p class="switch-desc">开启后生成并导出的图片会包含折叠的游戏卡片，关闭则只生成并导出展开的游戏卡片。</p>
             </div>
         </div>
-        <!-- ==========【新增】导出隐藏/续作/FD角色名开关 ========== -->
         <div class="switch-row">
             <label class="switch">
                 <input type="checkbox" id="export-show-hidden-fd-name">
@@ -196,8 +188,6 @@
                 <p class="switch-desc">开启后生成并导出的图片中会显示隐藏/续作/FD的角色名，关闭则只显示角色图片。适合搭配剪影图使用，形成剧透防护。</p>
             </div>
         </div>
-
-        <!-- ==========【新增】导出普通画质开关 ========== -->
         <div class="switch-row">
             <label class="switch">
                 <input type="checkbox" id="export-normal-quality">
@@ -208,12 +198,9 @@
                 <p class="switch-desc">iOS 系统存在对内核与总像素的硬性限制，若使用 IOS 设备渲染失败则建议开启，总像素低、图片未超出上限时便可成功生成并导出。</p>
             </div>
         </div>
-
-        <!-- 恢复默认设置按钮（导出折叠内容下方、导出背景色上方） -->
         <div class="center-btn-block left-align-btn">
             <button id="btn-reset-color">恢复默认设置</button>
         </div>
-
         <!-- 颜色选择区域 -->
         <div class="color-set-row">
             <div class="color-item">
@@ -236,7 +223,6 @@
                 <label class="text-light-pink">游戏名文字色</label>
                 <input type="color" id="color-gamename" value="#000000">
             </div>
-            <!-- 新增：自定义文本色 -->
             <div class="color-item">
                 <label class="text-light-pink">自定义文本色</label>
                 <input type="color" id="color-customtext" value="#c98fac">
@@ -246,13 +232,11 @@
                 <input type="color" id="color-border" value="#f6a5b8">
             </div>
         </div>
-
         <div class="font-size-set-row">
             <label for="slider-custom-text-font">调节自定义文本字号</label>
             <div id="custom-text-font-value" class="font-size-value-display">16px</div>
             <input id="slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
         </div>
-
         <!-- 导出尺寸选项 -->
         <div class="size-select">
             <label class="text-light-pink">导出尺寸：</label>
@@ -268,15 +252,13 @@
             <label><input type="radio" name="export-size" value="long-810" checked>810长图</label>
             <label><input type="radio" name="export-size" value="long-1080">1080长图</label>
         </div>
-
         <div class="center-btn-block export-btn-wrap">
             <button id="btn-export">生成并导出图片</button>
         </div>
-
         <canvas id="export-canvas" style="display:none;"></canvas>
     </div>
 
-    <!-- 回到添加游戏、最后一张游戏卡片悬浮按钮 -->
+    <!-- 悬浮按钮 -->
     <button id="back-to-add-btn" class="float-scroll-btn back-to-add">▲</button>
     <button id="scroll-to-last-game-btn" class="float-scroll-btn scroll-last-card">▼</button>
 
@@ -287,15 +269,12 @@
             或有希望新增的作品，欢迎通过邮箱联系。</p>
         <p class="email-text">Email：<a href="mailto:otomefavlist@163.com">otomefavlist@163.com</a></p>
     </div>
-
 </div>
 <!-- ========== FavList 模式 wrap 结束 ========== -->
 
 <!-- ========== 年度报告模式 wrap，默认mode-hidden占位隐藏，不用display:none ========== -->
 <div class="mode-wrap mode-hidden" data-mode="annual">
     <!-- 年度报告页面主标题已移除，改为动态替换 .site-title h1 -->
-
-    <!-- 独立卡片1：一、数据统计 -->
     <div class="big-card annual-card-stats">
         <div class="annual-card-header">
             <h2>一、数据统计</h2>
