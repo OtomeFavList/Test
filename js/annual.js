@@ -22,6 +22,7 @@ const annualExportDefault = {
     border: "#f6a5b8",
     customTextFontSize: 16,
     useSummaryTitle: false,
+    useOshiTitle: false,          // ✅新增：宫格小标题使用推しゲーム & 推しキャラ
     normalQuality: false,
     labelColor: "#b85878",        // ✅修改点6：标签文字色
     boxBgColor: "#fff7f9",        // ✅修改点6：内容框背景色
@@ -2200,6 +2201,7 @@ function bindAnnualExportPanel() {
     const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
     const btnExportImage = document.getElementById("annual-btn-export-image");
     const useSummaryTitleEl = document.getElementById("annual-use-summary-title");
+    const useOshiTitleEl = document.getElementById("annual-use-oshi-title");  // ✅新增：推し标题开关
     const normalQualityEl = document.getElementById("annual-export-normal-quality");
     const canvasEl = document.getElementById("annual-export-canvas");
     const snapshotBox = document.getElementById("snapshot-container");
@@ -2227,6 +2229,7 @@ function bindAnnualExportPanel() {
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
     if (useSummaryTitleEl) useSummaryTitleEl.checked = !!annualExportConfig.useSummaryTitle;
+    if (useOshiTitleEl) useOshiTitleEl.checked = !!annualExportConfig.useOshiTitle;  // ✅新增
     if (normalQualityEl) normalQualityEl.checked = !!annualExportConfig.normalQuality;
 
     annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
@@ -2266,6 +2269,7 @@ function bindAnnualExportPanel() {
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
         if (useSummaryTitleEl) useSummaryTitleEl.checked = false;
+        if (useOshiTitleEl) useOshiTitleEl.checked = false;  // ✅新增：重置推し标题开关
         annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
         annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
@@ -2380,6 +2384,13 @@ function bindAnnualExportPanel() {
     if (useSummaryTitleEl) {
         useSummaryTitleEl.onchange = () => {
             annualExportConfig.useSummaryTitle = useSummaryTitleEl.checked;
+            saveAnnualExportConfig();
+        };
+    }
+    // ✅新增：推しゲーム & 推しキャラ 宫格小标题开关
+    if (useOshiTitleEl) {
+        useOshiTitleEl.onchange = () => {
+            annualExportConfig.useOshiTitle = useOshiTitleEl.checked;
             saveAnnualExportConfig();
         };
     }
