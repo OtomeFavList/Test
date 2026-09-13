@@ -3,10 +3,10 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
-    /* 去掉 GenJyuuGothic，避免字体缺失警告 */
+    /* 移除 GenJyuuGothic，避免字体缺失警告 */
     font-family: sans-serif,system-ui;
 }
-/* 防止手机端横向滚动 */
+/* 额外优化：防止手机端横向滚动 */
 html {
     overflow-x: hidden;
 }
@@ -120,7 +120,7 @@ body{
     /* sub-desc 的 margin-bottom 是间距基准，保留；实际空白交给下面的 guide-btn-block margin-top */
     margin-bottom:0;
 }
-/* 新增：使用指南按钮块，承接 sub-desc 下方间距 */
+/* 新增：使用指南按钮，承接 sub-desc 下方间距 */
 .center-btn-block.guide-btn-block {
     margin-top: 30px;
     margin-bottom: 0;
@@ -140,7 +140,7 @@ body{
     margin:0 auto;
     display:flex;
     flex-direction:column;
-    /* 补丁：gap 从 30px 改成 0，去掉 flex 子元素默认 30px 间距 */
+    /* 补丁：gap 从 30px 改成 0，清除 flex 子元素默认 30px 间距 */
     gap:0;
 }
 
@@ -231,7 +231,7 @@ input:checked + .slider:before{
     background:#fcfcfc;
 }
 
-/* 全局普通按钮 */
+/* 全局普通按钮 button 基础样式 */
 button{
     padding:10px 18px;
     border:none;
@@ -260,7 +260,7 @@ button:hover{
     background-color:#666 !important;
 }
 
-/* 新增：游戏卡片每组模块，加一点上下间距，别太挤 */
+/* 新增：游戏卡片每组模块，增加上下间距，解决拥挤 */
 .game-card-block-item{
     margin-bottom:24px;
 }
@@ -277,7 +277,7 @@ button:hover{
     gap:12px;
 }
 
-/* 修复：游戏搜索面板 game-search-box */
+/* 核心修复：游戏搜索面板 game-search-box */
 .game-search-box{
     margin:16px 0;
     display:none; /* 默认隐藏 */
@@ -290,7 +290,7 @@ button:hover{
     background:#fff;
 }
 .game-search-box.active{
-    display:flex; /* 激活恢复 flex，保证 filter-group 正常排列 */
+    display:flex; /* 激活恢复 flex 布局，保证 filter-group 正常排列 */
 }
 .game-search-box input{
     padding:10px;
@@ -388,7 +388,7 @@ button:hover{
     display: flex;
     gap: 4px;
 }
-/* 删：旧 .game-card-hearts .heart 样式，含 font-variant-emoji */
+/* 删除：.game-card-hearts .heart 旧样式，含 font-variant-emoji */
 /* 统一由下面的全局 .heart SVG 样式接管 */
 .game-card-actions {
     display: flex;
@@ -410,7 +410,7 @@ button:hover{
     font-size:14px;
 }
 
-/* 改：游戏开关行间距和单元最小宽度 */
+/* 修改：游戏开关行间距和单元最小宽度 */
 .game-switch-row{
     display: flex;
     align-items: flex-start;
@@ -424,7 +424,7 @@ button:hover{
     align-items: flex-start;
     gap:12px;
     flex: 0 1 auto;
-    min-width:180px; /* 280 → 180，允许收缩，去掉多余空白 */
+    min-width:180px; /* 280 → 180，允许单元收缩，清除多余空白 */
 }
 .game-switch-row span {
     font-size: 14px;
@@ -474,14 +474,14 @@ button:hover{
     margin:10px 0;
 }
 
-/* 改：去掉 justify-content: space-between */
+/* 修改后：移除 justify-content: space-between */
 .game-card-head{
     display:flex;
     align-items:center;
     margin-bottom:12px;
     flex-wrap:wrap;
     gap:10px;
-    /* 删 padding-left:34px，不再内部缩进，按钮向外凸出 */
+    /* 删除 padding-left:34px，不再内部缩进，按钮向外凸出 */
     overflow: visible !important;
 }
 .heart-rate{
@@ -489,7 +489,7 @@ button:hover{
     gap:6px;
     margin:8px 0;
 }
-/* 删：旧 .heart 样式，含 font-family / font-variant-emoji */
+/* 删除：.heart 旧样式，含 font-family / font-variant-emoji */
 /* 统一由下面的全局 .heart SVG 样式接管 */
 
 .game-switch-group{
@@ -659,7 +659,7 @@ button:hover{
     align-items:center;
     justify-content:center;
 }
-/* 图片切换按钮，禁止点击事件冒泡，提高移动端点击权重 */
+/* 图片切换按钮，禁止点击事件冒泡到父卡片的视觉反馈，提高移动端点击权重 */
 .char-switch-btn{
     pointer-events:auto !important;
     touch-action: manipulation;
@@ -749,7 +749,7 @@ button:hover{
 }
 /* 补丁结束 */
 
-/* CP 布局 cp-layout-row，去掉 25% / 75% 固定占比，左右分栏，间距对齐 character */
+/* CP 布局 cp-layout-row，移除 25%｜75% 固定占比，左右分栏，间距对齐 character */
 .cp-group{
     margin:16px 0;
     padding-top:12px;
@@ -937,7 +937,7 @@ input[type="checkbox"] {
     background: transparent;
     border-radius:999px;
 }
-/* 修复：仅 Firefox 渲染伪元素轨道，Chrome/Safari 不生成这一层 */
+/* 关键修复：仅 Firefox 渲染伪元素轨道，Chrome/Safari 不生成这一层 */
 @-moz-document url-prefix() {
     .font-size-set-row input[type="range"] {
         position: relative;
@@ -1026,22 +1026,22 @@ h2{
     color:#666;
     font-weight:normal;
 }
-/* 基础信息文字颜色，常态页面 + 快照统一用 CSS 变量，实时生效 */
+/* 基础信息文字颜色，常态页面 + 快照统一使用 CSS 变量，实时生效 */
 .base-info-item {
     color: var(--export-baseinfotext, #c98fac);
 }
-/* 新增：页面常态下游戏卡片标题用游戏名变量，和快照规则统一 */
+/* 新增：页面常态下游戏卡片标题使用游戏名变量，和快照规则统一 */
 .added-game-card > .game-card-head .game-card-head-title-wrap h3 {
     color: var(--export-gamename, #000000);
 }
-/* 新增：只给三处自定义输出文本绑定自定义文本色，页面常态 + 导出快照共用 */
+/* 新增：仅三处自定义输出文本绑定自定义文本色，页面常态 + 导出快照共用 */
 .game-head-text-output,
 .game-char-text-output,
 .game-cp-text-output {
     color: var(--export-customtext, #c98fac);
 }
 
-/* 移动端适配，已合并到下面统一的 @media (max-width:900px) */
+/* 移动端适配 max-width:768px，已移除并合并到下方统一的 @media (max-width:900px) */
 
 /* 按钮统一：新增游戏按钮与导出图片按钮尺寸对齐 */
 #btn-add-game,
@@ -1084,7 +1084,7 @@ h2{
     gap:10px;
 }
 
-/* 手机端适配已合并到下面统一的 @media (max-width:900px) */
+/* 手机端适配已移除并合并到下方统一的 @media (max-width:900px) */
 
 /* 角色选择面板 item，和游戏选择 item 统一风格，旧废弃面板，保留类备用 */
 .char-select-item{
@@ -1140,7 +1140,7 @@ h2{
     flex-direction:column;
     gap:8px;
 }
-/* 待选女主：完全复制 char-item 样式，加 flex 纵向布局修复高度 */
+/* 待选女主：完全复制 char-item 样式，增加 flex 纵向布局修复高度 */
 .cp-female-card-btn{
     width: 120px;
     min-height:168px;
@@ -1192,15 +1192,15 @@ h2{
     align-items:center;
     justify-content:center;
     word-break:break-word;
-    width: 100%;  /* 补丁：撑满卡片宽度，CP 女主切换按钮定位到名字框左右 */
+    width: 100%;  /* 补丁：撑满卡片宽度，CP 女主切换按钮定位在整个名字框左右 */
 }
-/* 改：加 position:relative，替换原有 cp-male-select-wrap 定义 */
+/* 修改：增加 position:relative，替换原有 cp-male-select-wrap 定义 */
 .cp-male-select-wrap{
     min-height: 180px;
     border:none;
     border-radius:0;
     position: relative;
-    /* 加一点上下间距，隔开列表与按钮 */
+    /* 增加上下间距，隔开列表与按钮 */
     padding-bottom:4px;
 }
 .cp-male-title{
@@ -1213,7 +1213,7 @@ h2{
     gap:12px;
     align-items:stretch;
 }
-/* 待选男主 cp-male-item：照 char-item，flex 纵向布局修复高度 */
+/* 待选男主 cp-male-item：复用 char-item，flex 纵向布局修复高度 */
 .cp-male-item{
     width: 120px;
     min-height:168px;
@@ -1385,7 +1385,7 @@ h2{
     100%{transform:rotate(360deg);}
 }
 
-/* 改：折叠展开按钮移到爱心右边，改成普通 flex 子元素 */
+/* 修改：折叠展开按钮移到爱心右边，改成普通 flex 子元素 */
 .game-fold-icon-expand {
     flex-shrink: 0;
     align-self: center;
@@ -1396,7 +1396,7 @@ h2{
     font-size: 20px;
     color: #b33a3a;
     cursor: pointer;
-    padding: 0 !important;        /* 清全局 button 默认 padding */
+    padding: 0 !important;        /* 清除全局 button 默认 padding */
     line-height: 1;
     width: 28px;
     height: 28px;
@@ -1426,7 +1426,7 @@ h2{
 /* 卡片折叠整体隐藏内容 */
 .added-game-card[data-fold="true"] .game-card-block-item,
 .added-game-card[data-fold="true"] .card-bottom-buttons,
-/* 需求①：折叠时隐藏两个单独显示开关 */
+/* 新增：折叠时隐藏两个单独显示开关 */
 .added-game-card[data-fold="true"] .game-switch-row,
 /* 折叠时同时隐藏独立的自定义文本框 */
 .added-game-card[data-fold="true"] .game-custom-text-wrap {
@@ -1473,7 +1473,7 @@ h2{
     border-color: var(--export-border) !important;
 }
 
-/* 快照模式新增规则，重点 */
+/* 重点：快照模式新增规则 */
 .snapshot-container.export-snapshot {
     --export-bg: #fff7f9;
     --export-title: #b33a3a;
@@ -1561,7 +1561,7 @@ h2{
     padding:16px;
     overflow-y:auto;
     overflow-x:hidden;
-    position: relative; /* 给内部绝对定位 loading 做锚点 */
+    position: relative; /* 为内部绝对定位 loading 提供锚点 */
 }
 .preview-scroll-wrap .preview-img-item {
     display:block;
@@ -1573,7 +1573,7 @@ h2{
     position: relative;
     z-index: 1;
 }
-/* 最后一张图片去掉底部分隔线 */
+/* 最后一张图片移除底部分隔线 */
 .preview-scroll-wrap .preview-img-item:last-child {
     border-bottom:none;
     margin-bottom:0;
@@ -1653,7 +1653,7 @@ h2{
     justify-content: center;
     gap: 20px; /* 加大加载圈与文字间距，避免拥挤裁切 */
     z-index: 2;
-    /* 上下加内边距，防止靠近上下边界被截断 */
+    /* 上下增加内边距，防止靠近上下边界被截断 */
     padding: 40px 20px;
 }
 .preview-inner-loading .loading-spinner {
@@ -1869,11 +1869,11 @@ h2{
     .game-card {
         padding: 14px 8px !important;
     }
-    /* 游戏卡片内部自定义文本框外层容器，去掉多余横向留白 */
+    /* 游戏卡片内部自定义文本框外层容器，消除多余横向留白 */
     .game-custom-text-wrap {
         padding: 0 !important;
     }
-    /* 筛选 select 容器，去掉多余横向间隙，允许 select 尽量占满宽度 */
+    /* 筛选 select 容器，消除多余横向间隙，允许 select 尽量占满宽度 */
     .filter-group {
         gap: 6px !important;
     }
@@ -1947,7 +1947,7 @@ h2{
     height: 24px;
     cursor: ns-resize;
     z-index: 2;
-    /* 删 flex，避免浏览器渲染分歧 */
+    /* 删除 flex，避免浏览器渲染分歧 */
     /* display: flex;
     align-items: flex-end;
     justify-content: flex-end; */
@@ -1965,7 +1965,7 @@ h2{
     right: 0;
     bottom: 0;
 }
-/* 拖拽激活状态 */
+/* 拖拽激活状态样式 */
 .game-custom-text-wrap .resize-handle:active::after {
     opacity: 0.7;
 }
@@ -1978,7 +1978,7 @@ h2{
     .game-custom-text-wrap {
         position: relative;
         overflow: hidden;
-        /* 删 border-radius，全局统一无圆角 */
+        /* 删除 border-radius，全局统一无圆角 */
     }
     .game-custom-text-wrap .resize-handle {
         position: absolute;
