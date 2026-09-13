@@ -179,7 +179,6 @@
 #annual-global-game-modal .annual-modal-header {
     flex-shrink: 0;
 }
-
 /* 新增：游戏弹窗搜索框外层固定容器，不参与滚动 */
 #annual-global-game-modal .annual-modal-search-bar-wrap {
     flex-shrink: 0;
@@ -445,13 +444,11 @@
     --annual-export-labelcolor:#b85878;
     background-color: var(--annual-export-bg, #fff7f9);
 }
-
 /* 新增：年度报告模块标题由小标题文字色控制，含左侧竖线 */
 .mode-wrap[data-mode="annual"] .big-card h2 {
     color: var(--annual-export-subtitle, #b85878);
     border-left-color: var(--annual-export-subtitle, #b85878);
 }
-
 /* 新增：卡片边框色由卡片边框色控制，覆盖 main.css 硬编码 */
 .mode-wrap[data-mode="annual"] .big-card {
     border-color: var(--annual-export-border, #f6a5b8);
@@ -1043,7 +1040,7 @@
     resize: vertical;
 }
 
-/* 年度报告全局角色弹窗 #annual-global-char-modal */
+/* 全局角色弹窗 */
 #annual-global-char-modal,
 #annual-global-cp-modal {
     position: fixed;
@@ -1104,14 +1101,14 @@
     background: #992e2e !important;
     color: #b33a3a !important;
 }
-/* 全局开关组：搜索框上方，默认显示 */
+/* 全局开关：搜索框上方，默认显示 */
 .annual-modal-global-switch-group {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;  /* 和 FavList 主页面 switch-row gap 一致 */
     padding: 0 20px 8px 20px;
 }
-/* CP 弹窗全局开关组：和角色弹窗全局开关组一致，左右 padding 20px 对齐搜索框 margin 20px */
+/* CP 弹窗全局开关：和角色弹窗全局开关组一致，左右 padding 20px 对齐搜索框 margin 20px */
 .annual-cp-global-switch-group {
     display: flex;
     flex-wrap: wrap;
@@ -1129,7 +1126,6 @@
 .annual-modal-global-switch-group > .switch-row {
     margin: 0;
 }
-
 /* 单游戏开关组，默认隐藏；进入角色列表视图才显示 */
 .annual-modal-game-switch-group {
     display: none;
@@ -1225,7 +1221,6 @@
     line-height:1.6;
     color:#333;
 }
-
 /* 搜索命中角色卡片，直接搜索角色名结果，复用二级角色待选 char-item 布局 */
 /* 新增：搜索结果双层子容器：角色结果块、游戏结果块，上下分开排布，互不干扰 */
 .annual-global-char-game-list .search-char-result-wrap {
@@ -1351,7 +1346,6 @@
 .char-modal-charlist-view .annual-modal-game-switch-group { display:flex; }
 .char-modal-charlist-view .annual-global-char-game-list { display:none; }
 .char-modal-charlist-view .annual-global-char-char-list { display:grid; }
-
 /* 新增：CP 弹窗视图切换 */
 .cp-modal-gamelist-view .annual-cp-global-switch-group { display:flex; }
 .cp-modal-gamelist-view .annual-global-cp-search-input { display:block; }
@@ -1364,10 +1358,7 @@
 .cp-modal-femalelist-view .annual-global-cp-game-list { display:none; }
 .cp-modal-femalelist-view .annual-global-cp-female-list { display:grid; }
 
-/* ================================================================ */
 /* 修复：TOP3 行布局、删除按钮、文本框拖拽、移动端封面尺寸 */
-/* ================================================================ */
-
 /* NO.x + 名称 + ×按钮 严格垂直中线对齐 */
 .annual-top-label-row {
     display: flex;
@@ -1428,7 +1419,7 @@
     color: #ffffff !important;
 }
 
-/* 新增：模块折叠头部与按钮 */
+/* 新增：模块折叠按钮 */
 .annual-card-header {
     display: flex;
     align-items: center;
@@ -1465,6 +1456,7 @@
 .big-card.annual-folded .annual-card-body {
     display: none;
 }
+
 /* 年度报告自定义文本框，含拖拽手柄 */
 .annual-custom-text-wrap {
     position: relative;
@@ -1529,6 +1521,7 @@
         height: 16px;
     }
 }
+
 /* 全局板块添加按钮容器，替换原 item 内部 wrap */
 .annual-global-add-game-btn-wrap,
 .annual-global-add-char-btn-wrap {
@@ -1769,10 +1762,7 @@
     background-color: #992e2e;
 }
 
-/* ================================================================ */
 /* CP 弹窗独立 class 样式，复用角色弹窗 .char-item */
-/* ================================================================ */
-
 /* 独立返回按钮：复用 .annual-modal-back-btn 视觉 */
 .annual-cp-modal-back-btn {
     position: absolute;
@@ -1822,7 +1812,7 @@
     flex-shrink: 0;
 }
 
-/* ---------- 女主 block：纯包裹容器，无边框无间距，由 grid gap 控制 ---------- */
+/* 女主 block：纯包裹容器，无边框无间距，由 grid gap 控制 */
 .annual-cp-female-block {
     margin-bottom: 0;
     display: flex;
@@ -1838,7 +1828,7 @@
 .annual-cp-female-block-expanded .char-item {
     max-width: 130px;
 }
-/* ---------- 女主 block 内部男主选择面板 ---------- */
+/* 女主 block 内部男主选择面板 */
 .annual-cp-male-select-wrap {
     margin-top: 16px;
     margin-bottom: 4px;
@@ -1866,10 +1856,7 @@
     box-sizing: border-box;
 }
 
-/* ================================================================ */
 /* 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 */
-/* ================================================================ */
-
 /* ---------- 通用 + 按钮，复用 × 按钮视觉，符号为 + ---------- */
 .annual-grid-add-btn {
     width: 28px;
@@ -1920,8 +1907,7 @@
 .annual-grid-cover-box.filled {
     position: relative;
 }
-
-/* ---------- 五、其他：还玩了圆角长框 ---------- */
+/* 还玩了框 */
 .annual-other-also-box {
     border: 1px solid #eee;
     border-radius: 12px;
@@ -1980,8 +1966,7 @@
     box-sizing: border-box;
 }
 .annual-other-also-remove:hover { background: #992e2e; color: #fff; }
-
-/* ---------- 五、其他：小圆角框 ---------- */
+/* 圆角小卡片 */
 .annual-other-cards-row {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -2113,7 +2098,7 @@
     color: #fff;
 }
 
-/* ---------- 六、七：宫格通用 ---------- */
+/* 六、七：宫格通用 */
 .annual-grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -2137,7 +2122,7 @@
     overflow: visible;
     position: relative;  /* 增加 position:relative */
 }
-/* 游戏宫格封面：竖版比例，高度高于宽度 */
+/* 游戏宫格封面 */
 #annual-game-grid-container .annual-grid-cover-box {
     height: 186px;
 }
@@ -2182,8 +2167,7 @@
     display: block;
 }
 .annual-grid-custom-label:focus { outline: none; border-color: #f6a5b8; }
-
-/* ---------- 宫格底部长文本框 ---------- */
+/* 宫格底部长文本框 */
 .annual-grid-footer-text {
     background: var(--annual-export-boxbg, #fff7f9);  /* 背景色接入 CSS 变量 */
     border: 1px solid #eee;
@@ -2195,7 +2179,7 @@
     font-size: 16px;  /* 增加 font-size:16px */
 }
 
-/* ---------- 移动端适配 ---------- */
+/* 移动端适配 */
 @media (max-width: 768px) {
     .annual-other-cards-row {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -2246,7 +2230,7 @@
     }
 }
 
-/* ---------- 填表人输入行 ---------- */
+/* 填表人输入行 */
 .annual-reporter-row {
     display: flex;
     align-items: center;
