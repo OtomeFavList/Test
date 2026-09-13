@@ -67,7 +67,6 @@
 
 <!-- ========== FavList 模式 wrap ========== -->
 <div class="mode-wrap" data-mode="favlist">
-
     <div class="big-card" id="card-setting">
         <h2>一、设置</h2>
         <div class="switch-row">
@@ -111,7 +110,6 @@
             </div>
         </div>
     </div>
-
     <div class="big-card" id="card-base">
         <h2>二、基础信息</h2>
         <div class="form-row-double">
@@ -135,7 +133,6 @@
             </div>
         </div>
     </div>
-
     <div class="big-card" id="card-game">
         <h2>三、游戏列表</h2>
         <div class="center-btn-block">
@@ -165,7 +162,6 @@
         </div>
         <div id="added-game-container"></div>
     </div>
-
     <div class="big-card" id="card-export">
         <h2>四、导出</h2>
         <div class="switch-row">
@@ -306,44 +302,36 @@
         </div>
         </div><!-- /.annual-card-body -->
     </div>
-    <!-- 独立卡片2：二、ゲームTOP -->
-
     <div class="big-card annual-card-top3">
         <div class="annual-card-header">
             <h2>二、ゲームTOP</h2>
             <button class="annual-card-fold-btn">▲</button>
         </div>
         <div class="annual-card-body">
-        <!-- ✅全局唯一添加游戏按钮，板块顶部，移除每个item内部按钮 -->
+        <!-- 游戏按钮，板块顶部，移除每个item内部按钮 -->
         <div class="annual-global-add-game-btn-wrap center-btn-block">
             <button id="annual-global-add-game-btn" class="annual-add-game-btn">+ 添加游戏</button>
         </div>
-        <!-- 拖拽容器 -->
         <div id="annual-game-top-drag-container">
             <!-- 全部条目由JS动态生成，页面不预置任何annual-top-item -->
         </div>
         </div><!-- /.annual-card-body -->
     </div>
-    <!-- 独立卡片3：三、キャラTOP -->
-
     <div class="big-card annual-card-char-top3">
         <div class="annual-card-header">
             <h2>三、キャラTOP</h2>
             <button class="annual-card-fold-btn">▲</button>
         </div>
         <div class="annual-card-body">
-        <!-- ✅全局唯一添加角色按钮，板块顶部，移除每个item内部按钮 -->
+        <!-- 角色按钮，板块顶部，移除每个item内部按钮 -->
         <div class="annual-global-add-char-btn-wrap center-btn-block">
             <button id="annual-global-add-char-btn" class="annual-add-char-btn">+ 添加角色</button>
         </div>
-        <!-- 角色拖拽容器 -->
         <div id="annual-char-top-drag-container">
             <!-- 全部条目由JS动态生成，页面不预置任何annual-char-top-item -->
         </div>
         </div><!-- /.annual-card-body -->
     </div>
-    <!-- 独立卡片4：四、カップルTOP -->
-
     <div class="big-card annual-card-cp-top3">
         <div class="annual-card-header">
             <h2>四、カップルTOP</h2>
@@ -356,22 +344,18 @@
         <div id="annual-cp-top-drag-container"></div>
         </div><!-- /.annual-card-body -->
     </div>
-
-    <!-- 独立卡片5：五、其他 -->
     <div class="big-card annual-card-other">
         <div class="annual-card-header">
             <h2>五、其他</h2>
             <button class="annual-card-fold-btn">▲</button>
         </div>
         <div class="annual-card-body">
-            <!-- 还玩了：圆角长框 -->
             <div class="annual-other-also-box" id="annual-other-also-box">
                 <div class="annual-other-also-title">还玩了</div>
                 <div class="annual-other-also-content" id="annual-other-also-content">
                     <!-- 空状态＋按钮 / 已添加封面列表 由JS动态渲染 -->
                 </div>
             </div>
-            <!-- 七个圆角框 -->
             <div class="annual-other-cards-row" id="annual-other-cards-row">
                 <div class="annual-other-card">
                     <div class="annual-other-card-title">最喜欢的女主</div>
@@ -391,7 +375,7 @@
                         <button class="annual-grid-add-btn" data-other-action="addFavCp">+</button>
                     </div>
                 </div>
-                <!-- ④自定义角色卡片由JS动态插入到此锚点之前 -->
+                <!-- 自定义角色卡片由JS动态插入到此锚点之前 -->
                 <div class="annual-other-card" id="annual-other-first-text-card">
                     <div class="annual-other-card-title">最喜欢的台词</div>
                     <div class="annual-custom-text-wrap">
@@ -423,8 +407,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 独立卡片6：六、ゲーム宫格 -->
     <div class="big-card annual-card-game-grid">
         <div class="annual-card-header">
             <h2>六、ゲーム宫格</h2>
@@ -441,8 +423,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 独立卡片7：七、キャラ宫格 -->
     <div class="big-card annual-card-char-grid">
         <div class="annual-card-header">
             <h2>七、キャラ宫格</h2>
@@ -459,20 +439,16 @@
             </div>
         </div>
     </div>
-    
-<!-- ========== 导出 ========== -->
 <div class="big-card" id="annual-card-export">
     <div class="annual-card-header">
         <h2>八、导出</h2>
         <button class="annual-card-fold-btn">▲</button>
     </div>
     <div class="annual-card-body">
-    <!-- 填表人 -->
     <div class="annual-reporter-row">
         <span class="text-light-pink">填表人：</span>
         <input type="text" id="annual-reporter-name" placeholder="选填，生成并导出图片时显示在标题右下方">
     </div>
-    <!-- 导出标题开关 -->
     <div class="switch-row">
         <label class="switch">
             <input type="checkbox" id="annual-use-summary-title">
@@ -483,7 +459,6 @@
             <p class="switch-desc">开启后生成并导出的图片标题为 Otome Summary Report，关闭则标题默认为 20XX Otome Annual Report。</p>
         </div>
     </div>
-    <!-- ==========【新增】导出普通画质开关 ========== -->
     <div class="switch-row">
         <label class="switch">
             <input type="checkbox" id="annual-export-normal-quality">
@@ -494,7 +469,6 @@
             <p class="switch-desc">iOS 系统存在对内核与总像素的硬性限制，若使用 IOS 设备渲染失败则建议开启，总像素低、图片未超出上限时便可成功生成并导出。</p>
         </div>
     </div>
-    <!-- 恢复默认设置按钮 -->
     <div class="center-btn-block left-align-btn">
         <button id="annual-btn-reset-color">恢复默认设置</button>
     </div>
@@ -508,17 +482,16 @@
             <label class="text-light-pink">标题文字色</label>
             <input type="color" id="annual-color-title" value="#b33a3a">
         </div>
-        <!-- ✅新增：小标题文字色（控制TOP模块标题+NO标签） -->
+        <!-- 新增：小标题文字色（控制TOP标题NO标签） -->
         <div class="color-item">
             <label class="text-light-pink">小标题文字色</label>
             <input type="color" id="annual-color-subtitle" value="#b85878">
         </div>
-        <!-- ✅新增：数据统计文字色（控制"年度/游玩总数"等标签） -->
+        <!-- 新增：数据统计文字色（控制年度/游玩总数等标签） -->
         <div class="color-item">
             <label class="text-light-pink">数据统计文字色</label>
             <input type="color" id="annual-color-stattext" value="#b85878">
         </div>
-        <!-- 数据统计数据色 -->
         <div class="color-item">
             <label class="text-light-pink">数据统计数据色</label>
             <input type="color" id="annual-color-statdata" value="#b33a3a">
@@ -531,7 +504,6 @@
             <label class="text-light-pink">自定义文本色</label>
             <input type="color" id="annual-color-customtext" value="#c98fac">
         </div>
-        <!-- 自定义文本边框色 -->
         <div class="color-item">
             <label class="text-light-pink">自定义文本边框色</label>
             <input type="color" id="annual-color-customborder" value="#eeeeee">
@@ -558,7 +530,6 @@
         <div id="annual-custom-text-font-value" class="font-size-value-display">16px</div>
         <input id="annual-slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
     </div>
-    <!-- 导出尺寸：仅长图三选一，name独立避免与FavList的export-size冲突 -->
     <div class="size-select">
         <label class="text-light-pink">导出尺寸：</label>
         <label><input type="radio" name="annual-export-size" value="long-640">640长图</label>
@@ -572,7 +543,7 @@
     </div><!-- /.annual-card-body -->
 </div>
 
-<!-- ✅新增：annual模式悬浮滚动按钮（复用.float-scroll-btn样式，逻辑独立） -->
+<!-- 新增：annual模式悬浮滚动按钮（复用.float-scroll-btn样式，逻辑独立） -->
 <button id="annual-back-to-top-btn" class="float-scroll-btn back-to-add">▲</button>
 <button id="annual-scroll-to-bottom-btn" class="float-scroll-btn scroll-last-card">▼</button>
 
@@ -583,7 +554,6 @@
             或有希望新增的作品，欢迎通过邮箱联系。</p>
         <p class="email-text">Email：<a href="mailto:otomefavlist@163.com">otomefavlist@163.com</a></p>
 </div>
-    
 <!-- ========== 年度报告模式 wrap 结束 ========== -->
 
 </div> <!-- .wrap 结束 -->
