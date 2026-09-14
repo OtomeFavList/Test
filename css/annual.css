@@ -2327,11 +2327,11 @@
     flex-direction: column;
     gap: 10px;
 }
-/* 月份小标题 */
+/* 月份标签 */
 .annual-monthly-label {
     font-size: 18px;
     font-weight: bold;
-    color: var(--annual-export-subtitle, #b85878);
+    color: var(--annual-export-labelcolor, #b85878);
     line-height: 1.4;
 }
 /* 时长输入框 */
