@@ -23,6 +23,7 @@ const annualExportDefault = {
     useOshiTitle: false,          // 新增：宫格小标题使用推しゲーム & 推しキャラ
     normalQuality: false,
     labelColor: "#b85878",        // 修改：标签文字色
+    barColor: "#e895a8",          // 新增：模块八九月度总结柱状条色
     boxBgColor: "#fff7f9",        // 修改：内容框背景色
     reporterName: "",             // 修改：填表人姓名
     reporterColor: "#b33a3a"      // 修改：填表人文字色
@@ -42,7 +43,8 @@ function loadAnnualExportConfig() {
     }
     // input[type=color] 只接受 #rrggbb 六位格式，旧数据中存的 #eee 三位简写会被移动端浏览器回退为黑色 #000000
     // 修改：扩展到新字段
-    ['customborder', 'labelColor', 'boxBgColor', 'reporterColor'].forEach(key => {
+    // 新增：barColor 到三位色修复数组
+    ['customborder', 'labelColor', 'barColor', 'boxBgColor', 'reporterColor'].forEach(key => {
         if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
             config[key] = "#" + config[key][1].repeat(2)
                          + config[key][2].repeat(2)
@@ -2202,6 +2204,7 @@ function bindAnnualExportPanel() {
     const colorCustomborder = document.getElementById("annual-color-customborder");
     // 新增：控件元素引用
     const colorLabelcolor = document.getElementById("annual-color-labelcolor");
+    const colorBarcolor = document.getElementById("annual-color-barcolor");  // 新增
     const colorBoxbg = document.getElementById("annual-color-boxbg");
     const colorReportercolor = document.getElementById("annual-color-reportercolor");
     const reporterNameInput = document.getElementById("annual-reporter-name");
@@ -2230,6 +2233,7 @@ function bindAnnualExportPanel() {
     colorCustomborder.value = annualExportConfig.customborder;
     // 修改：新字段初始化
     if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
+    if (colorBarcolor) colorBarcolor.value = annualExportConfig.barColor;  // 新增
     if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
     if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
     if (reporterNameInput) reporterNameInput.value = annualExportConfig.reporterName || "";
@@ -2271,6 +2275,7 @@ function bindAnnualExportPanel() {
         colorCustomborder.value = annualExportConfig.customborder;
         // 修改：重置按钮更新新字段
         if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
+        if (colorBarcolor) colorBarcolor.value = annualExportConfig.barColor;  // 新增
         if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
         if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
         if (reporterNameInput) reporterNameInput.value = annualExportConfig.reporterName || "";
@@ -2357,6 +2362,13 @@ function bindAnnualExportPanel() {
         colorLabelcolor.oninput = () => {
             annualExportConfig.labelColor = colorLabelcolor.value;
             annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
+            saveAnnualExportConfig();
+        };
+    }
+    // 新增：柱状条色
+    if (colorBarcolor) {
+        colorBarcolor.oninput = () => {
+            annualExportConfig.barColor = colorBarcolor.value;
             saveAnnualExportConfig();
         };
     }
