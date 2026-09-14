@@ -1,4 +1,4 @@
-// ===================== export-canvas-render.js =====================
+// export-canvas-render.js
 // 纯 Canvas 绘制导出图，数据驱动，无 DOM 依赖
 import {
   LAYOUT_SPACE,
@@ -9,16 +9,13 @@ import {
   convertR2ToJsDelivr,
   getCharDisplayName,
   getCharNameList,
-  getCharShowHide  // ✅补丁新增
+  getCharShowHide  // 新增
 } from './main.js';
 
 // 最大并发图片加载数量，降低并发减少移动端解码资源竞争
 const MAX_IMAGE_CONCURRENCY = 4;
-// ===================== 【补丁新增：渲染进度上报 开始】 =====================
-/**
- * 派发渲染进度事件，percent:0~100
- * 不修改原有业务逻辑，仅向外抛出自定义事件供UI层展示
- */
+// 新增：渲染进度上报 开始
+// 派发渲染进度事件，percent:0~100
 function emitRenderProgress(percent) {
   const evt = new CustomEvent('canvas-render-progress', {
     detail: {
@@ -27,20 +24,20 @@ function emitRenderProgress(percent) {
   });
   window.dispatchEvent(evt);
 }
-// ===================== 【补丁新增：渲染进度上报 结束】 =====================
+// 渲染进度上报 结束
 
-//【IOS环境检测：Safari / iOS Chrome(WebKit内核)】
+// IOS 环境检测：Safari / iOS Chrome(WebKit 内核)
 const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-//【优化】圆角离屏画布缓存：key = `${url}||${sourceW}x${sourceH}||${radius}||${dpr}`
+// 圆角离屏画布缓存：key = `${url}||${sourceW}x${sourceH}||${radius}||${dpr}`
 const roundImageCache = new Map();
 // 新增：图片资源缓存，区分 ImageBitmap / HTMLImageElement 降级对象
 const rawImageResourceCache = new Map();
 
-// ========== 字体规范 ==========
+// 字体规范
 const FONT_SIYUAN = "Noto Sans SC, sans-serif";
 
-// ============================ 固定 DPR = 2 ============================
+// 固定 DPR = 2
 let currentDPR = 2;
 
 function getExportDPR(width) {
@@ -52,14 +49,14 @@ export function setCurrentDPR(dpr) {
   currentDPR = dpr || 2;
 }
 
-// ============================ 工具函数 ============================
+// 工具函数
 
 export function wrapText(ctx, text, x, y, maxWidth, lineHeight, fontSize, color, font = FONT_SIYUAN, bold = false) {
   if (!text) return 0;
   const fontStr = bold ? `bold ${fontSize}px ${font}` : `${fontSize}px ${font}`;
   ctx.font = fontStr;
   ctx.fillStyle = color;
-  // ==========【新增补丁】行空隙上限12px ==========
+  // 新增：行空隙上限 12px
   const gap = Math.min(lineHeight - fontSize, 12);
   const safeLineHeight = fontSize + gap;
   const chars = Array.from(text);
@@ -67,14 +64,14 @@ export function wrapText(ctx, text, x, y, maxWidth, lineHeight, fontSize, color,
   let totalHeight = 0;
   for (let n = 0; n < chars.length; n++) {
     const ch = chars[n];
-    // ✅新增：遇到手动换行符 \n 时强制换行
+    // 遇到手动换行符 \n 时强制换行
     if (ch === '\n') {
       ctx.fillText(line, x, y + totalHeight);
       line = '';
       totalHeight += safeLineHeight;
       continue;
     }
-    // ✅新增：遇到 \r 时强制换行，兼容 \r\n（跳过紧随的 \n）
+    // 遇到 \r 时强制换行，兼容 \r\n（跳过紧随的 \n）
     if (ch === '\r') {
       if (chars[n + 1] === '\n') {
         n++;
@@ -106,7 +103,7 @@ export function measureWrappedHeight(ctx, text, maxWidth, lineHeight, fontSize, 
   if (!text) return 0;
   const fontStr = bold ? `bold ${fontSize}px ${FONT_SIYUAN}` : `${fontSize}px ${FONT_SIYUAN}`;
   ctx.font = fontStr;
-  // ==========【新增补丁】行空隙上限12px，和绘制逻辑保持一致 ==========
+  // 行空隙上限 12px，和绘制逻辑保持一致
   const gap = Math.min(lineHeight - fontSize, 12);
   const safeLineHeight = fontSize + gap;
   const chars = Array.from(text);
@@ -114,13 +111,13 @@ export function measureWrappedHeight(ctx, text, maxWidth, lineHeight, fontSize, 
   let lines = 1;
   for (let n = 0; n < chars.length; n++) {
     const ch = chars[n];
-    // ✅新增：遇到手动换行符 \n 时强制换行
+    // 遇到手动换行符 \n 时强制换行
     if (ch === '\n') {
       lines++;
       line = '';
       continue;
     }
-    // ✅新增：遇到 \r 时强制换行，兼容 \r\n
+    // 遇到 \r 时强制换行，兼容 \r\n
     if (ch === '\r') {
       if (chars[n + 1] === '\n') {
         n++;
@@ -142,18 +139,16 @@ export function measureWrappedHeight(ctx, text, maxWidth, lineHeight, fontSize, 
   return lines * safeLineHeight;
 }
 
-/**
- * 离屏画布生成圆角图片，增加判空、清理和异常捕获
+/* 离屏画布生成圆角图片，增加判空、清理和异常捕获
  * 兼容 ImageBitmap / HTMLImageElement，修复移动端 scale+clip 空洞问题
- * 移除 visualW/visualH 参数，缓存只依赖于原图尺寸、圆角半径和 DPR
- */
+ * 移除 visualW/visualH 参数，缓存只依赖于原图尺寸、圆角半径和 DPR */
 function createRoundImageCanvas(img, srcUrl, radius) {
   if (!img) return null;
   const sourceW = (img.naturalWidth ?? img.width) || 1;
   const sourceH = (img.naturalHeight ?? img.height) || 1;
   if (sourceW <= 0 || sourceH <= 0) return null;
   const dpr = currentDPR;
-  // =========【补丁3‑1】仅IOS安全熔断：单张离屏画布像素上限阈值，超过直接不生成缓存，走实时clip降级 ==========
+  // 仅 IOS 安全熔断：单张离屏画布像素上限阈值，超过直接不生成缓存，走实时 clip 降级
   if(IS_IOS_WEBKIT){
     const MAX_OFFSCREEN_PX = 4096 * 4096;
     const pxTotal = (sourceW * dpr) * (sourceH * dpr);
@@ -194,7 +189,7 @@ function createRoundImageCanvas(img, srcUrl, radius) {
     offCtx.restore();
   } catch (e) {
     console.warn("离屏画布绘制异常", srcUrl, e);
-    // =========【补丁3‑2】异常时销毁失败画布，不要留在内存 ==========
+    // 异常时销毁失败画布，不要留在内存
     offCanvas.width = 0;
     offCanvas.height = 0;
     return null;
@@ -203,15 +198,8 @@ function createRoundImageCanvas(img, srcUrl, radius) {
   return offCanvas;
 }
 
-// ============================================================
-// 预生成所有圆角画布函数（放在 loadImagesWithLimit 上方）
-// ============================================================
-/**
- * 根据图片缓存，预生成所有需要用到的圆角离屏画布
- * 提前一次性全部生成，绘制阶段不再实时计算
- * @param {Map<string, ImageBitmap>} imageCache
- * @param {Array<{src:string, radius:number}>} roundTaskList
- */
+// 根据图片缓存，预生成所有需要用到的圆角离屏画布
+// 提前一次性全部生成，绘制阶段不再实时计算
 async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
   // 去重任务，只保留 src 和 radius
   const taskMap = new Map();
@@ -243,19 +231,19 @@ async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
     // IOS加大离屏画布生成间隔，缓解GPU队列拥堵
     const delayMs = IS_IOS_WEBKIT ? 30 : 12;
     await new Promise(r => setTimeout(r, delayMs));
-    // ===================== 【补丁新增：圆角画布阶段进度】 =====================
+    // 圆角画布阶段进度
     roundTaskIndex += 1;
     if(totalRoundTask > 0){
       // 图片加载占45，本阶段区间：45 ~ 60
       const roundStagePercent = 45 + (roundTaskIndex / totalRoundTask) * 15;
       emitRenderProgress(roundStagePercent);
     }
-    // ===================== 补丁结束 =====================
+    // 补丁结束
   }
   // 多层帧等待，低性能移动端充分刷新渲染队列
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => setTimeout(r, 50));
-  // =========【补丁7】仅IOS：限制圆角离屏缓存最大数量，防止IOS内存爆炸 ==========
+  // 仅 IOS：限制圆角离屏缓存最大数量，防止 IOS 内存爆炸
   if(IS_IOS_WEBKIT){
     const MAX_ROUND_CACHE = 80;
     if(roundImageCache.size > MAX_ROUND_CACHE){
@@ -272,10 +260,8 @@ async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
   }
 }
 
-// ============================================================
 // 重写 loadImagesWithLimit：增加重试、尺寸校验、帧等待
 // 移动端容错模式：失败图片不阻断渲染，控制台警告
-// ============================================================
 async function loadImagesWithLimit(urlList, limit) {
   const uniqueUrls = [...new Set(urlList)];
   const resultMap = new Map();
@@ -322,21 +308,21 @@ async function loadImagesWithLimit(urlList, limit) {
       if (resultMap.has(url)) continue;
       const bitmap = await loadSingleUrl(url);
       resultMap.set(url, bitmap);
-      // ===================== 【补丁新增：图片加载阶段进度】 =====================
+      // 图片加载阶段进度
       const doneCount = resultMap.size;
       const totalImg = uniqueUrls.length;
       if(totalImg > 0){
         const imgStagePercent = (doneCount / totalImg) * 45;
         emitRenderProgress(imgStagePercent);
       }
-      // ===================== 补丁结束 =====================
+      // 补丁结束
     }
   }
 
   const workers = Array.from({ length: limit }, worker);
   await Promise.all(workers);
 
-  // ==========【移动端容错模式】失败图片不阻断渲染 ==========
+  // 移动端容错模式：失败图片不阻断渲染
   const failList = [];
   for (const [u, val] of resultMap.entries()) {
     if (!val) failList.push(u);
@@ -356,7 +342,7 @@ async function loadImagesWithLimit(urlList, limit) {
   return returnObj;
 }
 
-// ============================ Canvas 布局绘制器 ============================
+// Canvas 布局绘制器
 
 export class CanvasLayoutPainter {
   constructor(canvas, designWidth, designHeight, bgColor) {
@@ -530,7 +516,7 @@ export class CanvasLayoutPainter {
   }
 }
 
-// ============================ 高度计算辅助 ============================
+// 高度计算辅助
 
 function calcCharCardHeight(ctx, charName, cardWidth, fontSize = 14) {
   const innerPad = LAYOUT_SPACE.CHAR_CARD_INNER_PADDING;
@@ -551,7 +537,7 @@ function calcCharAreaHeight(ctx, charItems, containerWidth, cardWidth, gap, font
   const rows = Math.ceil(charItems.length / cardsPerRow);
   let maxCardHeight = LAYOUT_SPACE.CHAR_CARD_MIN_H;
   charItems.forEach(item => {
-    const h = calcCharCardHeight(ctx, item.displayName || item.name, cardWidth, fontSize);  // ✅补丁
+    const h = calcCharCardHeight(ctx, item.displayName || item.name, cardWidth, fontSize);  // 补丁
     if (h > maxCardHeight) maxCardHeight = h;
   });
   let height = rows * maxCardHeight + (rows - 1) * gap;
@@ -561,7 +547,7 @@ function calcCharAreaHeight(ctx, charItems, containerWidth, cardWidth, gap, font
   return { height, rows, maxCardHeight };
 }
 
-// ============================ 预计算高度（用于分页） ============================
+// 预计算高度（用于分页）
 
 function calcHeaderVirtualHeight(targetWidth, appData) {
   const { baseInfo } = appData;
@@ -599,13 +585,13 @@ function calcHeaderVirtualHeight(targetWidth, appData) {
   }
 
   cursorY += LAYOUT_SPACE.WRAP_GAP;
-  // ==========【补丁2‑1】用完销毁虚拟画布，释放IOS显存 ==========
+  // 用完销毁虚拟画布，释放 IOS 显存
   virtualCanvas.width = 0;
   virtualCanvas.height = 0;
   return cursorY;
 }
 
-// ========== 【修改后】测量游戏标题行（含爱心）高度，自动处理名称换行 + 爱心换行 ==========
+// 测量游戏标题行（含爱心）高度，自动处理名称换行 + 爱心换行
 function measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameName) {
   const nameFontSize = 22;
   const HEART_SIZE = 26;
@@ -614,7 +600,7 @@ function measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameName) {
   const fontStr = `bold ${nameFontSize}px ${FONT_SIYUAN}`;
   vCtx.font = fontStr;
   const textMaxWidth = gameCardW - cardInnerPad * 2;
-  // 【新增】先测量游戏名称自动换行高度
+  // 先测量游戏名称自动换行高度
   const nameLineHeight = nameFontSize * 1.3;
   const nameWrapHeight = measureWrappedHeight(vCtx, gameName, textMaxWidth, nameLineHeight, nameFontSize, true);
 
@@ -635,7 +621,7 @@ function measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameName) {
   return totalTitleHeight;
 }
 
-// ============================ 【修改后】calcSingleGameBlockHeight ============================
+// calcSingleGameBlockHeight
 function calcSingleGameBlockHeight(targetWidth, renderData) {
   const { gameInfo, charItems, cpItems, gameItem } = renderData;
   const virtualCanvas = document.createElement('canvas');
@@ -651,15 +637,15 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
   const gameCardW = wrapW;
   const textMaxW = gameCardW - cardInnerPad * 2;
 
-  // =========【修改：读取自定义导出文本字号，默认16px】=========
+  // 读取自定义导出文本字号，默认 16px
   const textSize = renderData.appData.exportCustomTextFontSize ?? 16;
   const lineHeight = textSize * 1.45;
 
-  // =========【修改：动态计算标题高度】=========
+  // 动态计算标题高度
   const nameHeight = measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameInfo.name);
   const HEART_AREA_HEIGHT = 0;
 
-  // =========【补丁：固定间隔，间隔不再随字号变化】=========
+  // 固定间隔，间隔不再随字号变化
   const FIX_GAMEHEAD_TOP = -5;
   const FIX_GAMEHEAD_BOTTOM = 12;
   const FIX_CHARSEC_TOP = 14;
@@ -718,10 +704,10 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
     const maleContainerWidth = (gameCardW - cardInnerPad * 2) - femaleCardWidth - colGap;
 
     for (const cp of cpItems) {
-      const fHeight = calcCharCardHeight(vCtx, cp.femaleDisplayName || cp.femaleName, femaleCardWidth, 14);  // ✅补丁
+      const fHeight = calcCharCardHeight(vCtx, cp.femaleDisplayName || cp.femaleName, femaleCardWidth, 14);  // 补丁
       let maxMaleH = LAYOUT_SPACE.CHAR_CARD_MIN_H;
       cp.maleItems.forEach(m => {
-        const h = calcCharCardHeight(vCtx, m.displayName || m.name, maleCardWidth, 14);  // ✅补丁
+        const h = calcCharCardHeight(vCtx, m.displayName || m.name, maleCardWidth, 14);  // 补丁
         if (h > maxMaleH) maxMaleH = h;
       });
       const perRow = calcCardsPerRow(maleCardWidth, maleGap, maleContainerWidth);
@@ -734,7 +720,7 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
     cpAreaHeight = totalCpHeight;
   }
 
-  // =========【修改：叠加三处自定义文本高度】=========
+  // 叠加三处自定义文本高度
   const totalCardH = cardInnerPad * 2
     + nameHeight + HEART_AREA_HEIGHT
     + headTextHeight
@@ -742,7 +728,7 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
     + charSectionTextHeight
     + cpAreaHeight
     + cpSectionTextHeight;
-  // ==========【补丁2‑2】测量完成销毁虚拟画布 ==========
+  // 测量完成销毁虚拟画布
   virtualCanvas.width = 0;
   virtualCanvas.height = 0;
   return totalCardH;
@@ -861,7 +847,7 @@ function splitPagesByHeight(headerHeight, gameBlockHeights, maxH) {
   return pages;
 }
 
-// ============================ 绘制函数 ============================
+// 绘制函数
 
 async function drawHeaderBlock(painter, targetWidth, appData) {
   const { exportColor, baseInfo } = appData;
@@ -871,7 +857,7 @@ async function drawHeaderBlock(painter, targetWidth, appData) {
   const wrapW = Math.min(WRAP_MAX_W, targetWidth - BODY_PAD * 2);
   const wrapX = Math.max(BODY_PAD, (targetWidth - wrapW) / 2);
 
-  // ✅大标题在"画布上沿→第一个框上沿"区域内垂直居中
+  // 大标题在"画布上沿→第一个框上沿"区域内垂直居中
   const titleAreaH = LAYOUT_SPACE.BODY_PADDING + 42 + (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
   const titleY = (titleAreaH - 42) / 2;
   painter.drawTextCenter('Otome FavList', targetWidth / 2, titleY, 42, exportColor.title, 'sans-serif', true);
@@ -922,7 +908,7 @@ async function drawHeaderBlock(painter, targetWidth, appData) {
   }
 }
 
-// ============================ 【修改后】drawSingleGameCard ============================
+// drawSingleGameCard
 async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, isLastCard = false) {
   const { gameInfo, charItems, cpItems, gameItem } = renderData;
   const { exportColor } = renderData.appData || {};
@@ -974,10 +960,10 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     const maleContainerWidth = (gameCardW - cardInnerPad * 2) - femaleCardWidth - colGap;
 
     for (const cp of cpItems) {
-      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleDisplayName || cp.femaleName, femaleCardWidth, 14);  // ✅补丁
+      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleDisplayName || cp.femaleName, femaleCardWidth, 14);  // 补丁
       let maxMaleH = LAYOUT_SPACE.CHAR_CARD_MIN_H;
       cp.maleItems.forEach(m => {
-        const h = calcCharCardHeight(painter.ctx, m.displayName || m.name, maleCardWidth, 14);  // ✅补丁
+        const h = calcCharCardHeight(painter.ctx, m.displayName || m.name, maleCardWidth, 14);  // 补丁
         if (h > maxMaleH) maxMaleH = h;
       });
       const perRow = calcCardsPerRow(maleCardWidth, maleGap, maleContainerWidth);
@@ -996,7 +982,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     LAYOUT_STYLE.GAME_CARD_RADIUS,
     '#ffffff',
     exportColor.border,
-    2  // ✅大边框1px→2px，与annual模块大边框一致
+    2  // 大边框1px→2px，与annual模块大边框一致
   );
 
   let drawY = cardTop + cardInnerPad;
@@ -1004,7 +990,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
   const nameX = cardX + cardInnerPad;
   const nameBaselineY = drawY;
 
-  // ========== 【修改】绘制游戏标题，自动换行 ==========
+  // 绘制游戏标题，自动换行
   const usedNameHeight = wrapText(
     painter.ctx,
     gameInfo.name,
@@ -1046,11 +1032,11 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     );
   }
 
-  // ========== 【关键】drawY 移动真实总标题高度 ==========
+  // drawY 移动真实总标题高度
   const totalTitleHeight = measureGameTitleWithHeartHeight(painter.ctx, cardX, gameCardW, gameInfo.name);
   drawY += totalTitleHeight;
 
-  // ========== 绘制【游戏标题爱心下方自定义文字】 ==========
+  // 绘制游戏标题爱心下方自定义文字
   if (renderData.gameItem.gameHeadText?.trim()) {
       const FIX_GAMEHEAD_TOP = -5;
       const FIX_GAMEHEAD_BOTTOM = 12;
@@ -1120,7 +1106,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
           }
         }
         if (!roundCanvas) {
-          // =========【补丁4】降级clip分支强制try-finally保证restore ==========
+          // 降级 clip 分支强制 try-finally 保证 restore
           painter.ctx.save();
           try {
             painter.ctx.beginPath();
@@ -1149,7 +1135,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       const needDrawName = !(item.isHidden || item.isFD) || renderData.appData.exportShowHiddenFDName;
       if (needDrawName) {
         painter.drawTextWrapCenterInBox(
-          item.displayName || item.name,  // ✅补丁：使用用户选择的显示名
+          item.displayName || item.name,  // 补丁：使用用户选择的显示名
           xPos + innerPad,
           nameBoxY,
           cardW - innerPad * 2,
@@ -1168,7 +1154,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     drawY = yPos + charCardHeight;
   }
 
-  // ========== 绘制【Character区域下方自定义文字】 ==========
+  // 绘制 Character 区域下方自定义文字
   if (renderData.gameItem.charSectionText?.trim()) {
       const FIX_CHARSEC_TOP = 14;
       const FIX_CHARSEC_BOTTOM = 6;
@@ -1214,13 +1200,13 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     const imgSize = femaleCardW - innerPad * 2;
 
     for (const cp of cpItems) {
-      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleDisplayName || cp.femaleName, femaleCardW, 14);  // ✅补丁
+      const fHeight = calcCharCardHeight(painter.ctx, cp.femaleDisplayName || cp.femaleName, femaleCardW, 14);  // 补丁
       const maleContainerW = (gameCardW - cardInnerPad * 2) - femaleCardW - colGap;
       const perRow = calcCardsPerRow(maleCardW, maleGap, maleContainerW);
       const maleRows = Math.ceil(cp.maleItems.length / perRow);
       let maxMaleH = LAYOUT_SPACE.CHAR_CARD_MIN_H;
       cp.maleItems.forEach(m => {
-        const h = calcCharCardHeight(painter.ctx, m.displayName || m.name, maleCardW, 14);  // ✅补丁
+        const h = calcCharCardHeight(painter.ctx, m.displayName || m.name, maleCardW, 14);  // 补丁
         if (h > maxMaleH) maxMaleH = h;
       });
       const rowH = Math.max(fHeight, maxMaleH);
@@ -1274,7 +1260,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       const fNameBoxY = femaleY + innerPad + imgSize + LAYOUT_SPACE.CHAR_IMG_BOX_MB;
       const fNameBoxH = rowH - (innerPad + imgSize + LAYOUT_SPACE.CHAR_IMG_BOX_MB) - innerPad;
       painter.drawTextWrapCenterInBox(
-        cp.femaleDisplayName || cp.femaleName,  // ✅补丁
+        cp.femaleDisplayName || cp.femaleName,  // 补丁
         femaleX + innerPad,
         fNameBoxY,
         femaleCardW - innerPad * 2,
@@ -1338,7 +1324,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
         const needDrawName = !(m.isHidden || m.isFD) || renderData.appData.exportShowHiddenFDName;
         if (needDrawName) {
           painter.drawTextWrapCenterInBox(
-            m.displayName || m.name,  // ✅补丁
+            m.displayName || m.name,  // 补丁
             mx + innerPad,
             mNameBoxY,
             maleCardW - innerPad * 2,
@@ -1355,11 +1341,11 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
         }
       }
       drawY = my + rowH;
-      // ----- 移除多余固定留白，消除couple有无文字时上下间距不一致问题 -----
+      // 移除多余固定留白，消除 couple 有无文字时上下间距不一致问题
     }
   }
 
-  // ========== 绘制【Couple区域下方自定义文字】 ==========
+  // 绘制 Couple 区域下方自定义文字
   if (renderData.gameItem.cpSectionText?.trim()) {
       const FIX_CPSEC_TOP = 14;
       const FIX_CPSEC_BOTTOM = 0; // couple自定义文本底部无额外间距
@@ -1415,7 +1401,7 @@ async function drawFullContent(
     const data = renderDataList[idx];
     const isLast = (i === gameIndexList.length - 1);
     await drawSingleGameCard(painter, targetWidth, data, imageCache, isLast);
-    // ===================== 【补丁新增：绘制阶段进度 长图/分页共用】 =====================
+    // 绘制阶段进度 长图/分页共用
     const drawDone = i + 1;
     const drawTotal = gameIndexList.length;
     if(drawTotal > 0){
@@ -1423,7 +1409,7 @@ async function drawFullContent(
       const drawPercent = 60 + (drawDone / drawTotal) * 40;
       emitRenderProgress(drawPercent);
     }
-    // ===================== 补丁结束 =====================
+    // 补丁结束
   }
 }
 
@@ -1444,7 +1430,7 @@ function cropCanvas(sourceCanvas, designW, designH) {
   return cropped;
 }
 
-// ============================ 长图高度计算 ============================
+// 长图高度计算
 
 function calcTotalVirtualHeight(targetWidth, appData, gameTemplateList, renderDataList) {
   const headerH = calcHeaderVirtualHeight(targetWidth, appData);
@@ -1462,7 +1448,7 @@ function calcTotalVirtualHeight(targetWidth, appData, gameTemplateList, renderDa
   return total;
 }
 
-// ============================ 主渲染函数 ============================
+// 主渲染函数
 
 export async function renderExportCanvas(
   targetWidth,
@@ -1474,7 +1460,7 @@ export async function renderExportCanvas(
 ) {
   const { exportColor, gameList } = appData;
   currentDPR = dpr || getExportDPR(targetWidth);
-  // ==========【补丁1】仅IOS：释放ImageBitmap资源，避免IOS内存泄漏 ==========
+  // 仅 IOS：释放 ImageBitmap 资源，避免 IOS 内存泄漏
   if(IS_IOS_WEBKIT){
     for (const [k, res] of rawImageResourceCache.entries()) {
       if(res?.type === 'bitmap' && res.data && typeof res.data.close === 'function'){
@@ -1500,37 +1486,37 @@ export async function renderExportCanvas(
     const globalFD = appData.globalFD;
     const localHide = gameItem.localHideChar;
     const localFD = gameItem.localFD;
-    // ✅新增次要角色开关
+    // 新增次要角色开关
     const showSub = appData.globalSubChar || (gameItem.localSubChar ?? false);
-    // ✅补丁新增：续作/FD次要角色开关
+    // 新增：续作/FD 次要角色开关
     const showFdSub = appData.globalFdSubChar || (gameItem.localFdSubChar ?? false);
     const charItems = [];
     if (Array.isArray(gameItem.selectChars)) {
       for (const cid of gameItem.selectChars) {
         const char = gameInfo.charList?.find(c => c.id === cid);
         if (!char) continue;
-        // ========== ✅改为OR逻辑：统一过滤，角色有多个状态true时任一对应开关开启即显示 ==========
+        // 改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
         const isSub = char.isSub ?? false;
         const isHidden = !!char.isHidden;
         const isFD = !!char.isFD;
         const isFdSub = !!char.isFdSub;
         // 普通角色（无任何特殊标记）直接保留
         if (isSub || isHidden || isFD || isFdSub) {
-            // ✅修复：隐藏/FD可见性判断必须包含局部开关，与页面getAllGameChar逻辑一致
+            // 修复：隐藏/FD 可见性判断必须包含局部开关，与页面 getAllGameChar 逻辑一致
             const pass = (isSub && showSub) || (isHidden && (globalHide || localHide)) || (isFD && (globalFD || localFD)) || (isFdSub && showFdSub);
             if (!pass) continue;
         }
-        // ========== 修改结束 ==========
+        // 修改结束
         const avail = getAvailableCharImages(char, globalHide, globalFD, localHide, localFD);
         let allSrc = [];
         avail.forEach(u => allSrc.push(...u.srcList));
         if (allSrc.length === 0) continue;
         const stored = gameItem.selectCharItems?.find(s => s.charId === cid);
         const idx = Number(stored?.imgIndex ?? 0);
-        const nameIdx = Number(stored?.nameIndex ?? 0);  // ✅补丁新增
+        const nameIdx = Number(stored?.nameIndex ?? 0);  // 新增
         const src = allSrc[idx] || allSrc[0];
         const canvasSrc = convertR2ToJsDelivr(src);
-        // =========【修改点A-1】防火墙：禁止空值、非http、R2 pub地址、github raw地址进入图片队列 ==========
+        // 防火墙：禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
         const isBlockedUrl = (!canvasSrc)
           || (!canvasSrc.startsWith('http'))
           || canvasSrc.startsWith('https://pub-')
@@ -1539,13 +1525,13 @@ export async function renderExportCanvas(
           console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasSrc);
           continue;
         }
-        // ✅补丁修改：多名字显示名，隐藏开关或FD开关（角色isFD时）任一开启即显示隐藏名
+        // 多名字显示名，隐藏开关或 FD 开关（角色 isFD 时）任一开启即显示隐藏名
         const showHide = getCharShowHide(char, globalHide, localHide, globalFD, localFD);
         const displayName = getCharDisplayName(char, nameIdx, showHide) || char.name || "";
         charItems.push({
           id: char.id,
           name: char.name,
-          displayName: displayName,  // ✅补丁新增
+          displayName: displayName,  // 新增
           src: canvasSrc,
           isHidden: !!char.isHidden,
           isFD: !!char.isFD
@@ -1564,10 +1550,10 @@ export async function renderExportCanvas(
         fAvail.forEach(u => fAllSrc.push(...u.srcList));
         if (fAllSrc.length === 0) continue;
         const fIdx = Number(cp.femaleImgIndex ?? 0);
-        const fNameIdx = Number(cp.femaleNameIndex ?? 0);  // ✅补丁新增
+        const fNameIdx = Number(cp.femaleNameIndex ?? 0);  // 新增
         const fSrc = fAllSrc[fIdx] || fAllSrc[0];
         const canvasFSrc = convertR2ToJsDelivr(fSrc);
-        // =========【修改点A-2】防火墙：禁止空值、非http、R2 pub地址、github raw地址进入图片队列 ==========
+        // 防火墙：禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
         const isBlockedUrlF = (!canvasFSrc)
           || (!canvasFSrc.startsWith('http'))
           || canvasFSrc.startsWith('https://pub-')
@@ -1582,27 +1568,27 @@ export async function renderExportCanvas(
           for (const mi of cp.maleItems) {
             const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
             if (!mChar) continue;
-            // ========== ✅改为OR逻辑：统一过滤，角色有多个状态true时任一对应开关开启即显示 ==========
+            // 改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
             const isSub = mChar.isSub ?? false;
             const isHidden = !!mChar.isHidden;
             const isFD = !!mChar.isFD;
             const isFdSub = !!mChar.isFdSub;
             // 普通角色（无任何特殊标记）直接保留
             if (isSub || isHidden || isFD || isFdSub) {
-                // ✅修复：隐藏/FD可见性判断必须包含局部开关，与页面getAllGameChar逻辑一致
+                // 修复：隐藏/FD 可见性判断必须包含局部开关，与页面 getAllGameChar 逻辑一致
                 const pass = (isSub && showSub) || (isHidden && (globalHide || localHide)) || (isFD && (globalFD || localFD)) || (isFdSub && showFdSub);
                 if (!pass) continue;
             }
-            // ========== 修改结束 ==========
+            // 修改结束
             const mAvail = getAvailableCharImages(mChar, globalHide, globalFD, localHide, localFD);
             let mAllSrc = [];
             mAvail.forEach(u => mAllSrc.push(...u.srcList));
             if (mAllSrc.length === 0) continue;
             const mIdx = Number(mi.imgIndex ?? 0);
-            const mNameIdx = Number(mi.nameIndex ?? 0);  // ✅补丁新增
+            const mNameIdx = Number(mi.nameIndex ?? 0);  // 新增
             const mSrc = mAllSrc[mIdx] || mAllSrc[0];
             const canvasMSrc = convertR2ToJsDelivr(mSrc);
-            // =========【修改点A-3】防火墙：禁止空值、非http、R2 pub地址、github raw地址进入图片队列 ==========
+            // 防火墙：禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
             const isBlockedUrlM = (!canvasMSrc)
               || (!canvasMSrc.startsWith('http'))
               || canvasMSrc.startsWith('https://pub-')
@@ -1611,13 +1597,13 @@ export async function renderExportCanvas(
               console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasMSrc);
               continue;
             }
-            // ✅补丁修改：男主多名字显示名
+            // 男主多名字显示名
             const mShowHide = getCharShowHide(mChar, globalHide, localHide, globalFD, localFD);
             const mDisplayName = getCharDisplayName(mChar, mNameIdx, mShowHide) || mChar.name || "";
             maleItems.push({
               id: mChar.id,
               name: mChar.name,
-              displayName: mDisplayName,  // ✅补丁新增
+              displayName: mDisplayName,  // 新增
               src: canvasMSrc,
               isHidden: !!mChar.isHidden,
               isFD: !!mChar.isFD
@@ -1625,13 +1611,13 @@ export async function renderExportCanvas(
             allImageSrcList.push(canvasMSrc);
           }
         }
-        // ✅补丁修改：女主多名字显示名
+        // 女主多名字显示名
         const fShowHide = getCharShowHide(fChar, globalHide, localHide, globalFD, localFD);
         const fDisplayName = getCharDisplayName(fChar, fNameIdx, fShowHide) || fChar.name || "";
         if (maleItems.length > 0) {
           cpItems.push({
             femaleName: fChar.name,
-            femaleDisplayName: fDisplayName,  // ✅补丁新增
+            femaleDisplayName: fDisplayName,  // 新增
             femaleSrc: canvasFSrc,
             maleItems: maleItems
           });
@@ -1650,7 +1636,7 @@ export async function renderExportCanvas(
     });
   }
 
-  // =========【补丁8】兜底防火墙：再次清洗图片源列表，剔除null/空/R2/raw地址，防止上层逻辑穿透 ==========
+  // 兜底防火墙：再次清洗图片源列表，剔除 null/空/R2/raw 地址，防止上层逻辑穿透
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
   const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
   const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
@@ -1664,7 +1650,7 @@ export async function renderExportCanvas(
   // 去重
   allImageSrcList = [...new Set(allImageSrcList)];
 
-  // ===================== 收集所有圆角图片绘制任务（只记录 src 和 radius） =====================
+  // 收集所有圆角图片绘制任务（只记录 src 和 radius）
   const roundCanvasTasks = [];
   for (const data of renderDataList) {
     for (const item of data.charItems) {
@@ -1693,7 +1679,6 @@ export async function renderExportCanvas(
       }
     }
   }
-  // ==========================================================================
 
   if (renderDataList.length === 0) {
     console.warn("没有可导出的游戏卡片");
@@ -1707,7 +1692,7 @@ export async function renderExportCanvas(
     const realCanvasW = targetWidth * dpr;
     const realCanvasH = totalHeight * dpr;
     const totalPixel = realCanvasW * realCanvasH;
-    // =========【补丁5】仅IOS长图画布像素预警，超过阈值控制台警告，建议使用分页模式 ==========
+    // 仅 IOS 长图画布像素预警，超过阈值控制台警告，建议使用分页模式
     if(IS_IOS_WEBKIT){
       const SAFARI_MAX_PX = 32 * 1024 * 1024;
       if(totalPixel > SAFARI_MAX_PX){
@@ -1745,7 +1730,7 @@ export async function renderExportCanvas(
       await new Promise(r => setTimeout(r, 100));
       blob = await new Promise((resolve) => finalCanvas.toBlob(resolve, 'image/png', 1));
     }
-    // ===================== 【补丁新增：强制100%】 =====================
+    // 强制 100%
     emitRenderProgress(100);
     const res = [blob];
     res.imageFailList = imageFailList;
@@ -1815,21 +1800,21 @@ export async function renderExportCanvas(
       });
     }
     if (blob) blobList.push(blob);
-    // =========【补丁6】仅IOS：单页绘制完成立刻释放临时画布，降低IOS多页内存峰值 ==========
+    // 仅 IOS：单页绘制完成立刻释放临时画布，降低 IOS 多页内存峰值
     if(IS_IOS_WEBKIT){
       canvas.width = 0;
       canvas.height = 0;
       finalCanvas.width = 0;
       finalCanvas.height = 0;
     }
-    // ===================== 【补丁新增：分页模式总进度上报】 =====================
+    // 分页模式总进度上报
     if(totalPageCount > 0){
       const pagePercent = 60 + (pageIndex / totalPageCount) * 40;
       emitRenderProgress(pagePercent);
     }
-    // ===================== 补丁结束 =====================
+    // 补丁结束
   }
-  // ===================== 【补丁新增：强制100%】 =====================
+  // 强制 100%
   emitRenderProgress(100);
   blobList.imageFailList = imageFailList;
   return blobList;
