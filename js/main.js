@@ -499,7 +499,7 @@ export function saveLocalSwitchConfirmDate() {
     localStorage.setItem(SPOILER_LOCAL_SWITCH_KEY, getTodayDateStr());
 }
 
-// 角色图片过滤工具函数，适配项目 srcList 格式
+// 角色图片过滤工具函数，适配 srcList 格式
 export function getAvailableCharImages(char, globalHideSwitch, globalFDSwitch, localHideSwitch, localFDSwitch) {
     if (!char) return [];
     if (!char.images || !Array.isArray(char.images)) return [];
