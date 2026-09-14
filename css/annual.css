@@ -2250,3 +2250,139 @@
 .mode-wrap[data-mode="annual"] .about-block {
     margin-bottom: 30px;
 }
+
+/* 新增：八、九 月度总结模块 */
+/* 单个月度行容器 */
+.annual-monthly-row {
+    margin-bottom: 24px;
+}
+.annual-monthly-row:last-child {
+    margin-bottom: 0;
+}
+/* 月度头部行 */
+.annual-monthly-header {
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+/* 月度图片框 */
+.annual-monthly-box {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+/* 封面列表：行 */
+.annual-monthly-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: flex-start;
+    width: 100%;
+}
+/* 单个封面条目 */
+.annual-monthly-item {
+    position: relative;
+    flex-shrink: 0;
+}
+/* 游戏封面： */
+.annual-monthly-cover {
+    width: 140px;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    display: block;
+}
+/* 角色封面 */
+.annual-monthly-char-cover {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    display: block;
+}
+/* 月度封面删除按钮 */
+.annual-monthly-item-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+}
+/* + 按钮 */
+.annual-monthly-add-btn {
+    flex-shrink: 0;
+}
+/* 右侧栏 */
+.annual-monthly-side {
+    flex-shrink: 0;
+    width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+/* 月份小标题 */
+.annual-monthly-label {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--annual-export-subtitle, #b85878);
+    line-height: 1.4;
+}
+/* 时长输入框 */
+.annual-monthly-hours {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fcfcfc;
+    color: var(--annual-export-statdata, #b33a3a);
+    box-sizing: border-box;
+}
+.annual-monthly-hours:focus {
+    outline: none;
+    border-color: #f6a5b8;
+}
+/* 移动端适配（≤768px） */
+@media (max-width: 768px) {
+    .annual-monthly-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .annual-monthly-side {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+    .annual-monthly-label {
+        flex-shrink: 0;
+        width: 48px;
+        font-size: 16px;
+    }
+    .annual-monthly-hours {
+        flex: 1;
+    }
+    .annual-monthly-cover {
+        width: 80px;
+    }
+    .annual-monthly-char-cover {
+        width: 80px;
+        height: 80px;
+    }
+    .annual-monthly-item {
+        width: 80px;
+    }
+    .annual-monthly-items {
+        gap: 10px;
+    }
+    .annual-monthly-box {
+        padding: 12px;
+    }
+}
