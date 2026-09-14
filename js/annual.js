@@ -43,7 +43,7 @@ function loadAnnualExportConfig() {
     }
     // input[type=color] 只接受 #rrggbb 六位格式，旧数据中存的 #eee 三位简写会被移动端浏览器回退为黑色 #000000
     // 修改：扩展到新字段
-    // 新增：barColor 到三位色修复数组
+    // 新增：barColor 到修复数组
     ['customborder', 'labelColor', 'barColor', 'boxBgColor', 'reporterColor'].forEach(key => {
         if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
             config[key] = "#" + config[key][1].repeat(2)
