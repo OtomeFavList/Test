@@ -76,6 +76,8 @@ const CHAR_GRID_FIXED_LABELS = [
     "TA的线年度最佳", "TA的线就能值回票价", "打完TA的线就想封盘",
     "对TA一见钟情", "TA外表与内在差别最大", "感觉会喜欢TA很久"
 ];
+// 新增：月度总结标签
+const MONTH_LABELS = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
 
 const getDefaultAnnualData = () => ({
     reportYear: "",
@@ -115,6 +117,16 @@ const getDefaultAnnualData = () => ({
         fixed: CHAR_GRID_FIXED_LABELS.map(label => ({label, gameId: "", charId: "", charName: "", coverSrc: ""})),
         custom: [],                                        // [{label, gameId, charId, charName, coverSrc}]
         extraThoughts: ""
+    },
+
+    // 新增：八、ゲーム月度总结
+    gameMonthly: {
+        months: MONTH_LABELS.map(label => ({ label, items: [], hours: "", text: "" }))
+    },
+
+    // 新增：九、キャラ月度总结
+    charMonthly: {
+        months: MONTH_LABELS.map(label => ({ label, items: [], hours: "", text: "" }))
     }
 });
 
@@ -130,8 +142,10 @@ let activeCharTopItemIndex = null;
 // 新增：カップルTOP 弹窗状态
 let activeCpTopItemIndex = null;
 // 新增：弹窗上下文标记，区分当前弹窗服务于哪个模块
-let _activeModalContext = null;   // "gameTop"|"charTop"|"cpTop"|"otherAlso"|"otherFavCp"|"otherFavSupport"|"gameGrid"|"charGrid"
+let _activeModalContext = null;   // "gameTop"|"charTop"|"cpTop"|"otherAlso"|"otherFavCp"|"otherFavSupport"|"gameGrid"|"charGrid"|"gameMonthly"|"charMonthly"
 let _activeGridTarget = null;     // {type:"fixed"|"custom", index:number}  宫格模块当前操作目标
+// 新增：月度总结模块当前操作目标
+let _activeMonthlyTarget = null;  // {monthIdx:number}
 let _activeOtherCustomCharIndex = null;  // 新增：当前操作的自定义角色卡片下标
 let cpModalViewMode = "gameList";       // gameList / femaleList
 let cpModalCurrentGameId = null;
@@ -427,6 +441,20 @@ function renderGameList(wrap, keyword) {
                 closeAnnualGlobalGameModal();
                 return;
             }
+
+            // 新增：游戏月度总结模块
+            if (_activeModalContext === "gameMonthly" && _activeMonthlyTarget) {
+                const mIdx = _activeMonthlyTarget.monthIdx;
+                const month = annualData.gameMonthly.months[mIdx];
+                if (month) {
+                    month.items.push({gameId: game.id, gameName: game.name, coverSrc: game.cover ?? ""});
+                }
+                saveAnnualData();
+                renderMonthlyModule("annual-game-monthly-container", "game");
+                closeAnnualGlobalGameModal();
+                return;
+            }
+
             // 新增：游戏宫格模块
             if (_activeModalContext === "gameGrid" && _activeGridTarget) {
                 const t = _activeGridTarget;
@@ -959,6 +987,27 @@ function renderCharModalCharList() {
                 closeAnnualGlobalCharModal();
                 return;
             }
+
+            // 新增：角色月度总结模块
+            if (_activeModalContext === "charMonthly" && _activeMonthlyTarget) {
+                const mIdx = _activeMonthlyTarget.monthIdx;
+                const month = annualData.charMonthly.months[mIdx];
+                if (month) {
+                    const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
+                    month.items.push({
+                        gameId: charModalCurrentGameId,
+                        charId: char.id,
+                        charName: charNameList[finalNameIdx] || char.name,
+                        coverSrc: allSrc[annualCharImgIndex.get(imgKey) ?? 0] || ""
+                    });
+                }
+
+                saveAnnualData();
+                renderMonthlyModule("annual-char-monthly-container", "char");
+                closeAnnualGlobalCharModal();
+                return;
+            }
+
             if(activeCharTopItemIndex === null) return;
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
             if(isDuplicate){
@@ -1065,6 +1114,7 @@ function closeAnnualGlobalCharModal(){
     _activeModalContext = null;
     _activeGridTarget = null;
     _activeOtherCustomCharIndex = null;  // 新增：清理自定义角色卡片索引
+    _activeMonthlyTarget = null;  // 新增：清理月度目标
     charModalViewMode = "gameList";
     charModalCurrentGameId = null;
     const modal = document.getElementById("annual-global-char-modal");
@@ -1106,6 +1156,7 @@ function closeAnnualGlobalGameModal(){
     activeTopItemIndex = null;
     _activeModalContext = null;
     _activeGridTarget = null;
+    _activeMonthlyTarget = null;  // 新增：清理月度目标
     const modal = document.getElementById("annual-global-game-modal");
     if(!modal) return;
     modal.classList.remove("active");
@@ -1709,6 +1760,63 @@ function renderCharGridItem(item, type, idx) {
             ${labelEl}
         </div>`;
 }
+
+// 新增：八、九 月度总结模块
+function renderMonthlyRow(month, idx, kind) {
+    const items = month.items || [];
+    let itemsHtml = "";
+    if (items.length > 0) {
+        itemsHtml = `<div class="annual-monthly-items">`;
+        items.forEach((item, iIdx) => {
+            const coverClass = kind === "game" ? "annual-monthly-cover" : "annual-monthly-char-cover";
+            const alt = kind === "game" ? (item.gameName || "") : (item.charName || "");
+            itemsHtml += `
+                <div class="annual-monthly-item">
+                    <img class="${coverClass}" src="${getWebImageUrl(item.coverSrc)}" alt="${alt}">
+                    <button class="annual-other-also-remove annual-monthly-item-remove"
+                            data-monthly-remove="${kind}" data-month-idx="${idx}" data-item-idx="${iIdx}">×</button>
+                </div>`;
+        });
+        itemsHtml += `</div>`;
+    }
+    const action = kind === "game" ? "addGame" : "addChar";
+    return `
+        <div class="annual-monthly-row" data-month-idx="${idx}">
+            <div class="annual-monthly-header">
+                <div class="annual-monthly-box">
+                    ${itemsHtml}
+                    <button class="annual-grid-add-btn annual-monthly-add-btn"
+                            data-monthly-action="${action}" data-month-idx="${idx}">+</button>
+                </div>
+                <div class="annual-monthly-side">
+                    <div class="annual-monthly-label">${month.label}</div>
+                    <input class="annual-monthly-hours" type="text" placeholder="选填游戏时长"
+                           value="${month.hours || ''}" data-monthly-hours="${kind}" data-month-idx="${idx}">
+                </div>
+            </div>
+            <div class="annual-custom-text-wrap">
+                <textarea class="annual-other-textarea annual-monthly-text" placeholder="自定义文本"
+                          data-monthly-text="${kind}" data-month-idx="${idx}">${month.text || ''}</textarea>
+                <div class="resize-handle"></div>
+            </div>
+        </div>`;
+}
+
+// 渲染月度总结模块
+function renderMonthlyModule(containerId, kind) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const data = kind === "game" ? annualData.gameMonthly : annualData.charMonthly;
+    if (!data || !Array.isArray(data.months)) return;
+    let html = "";
+    data.months.forEach((month, idx) => {
+        html += renderMonthlyRow(month, idx, kind);
+    });
+    container.innerHTML = html;
+    // 动态渲染后重新绑定文本框拖拽手柄
+    bindAnnualTextareaResize();
+}
+
 // 修复：移动端触摸拖拽兼容，替代 HTML5 draggable，解决移动端无反应
 function bindTouchDrag(){
     // 游戏 TOP 触摸拖拽
@@ -3121,6 +3229,9 @@ function realInitAnnualModule(){
     rebuildOtherModule();
     renderGameGrid();
     renderCharGrid();
+    // 新增：八、九月度总结模块渲染
+    renderMonthlyModule("annual-game-monthly-container", "game");
+    renderMonthlyModule("annual-char-monthly-container", "char");
     bindOtherTextareas();
     // 如果游戏弹窗打开刷新列表
     const modalGame = document.getElementById("annual-global-game-modal");
@@ -3278,6 +3389,33 @@ export function initAnnualModule(){
                     saveAnnualData();
                     renderCharGrid();
                 }
+                return;
+            }
+
+            // 新增：月度总结 + 按钮
+            const monthlyAddBtn = e.target.closest('[data-monthly-action]');
+            if (monthlyAddBtn) {
+                const action = monthlyAddBtn.dataset.monthlyAction;
+                const mIdx = Number(monthlyAddBtn.dataset.monthIdx);
+                _activeMonthlyTarget = { monthIdx: mIdx };
+                if (action === "addGame") {
+                    openAnnualGlobalGameModal(null, "gameMonthly");
+                } else if (action === "addChar") {
+                    openAnnualGlobalCharModal(null, "charMonthly");
+                }
+                return;
+            }
+
+            // 新增：月度封面删除 × 按钮
+            const monthlyRemoveBtn = e.target.closest('[data-monthly-remove]');
+            if (monthlyRemoveBtn) {
+                const kind = monthlyRemoveBtn.dataset.monthlyRemove;
+                const mIdx = Number(monthlyRemoveBtn.dataset.monthIdx);
+                const iIdx = Number(monthlyRemoveBtn.dataset.itemIdx);
+                const data = kind === "game" ? annualData.gameMonthly : annualData.charMonthly;
+                data.months[mIdx].items.splice(iIdx, 1);
+                saveAnnualData();
+                renderMonthlyModule(kind === "game" ? "annual-game-monthly-container" : "annual-char-monthly-container", kind);
                 return;
             }
 
@@ -3541,6 +3679,29 @@ export function initAnnualModule(){
                 const modal = document.getElementById("annual-global-cp-modal");
                 const wrap = modal?.querySelector(".annual-global-cp-game-list");
                 if(wrap){ renderCpModalGameList(wrap, cpSearchInput.value); }
+                return;
+            }
+
+            // 新增：月度时长输入
+            const monthlyHoursInput = e.target.closest('[data-monthly-hours]');
+            if (monthlyHoursInput) {
+                const kind = monthlyHoursInput.dataset.monthlyHours;
+                const mIdx = Number(monthlyHoursInput.dataset.monthIdx);
+                const data = kind === "game" ? annualData.gameMonthly : annualData.charMonthly;
+                data.months[mIdx].hours = monthlyHoursInput.value;
+                saveAnnualData();
+                return;
+            }
+
+            // 新增：月度自定义文本输入
+
+            const monthlyTextInput = e.target.closest('[data-monthly-text]');
+            if (monthlyTextInput) {
+                const kind = monthlyTextInput.dataset.monthlyText;
+                const mIdx = Number(monthlyTextInput.dataset.monthIdx);
+                const data = kind === "game" ? annualData.gameMonthly : annualData.charMonthly;
+                data.months[mIdx].text = monthlyTextInput.value;
+                saveAnnualData();
                 return;
             }
         });
