@@ -923,8 +923,8 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
   // 统计时长行，仅当至少一个月有时长时占高
   const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
   if (hasAnyHours) {
-    // 修改：上方间距从全局 16 微调为 12（绘制时 shiftY(-4)）
-    contentH += MONTHLY_STATS_SIZE + 12;
+    // 修改：上方间距进一步缩小（绘制时 shiftY(-8)）
+    contentH += MONTHLY_STATS_SIZE + 8;
   }
 
   // 修改：月度模块封面尺寸用专用常量，不影响 TOP /宫格模块
@@ -963,12 +963,14 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
     // 月份标签，右侧栏最小高度
     const sideH = Math.max(MONTHLY_LABEL_SIZE * 1.4, 24);
     contentH += Math.max(boxH, sideH);
-
+    const hasBar = String(m.hours || '').trim() !== '';
     // 柱状条，该月有时长才占高
-    if (String(m.hours || '').trim() !== '') {
+    if (hasBar) {
       contentH += MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2;
+    } else if (boxH > 0) {
+      // 补丁：图片框和自定义文本框之间的间距
+      contentH += MONTHLY_BAR_GAP;
     }
-
     // 自定义文本框
     const text = (m.text || '').trim();
     if (text) {
@@ -1508,8 +1510,8 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     const totalHours = months.reduce((sum, m) => sum + parseMonthlyHours(m.hours), 0);
     const avgHours = totalHours / 12;
     const statsText = `总时长${fmtMonthlyHours(totalHours)}小时，平均每月${fmtMonthlyHours(avgHours)}小时`;
-    // 修改：上方间距从全局 16 微调为 12
-    painter.shiftY(-4);
+    // 修改：上方间距从 shiftY(-4) 加大到 -8
+    painter.shiftY(-8);
     ctx.save();
     ctx.font = `${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;  // 改：不加粗
     ctx.fillStyle = valueColor;
@@ -1642,6 +1644,9 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.restore();
       }
       painter.shiftY(MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2);
+    } else if (boxH > 0) {
+      // 补丁：图片框和自定义文本框之间的间距
+      painter.shiftY(MONTHLY_BAR_GAP);
     }
 
     // 绘制自定义文本框
