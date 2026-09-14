@@ -75,6 +75,9 @@ const MONTHLY_BAR_GAP = 8;              // 柱状条上下间距
 const MONTHLY_STATS_SIZE = 16;          // 总时长/平均时长文字大小
 const MONTHLY_STATS_GAP = 12;           // 统计文字底部间距
 const MONTHLY_LABEL_SIZE = 18;          // 月份标签文字大小
+// 新增：月度模块导出专用封面尺寸（不影响 TOP/宫格/其他模块的 GAME_COVER_W / CHAR_COVER_SIZE）
+const MONTHLY_GAME_COVER_W = 100;       // 月度游戏封面宽度，高度随原图比例
+const MONTHLY_CHAR_COVER_SIZE = 80;     // 月度角色封面正方形边长
 
 // 缓存
 const roundImageCache = new Map();
@@ -120,6 +123,12 @@ function calcGameCoverHeight(img) {
   const { w, h } = getImgSize(img);
   if (w <= 0 || h <= 0) return Math.round(GAME_COVER_W * 1.4); // 兜底竖版比例
   return Math.round(GAME_COVER_W * h / w);
+}
+// 新增：月度模块游戏封面高度（宽度用 MONTHLY_GAME_COVER_W=100，不影响其他模块）
+function calcMonthlyGameCoverHeight(img) {
+  const { w, h } = getImgSize(img);
+  if (w <= 0 || h <= 0) return Math.round(MONTHLY_GAME_COVER_W * 1.4);
+  return Math.round(MONTHLY_GAME_COVER_W * h / w);
 }
 
 // 布局计算辅助
@@ -912,8 +921,9 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
     contentH += MONTHLY_STATS_SIZE + MONTHLY_STATS_GAP;
   }
 
-  const coverW = kind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
-  // 图片框可用宽度 = 内容宽 - 右侧栏 - 栏间距
+  // 修改：月度模块封面尺寸用专用常量，不影响 TOP/宫格模块
+  const coverW = kind === 'game' ? MONTHLY_GAME_COVER_W : MONTHLY_CHAR_COVER_SIZE;
+  // 图片框可用宽度 = 内容宽 - 左侧栏 - 栏间距
   const boxAvailW = innerW - MONTHLY_SIDE_W - 16;
   const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
 
@@ -932,9 +942,11 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
           if (kind === 'game') {
             const src = toCanvasUrl(item.coverSrc);
             const img = src ? imageCache.get(src) : null;
-            rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+            // 修改：月度游戏封面用100宽计算高度
+            rowMaxH = Math.max(rowMaxH, calcMonthlyGameCoverHeight(img));
           } else {
-            rowMaxH = Math.max(rowMaxH, CHAR_COVER_SIZE);
+            // 修改：月度角色封面用80正方形
+            rowMaxH = Math.max(rowMaxH, MONTHLY_CHAR_COVER_SIZE);
           }
         }
         boxContentH += rowMaxH;
@@ -1499,8 +1511,11 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
   // 全局最大时长
   const maxHours = Math.max(...months.map(m => parseMonthlyHours(m.hours)), 0);
 
-  const coverW = kind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
+  // 修改：月度模块封面尺寸用专用常量
+  const coverW = kind === 'game' ? MONTHLY_GAME_COVER_W : MONTHLY_CHAR_COVER_SIZE;
   const boxAvailW = innerW - MONTHLY_SIDE_W - 16;
+  // 修改：左侧栏（月份+时长）在左，图片框从 contentX + MONTHLY_SIDE_W + 16 开始
+  const boxX = contentX + MONTHLY_SIDE_W + 16;
   const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
 
   months.forEach((m, mi) => {
@@ -1519,9 +1534,11 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
           if (kind === 'game') {
             const src = toCanvasUrl(item.coverSrc);
             const img = src ? imageCache.get(src) : null;
-            rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+            // 修改：月度游戏封面用100宽计算高度
+            rowMaxH = Math.max(rowMaxH, calcMonthlyGameCoverHeight(img));
           } else {
-            rowMaxH = Math.max(rowMaxH, CHAR_COVER_SIZE);
+            // 修改：月度角色封面用80正方形
+            rowMaxH = Math.max(rowMaxH, MONTHLY_CHAR_COVER_SIZE);
           }
         }
         boxContentH += rowMaxH;
@@ -1532,9 +1549,9 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     const sideH = Math.max(MONTHLY_LABEL_SIZE * 1.4, 24);
     const headerH = Math.max(boxH, sideH);
 
-    // 绘制图片框
+    // 绘制图片框（修改：x 从 boxX 开始，左侧栏在左）
     if (boxH > 0) {
-      painter.drawRoundRect(contentX, painter.y, boxAvailW, boxH, 12, '#ffffff', '#eee', 1);
+      painter.drawRoundRect(boxX, painter.y, boxAvailW, boxH, 12, '#ffffff', '#eee', 1);
       const rows = Math.ceil(items.length / cols);
       let cursorY = painter.y + MONTHLY_BOX_PAD;
       for (let r = 0; r < rows; r++) {
@@ -1543,11 +1560,12 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
           const idx = r * cols + c;
           if (idx >= items.length) break;
           const item = items[idx];
-          const x = contentX + MONTHLY_BOX_PAD + c * (coverW + MONTHLY_COVER_GAP);
+          // 修改：封面 x 从 boxX 内边距开始，高度用月度函数
+          const x = boxX + MONTHLY_BOX_PAD + c * (coverW + MONTHLY_COVER_GAP);
           const y = cursorY;
           const src = toCanvasUrl(item.coverSrc);
           const img = src ? imageCache.get(src) : null;
-          const covH = kind === 'game' ? calcGameCoverHeight(img) : CHAR_COVER_SIZE;
+          const covH = kind === 'game' ? calcMonthlyGameCoverHeight(img) : MONTHLY_CHAR_COVER_SIZE;
           rowMaxH = Math.max(rowMaxH, covH);
           drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
         }
@@ -1556,8 +1574,8 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
       }
     }
 
-    //绘制月份标签
-    const labelX = contentX + boxAvailW + 16;
+    // 修改：月份标签移到左侧栏（contentX），与网页端 side 在左的布局一致
+    const labelX = contentX;
     ctx.save();
     ctx.font = `bold ${MONTHLY_LABEL_SIZE}px ${FONT_SIYUAN}`;
     ctx.fillStyle = labelColor;
@@ -1579,15 +1597,16 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.fillStyle = config.border || '#f6a5b8';
         ctx.beginPath();
         const r = Math.min(MONTHLY_BAR_RADIUS, barW / 2, MONTHLY_BAR_HEIGHT / 2);
-        ctx.moveTo(contentX + r, barY);
-        ctx.lineTo(contentX + barW - r, barY);
-        ctx.quadraticCurveTo(contentX + barW, barY, contentX + barW, barY + r);
-        ctx.lineTo(contentX + barW, barY + MONTHLY_BAR_HEIGHT - r);
-        ctx.quadraticCurveTo(contentX + barW, barY + MONTHLY_BAR_HEIGHT, contentX + barW - r, barY + MONTHLY_BAR_HEIGHT);
-        ctx.lineTo(contentX + r, barY + MONTHLY_BAR_HEIGHT);
-        ctx.quadraticCurveTo(contentX, barY + MONTHLY_BAR_HEIGHT, contentX, barY + MONTHLY_BAR_HEIGHT - r);
-        ctx.lineTo(contentX, barY + r);
-        ctx.quadraticCurveTo(contentX, barY, contentX + r, barY);
+        // 修改：柱状条与图片框左对齐，从 boxX 开始
+        ctx.moveTo(boxX + r, barY);
+        ctx.lineTo(boxX + barW - r, barY);
+        ctx.quadraticCurveTo(boxX + barW, barY, boxX + barW, barY + r);
+        ctx.lineTo(boxX + barW, barY + MONTHLY_BAR_HEIGHT - r);
+        ctx.quadraticCurveTo(boxX + barW, barY + MONTHLY_BAR_HEIGHT, boxX + barW - r, barY + MONTHLY_BAR_HEIGHT);
+        ctx.lineTo(boxX + r, barY + MONTHLY_BAR_HEIGHT);
+        ctx.quadraticCurveTo(boxX, barY + MONTHLY_BAR_HEIGHT, boxX, barY + MONTHLY_BAR_HEIGHT - r);
+        ctx.lineTo(boxX, barY + r);
+        ctx.quadraticCurveTo(boxX, barY, boxX + r, barY);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
@@ -1596,7 +1615,8 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.fillStyle = statTextColor;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${fmtMonthlyHours(hours)}h`, contentX + barW + 6, barY + MONTHLY_BAR_HEIGHT / 2);
+        // 修改：标注跟随柱子右端
+        ctx.fillText(`${fmtMonthlyHours(hours)}h`, boxX + barW + 6, barY + MONTHLY_BAR_HEIGHT / 2);
         ctx.restore();
       }
       painter.shiftY(MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2);
