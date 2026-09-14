@@ -1783,15 +1783,15 @@ function renderMonthlyRow(month, idx, kind) {
     return `
         <div class="annual-monthly-row" data-month-idx="${idx}">
             <div class="annual-monthly-header">
-                <div class="annual-monthly-box">
-                    ${itemsHtml}
-                    <button class="annual-grid-add-btn annual-monthly-add-btn"
-                            data-monthly-action="${action}" data-month-idx="${idx}">+</button>
-                </div>
                 <div class="annual-monthly-side">
                     <div class="annual-monthly-label">${month.label}</div>
                     <input class="annual-monthly-hours" type="text" placeholder="游戏时长，选填"
                            value="${month.hours || ''}" data-monthly-hours="${kind}" data-month-idx="${idx}">
+                </div>
+                <div class="annual-monthly-box">
+                    ${itemsHtml}
+                    <button class="annual-grid-add-btn annual-monthly-add-btn"
+                            data-monthly-action="${action}" data-month-idx="${idx}">+</button>
                 </div>
             </div>
             <div class="annual-custom-text-wrap">
