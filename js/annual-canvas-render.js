@@ -1,6 +1,6 @@
 // annual-canvas-render.js
-// 年度报告模式 纯 Canvas 绘制导出（对齐 export-canvas-render.js 视觉风格）
-// 每个模块单独生成一张图，固定尺寸 + DPR×2 高清输出
+// 年度报告模式纯 Canvas 绘制导出，对齐 export-canvas-render.js
+// 每个模块单独生成一张图，DPR×2 高清输出
 import {
   getWebImageUrl,
   preloadImageBitmap,
@@ -19,43 +19,43 @@ const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MS
 let DPR = 2;
 const WRAP_MAX_W = 1200;
 
-// 固定尺寸（对齐 FavList，不随宽度等比缩放）
-const TITLE_SIZE = 42;                 // 大标题（对齐 FavList）
-const MODULE_TITLE_SIZE = 24;          // 模块小标题（对齐 FavList "基础信息" 24px）
+// 固定尺寸
+const TITLE_SIZE = 42;                 // 大标题
+const MODULE_TITLE_SIZE = 24;          // 模块小标题
 const NO_SIZE = 22;                    // NO. 标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP 名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
 const STAT_VALUE_SIZE = 42;            // 用户输入值固定 42px（整体调大，更适应文本框）
 const STAT_LABEL_SIZE = 36;            // 标签文字固定 36px
 const STAT_LINE_HEIGHT = 52;           // 混排行高
-const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色（对齐网页 .annual-top-label，用户指定）
-const COVER_TEXT_GAP = 16;             // 新增：封面卡片右边框到感想框左边框的统一间距
-const NO_COLOR = '#b85878';            // NO 标签颜色（对齐网页 .annual-top-label）
-const LABEL_ROW_MB = 8;                // NO+名称行底部间距（12→8，缩减与下方图片距离）
+const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色
+const COVER_TEXT_GAP = 16;             // 新增：游戏封面到自定义文本的统一间距
+const NO_COLOR = '#b85878';            // NO 标签颜色
+const LABEL_ROW_MB = 8;                // NO + 名称行底部间距（改：12 改为 8，缩减与下方图片距离）
 const ITEM_GAP = 24;                   // TOP 条目间间距
 const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
 const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐 BIG_CARD_PADDING）
-const COVER_CARD_PAD = 0;              // 封面卡片内边距（8→0，图片贴外框，删除图片与外框间内边距）
+const COVER_CARD_PAD = 0;              // 封面卡片内边距（改：8 改为 0，图片贴外框，删除图片与外框间内边距）
 const TEXT_BOX_PAD = 10;               // 感想文字框内边距
 const GAME_COVER_W = 140;              // 游戏封面固定宽度
 const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
 const CP_COVER_SIZE = 100;             // CP 封面固定正方形
 const CP_GAP = 10;                     // CP 双图间距
 // 五、其他模块
-const OTHER_SECTION_TITLE_SIZE = 18;   // "还玩了" / 卡片标题 / 底部标题统一 18px
-const OTHER_CARD_W = 225;              // 其他模块卡片宽度（容纳 CP 双图 100+10+100=210）
+const OTHER_SECTION_TITLE_SIZE = 18;   // 还玩了/卡片标题/ 底部标题统一 18px
+const OTHER_CARD_W = 225;              // 其他模块卡片宽度（改：容纳 CP 双图 100+10+100=210）
 const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
 const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
 const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
-const OTHER_ALSO_COVER_W = GAME_COVER_W;      // "还玩了" 封面宽度=模块二 140
-const OTHER_ALSO_COVER_GAP = 16;       // "还玩了" 封面间距
-const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的 CP 封面=模块四 100
-const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角=与 CP 图一致 100
+const OTHER_ALSO_COVER_W = GAME_COVER_W;      // 还玩了封面宽度等于模块二 140
+const OTHER_ALSO_COVER_GAP = 16;       // 还玩了封面间距
+const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的 CP 封面等于模块四 100
+const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角与 CP 图一致 100
 const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
-const OTHER_SECTION_GAP = 20;          // "还玩了" 区域与卡片区间距
+const OTHER_SECTION_GAP = 20;          // 还玩了区域与卡片区间距
 // 六、七宫格模块
 const GRID_GAP = 16;                   // 宫格间距
-const GRID_LABEL_SIZE = 18;            // 宫格标签字号统一 18px
+const GRID_LABEL_SIZE = 18;            // 宫格标签字号统一
 const GRID_LABEL_GAP = 8;              // 封面与标签间距
 const GRID_FOOTER_GAP = 20;            // 宫格与底部文本框间距
 const FOOTER_PAD = 14;                 // 底部文本框内边距
@@ -146,10 +146,10 @@ function createRoundImageCanvas(img, srcUrl, radius) {
   offCanvas.height = sourceH * DPR;
   const offCtx = offCanvas.getContext('2d');
   if (!offCtx) return null;
-  offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);  // 补：清空离屏画布
+  offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);  // 补丁：清空离屏画布
   offCtx.imageSmoothingEnabled = true;
   offCtx.imageSmoothingQuality = "high";
-  offCtx.webkitImageSmoothingEnabled = true;  // 补：IOS Safari 前缀兼容
+  offCtx.webkitImageSmoothingEnabled = true;  // 补丁：IOS Safari 前缀兼容
   try {
     offCtx.save();
     offCtx.scale(DPR, DPR);
@@ -168,7 +168,7 @@ function createRoundImageCanvas(img, srcUrl, radius) {
     offCtx.drawImage(img, 0, 0, sourceW, sourceH);
     offCtx.restore();
   } catch (e) {
-    console.warn("annual 离屏画布绘制异常", srcUrl, e);  // 补：可追踪警告
+    console.warn("annual 离屏画布绘制异常", srcUrl, e);  // 补丁：可追踪警告
     offCanvas.width = 0; offCanvas.height = 0;
     return null;
   }
@@ -251,7 +251,7 @@ async function loadImagesWithLimit(urlList, limit) {
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => setTimeout(r, 30));
-  // 收集失败列表（对齐 export 容错模式）
+  // 收集失败列表，对齐 export 容错
   const failList = [];
   for (const [u, val] of resultMap.entries()) {
     if (!val) failList.push(u);
@@ -280,54 +280,42 @@ const STAT_LABELS = [
 const STATS_BG_CONFIG = {
   A: {
     file: 'game/Stats1.png',
-    // 只有 A：高 502-890px（底图上 204px/高 874px）→ t=0.34 b=0.79；左右全宽居中
     boxes: { A: { l: 0.00, r: 1.00, t: 0.34, b: 0.79 } }
   },
   B: {
     file: 'game/Stats2.png',
-    // 只有 B：高 270-820px（底图上 204px/高 786px）→ t=0.08 b=0.78；宽 405-1405px → l=0.24 r=0.89
     boxes: { B: { l: 0.24, r: 0.89, t: 0.08, b: 0.78 } }
   },
   C: {
     file: 'game/Stats3.png',
-    // 只有 C：高 275-880px（底图上 204px/高 748px）→ t=0.10 b=0.90；宽 175-1270px → l=0.09 r=0.80
     boxes: { C: { l: 0.09, r: 0.80, t: 0.10, b: 0.90 } }
   },
   AB: {
     file: 'game/Stats4.png',
     boxes: {
-      // A 高 505-890px（底图上 204px/高 1586px）→ t=0.19 b=0.43；左右全宽居中
       A: { l: 0.00, r: 1.00, t: 0.19, b: 0.43 },
-      // B 高 1065-1625px → t=0.54 b=0.90；宽 405-1405px（底图左 40px/宽 1540px）→ l=0.24 r=0.89
       B: { l: 0.24, r: 0.89, t: 0.54, b: 0.90 }
     }
   },
   AC: {
     file: 'game/Stats5.png',
     boxes: {
-      // A 高 502-890px（底图上 204px/高 1568px）→ t=0.19 b=0.44；左右全宽居中
       A: { l: 0.00, r: 1.00, t: 0.19, b: 0.44 },
-      // C 高 1097-1703px → t=0.57 b=0.96；宽 175-1270px → l=0.09 r=0.80
       C: { l: 0.09, r: 0.80, t: 0.57, b: 0.96 }
     }
   },
   BC: {
     file: 'game/Stats6.png',
     boxes: {
-      // B 高 275-825px（底图上 204px/高 1382px）→ t=0.05 b=0.45；宽 405-1405px → l=0.24 r=0.89
       B: { l: 0.24, r: 0.89, t: 0.05, b: 0.45 },
-      // C 高 915-1515px → t=0.51 b=0.95；宽 175-1270px → l=0.09 r=0.80
       C: { l: 0.09, r: 0.80, t: 0.51, b: 0.95 }
     }
   },
   ABC: {
     file: 'game/Stats7.png',
     boxes: {
-      // A 高 505-890px（底图上 204px/高 2178px）→ t=0.14 b=0.32；左右全宽居中
       A: { l: 0.00, r: 1.00, t: 0.14, b: 0.32 },
-      // B 高 1070-1625px → t=0.40 b=0.65；宽 405-1405px → l=0.24 r=0.89
       B: { l: 0.24, r: 0.89, t: 0.40, b: 0.65 },
-      // C 高 1705-2310px → t=0.69 b=0.97；宽 175-1270px → l=0.09 r=0.80
       C: { l: 0.09, r: 0.80, t: 0.69, b: 0.97 }
     }
   }
@@ -343,7 +331,7 @@ function getStatsParts(annualData) {
   return parts;
 }
 
-// buildStatPartSegments — 去掉 finished 的 noStyle 标记
+// 修改：buildStatPartSegments，去掉 finished 的 noStyle 标记
 function buildStatPartSegments(part, annualData) {
   const v = (key) => String(annualData[key] ?? '').trim();
   const BR = { text: '', isBreak: true };
@@ -436,9 +424,8 @@ function buildStatPartSegments(part, annualData) {
   return segments;
 }
 
-// wrapStatSegments — 去掉自动换行，只按 BR 强制换行
+// 修改：wrapStatSegments，去掉自动换行，只按 BR 强制换行
 function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
-  // 不自动换行：只按 BR 标记强制换行，每行内容直接排列
   const lines = [[]];
   for (const seg of segments) {
     if (seg.isBreak) {
@@ -461,7 +448,7 @@ function wrapStatSegments(ctx, segments, maxWidth, valueSize, labelSize) {
   return lines;
 }
 
-// drawStatPartCentered — 修正垂直居中计算（解决文字偏下）
+// 修改：drawStatPartCentered，修正垂直居中计算，解决文字偏下的问题
 function drawStatPartCentered(ctx, segments, boxX, boxY, boxW, boxH,
                               valueSize, labelSize, lineHeight, valueColor, labelColor) {
   const lines = wrapStatSegments(ctx, segments, boxW, valueSize, labelSize);
@@ -592,7 +579,7 @@ function hasOtherContent(annualData) {
 function getOtherCards(annualData) {
   const o = annualData.other || {};
   const cards = [];
-  // 新增：最喜欢的女主（顺序最前）
+  // 新增：最喜欢的女主
   if (o.favHeroine && o.favHeroine.charId) {
     cards.push({ type: 'heroine', title: '最喜欢的女主', data: o.favHeroine });
   }
@@ -643,10 +630,10 @@ function hasGridContent(gridData, gridKind, footerText) {
   return false;
 }
 
-// 高度计算（需在图片加载后调用）
+// 高度计算，在图片加载后调用
 function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
   const wrapW = getWrapW(targetW);
-  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 大标题（含顶部边距）
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb(); // 改：大标题增加顶部边距
   let contentH = 0;
   const parts = getStatsParts(annualData);
   if (parts.length > 0) {
@@ -683,7 +670,7 @@ function calcTopItemHeight(ctx, targetW, item, itemType, config, imageCache) {
   const noLineH = NO_SIZE * 1.3;
   h += Math.max(noLineH, nameH) + LABEL_ROW_MB;
 
-  // 封面 + 感想行
+  // 封面 + 自定义文本
   let coverH;
   let coverAreaW;
   if (itemType === 'game') {
@@ -817,9 +804,9 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
     const cols = Math.max(1, Math.floor((innerW + GRID_GAP) / (coverW + GRID_GAP)));
     const rows = Math.ceil(items.length / cols);
     for (let r = 0; r < rows; r++) {
-      // 修复：先求该行最大封面高度和最大标签高度，行高=最大封面+间距+最大标签
+      // 修复：先求该行最大封面高度和最大标签高度，行高 = 最大封面 + 间距 + 最大标签
       // 原逻辑用各单元格自己的 coverH 算 cellH，与绘制时标签统一对齐到 rowMaxCoverH 不一致，
-      // 导致封面矮+标签长的单元格标签底部溢出 rowMaxH，行间距不统一甚至重叠
+      // 导致封面矮 + 标签长的单元格标签底部溢出 rowMaxH，行间距不统一甚至重叠
       let rowMaxCoverH = 0;
       let rowMaxLabelH = 0;
       for (let c = 0; c < cols; c++) {
@@ -1037,7 +1024,7 @@ function buildStatsParts(annualData) {
   return parts;
 }
 
-// drawStatsContent：绘制底图+文字
+// drawStatsContent：绘制底图 + 文字
 function drawStatsContent(painter, x, y, innerW, annualData, config, imageCache) {
   const parts = getStatsParts(annualData);
   if (parts.length === 0) return;
@@ -1297,8 +1284,8 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
       const rowCount = Math.min(cols, items.length - rowStart);
       const rowTotalW = rowCount * coverW + (rowCount - 1) * GRID_GAP;
       const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
-      // 修复：行高统一用 "该行最大封面高度 + 间距 + 该行最大标签高度" 计算，
-      // 与标签绘制 Y 坐标 (y + rowMaxCoverH + GRID_LABEL_GAP) 基准一致，
+      // 修复：行高统一用 该行最大封面高度 + 间距 + 该行最大标签高度 计算，
+      // 与标签绘制 Y 坐标（y + rowMaxCoverH + GRID_LABEL_GAP）基准一致，
       // 确保所有标签底部恰好落在行底，下一行封面间距恒为 GRID_GAP
       let rowMaxCoverH = 0;
       let rowMaxLabelH = 0;
@@ -1527,7 +1514,7 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
 
 // 批量导出所有模块
 export async function renderAllAnnualModules(designW, annualData, config, titleMap, dpr) {
-  // 新增：推し标题开关——开启时模块六/七小标题为推しゲーム / 推しキャラ，关闭则默认ゲーム宫格 / キャラ宫格
+  // 新增：推し标题开关，开启时模块六/七小标题为推しゲーム/推しキャラ，关闭则默认ゲーム宫格/キャラ宫格
   const gameGridTitle = config.useOshiTitle ? '推しゲーム' : (titleMap?.gameGrid || 'ゲーム宫格');
   const charGridTitle = config.useOshiTitle ? '推しキャラ' : (titleMap?.charGrid || 'キャラ宫格');
   const modules = [
