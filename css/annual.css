@@ -2342,7 +2342,7 @@
     border-radius: 8px;
     font-size: 14px;
     background: #fcfcfc;
-    color: var(--annual-export-statdata, #b33a3a);
+    color: var(--annual-export-customtext, #c98fac);
     box-sizing: border-box;
 }
 .annual-monthly-hours:focus {
