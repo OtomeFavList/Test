@@ -64,11 +64,11 @@ const CARD_RADIUS = 16;                // 模块卡片圆角（对齐 BIG_CARD_R
 const CARD_BORDER_W = 2;               // 模块卡片边框宽度
 const SUB_CARD_RADIUS = 8;             // 封面/感想框圆角
 const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
-// 新增：八、九 月度总结模块常量
-const MONTHLY_COVER_GAP = 16;          // 月度封面间距（同还玩了框）
+// 新增：八、九月度总结模块
+const MONTHLY_COVER_GAP = 16;          // 月度封面间距
 const MONTHLY_ROW_GAP = 24;            // 月度行之间间距
-const MONTHLY_SIDE_W = 160;             // 右侧栏宽度（月份标签区域，同网页 .annual-monthly-side）
-const MONTHLY_BOX_PAD = 16;             // 月度图片框内边距（同还玩了框 padding）
+const MONTHLY_SIDE_W = 160;             // 右侧栏宽度
+const MONTHLY_BOX_PAD = 16;             // 月度图片框内边距
 const MONTHLY_BAR_HEIGHT = 16;          // 时长柱状条高度
 const MONTHLY_BAR_RADIUS = 4;           // 柱状条圆角
 const MONTHLY_BAR_GAP = 8;              // 柱状条上下间距
@@ -650,7 +650,8 @@ function hasGridContent(gridData, gridKind, footerText) {
   if ((footerText || '').trim()) return true;
   return false;
 }
-// 新增：八、九 月度总结 工具函数
+
+// 新增：八、九 月度总结工具函数
 function parseMonthlyHours(hoursStr) {
   if (!hoursStr) return 0;
   const n = parseFloat(String(hoursStr));
@@ -892,7 +893,7 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
   return h;
 }
 
-// 新增：八、九 月度总结 高度计算
+// 新增：八、九 月度总结高度计算
 function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) {
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
@@ -917,7 +918,7 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
   const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
 
   months.forEach((m, mi) => {
-    //  图片框高度
+    // 图片框高度
     const items = m.items || [];
     let boxContentH = 0;
     if (items.length > 0) {
@@ -1465,7 +1466,7 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
   }
 }
 
-// 新增：八、九 月度总结 绘制
+// 新增：八、九 月度总结绘制
 function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCache) {
   const wrapW = getWrapW(targetW);
   const wrapX = getWrapX(targetW, wrapW);
@@ -1479,7 +1480,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
   const months = getValidMonths(monthlyData);
   if (months.length === 0) return;
 
-  // 模块级统计文字：总时长 / 平均每月
+  // 模块级统计文字：总时长/平均每月
   const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
   if (hasAnyHours) {
     const totalHours = months.reduce((sum, m) => sum + parseMonthlyHours(m.hours), 0);
