@@ -1,33 +1,33 @@
-// ===================== 年度报告模块 annual.js =====================
-// 存储key: "annual-report-data"，与喜好表数据隔离
+// 年度报告模块 annual.js
+// 存储 key: "annual-report-data"，与喜好表数据隔离
 
-// =========【修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加window全局变量兜底】===========
+// 修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加 window 全局变量兜底
 
 import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide, switchCharImageWithLoading } from '/js/main.js';
 import { renderAllAnnualModules } from './annual-canvas-render.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
 
-// ============【配色持久化，对齐script.js】============
+// 配色持久化，对齐 script.js
 
 const annualExportDefault = {
     bg: "#fff7f9",
     title: "#b33a3a",
-    subtitle: "#b85878",          // ✅新增：小标题文字色（TOP模块标题+NO）
+    subtitle: "#b85878",          // 新增：小标题文字色（TOP 模块标题+NO）
     gamename: "#000000",
-    stattext: "#b85878",          // ✅新增：数据统计标签文字色
-    statdata: "#b33a3a",          // ✅新增：数据统计数据色
+    stattext: "#b85878",          // 新增：数据统计标签文字色
+    statdata: "#b33a3a",          // 新增：数据统计数据色
     customtext: "#c98fac",
-    customborder: "#eeeeee",      // ✅自定义文本边框色，默认#eeeeee（input[type=color]只接受六位#rrggbb，三位#eee会回退黑色）
+    customborder: "#eeeeee",      // 自定义文本边框色，默认 #eeeeee（input[type=color] 只接受六位 #rrggbb，三位 #eee 会回退黑色）
     border: "#f6a5b8",
     customTextFontSize: 16,
     useSummaryTitle: false,
-    useOshiTitle: false,          // ✅新增：宫格小标题使用推しゲーム & 推しキャラ
+    useOshiTitle: false,          // 新增：宫格小标题使用推しゲーム & 推しキャラ
     normalQuality: false,
-    labelColor: "#b85878",        // ✅修改点6：标签文字色
-    boxBgColor: "#fff7f9",        // ✅修改点6：内容框背景色
-    reporterName: "",             // ✅修改点6：填表人姓名
-    reporterColor: "#b33a3a"      // ✅修改点6：填表人文字色
+    labelColor: "#b85878",        // 修改点6：标签文字色
+    boxBgColor: "#fff7f9",        // 修改点6：内容框背景色
+    reporterName: "",             // 修改点6：填表人姓名
+    reporterColor: "#b33a3a"      // 修改点6：填表人文字色
 };
 
 function loadAnnualExportConfig() {
@@ -42,8 +42,8 @@ function loadAnnualExportConfig() {
     } else {
         config = {...annualExportDefault};
     }
-    // ✅归一化：input[type=color]只接受#rrggbb六位格式，旧数据中存的#eee三位简写会被移动端浏览器回退为黑色#000000
-    // ✅修改点7：扩展到新字段
+    // 归一化：input[type=color] 只接受 #rrggbb 六位格式，旧数据中存的 #eee 三位简写会被移动端浏览器回退为黑色 #000000
+    // 修改点7：扩展到新字段
     ['customborder', 'labelColor', 'boxBgColor', 'reporterColor'].forEach(key => {
         if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
             config[key] = "#" + config[key][1].repeat(2)
@@ -63,7 +63,7 @@ function saveAnnualExportConfig() {
 
 let annualExportConfig = loadAnnualExportConfig();
 
-// 游戏宫格固定标签（19项）
+// 游戏宫格固定标签（19 项）
 const GAME_GRID_FIXED_LABELS = [
     "年度最佳", "时长最长", "剧情最爱", "画风最爱", "音乐最爱",
     "过程最开心", "过程最幸福", "过程最心痛", "过程最坐牢",
@@ -71,7 +71,7 @@ const GAME_GRID_FIXED_LABELS = [
     "最想安利", "最想避雷", "最被低估偏冷门", "最需要续作/FD",
     "没期待但打完真香", "评价两极但我喜欢"
 ];
-// 角色宫格固定标签（13项）
+// 角色宫格固定标签（13 项）
 const CHAR_GRID_FIXED_LABELS = [
     "TA最可爱", "TA最蛊惑", "TA最符合XP", "TA最让人心疼",
     "为TA流过最多眼泪", "TA的线最甜", "TA的线最虐",
@@ -93,7 +93,7 @@ const getDefaultAnnualData = () => ({
     topList: [],
     charTopList: [],
     cpTopList: [],
-    // ===== 新增：五、其他 =====
+    // 新增：五、其他
     other: {
         alsoPlayed: [],
         favHeroine: null,       // 新增：最喜欢的女主 {gameId, charId, charName, coverSrc}
@@ -106,13 +106,13 @@ const getDefaultAnnualData = () => ({
         customCards: [],
         customCharCards: []     // 新增：自定义角色卡片 [{label, gameId, charId, charName, coverSrc}]
     },
-    // ===== 新增：六、ゲーム宫格 =====
+    // 新增：六、ゲーム宫格
     gameGrid: {
         fixed: GAME_GRID_FIXED_LABELS.map(label => ({label, gameId: "", gameName: "", coverSrc: ""})),
         custom: [],                                        // [{label, gameId, gameName, coverSrc}]
         nextYearExpect: ""
     },
-    // ===== 新增：七、キャラ宫格 =====
+    // 新增：七、キャラ宫格
     charGrid: {
         fixed: CHAR_GRID_FIXED_LABELS.map(label => ({label, gameId: "", charId: "", charName: "", coverSrc: ""})),
         custom: [],                                        // [{label, gameId, charId, charName, coverSrc}]
@@ -123,17 +123,17 @@ const getDefaultAnnualData = () => ({
 let annualData = getDefaultAnnualData();
 
 let btnAnnualExport;
-let _annualIsRendering = false;  // ✅新增：导出渲染锁，防止重复点击
+let _annualIsRendering = false;  // 新增：导出渲染锁，防止重复点击
 
-// =========【新增】全局弹窗：记录当前操作的TOP条目下标 0/1/2；null=弹窗关闭
+// 新增：全局弹窗，记录当前操作的 TOP 条目下标 0/1/2；null=弹窗关闭
 let activeTopItemIndex = null;
 
-// ========= キャラTOP3弹窗状态 =========
+// キャラTOP3 弹窗状态
 let activeCharTopItemIndex = null;
 
-// ========= ✅新增：カップルTOP弹窗状态 =========
+// 新增：カップルTOP 弹窗状态
 let activeCpTopItemIndex = null;
-// ===== 新增：弹窗上下文标记，区分当前弹窗服务于哪个模块 =====
+// 新增：弹窗上下文标记，区分当前弹窗服务于哪个模块
 let _activeModalContext = null;   // "gameTop"|"charTop"|"cpTop"|"otherAlso"|"otherFavCp"|"otherFavSupport"|"gameGrid"|"charGrid"
 let _activeGridTarget = null;     // {type:"fixed"|"custom", index:number}  宫格模块当前操作目标
 let _activeOtherCustomCharIndex = null;  // 新增：当前操作的自定义角色卡片下标
@@ -147,36 +147,36 @@ const annualCpNameIndex = new Map();
 
 // 弹窗内部视图状态：gameList / charList
 let charModalViewMode = "gameList";
-// 当前弹窗选中的游戏ID（进入角色列表时赋值）
+// 当前弹窗选中的游戏 ID（进入角色列表时赋值）
 let charModalCurrentGameId = null;
-// 弹窗内开关临时状态（只作用弹窗内部，不污染全局appData）
+// 弹窗内开关临时状态（只作用弹窗内部，不污染全局 appData）
 let charModalGlobal = {
     subChar: false,
     hideChar: false,
     fdChar: false,
-    fdSubChar: false  // ✅补丁新增：全局显示续作/FD次要角色
+    fdSubChar: false  // 补丁新增：全局显示续作/FD 次要角色
 };
 let charModalLocal = {
     subChar: false,
     hideChar: false,
     fdChar: false,
-    fdSubChar: false  // ✅补丁新增：单游戏显示续作/FD次要角色
+    fdSubChar: false  // 补丁新增：单游戏显示续作/FD 次要角色
 };
 
 // 模块内部状态标记
 let _annualRealInitialized = false;
 
-// 模块级标记，用于全局document click防重复绑定（当前方案已移除，保留作为预留）
+// 模块级标记，用于全局 document click 防重复绑定（当前方案已移除，保留作为预留）
 let _annualDocClickBound = false;
 let _annualSortDocClickHandler = null;
-// ✅补丁新增：Annual模式独立角色立绘索引，key="${gameId}-${charId}"，不污染FavList的charImageSelect
+// 补丁新增：Annual 模式独立角色立绘索引，key="${gameId}-${charId}"，不污染 FavList 的 charImageSelect
 const annualCharImgIndex = new Map();
-// ✅补丁新增：Annual模式独立角色名字索引，key="${gameId}-${charId}"，0=正常名，与立绘索引完全同构
+// 补丁新增：Annual 模式独立角色名字索引，key="${gameId}-${charId}"，0=正常名，与立绘索引完全同构
 const annualCharNameIndex = new Map();
 
 /**
- * 获取基础游戏模板（仅普通游戏，不含FD续作）
- * 供：角色弹窗使用，角色弹窗禁止读取FD游戏
+ * 获取基础游戏模板（仅普通游戏，不含 FD 续作）
+ * 供：角色弹窗使用，角色弹窗禁止读取 FD 游戏
  */
 function getGameTemplateState_BaseOnly() {
     const core = window.Core;
@@ -206,8 +206,8 @@ function getGameTemplateState_BaseOnly() {
 }
 
 /**
- * 获取游戏模板【包含FD续作】，仅年度报告【游戏TOP弹窗】使用
- * 普通FavList不会读取；角色弹窗不调用此函数
+ * 获取游戏模板【包含 FD 续作】，仅年度报告【游戏 TOP 弹窗】使用
+ * 普通 FavList 不会读取；角色弹窗不调用此函数
  */
 function getGameTemplateState_WithFD() {
     const baseState = getGameTemplateState_BaseOnly();
@@ -226,7 +226,7 @@ function getGameTemplateState_WithFD() {
 }
 
 /**
- * ✅补丁新增：获取角色在当前弹窗开关状态下的全部可用立绘src列表
+ * 补丁新增：获取角色在当前弹窗开关状态下的全部可用立绘 src 列表
  * 复用 main.js getAvailableCharImages，传入弹窗全局/局部开关
  * @param {Object} char 角色对象
  * @returns {string[]} 可用图片相对路径数组
@@ -248,9 +248,9 @@ function getAnnualCharAvailImages(char) {
 }
 
 /**
- * ✅补丁新增：重置角色弹窗局部开关（逻辑状态 + DOM勾选状态同步）
+ * 补丁新增：重置角色弹窗局部开关（逻辑状态 + DOM 勾选状态同步）
  * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
- * 防止上一个游戏的开关DOM勾选残留到下一个游戏造成显示与逻辑相反
+ * 防止上一个游戏的开关 DOM 勾选残留到下一个游戏造成显示与逻辑相反
  */
 function resetCharModalLocalSwitches() {
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
@@ -267,7 +267,7 @@ function resetCharModalLocalSwitches() {
 }
 
 /**
- * ✅新增：重置CP弹窗局部开关（逻辑+DOM同步）
+ * 新增：重置 CP 弹窗局部开关（逻辑+DOM 同步）
  */
 function resetCpModalLocalSwitches() {
     cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
@@ -279,7 +279,7 @@ function resetCpModalLocalSwitches() {
 }
 
 /**
- * ✅新增：CP弹窗角色可用立绘列表
+ * 新增：CP 弹窗角色可用立绘列表
  */
 function getAnnualCpAvailImages(char) {
     if (!char) return [];
@@ -293,9 +293,9 @@ function getAnnualCpAvailImages(char) {
 }
 
 /**
- * ✅补丁新增：统计角色在指定开关状态下的可用图片总数
+ * 补丁新增：统计角色在指定开关状态下的可用图片总数
  * 复用 main.js getAvailableCharImages，通过比较开关开/关时的图片数量差，
- * 判断角色是否有隐藏图片或FD图片，无需硬编码图片属性名。
+ * 判断角色是否有隐藏图片或 FD 图片，无需硬编码图片属性名。
  */
 function countCharImages(char, hideOn, fdOn) {
     if (!char) return 0;
@@ -308,8 +308,8 @@ function countCharImages(char, hideOn, fdOn) {
 }
 
 /**
- * ✅补丁新增：判断角色是否有"隐藏内容"（隐藏角色标记 / 隐藏姓名 / 隐藏图片）
- * 用于局部隐藏开关的显隐判断，解决"有隐藏图片/姓名但无isHidden标记时开关不显示"的问题
+ * 补丁新增：判断角色是否有"隐藏内容"（隐藏角色标记 / 隐藏姓名 / 隐藏图片）
+ * 用于局部隐藏开关的显隐判断，解决"有隐藏图片/姓名但无 isHidden 标记时开关不显示"的问题
  */
 function charHasHiddenContent(char) {
     if (!char) return false;
@@ -320,20 +320,20 @@ function charHasHiddenContent(char) {
 }
 
 /**
- * ✅补丁新增：判断角色是否有"FD内容"（FD角色标记 / FD图片）
- * 用于局部FD开关的显隐判断
+ * 补丁新增：判断角色是否有"FD 内容"（FD 角色标记 / FD 图片）
+ * 用于局部 FD 开关的显隐判断
  */
 function charHasFdContent(char) {
     if (!char) return false;
     if (char.isFD === true) return true;
-    // 开启FD开关后图片数量增加 → 角色有FD图片
+    // 开启 FD 开关后图片数量增加 → 角色有 FD 图片
     return countCharImages(char, false, true) > countCharImages(char, false, false);
 }
 
 /**
- * 更新单个TOP条目UI显隐状态（游戏）
+ * 更新单个 TOP 条目 UI 显隐状态（游戏）
  * @param {HTMLElement} itemDom annual-top-item
- * @param {Object} dataItem topList单条数据
+ * @param {Object} dataItem topList 单条数据
  */
 function refreshTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
@@ -353,9 +353,9 @@ function refreshTopItemUi(itemDom, dataItem) {
 }
 
 /**
- * 更新キャラTOP3单条UI
+ * 更新キャラTOP3 单条 UI
  * @param {HTMLElement} itemDom .annual-char-top-item
- * @param {Object} dataItem charTopList子项
+ * @param {Object} dataItem charTopList 子项
  */
 function refreshCharTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
@@ -375,7 +375,7 @@ function refreshCharTopItemUi(itemDom, dataItem) {
 }
 
 /**
- * ✅新增：更新カップルTOP单条UI显隐
+ * 新增：更新カップルTOP 单条 UI 显隐
  */
 function refreshCpTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
@@ -428,7 +428,7 @@ function isGameTemplateReady() {
 }
 
 /**
- * 渲染【全局模态弹窗】游戏候选列表（游戏TOP3）
+ * 渲染【全局模态弹窗】游戏候选列表（游戏 TOP3）
  * @param {HTMLElement} wrap 弹窗内列表容器
  * @param {string} keyword
  */
@@ -450,7 +450,7 @@ function renderGameList(wrap, keyword) {
         return String(g.name).toLowerCase().includes(kw);
     });
 
-    // ✅【核心修改：完全复用FavList主列表的中英日排序逻辑 localeCompare("zh-CN")】
+    // 核心修改：完全复用 FavList 主列表的中英日排序逻辑 localeCompare("zh-CN")
     const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
 
     sorted.forEach((game, listIndex)=>{
@@ -459,7 +459,7 @@ function renderGameList(wrap, keyword) {
         div.className = "game-option-item";
         div.innerHTML = renderGameSelectItem(game, listIndex);
         div.addEventListener("click", ()=>{
-            // ===== 新增：还玩了模块 =====
+            // 新增：还玩了模块
             if (_activeModalContext === "otherAlso") {
                 annualData.other.alsoPlayed.push({gameId: game.id, gameName: game.name, coverSrc: game.cover ?? ""});
                 saveAnnualData();
@@ -467,7 +467,7 @@ function renderGameList(wrap, keyword) {
                 closeAnnualGlobalGameModal();
                 return;
             }
-            // ===== 新增：游戏宫格模块 =====
+            // 新增：游戏宫格模块
             if (_activeModalContext === "gameGrid" && _activeGridTarget) {
                 const t = _activeGridTarget;
                 const targetItem = (t.type === "fixed") ? annualData.gameGrid.fixed[t.index] : annualData.gameGrid.custom[t.index];
@@ -476,7 +476,7 @@ function renderGameList(wrap, keyword) {
                     targetItem.gameName = game.name;
                     targetItem.coverSrc = game.cover ?? "";
                 }
-                // ✅修复：仅当编辑的是最后一个且此前完全空白的自定义卡片时，才追加新空白卡片
+                // 修复：仅当编辑的是最后一个且此前完全空白的自定义卡片时，才追加新空白卡片
                 if (t.type === "custom") {
                     const card = targetItem;
                     const isLastEmpty = t.index === annualData.gameGrid.custom.length - 1
@@ -486,7 +486,7 @@ function renderGameList(wrap, keyword) {
                     // 若目标卡片此前 gameId 为空且 label 为空，且它是最后一个，则追加
                     // 但此处赋值已完成，所以改用另一个判定：若 t.index 是最后一个索引，则追加
                 }
-                // ✅修复：仅当编辑的是最后一个且此前完全空白的自定义卡片时，才追加新空白卡片
+                // 修复：仅当编辑的是最后一个且此前完全空白的自定义卡片时，才追加新空白卡片
                 if (t.type === "custom") {
                     // 判断当前编辑的索引是否已经是最后一个自定义项
                     const isLastIndex = t.index === annualData.gameGrid.custom.length - 1;
@@ -500,18 +500,18 @@ function renderGameList(wrap, keyword) {
                 return;
             }
             if (activeTopItemIndex === null) return;
-            //【问题③】重复游戏校验：排除当前正在编辑这一条，其余不能重复
+            // 问题③：重复游戏校验：排除当前正在编辑这一条，其余不能重复
             const isDuplicate = annualData.topList.some((item,i)=> i !== activeTopItemIndex && item.gameId === game.id);
             if(isDuplicate){
                 alert("该游戏已经添加，不可重复添加");
                 return;
             }
-            // 回填到当前激活的topList条目
+            // 回填到当前激活的 topList 条目
             const targetItem = annualData.topList[activeTopItemIndex];
             targetItem.gameId = game.id;
             targetItem.gameName = game.name;
             targetItem.coverSrc = game.cover ?? "";
-            // 更新对应DOM条目UI
+            // 更新对应 DOM 条目 UI
             const topItemDomList = Array.from(document.querySelectorAll(".annual-top-item"));
             const targetDom = topItemDomList[activeTopItemIndex];
             if(targetDom){
@@ -562,7 +562,7 @@ function renderCharModalGameList(wrap, keyword) {
             div.innerHTML = renderGameSelectItem(game);
             div.addEventListener("click", () => {
                 charModalCurrentGameId = game.id;
-                // ✅补丁修改：统一重置局部开关（逻辑+DOM同步），防止跨游戏开关状态残留
+                // 补丁修改：统一重置局部开关（逻辑+DOM 同步），防止跨游戏开关状态残留
                 resetCharModalLocalSwitches();
                 switchCharModalView("charList");
                 renderCharModalCharList();
@@ -572,7 +572,7 @@ function renderCharModalGameList(wrap, keyword) {
         return;
     }
 
-    // ====== 有搜索词：同时收集匹配角色、匹配游戏 ======
+    // 有搜索词：同时收集匹配角色、匹配游戏
     const matchedCharacters = [];
     const matchedGames = new Set();
 
@@ -584,7 +584,7 @@ function renderCharModalGameList(wrap, keyword) {
         if(!Array.isArray(game.charList)) continue;
         for(const char of game.charList) {
             const charNameLow = String(char.name).toLowerCase();
-            // ✅补丁修改：隐藏开关或FD开关（角色isFD时）任一开启即可搜索隐藏名
+            // 补丁修改：隐藏开关或 FD 开关（角色 isFD 时）任一开启即可搜索隐藏名
             const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
             let hiddenNameMatch = false;
             if (showHideForSearch && char.hiddenName) {
@@ -595,7 +595,7 @@ function renderCharModalGameList(wrap, keyword) {
                 }
             }
             if(!charNameLow.includes(kw) && !hiddenNameMatch) continue;
-            // ✅改为OR逻辑：角色有多个状态true时任一对应开关开启即显示
+            // 改为 OR 逻辑：角色有多个状态 true 时任一对应开关开启即显示
             const isSub = char.isSub ?? false;
             const isHidden = !!char.isHidden;
             const isFD = !!char.isFD;
@@ -612,12 +612,12 @@ function renderCharModalGameList(wrap, keyword) {
             }
             if(pass){
                 matchedCharacters.push({game, char});
-                // ✅移除 matchedGames.add(game.id);
+                // 移除 matchedGames.add(game.id);
             }
         }
     }
 
-    // ✅【改动：创建两个独立子容器，角色、游戏上下分块，不混在同一个grid】
+    // 改动：创建两个独立子容器，角色、游戏上下分块，不混在同一个 grid
     const searchCharWrap = document.createElement("div");
     searchCharWrap.className = "search-char-result-wrap";
 
@@ -628,8 +628,8 @@ function renderCharModalGameList(wrap, keyword) {
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item search-result-char-item";
-        // ========== ✅补丁新增：搜索结果角色卡片支持多立绘切换 ==========
-        // 搜索视图只有全局开关生效，局部开关传false
+        // 补丁新增：搜索结果角色卡片支持多立绘切换
+        // 搜索视图只有全局开关生效，局部开关传 false
         const availUnits = getAvailableCharImages(char, charModalGlobal.hideChar, charModalGlobal.fdChar, false, false);
         const allSrc = [];
         availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
@@ -639,7 +639,7 @@ function renderCharModalGameList(wrap, keyword) {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // ========== ✅补丁修改：搜索结果角色卡片名字切换（隐藏或FD开关任一开启） ==========
+        // 补丁修改：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启）
         const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
         const searchNameList = getCharNameList(char, searchShowHide);
         const searchTotalNames = searchNameList.length;
@@ -653,7 +653,7 @@ function renderCharModalGameList(wrap, keyword) {
             <button class="char-name-switch-btn char-name-switch-prev annual-search-name-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>
             <button class="char-name-switch-btn char-name-switch-next annual-search-name-next" data-game-id="${game.id}" data-char-id="${char.id}">&gt;</button>
         ` : "";
-        // ========== 补丁结束 ==========
+        // 补丁结束
         div.innerHTML = `
             <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
                 ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-search-img-prev" data-game-id="${game.id}" data-char-id="${char.id}">&lt;</button>` : ""}
@@ -699,7 +699,7 @@ function renderCharModalGameList(wrap, keyword) {
                 }
             });
         }
-        // ========== ✅补丁新增：搜索结果名字切换事件 ==========
+        // 补丁新增：搜索结果名字切换事件
         if (searchCanSwitchName) {
             const nameTextEl = div.querySelector(".char-name-text");
             const namePrevBtn = div.querySelector(".annual-search-name-prev");
@@ -719,7 +719,7 @@ function renderCharModalGameList(wrap, keyword) {
                 nameTextEl.textContent = searchNameList[idx] || char.name;
             });
         }
-        // ========== 补丁结束 ==========
+        // 补丁结束
         div.addEventListener("click", ()=>{
             if(activeCharTopItemIndex === null) return;
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
@@ -730,11 +730,11 @@ function renderCharModalGameList(wrap, keyword) {
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = game.id;
             targetItem.charId = char.id;
-            // ✅补丁新增：保存用户当前选择的名字及索引
+            // 补丁新增：保存用户当前选择的名字及索引
             const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
             targetItem.nameIndex = finalNameIdx;
             targetItem.charName = searchNameList[finalNameIdx] || char.name;
-            // ✅使用当前选中的立绘索引
+            // 使用当前选中的立绘索引
             const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
             targetItem.coverSrc = allSrc[finalIdx] || "";
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
@@ -769,7 +769,7 @@ function renderCharModalGameList(wrap, keyword) {
         div.innerHTML = renderGameSelectItem(game);
         div.addEventListener("click", () => {
             charModalCurrentGameId = game.id;
-            // ✅补丁修改：统一重置局部开关（逻辑+DOM同步），防止跨游戏开关状态残留
+            // 补丁修改：统一重置局部开关（逻辑+DOM 同步），防止跨游戏开关状态残留
             resetCharModalLocalSwitches();
             switchCharModalView("charList");
             renderCharModalCharList();
@@ -777,7 +777,7 @@ function renderCharModalGameList(wrap, keyword) {
         searchGameWrap.appendChild(div);
     });
 
-    // 输出到外层wrap：角色块在上，游戏块在下，完全上下分开
+    // 输出到外层 wrap：角色块在上，游戏块在下，完全上下分开
     wrap.innerHTML = "";
     if(matchedCharacters.length > 0) {
         wrap.appendChild(searchCharWrap);
@@ -805,13 +805,13 @@ function renderCharModalCharList() {
         charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
         return;
     }
-    // ========== ✅补丁新增：有相关角色才显示对应单独开关（复用FavList逻辑） ==========
+    // 补丁新增：有相关角色才显示对应单独开关（复用 FavList 逻辑）
     const rawCharList = gameInfo.charList || [];
     const localSwitchVisibility = {
         "#annual-modal-game-sub-char":   rawCharList.some(c => c.isSub === true),
-        // ✅修复：隐藏开关不仅看isHidden标记，还要看是否有隐藏姓名或隐藏图片
+        // 修复：隐藏开关不仅看 isHidden 标记，还要看是否有隐藏姓名或隐藏图片
         "#annual-modal-game-hide-char":  rawCharList.some(c => charHasHiddenContent(c)),
-        // ✅修复：FD开关不仅看isFD标记，还要看是否有FD图片
+        // 修复：FD 开关不仅看 isFD 标记，还要看是否有 FD 图片
         "#annual-modal-game-fd-game":    rawCharList.some(c => charHasFdContent(c)),
         "#annual-modal-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
     };
@@ -821,8 +821,8 @@ function renderCharModalCharList() {
         const switchWrap = inputEl.closest("label")?.parentElement;
         if (switchWrap) switchWrap.style.display = visible ? "" : "none";
     });
-    // ========== 补丁结束 ==========
-    // 复制一套getAllGameChar过滤逻辑，使用弹窗本地开关，不碰appData
+    // 补丁结束
+    // 复制一套 getAllGameChar 过滤逻辑，使用弹窗本地开关，不碰 appData
     let chars = [...rawCharList];
     chars = chars.filter(c=>{
         const isSub = c.isSub ?? false;
@@ -848,7 +848,7 @@ function renderCharModalCharList() {
         if(!char) return;
         const div = document.createElement("div");
         div.className = "char-item";
-        // ========== ✅补丁新增：多立绘切换逻辑（复用FavList char-switch-btn） ==========
+        // 补丁新增：多立绘切换逻辑（复用 FavList char-switch-btn）
         const allSrc = getAnnualCharAvailImages(char);
         const imgKey = `${charModalCurrentGameId}-${char.id}`;
         if (!annualCharImgIndex.has(imgKey)) annualCharImgIndex.set(imgKey, 0);
@@ -856,7 +856,7 @@ function renderCharModalCharList() {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // ========== ✅补丁修改：角色列表卡片名字切换（隐藏或FD开关任一开启） ==========
+        // 补丁修改：角色列表卡片名字切换（隐藏或 FD 开关任一开启）
         const charListShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
         const charNameList = getCharNameList(char, charListShowHide);
         const charTotalNames = charNameList.length;
@@ -870,7 +870,7 @@ function renderCharModalCharList() {
             <button class="char-name-switch-btn char-name-switch-prev annual-char-name-prev" data-char-id="${char.id}">&lt;</button>
             <button class="char-name-switch-btn char-name-switch-next annual-char-name-next" data-char-id="${char.id}">&gt;</button>
         ` : "";
-        // ========== 补丁结束 ==========
+        // 补丁结束
         div.innerHTML = `
             <div class="char-card-img-box ${hasMultiImg ? 'char-multi-img' : ''}">
                 ${hasMultiImg ? `<button class="char-switch-btn char-switch-prev annual-char-img-prev" data-char-id="${char.id}">&lt;</button>` : ""}
@@ -914,7 +914,7 @@ function renderCharModalCharList() {
                 }
             });
         }
-        // ========== ✅补丁新增：角色列表名字切换事件 ==========
+        // 补丁新增：角色列表名字切换事件
         if (charCanSwitchName) {
             const nameTextEl = div.querySelector(".char-name-text");
             const namePrevBtn = div.querySelector(".annual-char-name-prev");
@@ -934,9 +934,9 @@ function renderCharModalCharList() {
                 nameTextEl.textContent = charNameList[idx] || char.name;
             });
         }
-        // ========== 补丁结束 ==========
+        // 补丁结束
         div.addEventListener("click",()=>{
-            // ===== 其他-最喜欢的配角 =====
+            // 其他-最喜欢的配角
             if (_activeModalContext === "otherFavSupport") {
                 const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
                 annualData.other.favSupport = {
@@ -950,7 +950,7 @@ function renderCharModalCharList() {
                 closeAnnualGlobalCharModal();
                 return;
             }
-            // ===== 新增：其他-最喜欢的女主 =====
+            // 新增：其他-最喜欢的女主
             if (_activeModalContext === "otherFavHeroine") {
                 const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
                 annualData.other.favHeroine = {
@@ -964,7 +964,7 @@ function renderCharModalCharList() {
                 closeAnnualGlobalCharModal();
                 return;
             }
-            // ===== 新增：其他-自定义角色卡片 =====
+            // 新增：其他-自定义角色卡片
             if (_activeModalContext === "otherCustomChar" && _activeOtherCustomCharIndex !== null) {
                 const idx = _activeOtherCustomCharIndex;
                 const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
@@ -975,7 +975,7 @@ function renderCharModalCharList() {
                     target.charName = charNameList[finalNameIdx] || char.name;
                     target.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
                 }
-                // ✅修复：选择角色后，如果是最后一个卡片且已填充，追加新空白卡片
+                // 修复：选择角色后，如果是最后一个卡片且已填充，追加新空白卡片
                 if (idx === annualData.other.customCharCards.length - 1) {
                     annualData.other.customCharCards.push({label: "", gameId: "", charId: "", charName: "", coverSrc: ""});
                 }
@@ -984,7 +984,7 @@ function renderCharModalCharList() {
                 closeAnnualGlobalCharModal();
                 return;
             }
-            // ===== 角色宫格模块 =====
+            // 角色宫格模块
             if (_activeModalContext === "charGrid" && _activeGridTarget) {
                 const t = _activeGridTarget;
                 const targetItem = (t.type === "fixed") ? annualData.charGrid.fixed[t.index] : annualData.charGrid.custom[t.index];
@@ -995,7 +995,7 @@ function renderCharModalCharList() {
                     targetItem.charName = charNameList[finalNameIdx] || char.name;
                     targetItem.coverSrc = allSrc[annualCharImgIndex.get(imgKey) ?? 0] || "";
                 }
-                // ✅修复：仅当编辑的是最后一个自定义卡片时，才追加新空白卡片
+                // 修复：仅当编辑的是最后一个自定义卡片时，才追加新空白卡片
                 if (t.type === "custom") {
                     const isLastIndex = t.index === annualData.charGrid.custom.length - 1;
                     if (isLastIndex) {
@@ -1016,11 +1016,11 @@ function renderCharModalCharList() {
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
             targetItem.gameId = charModalCurrentGameId;
             targetItem.charId = char.id;
-            // ✅补丁新增：保存用户当前选择的名字及索引
+            // 补丁新增：保存用户当前选择的名字及索引
             const finalNameIdx = annualCharNameIndex.get(imgKey) ?? 0;
             targetItem.nameIndex = finalNameIdx;
             targetItem.charName = charNameList[finalNameIdx] || char.name;
-            // ✅使用当前选中的立绘索引，而非固定第一张
+            // 使用当前选中的立绘索引，而非固定第一张
             const finalIdx = annualCharImgIndex.get(imgKey) ?? 0;
             targetItem.coverSrc = allSrc[finalIdx] || "";
             const charItemDoms = Array.from(document.querySelectorAll(".annual-char-top-item"));
@@ -1048,7 +1048,7 @@ function switchCharModalView(mode){
     const modal = document.getElementById("annual-global-char-modal");
     const inner = modal.querySelector(".annual-global-modal-inner");
     const backBtn = modal.querySelector(".annual-modal-back-btn");
-    // 清除旧视图class
+    // 清除旧视图 class
     inner.classList.remove("char-modal-gamelist-view", "char-modal-charlist-view");
 
     if(mode === "gameList"){
@@ -1062,7 +1062,7 @@ function switchCharModalView(mode){
 
 /**
  * 打开角色选择弹窗
- * @param {number} targetIndex charTopList下标 0/1/2
+ * @param {number} targetIndex charTopList 下标 0/1/2
  */
 function openAnnualGlobalCharModal(targetIndex, context){
     if(!_annualRealInitialized && isGameTemplateReady()){
@@ -1078,16 +1078,16 @@ function openAnnualGlobalCharModal(targetIndex, context){
     charModalCurrentGameId = null;
     charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    // ✅补丁新增：每次打开弹窗清空立绘索引缓存，避免上次选择残留
+    // 补丁新增：每次打开弹窗清空立绘索引缓存，避免上次选择残留
     annualCharImgIndex.clear();
-    // ✅补丁新增：清空名字索引缓存
+    // 补丁新增：清空名字索引缓存
     annualCharNameIndex.clear();
     switchCharModalView("gameList");
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
-    // ✅修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
-    // 重置开关DOM勾选（对齐HTML真实id）
+    // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
+    // 重置开关 DOM 勾选（对齐 HTML 真实 id）
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
     modal.querySelector("#annual-modal-global-hide-char").checked = false;
     modal.querySelector("#annual-modal-global-fd-game").checked = false;
@@ -1129,10 +1129,10 @@ function closeAnnualGlobalCharModal(){
 }
 
 /**
- * 打开年度全局游戏选择弹窗（游戏TOP3）
+ * 打开年度全局游戏选择弹窗（游戏 TOP3）
  */
 function openAnnualGlobalGameModal(targetIndex, context){
-    // 【修复】打开弹窗的时候再次尝试执行业务初始化，如果之前超时还没初始化完成
+    // 修复：打开弹窗的时候再次尝试执行业务初始化，如果之前超时还没初始化完成
     if(!_annualRealInitialized && isGameTemplateReady()){
         realInitAnnualModule();
     }
@@ -1144,7 +1144,7 @@ function openAnnualGlobalGameModal(targetIndex, context){
     const searchInput = modal.querySelector(".annual-global-search-input");
     const listWrap = modal.querySelector(".annual-global-game-list");
     searchInput.value = "";
-    // ✅修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
+    // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     // 打开弹窗，再次校验模板状态
     renderGameList(listWrap, "");
 }
@@ -1175,7 +1175,7 @@ function closeAnnualGlobalGameModal(){
 function bindTop3Items() {
     const topItems = document.querySelectorAll(".annual-top-item");
     topItems.forEach((item, domIndex)=>{
-        // domIndex：DOM遍历顺序 = 数组真实下标，不再读取data-rank做索引
+        // domIndex：DOM 遍历顺序 = 数组真实下标，不再读取 data-rank 做索引
         const dataItem = annualData.topList[domIndex];
         const nameTextEl = item.querySelector(".annual-game-name-text");
         const textarea = item.querySelector(".annual-top-textarea");
@@ -1222,7 +1222,7 @@ function bindCharTop3Items() {
 }
 
 /**
- * ✅新增：绑定カップルTOP全部条目（名称、双封面、感想框）
+ * 新增：绑定カップルTOP 全部条目（名称、双封面、感想框）
  */
 function bindCpTop3Items() {
     const cpItems = document.querySelectorAll(".annual-cp-top-item");
@@ -1233,7 +1233,7 @@ function bindCpTop3Items() {
         const textarea = item.querySelector(".annual-cp-textarea");
         const femaleImg = item.querySelector(".annual-cp-female-cover");
         const maleImg = item.querySelector(".annual-cp-male-cover");
-        // ✅修改点9a：名称显示为"女角色×男角色"
+        // 修改点9a：名称显示为"女角色×男角色"
         nameTextEl.textContent = `${dataItem.femaleName ?? ''}×${dataItem.maleName ?? ''}`;
         textarea.value = dataItem.text ?? "";
         if(dataItem.femaleCoverSrc) femaleImg.src = getWebImageUrl(dataItem.femaleCoverSrc);
@@ -1249,7 +1249,7 @@ function bindCpTop3Items() {
 }
 
 /**
- * ✅新增：拖拽后，刷新游戏TOP全部NO.N标签文本（根据数组真实下标，不依赖data-rank）
+ * 新增：拖拽后，刷新游戏 TOP 全部 NO.N 标签文本（根据数组真实下标，不依赖 data-rank）
  */
 function rerenderGameTopNoLabel(){
     const items = Array.from(document.querySelectorAll(".annual-top-item"));
@@ -1260,14 +1260,14 @@ function rerenderGameTopNoLabel(){
     });
 }
 /**
- * ✅新增：拖拽后，刷新角色TOP全部NO.N标签文本
+ * 新增：拖拽后，刷新角色 TOP 全部 NO.N 标签文本
  */
 function rerenderCharTopNoLabel(){
     const items = Array.from(document.querySelectorAll(".annual-char-top-item"));
     items.forEach((dom, arrIdx)=>{
         const labelEl = dom.querySelector(".annual-top-label");
         labelEl.textContent = `NO.${arrIdx+1}`;
-        dom.dataset.rank = String(arrIdx + 1); //同步更新属性
+        dom.dataset.rank = String(arrIdx + 1); // 同步更新属性
     });
 }
 
@@ -1281,14 +1281,14 @@ function rerenderCpTopNoLabel(){
 }
 
 /**
- * 【问题②】动态追加游戏TOP DOM条目，不限数量
+ * 问题②：动态追加游戏 TOP DOM 条目，不限数量
  */
 function appendNewGameTopDom(){
     const container = document.getElementById("annual-game-top-drag-container");
     const itemDom = document.createElement("div");
     itemDom.className = "annual-top-item";
     itemDom.dataset.dragType = "game-top";
-    // 不写死NO.xxx、不写死data-rank，全部交给rerenderGameTopNoLabel
+    // 不写死 NO.xxx、不写死 data-rank，全部交给 rerenderGameTopNoLabel
     itemDom.innerHTML = `
         <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
@@ -1310,12 +1310,12 @@ function appendNewGameTopDom(){
     container.appendChild(itemDom);
     bindTop3Items();
     rerenderGameTopNoLabel();
-    // ✅修复：动态追加条目后重新绑定文本框拖拽手柄
+    // 修复：动态追加条目后重新绑定文本框拖拽手柄
     bindAnnualTextareaResize();
 }
 
 /**
- * 【问题②】动态追加角色TOP DOM条目，不限数量
+ * 问题②：动态追加角色 TOP DOM 条目，不限数量
  */
 function appendNewCharTopDom(){
     const container = document.getElementById("annual-char-top-drag-container");
@@ -1343,12 +1343,12 @@ function appendNewCharTopDom(){
     container.appendChild(itemDom);
     bindCharTop3Items();
     rerenderCharTopNoLabel();
-    // ✅修复：动态追加条目后重新绑定文本框拖拽手柄
+    // 修复：动态追加条目后重新绑定文本框拖拽手柄
     bindAnnualTextareaResize();
 }
 
 /**
- * ✅新增：动态追加カップルTOP DOM条目
+ * 新增：动态追加カップルTOP DOM 条目
  */
 function appendNewCpTopDom(){
     const container = document.getElementById("annual-cp-top-drag-container");
@@ -1377,12 +1377,12 @@ function appendNewCpTopDom(){
     container.appendChild(itemDom);
     bindCpTop3Items();
     rerenderCpTopNoLabel();
-    // ✅修复：动态追加条目后重新绑定文本框拖拽手柄
+    // 修复：动态追加条目后重新绑定文本框拖拽手柄
     bindAnnualTextareaResize();
 }
 
 /**
- * 根据 topList 数组完整重建游戏TOP DOM，初始化使用
+ * 根据 topList 数组完整重建游戏 TOP DOM，初始化使用
  */
 function rebuildGameTopDomAll(){
     const container = document.getElementById("annual-game-top-drag-container");
@@ -1393,7 +1393,7 @@ function rebuildGameTopDomAll(){
 }
 
 /**
- * 根据 charTopList 数组完整重建角色TOP DOM，初始化使用
+ * 根据 charTopList 数组完整重建角色 TOP DOM，初始化使用
  */
 function rebuildCharTopDomAll(){
     const container = document.getElementById("annual-char-top-drag-container");
@@ -1412,7 +1412,7 @@ function rebuildCpTopDomAll(){
     });
 }
 
-// ===================== 五、其他 模块 =====================
+// 五、其他 模块
 function renderOtherAlsoPlayed() {
     const content = document.getElementById("annual-other-also-content");
     if (!content) return;
@@ -1505,7 +1505,7 @@ function bindOtherTextareas() {
 }
 
 /**
- * ✅新增：自定义标签 textarea 自动调整高度（随内容换行自动增高）
+ * 新增：自定义标签 textarea 自动调整高度（随内容换行自动增高）
  * 解决 input 单行无法换行、长标签被截断看不到的问题
  */
 function autoResizeCustomLabel(textarea) {
@@ -1516,11 +1516,11 @@ function autoResizeCustomLabel(textarea) {
     textarea.style.height = textarea.scrollHeight + 'px';
 }
 
-// ===== 新增：模块五末尾自定义卡片 =====
+// 新增：模块五末尾自定义卡片
 function renderOtherCustomCards() {
     const row = document.getElementById("annual-other-cards-row");
     if (!row) return;
-    // 清理旧的自定义卡片（保留前6个静态框）
+    // 清理旧的自定义卡片（保留前 6 个静态框）
     row.querySelectorAll('.annual-other-custom-card').forEach(el => el.remove());
     // 至少保留一个空白自定义卡片
     if (!annualData.other.customCards || annualData.other.customCards.length === 0) {
@@ -1549,7 +1549,7 @@ function renderOtherCustomCards() {
             saveAnnualData();
         };
         ta.addEventListener("input", ta._inputHandler);
-        // ✅新增：失焦时才检查是否追加新空白卡片并重新渲染
+        // 新增：失焦时才检查是否追加新空白卡片并重新渲染
         ta.removeEventListener("blur", ta._blurHandler);
         ta._blurHandler = () => {
             const idx = Number(ta.dataset.otherCustomLabel);
@@ -1570,7 +1570,7 @@ function renderOtherCustomCards() {
             saveAnnualData();
         };
         ta.addEventListener("input", ta._inputHandler);
-        // ✅新增：失焦时如果是最后一个卡片且文本非空，追加新空白卡片
+        // 新增：失焦时如果是最后一个卡片且文本非空，追加新空白卡片
         ta.removeEventListener("blur", ta._blurHandler);
         ta._blurHandler = () => {
             const idx = Number(ta.dataset.otherCustomText);
@@ -1582,7 +1582,7 @@ function renderOtherCustomCards() {
         };
         ta.addEventListener("blur", ta._blurHandler);
     });
-    // ✅修复：动态渲染后重新绑定文本框拖拽手柄
+    // 修复：动态渲染后重新绑定文本框拖拽手柄
     bindAnnualTextareaResize();
 }
 
@@ -1600,7 +1600,7 @@ function renderOtherCustomCharCards() {
     annualData.other.customCharCards.forEach((card, idx) => {
         const div = document.createElement("div");
         div.className = "annual-other-card annual-other-custom-char-card";
-        // 卡片body：有角色显示图片+删除，无角色显示＋按钮
+        // 卡片 body：有角色显示图片+删除，无角色显示＋按钮
         let bodyHtml;
         if (card.charId) {
             bodyHtml = `
@@ -1632,7 +1632,7 @@ function renderOtherCustomCharCards() {
             saveAnnualData();
         };
         ta.addEventListener("input", ta._inputHandler);
-        // ✅新增：失焦时才检查是否追加新空白卡片并重新渲染
+        // 新增：失焦时才检查是否追加新空白卡片并重新渲染
         ta.removeEventListener("blur", ta._blurHandler);
         ta._blurHandler = () => {
             const idx = Number(ta.dataset.otherCustomCharLabel);
@@ -1651,12 +1651,12 @@ function rebuildOtherModule() {
     renderOtherFavHeroine();      // 新增
     renderOtherFavCp();
     renderOtherFavSupport();
-    renderOtherCustomCharCards(); // 新增（必须在customCards之前，确保插入位置正确）
+    renderOtherCustomCharCards(); // 新增（必须在 customCards 之前，确保插入位置正确）
     renderOtherCustomCards();
     bindOtherTextareas();
 }
 
-// ===================== 六、ゲーム宫格 模块 =====================
+// 六、ゲーム宫格 模块
 function renderGameGrid() {
     const container = document.getElementById("annual-game-grid-container");
     if (!container) return;
@@ -1686,7 +1686,7 @@ function renderGameGrid() {
             if(item) { item.label = ta.value; saveAnnualData(); }
         };
         ta.addEventListener("input", ta._inputHandler);
-        // ✅新增：失焦时如果是最后一个自定义卡片且标签非空，追加新空白卡片
+        // 新增：失焦时如果是最后一个自定义卡片且标签非空，追加新空白卡片
         ta.removeEventListener("blur", ta._blurHandler);
         ta._blurHandler = () => {
             if (type === "custom" && item && ta.value.trim() !== "") {
@@ -1724,7 +1724,7 @@ function renderGameGridItem(item, type, idx) {
         </div>`;
 }
 
-// ===================== 七、キャラ宫格 模块 =====================
+// 七、キャラ宫格 模块
 function renderCharGrid() {
     const container = document.getElementById("annual-char-grid-container");
     if (!container) return;
@@ -1752,7 +1752,7 @@ function renderCharGrid() {
             if(item) { item.label = ta.value; saveAnnualData(); }
         };
         ta.addEventListener("input", ta._inputHandler);
-        // ✅新增：失焦时如果是最后一个自定义卡片且标签非空，追加新空白卡片
+        // 新增：失焦时如果是最后一个自定义卡片且标签非空，追加新空白卡片
         ta.removeEventListener("blur", ta._blurHandler);
         ta._blurHandler = () => {
             if (type === "custom" && item && ta.value.trim() !== "") {
@@ -1788,21 +1788,21 @@ function renderCharGridItem(item, type, idx) {
             ${labelEl}
         </div>`;
 }
-// ==========【问题⑥】移动端触摸拖拽兼容（替代HTML5 draggable，解决移动端无反应） ==========
+// 问题⑥：移动端触摸拖拽兼容（替代 HTML5 draggable，解决移动端无反应）
 function bindTouchDrag(){
-    // 游戏TOP触摸拖拽
+    // 游戏 TOP 触摸拖拽
     setupTouchSort("#annual-game-top-drag-container", annualData.topList, ()=>{
         bindTop3Items();
         rerenderGameTopNoLabel();
         saveAnnualData();
     });
-    // 角色TOP触摸拖拽
+    // 角色 TOP 触摸拖拽
     setupTouchSort("#annual-char-top-drag-container", annualData.charTopList, ()=>{
         bindCharTop3Items();
         rerenderCharTopNoLabel();
         saveAnnualData();
     });
-    // ✅新增：CP TOP触摸拖拽
+    // 新增：CP TOP 触摸拖拽
     setupTouchSort("#annual-cp-top-drag-container", annualData.cpTopList, ()=>{
         bindCpTop3Items();
         rerenderCpTopNoLabel();
@@ -1811,11 +1811,11 @@ function bindTouchDrag(){
 }
 
 /**
- * 统一排序工具函数：PC鼠标 / Mobile触摸 共用
- * 行为：长按NO+名称行2000ms进入选中模式
- *  - 进入选中模式：源卡片外层卡片虚线#f6a5b8高亮；出现红色插入指示横线
- *  - 松手后可以自由滚动页面，鼠标hover卡片更新指示线位置，**第一次点击横线变色，第二次点击执行【移动插入splice】，不是交换**
- *  - 再次长按任意NO+名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑
+ * 统一排序工具函数：PC 鼠标 / Mobile 触摸 共用
+ * 行为：长按 NO+名称行 2000ms 进入选中模式
+ *  - 进入选中模式：源卡片外层卡片虚线 #f6a5b8 高亮；出现红色插入指示横线
+ *  - 松手后可以自由滚动页面，鼠标 hover 卡片更新指示线位置，第一次点击横线变色，第二次点击执行【移动插入 splice】，不是交换
+ *  - 再次长按任意 NO+名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑
  * @param {string} containerSel 容器选择器
  * @param {Array} dataArr 对应数据数组
  * @param {Function} afterSort 插入完成回调
@@ -1830,14 +1830,14 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     // 选中锁定模式状态
     let selectedItem = null;
     let selectedIndex = null;
-    // PC鼠标按下临时变量
+    // PC 鼠标按下临时变量
     let mouseStartY = null;
     let mouseStartX = null;
-    // ✅防止长按松手后立刻触发click误清除选中
+    // 防止长按松手后立刻触发 click 误清除选中
     let selectCoolDown = false;
     let selectedFirstClickAfterEnter = false;
 
-    // 清除选中状态、**销毁全部**插入指示线DOM
+    // 清除选中状态、销毁全部插入指示线 DOM
     function clearSelectState(){
         if(selectedItem){
             selectedItem.classList.remove("sort-selected-item");
@@ -1847,7 +1847,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         selectedIndex = null;
         selectCoolDown = false;
         selectedFirstClickAfterEnter = false;
-        // 删除容器内所有横线DOM
+        // 删除容器内所有横线 DOM
         const allIndicators = Array.from(container.querySelectorAll(".sort-insert-indicator"));
         allIndicators.forEach(el=>{
             if(el.parentNode) el.parentNode.removeChild(el);
@@ -1855,14 +1855,14 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     }
 
     /**
-     * 进入排序模式：批量生成全部卡片之间的插入横线DOM
-     * 每条横线挂载 dataset.beforeIndex：代表插入到第beforeIndex条卡片之前
+     * 进入排序模式：批量生成全部卡片之间的插入横线 DOM
+     * 每条横线挂载 dataset.beforeIndex：代表插入到第 beforeIndex 条卡片之前
      */
     function renderAllInsertIndicators() {
         if(!selectedItem) return;
         const items = Array.from(container.querySelectorAll(".annual-top-item,.annual-char-top-item,.annual-cp-top-item"));
         if(items.length === 0) return;
-        // 统一创建横线的工厂函数（避免前后两处重复写onclick逻辑）
+        // 统一创建横线的工厂函数（避免前后两处重复写 onclick 逻辑）
         function createIndicator(beforeIndex) {
             const indicatorDom = document.createElement("div");
             indicatorDom.className = "sort-insert-indicator";
@@ -1893,19 +1893,19 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             };
             return indicatorDom;
         }
-        // 循环：在每一个item前面插入指示线（beforeIndex = 0 ~ items.length-1）
+        // 循环：在每一个 item 前面插入指示线（beforeIndex = 0 ~ items.length-1）
         items.forEach((beforeItemDom, beforeIndex)=>{
             const indicatorDom = createIndicator(beforeIndex);
             beforeItemDom.parentNode.insertBefore(indicatorDom, beforeItemDom);
         });
-        // ✅新增：在最后一个item后面追加一条横线（beforeIndex = items.length），支持插入到最后一位
+        // 新增：在最后一个 item 后面追加一条横线（beforeIndex = items.length），支持插入到最后一位
         const lastIndicator = createIndicator(items.length);
         container.appendChild(lastIndicator);
     }
 
-    // 长按1000ms进入锁定选中模式
+    // 长按 1000ms 进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
-        // 如果长按当前已经选中的条目：直接退出选中模式（需求：再次长按NO/封面退出）
+        // 如果长按当前已经选中的条目：直接退出选中模式（需求：再次长按 NO/封面退出）
         if(selectedItem === itemDom){
             clearSelectState();
             console.log("[sort] 退出选中模式");
@@ -1924,11 +1924,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         setTimeout(()=>{
             selectCoolDown = false;
         },300);
-        // ✅进入排序模式，批量生成全部卡片中间横线
+        // 进入排序模式，批量生成全部卡片中间横线
         renderAllInsertIndicators();
     }
 
-    // ============ 移动端 touch 事件 ============
+    // 移动端 touch 事件
     container.addEventListener("touchstart", (e) => {
         if(pressTimer !== null){
             clearTimeout(pressTimer);
@@ -1946,7 +1946,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             return;
         }
 
-        // ========= 新增判断：只在 NO标签 / 名称文本 / 封面图片 才执行 preventDefault =========
+        // 新增判断：只在 NO 标签 / 名称文本 / 封面图片 才执行 preventDefault
         const hitDragTrigger = !!e.target.closest(`
             .annual-top-label,
             .annual-game-name-text,
@@ -1972,7 +1972,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         }, 1000);
     }, {passive: false});
 
-    // ✅【重大修改】touchmove：**只处理还未触发长按阶段的移动阈值判断；进入选中模式后完全不操作指示线，删除updateIndicatorByPoint调用**
+    // 重大修改：touchmove 只处理还未触发长按阶段的移动阈值判断；进入选中模式后完全不操作指示线，删除 updateIndicatorByPoint 调用
     container.addEventListener("touchmove", (e) => {
         if(pressTimer !== null && touchStartY !== null && touchStartX !== null){
             const touch = e.touches[0];
@@ -2004,7 +2004,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         touchStartX = null;
     }, { passive: true });
 
-    // ============ PC鼠标 mousedown 长按1000ms逻辑 ============
+    // PC 鼠标 mousedown 长按 1000ms 逻辑
     container.addEventListener("mousedown", (e)=>{
         const labelRow = e.target.closest(".annual-top-label-row, .annual-top-content-row, .annual-char-top-content-row, .annual-cp-top-content-row");
         if (!labelRow) {
@@ -2018,11 +2018,11 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             pressTimer = null;
             return;
         }
-        // ✅关键修复：点击文本框/输入框/拖拽手柄/删除按钮时，直接放行，不阻止默认行为，不触发长按排序
+        // 关键修复：点击文本框/输入框/拖拽手柄/删除按钮时，直接放行，不阻止默认行为，不触发长按排序
         if (e.target.closest("textarea, input, .resize-handle, .annual-item-delete-btn")) {
             return;
         }
-        // ✅只在 NO标签 / 名称文本 / 封面图片 上才阻止默认并进入长按排序（与移动端 touchstart 的 hitDragTrigger 完全对齐）
+        // 只在 NO 标签 / 名称文本 / 封面图片 上才阻止默认并进入长按排序（与移动端 touchstart 的 hitDragTrigger 完全对齐）
         const hitDragTrigger = !!e.target.closest(`
             .annual-top-label,
             .annual-game-name-text,
@@ -2048,7 +2048,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
         },1000);
 
         function onMouseMove(me){
-            // mousemove：仅长按未触发时判断移动阈值；进入排序模式**彻底删除更新指示线逻辑**
+            // mousemove：仅长按未触发时判断移动阈值；进入排序模式彻底删除更新指示线逻辑
             if(pressTimer !== null){
                 const deltaY = Math.abs(me.clientY - mouseStartY);
                 const deltaX = Math.abs(me.clientX - mouseStartX);
@@ -2074,7 +2074,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
     container.addEventListener("click", (e)=>{
         if(!selectedItem) return;
         if(selectCoolDown) return;
-        // 如果点击对象是横线，onclick已经在DOM回调处理，此处直接return
+        // 如果点击对象是横线，onclick 已经在 DOM 回调处理，此处直接 return
         const clickIndicator = e.target.closest(".sort-insert-indicator");
         if(clickIndicator){
             return;
@@ -2084,7 +2084,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
             selectedFirstClickAfterEnter = false;
             return;
         }
-        // 点击空白 / 其他卡片，不会退出；只有再次长按NO/封面区域才退出（符合需求）
+        // 点击空白 / 其他卡片，不会退出；只有再次长按 NO/封面区域才退出（符合需求）
     });
 }
 
@@ -2104,7 +2104,7 @@ function updateSliderProgress(sliderEl) {
 }
 
 /**
- * 从DOM读取年度报告各模块标题（去掉序号前缀）
+ * 从 DOM 读取年度报告各模块标题（去掉序号前缀）
  */
 function getAnnualModuleTitles() {
     const cards = document.querySelectorAll('.mode-wrap[data-mode="annual"] .big-card');
@@ -2123,7 +2123,7 @@ function getAnnualModuleTitles() {
 }
 
 /**
- * ✅新增：年度报告感想框垂直拖拽（PC鼠标+移动端touch兼容）
+ * 新增：年度报告感想框垂直拖拽（PC 鼠标+移动端 touch 兼容）
  * 对齐 script.js bindTextareaResizeHandler 逻辑
  */
 function bindAnnualTextareaResize() {
@@ -2162,7 +2162,7 @@ function bindAnnualTextareaResize() {
 }
 
 /**
- * ✅新增：将需要影响 mode-wrap 外部元素（整个页面背景、site-title大标题）的颜色同步到 .wrap
+ * 新增：将需要影响 mode-wrap 外部元素（整个页面背景、site-title 大标题）的颜色同步到 .wrap
  * 因为 .site-title 和 .mode-switch-wrap 在 .mode-wrap 外面，继承不到 mode-wrap 上的变量
  */
 function applyAnnualPageColors() {
@@ -2170,7 +2170,7 @@ function applyAnnualPageColors() {
     if (!wrapEl) return;
     wrapEl.style.backgroundColor = annualExportConfig.bg;
     wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
-    // ✅同步设置body背景色，让视口两侧（.wrap最大宽度之外的区域）也跟着变色
+    // 同步设置 body 背景色，让视口两侧（.wrap 最大宽度之外的区域）也跟着变色
     document.body.style.backgroundColor = annualExportConfig.bg;
 }
 
@@ -2178,8 +2178,8 @@ function applyAnnualPageColors() {
  * 年度报告导出面板绑定
  */
 function bindAnnualExportPanel() {
-    // ✅关键修复：CSS变量设在mode-wrap元素自身（内联样式覆盖CSS规则中的硬编码值），
-    // 不能设在body上——.mode-wrap[data-mode="annual"]规则中硬编码的变量会遮蔽body继承值
+    // 关键修复：CSS 变量设在 mode-wrap 元素自身（内联样式覆盖 CSS 规则中的硬编码值），
+    // 不能设在 body 上——.mode-wrap[data-mode="annual"] 规则中硬编码的变量会遮蔽 body 继承值
     const annualWrap = document.querySelector('.mode-wrap[data-mode="annual"]') || document.body;
     const btnResetColor = document.getElementById("annual-btn-reset-color");
     const colorBg = document.getElementById("annual-color-bg");
@@ -2187,12 +2187,12 @@ function bindAnnualExportPanel() {
     const colorGamename = document.getElementById("annual-color-gamename");
     const colorCustomtext = document.getElementById("annual-color-customtext");
     const colorBorder = document.getElementById("annual-color-border");
-    // ✅新增4个颜色选择器元素
+    // 新增 4 个颜色选择器元素
     const colorSubtitle = document.getElementById("annual-color-subtitle");
     const colorStattext = document.getElementById("annual-color-stattext");
     const colorStatdata = document.getElementById("annual-color-statdata");
     const colorCustomborder = document.getElementById("annual-color-customborder");
-    // ✅修改点8：新增四个控件元素引用
+    // 修改点8：新增四个控件元素引用
     const colorLabelcolor = document.getElementById("annual-color-labelcolor");
     const colorBoxbg = document.getElementById("annual-color-boxbg");
     const colorReportercolor = document.getElementById("annual-color-reportercolor");
@@ -2201,7 +2201,7 @@ function bindAnnualExportPanel() {
     const fontValueDisplay = document.getElementById("annual-custom-text-font-value");
     const btnExportImage = document.getElementById("annual-btn-export-image");
     const useSummaryTitleEl = document.getElementById("annual-use-summary-title");
-    const useOshiTitleEl = document.getElementById("annual-use-oshi-title");  // ✅新增：推し标题开关
+    const useOshiTitleEl = document.getElementById("annual-use-oshi-title");  // 新增：推し标题开关
     const normalQualityEl = document.getElementById("annual-export-normal-quality");
     const canvasEl = document.getElementById("annual-export-canvas");
     const snapshotBox = document.getElementById("snapshot-container");
@@ -2215,12 +2215,12 @@ function bindAnnualExportPanel() {
     colorGamename.value = annualExportConfig.gamename;
     colorCustomtext.value = annualExportConfig.customtext;
     colorBorder.value = annualExportConfig.border;
-    // ✅新增4个颜色初始化
+    // 新增 4 个颜色初始化
     colorSubtitle.value = annualExportConfig.subtitle;
     colorStattext.value = annualExportConfig.stattext;
     colorStatdata.value = annualExportConfig.statdata;
     colorCustomborder.value = annualExportConfig.customborder;
-    // ✅修改点8：新字段初始化
+    // 修改点8：新字段初始化
     if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
     if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
     if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
@@ -2229,22 +2229,22 @@ function bindAnnualExportPanel() {
     fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
     updateSliderProgress(sliderFont);
     if (useSummaryTitleEl) useSummaryTitleEl.checked = !!annualExportConfig.useSummaryTitle;
-    if (useOshiTitleEl) useOshiTitleEl.checked = !!annualExportConfig.useOshiTitle;  // ✅新增
+    if (useOshiTitleEl) useOshiTitleEl.checked = !!annualExportConfig.useOshiTitle;  // 新增
     if (normalQualityEl) normalQualityEl.checked = !!annualExportConfig.normalQuality;
 
     annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
     annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
-    annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
+    annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // 新增
     annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-    annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
-    annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
+    annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // 新增
+    annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // 新增
     annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-    annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
-    // ✅修改点8：新增CSS变量注入
+    annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // 新增
+    // 修改点8：新增 CSS 变量注入
     annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
     annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
     annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
-    // ✅同步到 .wrap（控制整个页面背景 + site-title大标题颜色）
+    // 同步到 .wrap（控制整个页面背景 + site-title 大标题颜色）
     applyAnnualPageColors();
 
     btnResetColor.removeEventListener("click", btnResetColor._handler);
@@ -2256,12 +2256,12 @@ function bindAnnualExportPanel() {
         colorGamename.value = annualExportConfig.gamename;
         colorCustomtext.value = annualExportConfig.customtext;
         colorBorder.value = annualExportConfig.border;
-        // ✅新增4个颜色重置
+        // 新增 4 个颜色重置
         colorSubtitle.value = annualExportConfig.subtitle;
         colorStattext.value = annualExportConfig.stattext;
         colorStatdata.value = annualExportConfig.statdata;
         colorCustomborder.value = annualExportConfig.customborder;
-        // ✅修改点9：重置按钮更新新字段
+        // 修改点9：重置按钮更新新字段
         if (colorLabelcolor) colorLabelcolor.value = annualExportConfig.labelColor;
         if (colorBoxbg) colorBoxbg.value = annualExportConfig.boxBgColor;
         if (colorReportercolor) colorReportercolor.value = annualExportConfig.reporterColor;
@@ -2269,20 +2269,20 @@ function bindAnnualExportPanel() {
         sliderFont.value = annualExportConfig.customTextFontSize;
         fontValueDisplay.textContent = `${annualExportConfig.customTextFontSize}px`;
         if (useSummaryTitleEl) useSummaryTitleEl.checked = false;
-        if (useOshiTitleEl) useOshiTitleEl.checked = false;  // ✅新增：重置推し标题开关
+        if (useOshiTitleEl) useOshiTitleEl.checked = false;  // 新增：重置推し标题开关
         annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
         annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
-        annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // ✅新增
+        annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);       // 新增
         annualWrap.style.setProperty("--annual-export-gamename", annualExportConfig.gamename);
-        annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // ✅新增
-        annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // ✅新增
+        annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);       // 新增
+        annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);       // 新增
         annualWrap.style.setProperty("--annual-export-customtext", annualExportConfig.customtext);
-        annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // ✅新增
-        // ✅修改点9：重置按钮CSS变量重新注入
+        annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder); // 新增
+        // 修改点9：重置按钮 CSS 变量重新注入
         annualWrap.style.setProperty("--annual-export-labelcolor", annualExportConfig.labelColor);
         annualWrap.style.setProperty("--annual-export-boxbg", annualExportConfig.boxBgColor);
         annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
-        // ✅同步到 .wrap
+        // 同步到 .wrap
         applyAnnualPageColors();
         updateSliderProgress(sliderFont);
     };
@@ -2291,7 +2291,7 @@ function bindAnnualExportPanel() {
     colorBg.oninput = () => {
         annualExportConfig.bg = colorBg.value;
         annualWrap.style.setProperty("--annual-export-bg", annualExportConfig.bg);
-        // ✅同步整个页面背景（.wrap内部 + body视口两侧）
+        // 同步整个页面背景（.wrap 内部 + body 视口两侧）
         const wrapEl = document.querySelector('.wrap');
         if (wrapEl) wrapEl.style.backgroundColor = annualExportConfig.bg;
         document.body.style.backgroundColor = annualExportConfig.bg;
@@ -2300,7 +2300,7 @@ function bindAnnualExportPanel() {
     colorTitle.oninput = () => {
         annualExportConfig.title = colorTitle.value;
         annualWrap.style.setProperty("--annual-export-title", annualExportConfig.title);
-        // ✅同步到 .wrap，让 mode-wrap 外面的 site-title 大标题也能继承到
+        // 同步到 .wrap，让 mode-wrap 外面的 site-title 大标题也能继承到
         const wrapEl = document.querySelector('.wrap');
         if (wrapEl) wrapEl.style.setProperty("--annual-export-title", annualExportConfig.title);
         saveAnnualExportConfig();
@@ -2320,31 +2320,31 @@ function bindAnnualExportPanel() {
         annualWrap.style.setProperty("--annual-export-border", annualExportConfig.border);
         saveAnnualExportConfig();
     };
-    // ✅新增：小标题文字色（即时反应：模块标题+NO标签）
+    // 新增：小标题文字色（即时反应：模块标题+NO 标签）
     colorSubtitle.oninput = () => {
         annualExportConfig.subtitle = colorSubtitle.value;
         annualWrap.style.setProperty("--annual-export-subtitle", annualExportConfig.subtitle);
         saveAnnualExportConfig();
     };
-    // ✅新增：数据统计文字色（即时反应：统计标签文字）
+    // 新增：数据统计文字色（即时反应：统计标签文字）
     colorStattext.oninput = () => {
         annualExportConfig.stattext = colorStattext.value;
         annualWrap.style.setProperty("--annual-export-stattext", annualExportConfig.stattext);
         saveAnnualExportConfig();
     };
-    // ✅新增：数据统计数据色（即时反应：用户填写的数字）
+    // 新增：数据统计数据色（即时反应：用户填写的数字）
     colorStatdata.oninput = () => {
         annualExportConfig.statdata = colorStatdata.value;
         annualWrap.style.setProperty("--annual-export-statdata", annualExportConfig.statdata);
         saveAnnualExportConfig();
     };
-    // ✅新增：自定义文本边框色（即时反应：所有文本框边框）
+    // 新增：自定义文本边框色（即时反应：所有文本框边框）
     colorCustomborder.oninput = () => {
         annualExportConfig.customborder = colorCustomborder.value;
         annualWrap.style.setProperty("--annual-export-customborder", annualExportConfig.customborder);
         saveAnnualExportConfig();
     };
-    // ✅修改点9：新增四个控件的事件绑定
+    // 修改点9：新增四个控件的事件绑定
     if (colorLabelcolor) {
         colorLabelcolor.oninput = () => {
             annualExportConfig.labelColor = colorLabelcolor.value;
@@ -2387,7 +2387,7 @@ function bindAnnualExportPanel() {
             saveAnnualExportConfig();
         };
     }
-    // ✅新增：推しゲーム & 推しキャラ 宫格小标题开关
+    // 新增：推しゲーム & 推しキャラ 宫格小标题开关
     if (useOshiTitleEl) {
         useOshiTitleEl.onchange = () => {
             annualExportConfig.useOshiTitle = useOshiTitleEl.checked;
@@ -2402,13 +2402,13 @@ function bindAnnualExportPanel() {
         };
     }
 
-    // ========== 修改点3：导出按钮改为预览弹窗 ==========
+    // 修改点3：导出按钮改为预览弹窗
     btnExportImage.removeEventListener("click", btnExportImage._handler);
     btnExportImage._handler = async () => {
-        if (btnExportImage.disabled || _annualIsRendering) return;  // ✅渲染锁
+        if (btnExportImage.disabled || _annualIsRendering) return;  // 渲染锁
         let unlockTimer = null;
         _annualIsRendering = true;
-        unlockTimer = setTimeout(() => {  // ✅15秒超时强制解锁
+        unlockTimer = setTimeout(() => {  // 15 秒超时强制解锁
             _annualIsRendering = false;
             console.warn("[annual]渲染超时，强制解除渲染锁");
         }, 15000);
@@ -2423,14 +2423,14 @@ function bindAnnualExportPanel() {
         const designW = selectedExportWidth;
         const titleMap = getAnnualModuleTitles();
 
-        // 打开预览弹窗，先显示loading（含预计时间+进度）
+        // 打开预览弹窗，先显示 loading（含预计时间+进度）
         const modal = document.getElementById("export-preview-modal");
         const scrollWrap = modal.querySelector(".preview-scroll-wrap");
         const downloadBtn = document.getElementById("preview-download-btn");
         modal.classList.add("active");
         document.body.classList.add("modal-lock");
         downloadBtn.disabled = true;
-        // ✅显示loading+预计时间+进度，获取进度监听器（finally中清理）
+        // 显示 loading+预计时间+进度，获取进度监听器（finally 中清理）
         const progressHandler = showAnnualPreviewLoading(scrollWrap);
         try {
             const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
@@ -2452,18 +2452,18 @@ function bindAnnualExportPanel() {
             if (typeof progressHandler !== 'undefined') {
                 window.removeEventListener('annual-canvas-progress', progressHandler);
             }
-            if (unlockTimer) clearTimeout(unlockTimer);  // ✅清理超时计时器
-            _annualIsRendering = false;  // ✅释放渲染锁
+            if (unlockTimer) clearTimeout(unlockTimer);  // 清理超时计时器
+            _annualIsRendering = false;  // 释放渲染锁
             btnExportImage.disabled = false;
             btnExportImage.textContent = originalText;
         }
     };
     btnExportImage.addEventListener("click", btnExportImage._handler);
 }
-// ===================== 第二部分：bindAnnualFloatScrollButtons ～ 文件末尾 =====================
+// 第二部分：bindAnnualFloatScrollButtons ～ 文件末尾
 
 /**
- * ✅新增：annual模式悬浮滚动按钮逻辑
+ * 新增：annual 模式悬浮滚动按钮逻辑
  * ▲：模块中间→滚到当前模块顶部；已在顶部→滚到上一个模块顶部
  * ▼：模块中间→滚到当前模块底部；已在底部→滚到下一个模块底部
  */
@@ -2473,7 +2473,7 @@ function bindAnnualFloatScrollButtons() {
     if(!upBtn || !downBtn) return;
     const TOLERANCE = 30;               // 容差像素，小于此值视为"已到达"
     const EMPTY_MODULE_HEIGHT = 140;     // 空模块阈值：高度小于此值视为"无内容模块"，自动跳过
-    // 获取annual模式所有big-card模块（按DOM顺序）
+    // 获取 annual 模式所有 big-card 模块（按 DOM 顺序）
     function getAnnualModules() {
         const wrap = document.querySelector('.mode-wrap[data-mode="annual"]');
         if(!wrap) return [];
@@ -2589,7 +2589,7 @@ function bindAnnualFloatScrollButtons() {
 }
 
 /**
- * ✅新增：CP弹窗游戏列表（只搜索游戏名，不搜索角色名）
+ * 新增：CP 弹窗游戏列表（只搜索游戏名，不搜索角色名）
  */
 function renderCpModalGameList(wrap, keyword) {
     wrap.innerHTML = "";
@@ -2615,7 +2615,7 @@ function renderCpModalGameList(wrap, keyword) {
         div.className = "annual-cp-game-option-item";
         div.innerHTML = renderGameSelectItem(game);
         div.addEventListener("click", (e) => {
-            // ✅阻止同一元素上script.js设置的onclick，以及冒泡到document的事件委托
+            // 阻止同一元素上 script.js 设置的 onclick，以及冒泡到 document 的事件委托
             e.stopImmediatePropagation();
             cpModalCurrentGameId = game.id;
             cpModalCurrentFemaleId = null;
@@ -2631,7 +2631,7 @@ function renderCpModalGameList(wrap, keyword) {
 }
 
 /**
- * ✅新增：CP弹窗女主列表（点击女主展开男主列表，点击男主保存并关闭弹窗）
+ * 新增：CP 弹窗女主列表（点击女主展开男主列表，点击男主保存并关闭弹窗）
  */
 function renderCpModalFemaleList() {
     const modal = document.getElementById("annual-global-cp-modal");
@@ -2648,9 +2648,9 @@ function renderCpModalFemaleList() {
     // 局部开关显隐控制
     const visMap = {
         "#annual-modal-cp-game-sub-char":   rawCharList.some(c => c.isSub === true),
-        // ✅修复：隐藏开关不仅看isHidden标记，还要看是否有隐藏姓名或隐藏图片
+        // 修复：隐藏开关不仅看 isHidden 标记，还要看是否有隐藏姓名或隐藏图片
         "#annual-modal-cp-game-hide-char":  rawCharList.some(c => charHasHiddenContent(c)),
-        // ✅修复：FD开关不仅看isFD标记，还要看是否有FD图片
+        // 修复：FD 开关不仅看 isFD 标记，还要看是否有 FD 图片
         "#annual-modal-cp-game-fd-game":    rawCharList.some(c => charHasFdContent(c)),
         "#annual-modal-cp-game-fd-sub-char": rawCharList.some(c => c.isFdSub === true)
     };
@@ -2684,7 +2684,7 @@ function renderCpModalFemaleList() {
     const sortedFemales = sortByName(femaleChars);
     const sortedMales = sortByName(maleChars);
 
-    // 工具：渲染单个角色卡片HTML（女主/男主共用）
+    // 工具：渲染单个角色卡片 HTML（女主/男主共用）
     function renderCharCardHtml(char, imgKey, allSrc, nameList, totalNames, nameIdx, displayName,
                                  imgPrevCls, imgNextCls, namePrevCls, nameNextCls, cardClass) {
         const hasMultiImg = allSrc.length > 1;
@@ -2770,7 +2770,7 @@ function renderCpModalFemaleList() {
         const fDisplayName = fNameList[fNameIdx] || fChar.name;
         const isFemaleSelected = cpModalCurrentFemaleId === fChar.id;
 
-        // ✅修改点8：blockDiv添加条件类，展开时使用annual-cp-female-block-expanded
+        // 修改点8：blockDiv 添加条件类，展开时使用 annual-cp-female-block-expanded
         const blockDiv = document.createElement("div");
         blockDiv.className = `annual-cp-female-block ${isFemaleSelected ? 'annual-cp-female-block-expanded' : ''}`;
         blockDiv.dataset.fid = fChar.id;
@@ -2788,7 +2788,7 @@ function renderCpModalFemaleList() {
 
         // 女主点击：展开/收起男主列表
         femaleCard.addEventListener("click", (e)=>{
-            // ✅阻止冒泡到script.js的全局事件委托
+            // 阻止冒泡到 script.js 的全局事件委托
             e.stopPropagation();
             if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
             cpModalCurrentFemaleId = isFemaleSelected ? null : fChar.id;
@@ -2842,12 +2842,12 @@ function renderCpModalFemaleList() {
                 if(mAllSrc.length > 1) bindImgSwitch(maleItem, mImgKey, mAllSrc, ".annual-cp-male-img-prev", ".annual-cp-male-img-next");
                 if(mTotalNames > 1) bindNameSwitch(maleItem, mImgKey, mNameList, mTotalNames, ".annual-cp-name-prev", ".annual-cp-name-next");
 
-                // 男主点击：保存CP，关闭弹窗
+                // 男主点击：保存 CP，关闭弹窗
                 maleItem.addEventListener("click", (e)=>{
-                    // ✅阻止冒泡到script.js的全局事件委托
+                    // 阻止冒泡到 script.js 的全局事件委托
                     e.stopPropagation();
                     if(e.target.closest(".char-switch-btn, .char-name-switch-btn")) return;
-                    // ===== 新增：其他-最喜欢的CP =====
+                    // 新增：其他-最喜欢的 CP
                     if (_activeModalContext === "otherFavCp") {
                         annualData.other.favCp = {
                             gameId: cpModalCurrentGameId,
@@ -2882,7 +2882,7 @@ function renderCpModalFemaleList() {
                     const doms = Array.from(document.querySelectorAll(".annual-cp-top-item"));
                     const targetDom = doms[activeCpTopItemIndex];
                     if(targetDom){
-                        targetDom.querySelector(".annual-cp-name-text").textContent = `${targetItem.femaleName}×${targetItem.maleName}`; // ✅修改点9b
+                        targetDom.querySelector(".annual-cp-name-text").textContent = `${targetItem.femaleName}×${targetItem.maleName}`; // 修改点9b
                         targetDom.querySelector(".annual-cp-female-cover").src = getWebImageUrl(targetItem.femaleCoverSrc);
                         targetDom.querySelector(".annual-cp-male-cover").src = getWebImageUrl(targetItem.maleCoverSrc);
                         refreshCpTopItemUi(targetDom, targetItem);
@@ -2932,7 +2932,7 @@ function openAnnualGlobalCpModal(targetIndex, context){
     switchCpModalView("gameList");
     const searchInput = modal.querySelector(".annual-global-cp-search-input");
     searchInput.value = "";
-    // ✅修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
+    // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
      "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
      "#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
@@ -2965,14 +2965,14 @@ function closeAnnualGlobalCpModal(){
     modal.classList.remove("active");
 }
 
-// ===================== ✅新增：年度报告导出预计耗时计算（对齐FavList逻辑） =====================
+// 新增：年度报告导出预计耗时计算（对齐 FavList 逻辑）
 function calcAnnualEstimateSec() {
     const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isAndroid = /Android/.test(navigator.userAgent);
     // 统计有效模块数和图片数
     let moduleCount = 0;
     let imgCount = 0;
-    // stats模块
+    // stats 模块
     const hasStats = ['reportYear','playCount','totalHours','likeCharCount','cpCount','buyCount','costMoney','finished','ongoing','notStart']
         .some(k => annualData[k] !== undefined && annualData[k] !== null && String(annualData[k]).trim() !== '');
     if (hasStats) moduleCount++;
@@ -2982,11 +2982,11 @@ function calcAnnualEstimateSec() {
     // charTop
     const charValid = (annualData.charTopList || []).filter(i => i && i.charId);
     if (charValid.length) { moduleCount++; imgCount += charValid.length; }
-    // cpTop（每对CP两张图）
+    // cpTop（每对 CP 两张图）
     const cpValid = (annualData.cpTopList || []).filter(i => i && i.femaleId && i.maleId);
     if (cpValid.length) { moduleCount++; imgCount += cpValid.length * 2; }
 
-    // ✅对齐script.js：纳入降级概率+重试开销+圆角画布串行延时
+    // 对齐 script.js：纳入降级概率+重试开销+圆角画布串行延时
     let moduleCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
     if (IS_IOS_WEBKIT) {
         moduleCost = 1.10; imgCost = 0.85;
@@ -3002,18 +3002,18 @@ function calcAnnualEstimateSec() {
         roundCanvasOverheadSec = Math.min(2.5, imgCount * 0.012);
     }
     const baseEstimate = moduleCount * moduleCost + imgCount * imgCost;
-    const fallbackProbability = 0.30;  // 30%图片触发jsdelivr超时降级
-    const fallbackPerImageSec = 0.6;   // 每次降级600ms
+    const fallbackProbability = 0.30;  // 30% 图片触发 jsdelivr 超时降级
+    const fallbackPerImageSec = 0.6;   // 每次降级 600ms
     const fallbackEstimate = imgCount * fallbackProbability * fallbackPerImageSec;
     let sec = Math.ceil(baseEstimate + networkBufferSec + roundCanvasOverheadSec + fallbackEstimate);
     sec = IS_IOS_WEBKIT ? Math.max(2, Math.min(45, sec)) : Math.max(1, Math.min(35, sec));
     return sec;
 }
 
-// ===================== ✅新增：在预览弹窗中显示loading+预计时间+进度，返回进度监听器 =====================
+// 新增：在预览弹窗中显示 loading+预计时间+进度，返回进度监听器
 function showAnnualPreviewLoading(scrollWrap) {
     const estimateSec = calcAnnualEstimateSec();
-    // 完全对齐FavList loading UI结构
+    // 完全对齐 FavList loading UI 结构
     scrollWrap.innerHTML = `
         <div class="preview-inner-loading">
             <div class="loading-spinner"></div>
@@ -3031,26 +3031,26 @@ function showAnnualPreviewLoading(scrollWrap) {
     return progressHandler;
 }
 
-// ===================== 年度报告预览弹窗管理（复用 #export-preview-modal） =====================
+// 年度报告预览弹窗管理（复用 #export-preview-modal）
 let _annualPreviewResults = [];
 let _annualPreviewUrls = [];
 let _annualPreviewWidth = 810;
 let _annualPreviewBound = false;
-let _annualCurrentPage = 0;  // ✅新增：当前预览页码（对齐FavList currentPreviewPage）
+let _annualCurrentPage = 0;  // 新增：当前预览页码（对齐 FavList currentPreviewPage）
 
 function showAnnualPreviewModal(results, exportWidth) {
     _annualPreviewResults = results;
     _annualPreviewWidth = exportWidth;
-    _annualCurrentPage = 0;  // ✅重置到第1张
+    _annualCurrentPage = 0;  // 重置到第 1 张
     const downloadBtn = document.getElementById("preview-download-btn");
-    // 清理旧URL
+    // 清理旧 URL
     _annualPreviewUrls.forEach(u => URL.revokeObjectURL(u));
     _annualPreviewUrls = results.map(r => URL.createObjectURL(r.blob));
-    // ✅渲染第1张（分页切换模式，对齐FavList renderPreviewPage）
+    // 渲染第 1 张（分页切换模式，对齐 FavList renderPreviewPage）
     renderAnnualPreviewPage(0);
     downloadBtn.disabled = false;
-    // ✅每次Annual预览时用onclick赋值覆盖下载按钮，防止FavList的下载监听器同时触发
-    // ✅移动端修复：异步串行下载，间隔1500ms，revoke延迟延长到5000ms
+    // 每次 Annual 预览时用 onclick 赋值覆盖下载按钮，防止 FavList 的下载监听器同时触发
+    // 移动端修复：异步串行下载，间隔 1500ms，revoke 延迟延长到 5000ms
     downloadBtn.onclick = async () => {
         for (let i = 0; i < _annualPreviewResults.length; i++) {
             const r = _annualPreviewResults[i];
@@ -3061,11 +3061,11 @@ function showAnnualPreviewModal(results, exportWidth) {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            // 非最后一张：等待1500ms再触发下一张下载
+            // 非最后一张：等待 1500ms 再触发下一张下载
             if (i < _annualPreviewResults.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 1500));
             }
-            // revoke延迟延长到5000ms，确保移动端高清大图下载请求已发出
+            // revoke 延迟延长到 5000ms，确保移动端高清大图下载请求已发出
             setTimeout(() => URL.revokeObjectURL(url), 5000);
         }
     };
@@ -3076,14 +3076,14 @@ function showAnnualPreviewModal(results, exportWidth) {
     }
 }
 
-// ===================== ✅新增：渲染单张预览图 + 上一张/下一张切换控件（对齐FavList renderPreviewPage） =====================
+// 新增：渲染单张预览图 + 上一张/下一张切换控件（对齐 FavList renderPreviewPage）
 function renderAnnualPreviewPage(pageIndex) {
     _annualCurrentPage = pageIndex;
     const modal = document.getElementById("export-preview-modal");
     const scrollWrap = modal.querySelector(".preview-scroll-wrap");
     const totalPage = _annualPreviewResults.length;
     const currentUrl = _annualPreviewUrls[pageIndex];
-    // 分页控件（仅当多于1张时显示）
+    // 分页控件（仅当多于 1 张时显示）
     let paginationHtml = "";
     if (totalPage > 1) {
         paginationHtml = `
@@ -3093,7 +3093,7 @@ function renderAnnualPreviewPage(pageIndex) {
             <button class="preview-next-page" ${pageIndex >= totalPage - 1 ? 'disabled' : ''}>下一张</button>
         </div>`;
     }
-    // 单张图片 + 分页控件（与FavList预览完全一致，仅用CSS类控制，无内联样式）
+    // 单张图片 + 分页控件（与 FavList 预览完全一致，仅用 CSS 类控制，无内联样式）
     scrollWrap.innerHTML = `
         <img class="preview-img-item" src="${currentUrl}" alt="年度报告预览">
         ${paginationHtml}
@@ -3133,12 +3133,12 @@ function bindAnnualPreviewButtons() {
         if (e.target === modal) closeBtn.click();
     });
 
-    // 重新生成（✅对齐FavList：loading含预计时间+进度）
+    // 重新生成（对齐 FavList：loading 含预计时间+进度）
     regenBtn.addEventListener("click", async () => {
         if (_annualIsRendering) return;
         const scrollWrap = modal.querySelector(".preview-scroll-wrap");
         downloadBtn.disabled = true;
-        // ✅显示loading+预计时间+进度
+        // 显示 loading+预计时间+进度
         const progressHandler = showAnnualPreviewLoading(scrollWrap);
         let unlockTimer = null;
         _annualIsRendering = true;
@@ -3163,7 +3163,7 @@ function bindAnnualPreviewButtons() {
             console.error("重新生成失败", err);
             alert("重新生成失败：" + (err?.message || "未知错误"));
         } finally {
-            // ✅清理进度监听
+            // 清理进度监听
             if (typeof progressHandler !== 'undefined') {
                 window.removeEventListener('annual-canvas-progress', progressHandler);
             }
@@ -3173,7 +3173,7 @@ function bindAnnualPreviewButtons() {
     });
 
     // 导出图片（下载所有模块）—— 已移至 showAnnualPreviewModal 中通过 onclick 赋值，
-    // 防止与FavList模式的下载监听器冲突导致同时导出两种图片
+    // 防止与 FavList 模式的下载监听器冲突导致同时导出两种图片
 }
 
 function bindAnnualExport() {
@@ -3206,32 +3206,32 @@ function bindAnnualExport() {
 }
 
 /**
- * 真正执行年度模块业务初始化（必须等gameTemplateReady=true）
+ * 真正执行年度模块业务初始化（必须等 gameTemplateReady=true）
  */
 function realInitAnnualModule(){
     if(_annualRealInitialized) return;
     _annualRealInitialized = true;
     console.log("✅[annual.js] realInitAnnualModule 游戏模板就绪，执行业务初始化");
     loadAnnualData();
-    // 清理历史残留的空条目（修复旧数据导致的NO跳号、排序横线异常）
+    // 清理历史残留的空条目（修复旧数据导致的 NO 跳号、排序横线异常）
     annualData.topList = (annualData.topList || []).filter(item => item && item.gameId);
     annualData.charTopList = (annualData.charTopList || []).filter(item => item && item.charId);
     annualData.cpTopList = (annualData.cpTopList || []).filter(item => item && item.femaleId && item.maleId);
     saveAnnualData();
     bindStatInputs();
-    // 从localStorage读取数据后，完全重建DOM，保证DOM数量与数组长度完全一致
+    // 从 localStorage 读取数据后，完全重建 DOM，保证 DOM 数量与数组长度完全一致
     rebuildGameTopDomAll();
     rebuildCharTopDomAll();
-    rebuildCpTopDomAll();  // ✅新增
+    rebuildCpTopDomAll();  // 新增
     bindTop3Items();
     bindCharTop3Items();
-    bindCpTop3Items();  // ✅新增
+    bindCpTop3Items();  // 新增
     bindTouchDrag();
     bindAnnualExport();
     bindAnnualExportPanel();
-    bindAnnualFloatScrollButtons();  // ✅新增：悬浮滚动按钮
-    bindAnnualTextareaResize();  // ✅感想框拖拽手柄
-    // ===== 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格 =====
+    bindAnnualFloatScrollButtons();  // 新增：悬浮滚动按钮
+    bindAnnualTextareaResize();  // 感想框拖拽手柄
+    // 新增：五、其他 / 六、ゲーム宫格 / 七、キャラ宫格
     rebuildOtherModule();
     renderGameGrid();
     renderCharGrid();
@@ -3255,7 +3255,7 @@ function realInitAnnualModule(){
 export function initAnnualModule(){
     if(!window._annualPanelClickBound){
         document.addEventListener("click",(e)=>{
-            // ========== 新增：五、其他 模块按钮 ==========
+            // 新增：五、其他 模块按钮
             const alsoAddBtn = e.target.closest('[data-other-action="addAlso"]');
             if (alsoAddBtn) { openAnnualGlobalGameModal(null, "otherAlso"); return; }
 
@@ -3270,19 +3270,19 @@ export function initAnnualModule(){
 
             const removeFavSupport = e.target.closest('[data-other-action="removeFavSupport"]');
             if (removeFavSupport) { annualData.other.favSupport = null; saveAnnualData(); renderOtherFavSupport(); return; }
-            // ===== 新增：最喜欢的女主 =====
+            // 新增：最喜欢的女主
             const addFavHeroineBtn = e.target.closest('[data-other-action="addFavHeroine"]');
             if (addFavHeroineBtn) { openAnnualGlobalCharModal(null, "otherFavHeroine"); return; }
             const removeFavHeroine = e.target.closest('[data-other-action="removeFavHeroine"]');
             if (removeFavHeroine) { annualData.other.favHeroine = null; saveAnnualData(); renderOtherFavHeroine(); return; }
-            // ===== 新增：自定义角色卡片＋按钮 =====
+            // 新增：自定义角色卡片＋按钮
             const addOtherCustomCharBtn = e.target.closest('[data-other-action="addOtherCustomChar"]');
             if (addOtherCustomCharBtn) {
                 _activeOtherCustomCharIndex = Number(addOtherCustomCharBtn.dataset.otherCustomCharIndex);
                 openAnnualGlobalCharModal(null, "otherCustomChar");
                 return;
             }
-            // ===== 新增：自定义角色卡片 图片清除× =====
+            // 新增：自定义角色卡片 图片清除×
             const customCharClear = e.target.closest('[data-other-custom-char-clear]');
             if (customCharClear) {
                 const idx = Number(customCharClear.dataset.otherCustomCharClear);
@@ -3292,7 +3292,7 @@ export function initAnnualModule(){
                 renderOtherCustomCharCards();
                 return;
             }
-            // ===== 新增：自定义角色卡片 整卡删除× =====
+            // 新增：自定义角色卡片 整卡删除×
             const customCharCardRemove = e.target.closest('[data-other-custom-char-card-remove]');
             if (customCharCardRemove) {
                 const idx = Number(customCharCardRemove.dataset.otherCustomCharCardRemove);
@@ -3315,7 +3315,7 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== 新增：模块五自定义卡片删除 ==========
+            // 新增：模块五自定义卡片删除
             const otherCustomRemove = e.target.closest('[data-other-custom-remove]');
             if (otherCustomRemove) {
                 const idx = Number(otherCustomRemove.dataset.otherCustomRemove);
@@ -3330,7 +3330,7 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== 新增：六、ゲーム宫格 按钮 ==========
+            // 新增：六、ゲーム宫格 按钮
             const gridGameBtn = e.target.closest('[data-grid-action="addGame"]');
             if (gridGameBtn) {
                 _activeGridTarget = {type: gridGameBtn.dataset.gridType, index: Number(gridGameBtn.dataset.gridIndex)};
@@ -3338,7 +3338,7 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== 新增：七、キャラ宫格 按钮 ==========
+            // 新增：七、キャラ宫格 按钮
             const gridCharBtn = e.target.closest('[data-grid-action="addChar"]');
             if (gridCharBtn) {
                 _activeGridTarget = {type: gridCharBtn.dataset.gridType, index: Number(gridCharBtn.dataset.gridIndex)};
@@ -3346,7 +3346,7 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== 新增：宫格删除按钮 ==========
+            // 新增：宫格删除按钮
             const gridRemoveBtn = e.target.closest('[data-grid-remove]');
             if (gridRemoveBtn) {
                 const kind = gridRemoveBtn.dataset.gridRemove; // "game" | "char"
@@ -3395,19 +3395,19 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== ✅修改：全局板块添加游戏按钮，不再使用item内部按钮 ==========
+            // 修改：全局板块添加游戏按钮，不再使用 item 内部按钮
             const globalAddGameBtn = e.target.closest("#annual-global-add-game-btn");
             if(globalAddGameBtn){
-                //【问题②】不限数量：直接push空对象，不再依赖固定3个数组空位；【问题①】彻底解决离散空位NO1/NO3有值NO2空
+                // 问题②：不限数量：直接 push 空对象，不再依赖固定 3 个数组空位；问题①彻底解决离散空位 NO1/NO3 有值 NO2 空
                 const newIndex = annualData.topList.length;
                 annualData.topList.push({ gameId: "", gameName: "", coverSrc: "", text: "" });
                 saveAnnualData();
-                // 新增DOM条目
+                // 新增 DOM 条目
                 appendNewGameTopDom();
                 openAnnualGlobalGameModal(newIndex);
                 return;
             }
-            // ========== ✅修改：全局板块添加角色按钮 ==========
+            // 修改：全局板块添加角色按钮
             const globalAddCharBtn = e.target.closest("#annual-global-add-char-btn");
             if(globalAddCharBtn){
                 const newIndex = annualData.charTopList.length;
@@ -3417,7 +3417,7 @@ export function initAnnualModule(){
                 openAnnualGlobalCharModal(newIndex);
                 return;
             }
-            // ========== ✅新增：全局板块添加CP按钮 ==========
+            // 新增：全局板块添加 CP 按钮
             const globalAddCpBtn = e.target.closest("#annual-global-add-cp-btn");
             if(globalAddCpBtn){
                 const newIndex = annualData.cpTopList.length;
@@ -3427,7 +3427,7 @@ export function initAnnualModule(){
                 openAnnualGlobalCpModal(newIndex);
                 return;
             }
-            // ========== ✅新增：模块折叠/展开按钮 ==========
+            // 新增：模块折叠/展开按钮
             const foldBtn = e.target.closest(".annual-card-fold-btn");
             if(foldBtn){
                 const card = foldBtn.closest(".big-card");
@@ -3436,7 +3436,7 @@ export function initAnnualModule(){
                 foldBtn.textContent = isFolded ? "▼" : "▲";
                 return;
             }
-            // ========== 年度TOP条目删除按钮（游戏/角色） ==========
+            // 年度 TOP 条目删除按钮（游戏/角色）
             const delBtn = e.target.closest(".annual-item-delete-btn");
             if(delBtn){
                 const itemDom = delBtn.closest(".annual-top-item, .annual-char-top-item, .annual-cp-top-item");
@@ -3457,7 +3457,7 @@ export function initAnnualModule(){
                     itemDom.remove();
                     bindCharTop3Items();
                     rerenderCharTopNoLabel();
-                }else if(type === "cp"){  // ✅新增
+                }else if(type === "cp"){  // 新增
                     const all = Array.from(document.querySelectorAll(".annual-cp-top-item"));
                     dataIdx = all.indexOf(itemDom);
                     annualData.cpTopList.splice(dataIdx,1);
@@ -3469,25 +3469,25 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== 游戏弹窗关闭按钮 ==========
+            // 游戏弹窗关闭按钮
             const clickCloseBtn = e.target.closest("#annual-global-game-modal .annual-modal-close-btn");
             if(clickCloseBtn){
                 closeAnnualGlobalGameModal();
                 return;
             }
 
-            // ========== 角色弹窗关闭按钮 ==========
+            // 角色弹窗关闭按钮
             const charModalCloseBtn = e.target.closest("#annual-global-char-modal .annual-modal-close-btn");
             if(charModalCloseBtn){
                 closeAnnualGlobalCharModal();
                 return;
             }
 
-            // ========== ✅新增：CP弹窗关闭按钮 ==========
+            // 新增：CP 弹窗关闭按钮
             const cpModalCloseBtn = e.target.closest("#annual-global-cp-modal .annual-modal-close-btn");
             if(cpModalCloseBtn){ closeAnnualGlobalCpModal(); return; }
 
-            // ========== 角色弹窗返回按钮 ==========
+            // 角色弹窗返回按钮
             const charModalBackBtn = e.target.closest(".annual-modal-back-btn");
             if(charModalBackBtn){
                 charModalCurrentGameId = null;
@@ -3498,7 +3498,7 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== ✅新增：CP弹窗返回按钮（独立class，不与角色弹窗.annual-modal-back-btn冲突） ==========
+            // 新增：CP 弹窗返回按钮（独立 class，不与角色弹窗 .annual-modal-back-btn 冲突）
             const cpModalBackBtn = e.target.closest("#annual-global-cp-modal .annual-cp-modal-back-btn");
             if(cpModalBackBtn){
                 cpModalCurrentGameId = null;
@@ -3510,7 +3510,7 @@ export function initAnnualModule(){
                 return;
             }
 
-            // ========== 游戏弹窗遮罩点击关闭 ==========
+            // 游戏弹窗遮罩点击关闭
             const modalGameEl = document.getElementById("annual-global-game-modal");
             if(modalGameEl && modalGameEl.classList.contains("active")){
                 const insideModal = e.target.closest(".annual-global-modal-inner");
@@ -3520,7 +3520,7 @@ export function initAnnualModule(){
                 }
             }
 
-            // ========== 角色弹窗遮罩点击关闭 ==========
+            // 角色弹窗遮罩点击关闭
             const modalCharEl = document.getElementById("annual-global-char-modal");
             if(modalCharEl && modalCharEl.classList.contains("active")){
                 const insideCharModal = e.target.closest(".annual-global-modal-inner");
@@ -3530,7 +3530,7 @@ export function initAnnualModule(){
                 }
             }
 
-            // ========== ✅新增：CP弹窗遮罩点击关闭 ==========
+            // 新增：CP 弹窗遮罩点击关闭
             const modalCpEl = document.getElementById("annual-global-cp-modal");
             if(modalCpEl && modalCpEl.classList.contains("active")){
                 const insideCpModal = e.target.closest("#annual-global-cp-modal .annual-global-modal-inner");
@@ -3554,7 +3554,7 @@ export function initAnnualModule(){
                 if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
-            // ✅补丁新增：全局续作/FD次要角色开关
+            // 补丁新增：全局续作/FD 次要角色开关
             if(e.target.closest("#annual-modal-global-fd-sub-char")){
                 charModalGlobal.fdSubChar = !charModalGlobal.fdSubChar;
                 if(charModalViewMode === "charList") renderCharModalCharList();
@@ -3576,14 +3576,14 @@ export function initAnnualModule(){
                 renderCharModalCharList();
                 return;
             }
-            // ✅补丁新增：单游戏续作/FD次要角色开关
+            // 补丁新增：单游戏续作/FD 次要角色开关
             if(e.target.closest("#annual-modal-game-fd-sub-char")){
                 charModalLocal.fdSubChar = !charModalLocal.fdSubChar;
                 renderCharModalCharList();
                 return;
             }
 
-            // ========== ✅新增：CP弹窗全局开关 ==========
+            // 新增：CP 弹窗全局开关
             if(e.target.closest("#annual-modal-cp-global-sub-char")){
                 cpModalGlobal.subChar = !cpModalGlobal.subChar;
                 if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
@@ -3604,7 +3604,7 @@ export function initAnnualModule(){
                 if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
                 return;
             }
-            // ========== ✅新增：CP弹窗局部开关 ==========
+            // 新增：CP 弹窗局部开关
             if(e.target.closest("#annual-modal-cp-game-sub-char")){
                 cpModalLocal.subChar = !cpModalLocal.subChar;
                 renderCpModalFemaleList();
@@ -3627,9 +3627,9 @@ export function initAnnualModule(){
             }
         });
 
-        // ========== 全局弹窗搜索input事件委托 ==========
+        // 全局弹窗搜索 input 事件委托
         document.addEventListener("input", (e)=>{
-            // 游戏TOP3搜索
+            // 游戏 TOP3 搜索
             const input = e.target.closest(".annual-global-search-input");
             if(input){
                 const modal = document.getElementById("annual-global-game-modal");
@@ -3649,7 +3649,7 @@ export function initAnnualModule(){
                 }
                 return;
             }
-            // ✅新增：CP弹窗搜索（只搜游戏名）
+            // 新增：CP 弹窗搜索（只搜游戏名）
             const cpSearchInput = e.target.closest(".annual-global-cp-search-input");
             if(cpSearchInput){
                 const modal = document.getElementById("annual-global-cp-modal");
@@ -3659,7 +3659,7 @@ export function initAnnualModule(){
             }
         });
 
-        // ✅新增：模式切换监听——切回FavList时重置.wrap背景和标题变量，切回Annual时重新应用
+        // 新增：模式切换监听——切回 FavList 时重置 .wrap 背景和标题变量，切回 Annual 时重新应用
         document.querySelectorAll('.mode-switch-wrap .mode-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const wrapEl = document.querySelector('.wrap');
@@ -3667,7 +3667,7 @@ export function initAnnualModule(){
                 if (btn.dataset.mode === 'annual') {
                     applyAnnualPageColors();
                 } else {
-                    // ✅切回FavList时重置.wrap和body的背景色，恢复原页面样式
+                    // 切回 FavList 时重置 .wrap 和 body 的背景色，恢复原页面样式
                     wrapEl.style.backgroundColor = '';
                     wrapEl.style.removeProperty('--annual-export-title');
                     document.body.style.backgroundColor = '';
@@ -3681,7 +3681,7 @@ export function initAnnualModule(){
     if(isGameTemplateReady()){
         realInitAnnualModule();
     }else{
-        // 轮询等待 gameTemplateReady 变为true，最大等待2s
+        // 轮询等待 gameTemplateReady 变为 true，最大等待 2s
         console.log("[annual.js] 游戏模板尚未就绪，等待加载完成");
         let pollCount = 0;
         const pollTimer = setInterval(()=>{
@@ -3692,7 +3692,7 @@ export function initAnnualModule(){
                     realInitAnnualModule();
                 }else{
                     console.warn("[annual.js]等待游戏模板超时，将在打开弹窗时再次尝试初始化");
-                    // 【修复】超时不锁死，打开弹窗时重新尝试
+                    // 修复：超时不锁死，打开弹窗时重新尝试
                     _annualRealInitialized = false;
                 }
             }
