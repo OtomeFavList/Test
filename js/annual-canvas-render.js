@@ -67,7 +67,8 @@ const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
 // 新增：八、九月度总结模块
 const MONTHLY_COVER_GAP = 16;          // 月度封面间距
 const MONTHLY_ROW_GAP = 24;            // 月度行之间间距
-const MONTHLY_SIDE_W = 160;             // 右侧栏宽度
+// 废弃：MONTHLY_SIDE_W 不再使用，月度模块左侧栏宽度改为动态计算最长月份标签宽度
+// const MONTHLY_SIDE_W = 160;
 const MONTHLY_BOX_PAD = 16;             // 月度图片框内边距
 const MONTHLY_BAR_HEIGHT = 16;          // 时长柱状条高度
 const MONTHLY_BAR_RADIUS = 4;           // 柱状条圆角
@@ -915,16 +916,21 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
     return h;
   }
 
+  // 修改：动态计算所有有效月份中最长标签的文字宽度，替代固定 160
+  ctx.font = `bold ${MONTHLY_LABEL_SIZE}px ${FONT_SIYUAN}`;
+  const maxLabelW = Math.max(...months.map(m => ctx.measureText(m.label).width), 0);
+
   // 统计时长行，仅当至少一个月有时长时占高
   const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
   if (hasAnyHours) {
-    contentH += MONTHLY_STATS_SIZE + MONTHLY_STATS_GAP;
+    // 修改：上方间距从全局 16 微调为 12（绘制时 shiftY(-4)），下方间距 16，总增量 = 文字 + 12 不变
+    contentH += MONTHLY_STATS_SIZE + 12;
   }
 
   // 修改：月度模块封面尺寸用专用常量，不影响 TOP /宫格模块
   const coverW = kind === 'game' ? MONTHLY_GAME_COVER_W : MONTHLY_CHAR_COVER_SIZE;
-  // 图片框可用宽度 = 内容宽 - 左侧栏 - 栏间距
-  const boxAvailW = innerW - MONTHLY_SIDE_W - 16;
+  // 修改：图片框可用宽度 = 内容宽 - 最长标签宽 - 固定 16px 间隔
+  const boxAvailW = innerW - maxLabelW - 16;
   const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
 
   months.forEach((m, mi) => {
@@ -1492,20 +1498,27 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
   const months = getValidMonths(monthlyData);
   if (months.length === 0) return;
 
+  // 修改：动态计算最长月份标签宽度，替代固定 MONTHLY_SIDE_W
+  ctx.font = `bold ${MONTHLY_LABEL_SIZE}px ${FONT_SIYUAN}`;
+  const maxLabelW = Math.max(...months.map(m => ctx.measureText(m.label).width), 0);
+
   // 模块级统计文字：总时长/平均每月
   const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
   if (hasAnyHours) {
     const totalHours = months.reduce((sum, m) => sum + parseMonthlyHours(m.hours), 0);
     const avgHours = totalHours / 12;
-    const statsText = `总时长${fmtMonthlyHours(totalHours)}小时 / 平均每月${fmtMonthlyHours(avgHours)}小时`;
+    const statsText = `总时长${fmtMonthlyHours(totalHours)}小时，平均每月${fmtMonthlyHours(avgHours)}小时`;
+    // 修改：上方间距从全局 16 微调为 12，缩小与小标题的距离
+    painter.shiftY(-4);
     ctx.save();
-    ctx.font = `bold ${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;
+    ctx.font = `${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;  // 修改：去掉 bold，不加粗
     ctx.fillStyle = valueColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(statsText, contentX + innerW / 2, painter.y);
     ctx.restore();
-    painter.shiftY(MONTHLY_STATS_SIZE + MONTHLY_STATS_GAP);
+    // 修改：下方间距从 12 改为 16，增大与第一个图片框的距离
+    painter.shiftY(MONTHLY_STATS_SIZE + 16);
   }
 
   // 全局最大时长
@@ -1513,9 +1526,19 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
 
   // 修改：月度模块封面尺寸用专用常量
   const coverW = kind === 'game' ? MONTHLY_GAME_COVER_W : MONTHLY_CHAR_COVER_SIZE;
-  const boxAvailW = innerW - MONTHLY_SIDE_W - 16;
-  // 修改：左侧栏（月份 + 时长）在左，图片框从 contentX + MONTHLY_SIDE_W + 16 开始
-  const boxX = contentX + MONTHLY_SIDE_W + 16;
+  // 修改：图片框可用宽度 = 内容宽 - 最长标签宽 - 16px 固定间隔
+  const boxAvailW = innerW - maxLabelW - 16;
+  // 修改：图片框 x = contentX + 最长标签宽 + 16
+  const boxX = contentX + maxLabelW + 16;
+  // 修改：预计算最长柱状条标注（xxh）宽度，防止最长月时标注溢出图片框
+  ctx.font = `12px ${FONT_SIYUAN}`;
+  const maxBarLabelW = Math.max(...months.map(m => {
+    const h = parseMonthlyHours(m.hours);
+    return h > 0 ? ctx.measureText(`${fmtMonthlyHours(h)}h`).width : 0;
+  }), 0);
+  const barLabelGap = 6;
+  // 修改：柱子最大宽度 = 图片框宽 - 标注宽 - 标注间距，确保 xxh 始终在框内
+  const barMaxW = Math.max(0, boxAvailW - maxBarLabelW - barLabelGap);
   const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
 
   months.forEach((m, mi) => {
@@ -1589,15 +1612,14 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     // 绘制该月横向柱状条
     if (String(m.hours || '').trim() !== '' && maxHours > 0) {
       const hours = parseMonthlyHours(m.hours);
-      const barMaxW = boxAvailW;  // 最长月占满图片框宽度
+      // 修改：barMaxW 已在循环外计算（预留了 xxh 标注空间），最长月标注不再溢出
       const barW = Math.max(0, (hours / maxHours) * barMaxW);
       const barY = painter.y + MONTHLY_BAR_GAP;
       if (barW > 0) {
         ctx.save();
-        ctx.fillStyle = config.border || '#f6a5b8';
+        ctx.fillStyle = '#c98fac';  // 修改：柱状条默认颜色改为#c98fac
         ctx.beginPath();
         const r = Math.min(MONTHLY_BAR_RADIUS, barW / 2, MONTHLY_BAR_HEIGHT / 2);
-        // 修改：柱状条与图片框左对齐，从 boxX 开始
         ctx.moveTo(boxX + r, barY);
         ctx.lineTo(boxX + barW - r, barY);
         ctx.quadraticCurveTo(boxX + barW, barY, boxX + barW, barY + r);
@@ -1612,11 +1634,11 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.restore();
         ctx.save();
         ctx.font = `12px ${FONT_SIYUAN}`;
-        ctx.fillStyle = statTextColor;
+        ctx.fillStyle = '#c98fac';  // 修改：xxh 标注颜色改为@
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        // 修改：标注跟随柱子右端
-        ctx.fillText(`${fmtMonthlyHours(hours)}h`, boxX + barW + 6, barY + MONTHLY_BAR_HEIGHT / 2);
+        // 修改：标注间距用统一的 barLabelGap
+        ctx.fillText(`${fmtMonthlyHours(hours)}h`, boxX + barW + barLabelGap, barY + MONTHLY_BAR_HEIGHT / 2);
         ctx.restore();
       }
       painter.shiftY(MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2);
