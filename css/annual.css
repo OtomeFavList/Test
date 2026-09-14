@@ -2279,7 +2279,7 @@
     align-items: center;
     gap: 12px;
 }
-/* 封面列表：行 */
+/* 封面列表 */
 .annual-monthly-items {
     display: flex;
     flex-wrap: wrap;
