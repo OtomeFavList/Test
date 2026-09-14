@@ -1,6 +1,6 @@
 // data/games.js
-// 聚合games/下所有独立游戏数据，自动合并全局数组
-// 新增游戏只新建games/gameXXX.js，仅需要在下方数组追加文件名，本文件其余代码永久不用修改
+// 聚合 games/ 下所有独立游戏数据，自动合并全局数组
+// 新增游戏只新建 games/gameXXX.js，仅追加文件名，其余代码永久不用修改
 const allGameFileNames = [
     "game001.js", "game002.js", "game003.js", "game004.js", "game005.js",
     "game006.js", "game007.js", "game008.js", "game009.js", "game010.js",
