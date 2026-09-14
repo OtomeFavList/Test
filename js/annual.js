@@ -1460,7 +1460,7 @@ function renderOtherCustomCards() {
         row.appendChild(div);
     });
     // 修复：绑定标签输入，input 仅实时保存数据 + 调高度，blur 时才追加新卡片，避免输入过程中重新渲染打断焦点
-    row.querySelectorAll('.annual-other-custom-label').forEach(ta => {
+    row.querySelectorAll('[data-other-custom-label]').forEach(ta => {
         autoResizeCustomLabel(ta);
         ta.removeEventListener("input", ta._inputHandler);
         ta._inputHandler = () => {
