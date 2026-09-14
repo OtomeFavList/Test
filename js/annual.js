@@ -40,7 +40,7 @@ function loadAnnualExportConfig() {
     } else {
         config = {...annualExportDefault};
     }
-    // 归一化：input[type=color] 只接受 #rrggbb 六位格式，旧数据中存的 #eee 三位简写会被移动端浏览器回退为黑色 #000000
+    // input[type=color] 只接受 #rrggbb 六位格式，旧数据中存的 #eee 三位简写会被移动端浏览器回退为黑色 #000000
     // 修改：扩展到新字段
     ['customborder', 'labelColor', 'boxBgColor', 'reporterColor'].forEach(key => {
         if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
@@ -161,7 +161,6 @@ let charModalLocal = {
 
 // 模块内部状态标记
 let _annualRealInitialized = false;
-
 // 模块级标记，用于全局 document click 防重复绑定（当前方案已移除，保留作为预留）
 let _annualDocClickBound = false;
 let _annualSortDocClickHandler = null;
@@ -297,8 +296,7 @@ function charHasHiddenContent(char) {
     return countCharImages(char, true, false) > countCharImages(char, false, false);
 }
 
-/* 新增：判断角色是否有FD 内容（FD 角色标记 / FD 图片）
- * 用于局部 FD 开关的显隐判断 */
+// 新增：判断角色是否有FD 内容（FD 角色标记 / FD 图片）
  function charHasFdContent(char) {
     if (!char) return false;
     if (char.isFD === true) return true;
@@ -412,7 +410,7 @@ function renderGameList(wrap, keyword) {
         return String(g.name).toLowerCase().includes(kw);
     });
 
-    // 核心修改：完全复用 FavList 主列表的中英日排序逻辑 localeCompare("zh-CN")
+    // 核心修改：复用 FavList 主列表的中英日排序逻辑 localeCompare("zh-CN")
     const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
 
     sorted.forEach((game, listIndex)=>{
@@ -1035,7 +1033,7 @@ function openAnnualGlobalCharModal(targetIndex, context){
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
-    // 重置开关 DOM 勾选（对齐 HTML 真实 id）
+    // 重置开关 DOM 勾选，对齐 HTML 真实 id
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
     modal.querySelector("#annual-modal-global-hide-char").checked = false;
     modal.querySelector("#annual-modal-global-fd-game").checked = false;
@@ -1162,7 +1160,7 @@ function bindCharTop3Items() {
     });
 }
 
-// 新增：绑定カップルTOP 全部条目
+// 新增：绑定カップル TOP 全部条目
 function bindCpTop3Items() {
     const cpItems = document.querySelectorAll(".annual-cp-top-item");
     cpItems.forEach((item, domIndex)=>{
@@ -1216,13 +1214,12 @@ function rerenderCpTopNoLabel(){
 }
 
 // 修改：动态追加游戏 TOP DOM 条目，不限数量
- */
 function appendNewGameTopDom(){
     const container = document.getElementById("annual-game-top-drag-container");
     const itemDom = document.createElement("div");
     itemDom.className = "annual-top-item";
     itemDom.dataset.dragType = "game-top";
-    // 不写死 NO.xxx、不写死 data-rank，全部交给 rerenderGameTopNoLabel
+    // 不写死 NO 和 data-rank，全部交给 rerenderGameTopNoLabel
     itemDom.innerHTML = `
         <div class="annual-top-label-row hidden-when-empty">
             <div class="annual-top-label"></div>
@@ -1279,7 +1276,7 @@ function appendNewCharTopDom(){
     bindAnnualTextareaResize();
 }
 
-// 新增：动态追加カップルTOP DOM 条目
+// 新增：动态追加カップル TOP DOM 条目
 function appendNewCpTopDom(){
     const container = document.getElementById("annual-cp-top-drag-container");
     const itemDom = document.createElement("div");
@@ -1734,11 +1731,11 @@ function bindTouchDrag(){
     });
 }
 
-// 统一排序工具函数：PC 鼠标 / Mobile 触摸 共用
+// 统一排序工具函数：PC 鼠标/ Mobile 触摸共用
 /* 长按 NO + 名称行 2000ms 进入选中模式
  * 进入选中模式：源卡片外层卡片虚线 #f6a5b8 高亮；出现红色插入指示横线
  * 松手后可以自由滚动页面，鼠标 hover 卡片更新指示线位置，第一次点击横线变色，第二次点击执行移动插入 splice
- * 再次长按任意 NO + 名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑*/
+ * 再次长按任意 NO + 名称行：退出选中模式，清除指示线、清除选中框，停止插入逻辑 */
 function setupTouchSort(containerSel, dataArr, afterSort){
     const container = document.querySelector(containerSel);
     if (!container) return;
