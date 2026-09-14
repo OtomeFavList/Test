@@ -923,7 +923,7 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
   // 统计时长行，仅当至少一个月有时长时占高
   const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
   if (hasAnyHours) {
-    // 修改：上方间距从全局 16 微调为 12（绘制时 shiftY(-4)），下方间距 16，总增量 = 文字 + 12 不变
+    // 修改：上方间距从全局 16 微调为 12（绘制时 shiftY(-4)）
     contentH += MONTHLY_STATS_SIZE + 12;
   }
 
@@ -1508,16 +1508,16 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     const totalHours = months.reduce((sum, m) => sum + parseMonthlyHours(m.hours), 0);
     const avgHours = totalHours / 12;
     const statsText = `总时长${fmtMonthlyHours(totalHours)}小时，平均每月${fmtMonthlyHours(avgHours)}小时`;
-    // 修改：上方间距从全局 16 微调为 12，缩小与小标题的距离
+    // 修改：上方间距从全局 16 微调为 12
     painter.shiftY(-4);
     ctx.save();
-    ctx.font = `${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;  // 修改：去掉 bold，不加粗
+    ctx.font = `${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;  // 改：不加粗
     ctx.fillStyle = valueColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(statsText, contentX + innerW / 2, painter.y);
     ctx.restore();
-    // 修改：下方间距从 12 改为 16，增大与第一个图片框的距离
+    // 修改：下方间距从 12 改为 16
     painter.shiftY(MONTHLY_STATS_SIZE + 16);
   }
 
@@ -1530,7 +1530,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
   const boxAvailW = innerW - maxLabelW - 16;
   // 修改：图片框 x = contentX + 最长标签宽 + 16
   const boxX = contentX + maxLabelW + 16;
-  // 修改：预计算最长柱状条标注（xxh）宽度，防止最长月时标注溢出图片框
+  // 补丁：预计算最长柱状条标注（xxh）宽度，防止最长月时标注溢出图片框
   ctx.font = `12px ${FONT_SIYUAN}`;
   const maxBarLabelW = Math.max(...months.map(m => {
     const h = parseMonthlyHours(m.hours);
@@ -1612,7 +1612,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     // 绘制该月横向柱状条
     if (String(m.hours || '').trim() !== '' && maxHours > 0) {
       const hours = parseMonthlyHours(m.hours);
-      // 修改：barMaxW 已在循环外计算（预留了 xxh 标注空间），最长月标注不再溢出
+      // 补丁：barMaxW 已在循环外计算（预留了 xxh 标注空间），最长月标注不溢出
       const barW = Math.max(0, (hours / maxHours) * barMaxW);
       const barY = painter.y + MONTHLY_BAR_GAP;
       if (barW > 0) {
@@ -1634,7 +1634,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.restore();
         ctx.save();
         ctx.font = `12px ${FONT_SIYUAN}`;
-        ctx.fillStyle = '#c98fac';  // 修改：xxh 标注颜色改为@
+        ctx.fillStyle = '#c98fac';  // 修改：xxh 标注颜色改为#c98fac
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         // 修改：标注间距用统一的 barLabelGap
