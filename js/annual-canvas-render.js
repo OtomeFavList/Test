@@ -1599,14 +1599,15 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
       }
     }
 
-    // 修改：月份标签移到左侧栏 contentX
+    // 新增：月份标签以图片框（headerH）为准上下垂直居中
     const labelX = contentX;
+    const labelY = painter.y + (headerH - MONTHLY_LABEL_SIZE) / 2;
     ctx.save();
     ctx.font = `bold ${MONTHLY_LABEL_SIZE}px ${FONT_SIYUAN}`;
     ctx.fillStyle = labelColor;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(m.label, labelX, painter.y + 8);
+    ctx.fillText(m.label, labelX, labelY);
     ctx.restore();
 
     painter.shiftY(headerH);
