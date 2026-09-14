@@ -64,6 +64,17 @@ const CARD_RADIUS = 16;                // 模块卡片圆角（对齐 BIG_CARD_R
 const CARD_BORDER_W = 2;               // 模块卡片边框宽度
 const SUB_CARD_RADIUS = 8;             // 封面/感想框圆角
 const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
+// 新增：八、九 月度总结模块常量
+const MONTHLY_COVER_GAP = 16;          // 月度封面间距（同还玩了框）
+const MONTHLY_ROW_GAP = 24;            // 月度行之间间距
+const MONTHLY_SIDE_W = 160;             // 右侧栏宽度（月份标签区域，同网页 .annual-monthly-side）
+const MONTHLY_BOX_PAD = 16;             // 月度图片框内边距（同还玩了框 padding）
+const MONTHLY_BAR_HEIGHT = 16;          // 时长柱状条高度
+const MONTHLY_BAR_RADIUS = 4;           // 柱状条圆角
+const MONTHLY_BAR_GAP = 8;              // 柱状条上下间距
+const MONTHLY_STATS_SIZE = 16;          // 总时长/平均时长文字大小
+const MONTHLY_STATS_GAP = 12;           // 统计文字底部间距
+const MONTHLY_LABEL_SIZE = 18;          // 月份标签文字大小
 
 // 缓存
 const roundImageCache = new Map();
@@ -541,6 +552,16 @@ function collectModuleImages(moduleType, annualData) {
     const g = annualData.charGrid;
     safeEach(g?.fixed, item => { if (item.charId) pushUrl(item.coverSrc); });
     safeEach(g?.custom, item => { if (item.charId) pushUrl(item.coverSrc); });
+  } else if (moduleType === 'gameMonthly') {
+    // 新增：游戏月度总结，遍历12个月，收集所有游戏封面
+    (annualData.gameMonthly?.months || []).forEach(month => {
+      safeEach(month.items, item => pushUrl(item.coverSrc));
+    });
+  } else if (moduleType === 'charMonthly') {
+    // 新增：角色月度总结，遍历12个月，收集所有角色图
+    (annualData.charMonthly?.months || []).forEach(month => {
+      safeEach(month.items, item => pushUrl(item.coverSrc));
+    });
   }
   return [...new Set(urls)];
 }
@@ -629,6 +650,34 @@ function hasGridContent(gridData, gridKind, footerText) {
   if ((footerText || '').trim()) return true;
   return false;
 }
+// 新增：八、九 月度总结 工具函数
+function parseMonthlyHours(hoursStr) {
+  if (!hoursStr) return 0;
+  const n = parseFloat(String(hoursStr));
+  return isNaN(n) ? 0 : n;
+}
+function fmtMonthlyHours(n) {
+  const r = Math.round(n * 10) / 10;
+  return Number.isInteger(r) ? String(r) : r.toFixed(1);
+}
+function hasMonthlyContent(monthlyData) {
+  if (!monthlyData || !Array.isArray(monthlyData.months)) return false;
+  return monthlyData.months.some(m =>
+    (m.items && m.items.length > 0) ||
+    String(m.hours || '').trim() !== '' ||
+    String(m.text || '').trim() !== ''
+  );
+}
+function getValidMonths(monthlyData) {
+  if (!monthlyData || !Array.isArray(monthlyData.months)) return [];
+  return monthlyData.months
+    .map((m, idx) => ({ ...m, _idx: idx }))
+    .filter(m =>
+      (m.items && m.items.length > 0) ||
+      String(m.hours || '').trim() !== '' ||
+      String(m.text || '').trim() !== ''
+    );
+}
 
 // 高度计算，在图片加载后调用
 function calcStatsHeight(ctx, targetW, annualData, config, imageCache) {
@@ -706,6 +755,13 @@ function calcModuleHeight(ctx, targetW, moduleType, moduleTitle, annualData, con
   }
   if (moduleType === 'charGrid') {
     return calcGridHeight(ctx, targetW, annualData.charGrid, 'char', annualData.charGrid?.extraThoughts, config, imageCache);
+  }
+  // 新增：八、九月度总结
+  if (moduleType === 'gameMonthly') {
+    return calcMonthlyHeight(ctx, targetW, annualData.gameMonthly, 'game', config, imageCache);
+  }
+  if (moduleType === 'charMonthly') {
+    return calcMonthlyHeight(ctx, targetW, annualData.charMonthly, 'char', config, imageCache);
   }
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_INNER_PAD * 2;
@@ -832,6 +888,80 @@ function calcGridHeight(ctx, targetW, gridData, gridKind, footerText, config, im
     const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
     contentH += FOOTER_PAD * 2 + OTHER_SECTION_TITLE_SIZE + FOOTER_TITLE_GAP + textBoxH;
   }
+  h += CARD_INNER_PAD * 2 + contentH;
+  return h;
+}
+
+// 新增：八、九 月度总结 高度计算
+function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  let h = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let contentH = MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
+
+  const months = getValidMonths(monthlyData);
+  if (months.length === 0) {
+    h += CARD_INNER_PAD * 2 + contentH;
+    return h;
+  }
+
+  // 统计时长行，仅当至少一个月有时长时占高
+  const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
+  if (hasAnyHours) {
+    contentH += MONTHLY_STATS_SIZE + MONTHLY_STATS_GAP;
+  }
+
+  const coverW = kind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
+  // 图片框可用宽度 = 内容宽 - 右侧栏 - 栏间距
+  const boxAvailW = innerW - MONTHLY_SIDE_W - 16;
+  const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
+
+  months.forEach((m, mi) => {
+    //  图片框高度
+    const items = m.items || [];
+    let boxContentH = 0;
+    if (items.length > 0) {
+      const rows = Math.ceil(items.length / cols);
+      for (let r = 0; r < rows; r++) {
+        let rowMaxH = 0;
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          if (idx >= items.length) break;
+          const item = items[idx];
+          if (kind === 'game') {
+            const src = toCanvasUrl(item.coverSrc);
+            const img = src ? imageCache.get(src) : null;
+            rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+          } else {
+            rowMaxH = Math.max(rowMaxH, CHAR_COVER_SIZE);
+          }
+        }
+        boxContentH += rowMaxH;
+        if (r < rows - 1) boxContentH += MONTHLY_COVER_GAP;
+      }
+    }
+    const boxH = items.length > 0 ? boxContentH + MONTHLY_BOX_PAD * 2 : 0;
+    // 月份标签，右侧栏最小高度
+    const sideH = Math.max(MONTHLY_LABEL_SIZE * 1.4, 24);
+    contentH += Math.max(boxH, sideH);
+
+    // 柱状条，该月有时长才占高
+    if (String(m.hours || '').trim() !== '') {
+      contentH += MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2;
+    }
+
+    // 自定义文本框
+    const text = (m.text || '').trim();
+    if (text) {
+      const textSize = config.customTextFontSize || 16;
+      const textW = innerW - TEXT_BOX_PAD * 2;
+      const textH = measureWrappedHeight(ctx, text, textW, textSize * 1.55, textSize);
+      contentH += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+    }
+
+    if (mi < months.length - 1) contentH += MONTHLY_ROW_GAP;
+  });
+
   h += CARD_INNER_PAD * 2 + contentH;
   return h;
 }
@@ -1335,6 +1465,157 @@ function drawGridContent(painter, targetW, items, gridKind, footerLabel, footerT
   }
 }
 
+// 新增：八、九 月度总结 绘制
+function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_INNER_PAD * 2;
+  const contentX = wrapX + CARD_INNER_PAD;
+  const ctx = painter.ctx;
+  const labelColor = config.labelColor || config.subtitle || '#b85878';
+  const valueColor = config.statdata || '#b33a3a';
+  const statTextColor = config.stattext || '#b85878';
+
+  const months = getValidMonths(monthlyData);
+  if (months.length === 0) return;
+
+  // 模块级统计文字：总时长 / 平均每月
+  const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
+  if (hasAnyHours) {
+    const totalHours = months.reduce((sum, m) => sum + parseMonthlyHours(m.hours), 0);
+    const avgHours = totalHours / 12;
+    const statsText = `总时长${fmtMonthlyHours(totalHours)}小时 / 平均每月${fmtMonthlyHours(avgHours)}小时`;
+    ctx.save();
+    ctx.font = `bold ${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;
+    ctx.fillStyle = valueColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(statsText, contentX + innerW / 2, painter.y);
+    ctx.restore();
+    painter.shiftY(MONTHLY_STATS_SIZE + MONTHLY_STATS_GAP);
+  }
+
+  // 全局最大时长
+  const maxHours = Math.max(...months.map(m => parseMonthlyHours(m.hours)), 0);
+
+  const coverW = kind === 'game' ? GAME_COVER_W : CHAR_COVER_SIZE;
+  const boxAvailW = innerW - MONTHLY_SIDE_W - 16;
+  const cols = Math.max(1, Math.floor((boxAvailW + MONTHLY_COVER_GAP) / (coverW + MONTHLY_COVER_GAP)));
+
+  months.forEach((m, mi) => {
+    const items = m.items || [];
+
+    // 计算图片框内容高度
+    let boxContentH = 0;
+    if (items.length > 0) {
+      const rows = Math.ceil(items.length / cols);
+      for (let r = 0; r < rows; r++) {
+        let rowMaxH = 0;
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          if (idx >= items.length) break;
+          const item = items[idx];
+          if (kind === 'game') {
+            const src = toCanvasUrl(item.coverSrc);
+            const img = src ? imageCache.get(src) : null;
+            rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
+          } else {
+            rowMaxH = Math.max(rowMaxH, CHAR_COVER_SIZE);
+          }
+        }
+        boxContentH += rowMaxH;
+        if (r < rows - 1) boxContentH += MONTHLY_COVER_GAP;
+      }
+    }
+    const boxH = items.length > 0 ? boxContentH + MONTHLY_BOX_PAD * 2 : 0;
+    const sideH = Math.max(MONTHLY_LABEL_SIZE * 1.4, 24);
+    const headerH = Math.max(boxH, sideH);
+
+    // 绘制图片框
+    if (boxH > 0) {
+      painter.drawRoundRect(contentX, painter.y, boxAvailW, boxH, 12, '#ffffff', '#eee', 1);
+      const rows = Math.ceil(items.length / cols);
+      let cursorY = painter.y + MONTHLY_BOX_PAD;
+      for (let r = 0; r < rows; r++) {
+        let rowMaxH = 0;
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          if (idx >= items.length) break;
+          const item = items[idx];
+          const x = contentX + MONTHLY_BOX_PAD + c * (coverW + MONTHLY_COVER_GAP);
+          const y = cursorY;
+          const src = toCanvasUrl(item.coverSrc);
+          const img = src ? imageCache.get(src) : null;
+          const covH = kind === 'game' ? calcGameCoverHeight(img) : CHAR_COVER_SIZE;
+          rowMaxH = Math.max(rowMaxH, covH);
+          drawCoverCard(painter, x, y, coverW, covH, img, src, 6);
+        }
+        cursorY += rowMaxH;
+        if (r < rows - 1) cursorY += MONTHLY_COVER_GAP;
+      }
+    }
+
+    //绘制月份标签
+    const labelX = contentX + boxAvailW + 16;
+    ctx.save();
+    ctx.font = `bold ${MONTHLY_LABEL_SIZE}px ${FONT_SIYUAN}`;
+    ctx.fillStyle = labelColor;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(m.label, labelX, painter.y + 8);
+    ctx.restore();
+
+    painter.shiftY(headerH);
+
+    // 绘制该月横向柱状条
+    if (String(m.hours || '').trim() !== '' && maxHours > 0) {
+      const hours = parseMonthlyHours(m.hours);
+      const barMaxW = boxAvailW;  // 最长月占满图片框宽度
+      const barW = Math.max(0, (hours / maxHours) * barMaxW);
+      const barY = painter.y + MONTHLY_BAR_GAP;
+      if (barW > 0) {
+        ctx.save();
+        ctx.fillStyle = config.border || '#f6a5b8';
+        ctx.beginPath();
+        const r = Math.min(MONTHLY_BAR_RADIUS, barW / 2, MONTHLY_BAR_HEIGHT / 2);
+        ctx.moveTo(contentX + r, barY);
+        ctx.lineTo(contentX + barW - r, barY);
+        ctx.quadraticCurveTo(contentX + barW, barY, contentX + barW, barY + r);
+        ctx.lineTo(contentX + barW, barY + MONTHLY_BAR_HEIGHT - r);
+        ctx.quadraticCurveTo(contentX + barW, barY + MONTHLY_BAR_HEIGHT, contentX + barW - r, barY + MONTHLY_BAR_HEIGHT);
+        ctx.lineTo(contentX + r, barY + MONTHLY_BAR_HEIGHT);
+        ctx.quadraticCurveTo(contentX, barY + MONTHLY_BAR_HEIGHT, contentX, barY + MONTHLY_BAR_HEIGHT - r);
+        ctx.lineTo(contentX, barY + r);
+        ctx.quadraticCurveTo(contentX, barY, contentX + r, barY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.font = `12px ${FONT_SIYUAN}`;
+        ctx.fillStyle = statTextColor;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${fmtMonthlyHours(hours)}h`, contentX + barW + 6, barY + MONTHLY_BAR_HEIGHT / 2);
+        ctx.restore();
+      }
+      painter.shiftY(MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2);
+    }
+
+    // 绘制自定义文本框
+    const text = (m.text || '').trim();
+    if (text) {
+      const textSize = config.customTextFontSize || 16;
+      const textW = innerW - TEXT_BOX_PAD * 2;
+      const textH = measureWrappedHeight(ctx, text, textW, textSize * 1.55, textSize);
+      const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+      drawTextBox(painter, contentX, painter.y, innerW, boxH, text, config);
+      painter.shiftY(boxH);
+    }
+
+    if (mi < months.length - 1) painter.shiftY(MONTHLY_ROW_GAP);
+  });
+}
+
 // 主入口：单模块导出
 export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle, annualData, config, dpr) {
   DPR = dpr || 2;
@@ -1357,6 +1638,12 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     if (!hasGridContent(annualData.gameGrid, 'game', annualData.gameGrid?.nextYearExpect)) return null;
   } else if (moduleType === 'charGrid') {
     if (!hasGridContent(annualData.charGrid, 'char', annualData.charGrid?.extraThoughts)) return null;
+  } else if (moduleType === 'gameMonthly') {
+    // 新增：游戏月度总结
+    if (!hasMonthlyContent(annualData.gameMonthly)) return null;
+  } else if (moduleType === 'charMonthly') {
+    // 新增：角色月度总结
+    if (!hasMonthlyContent(annualData.charMonthly)) return null;
   } else {
     const validItems = getValidItems(moduleType, annualData);
     if (validItems.length === 0) return null;
@@ -1417,6 +1704,12 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     const footer = moduleType === 'gameGrid' ? annualData.gameGrid?.nextYearExpect : annualData.charGrid?.extraThoughts;
     const totalH = calcGridHeight(painter.ctx, designW, gridData, gridKind, footer, config, imageCache);
     cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
+  } else if (moduleType === 'gameMonthly' || moduleType === 'charMonthly') {
+    // 新增：八、九月度总结卡片高度
+    const monthlyData = moduleType === 'gameMonthly' ? annualData.gameMonthly : annualData.charMonthly;
+    const kind = moduleType === 'gameMonthly' ? 'game' : 'char';
+    const totalH = calcMonthlyHeight(painter.ctx, designW, monthlyData, kind, config, imageCache);
+    cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_INNER_PAD * 2;
   } else {
     if (moduleTitle && moduleType !== 'stats') {
       cardContentH += MODULE_TITLE_SIZE + (LAYOUT_SPACE.BIG_CARD_H2_MB || 16);
@@ -1473,6 +1766,13 @@ export async function renderAnnualModuleCanvas(designW, moduleType, moduleTitle,
     painter.y = contentY;
     drawGridContent(painter, designW, items, gridKind, footerLabel, footer, config, imageCache);
     painter.shiftY(CARD_INNER_PAD);
+  } else if (moduleType === 'gameMonthly' || moduleType === 'charMonthly') {
+    // 新增：八、九月度总结绘制
+    const monthlyData = moduleType === 'gameMonthly' ? annualData.gameMonthly : annualData.charMonthly;
+    const kind = moduleType === 'gameMonthly' ? 'game' : 'char';
+    painter.y = contentY;
+    drawMonthlyContent(painter, designW, monthlyData, kind, config, imageCache);
+    painter.shiftY(CARD_INNER_PAD);
   } else {
     const items = getValidItems(moduleType, annualData);
     const itemType = moduleType === 'gameTop' ? 'game' : moduleType === 'charTop' ? 'char' : 'cp';
@@ -1525,6 +1825,9 @@ export async function renderAllAnnualModules(designW, annualData, config, titleM
     { type: 'other', title: '' },
     { type: 'gameGrid', title: gameGridTitle },
     { type: 'charGrid', title: charGridTitle },
+    // 新增：八、ゲーム月度总结 / 九、キャラ月度总结
+    { type: 'gameMonthly', title: 'ゲーム月度总结' },
+    { type: 'charMonthly', title: 'キャラ月度总结' },
   ];
   const results = [];
   for (const mod of modules) {
