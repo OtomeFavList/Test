@@ -3694,7 +3694,6 @@ export function initAnnualModule(){
             }
 
             // 新增：月度自定义文本输入
-
             const monthlyTextInput = e.target.closest('[data-monthly-text]');
             if (monthlyTextInput) {
                 const kind = monthlyTextInput.dataset.monthlyText;
