@@ -1619,7 +1619,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
       const barY = painter.y + MONTHLY_BAR_GAP;
       if (barW > 0) {
         ctx.save();
-        ctx.fillStyle = '#992e2e';  // 修改：柱状条默认颜色改为#992e2e
+        ctx.fillStyle = '#e895a8';  // 修改：柱状条默认颜色改为#e895a8
         ctx.beginPath();
         const r = Math.min(MONTHLY_BAR_RADIUS, barW / 2, MONTHLY_BAR_HEIGHT / 2);
         ctx.moveTo(boxX + r, barY);
@@ -1636,7 +1636,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.restore();
         ctx.save();
         ctx.font = `12px ${FONT_SIYUAN}`;
-        ctx.fillStyle = '#992e2e';  // 修改：xxh 标注颜色改为#992e2e
+        ctx.fillStyle = '#e895a8';  // 修改：xxh 标注颜色改为#e895a8
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         // 修改：标注间距用统一的 barLabelGap
