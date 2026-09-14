@@ -14,8 +14,7 @@ import {
 
 // 最大并发图片加载数量，降低并发减少移动端解码资源竞争
 const MAX_IMAGE_CONCURRENCY = 4;
-// 新增：渲染进度上报 开始
-// 派发渲染进度事件，percent:0~100
+// 新增：渲染进度上报
 function emitRenderProgress(percent) {
   const evt = new CustomEvent('canvas-render-progress', {
     detail: {
@@ -24,39 +23,31 @@ function emitRenderProgress(percent) {
   });
   window.dispatchEvent(evt);
 }
-// 渲染进度上报 结束
 
-// IOS 环境检测：Safari / iOS Chrome(WebKit 内核)
+// IOS 环境检测：Safari / iOS Chrome（WebKit 内核）
 const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-// 圆角离屏画布缓存：key = `${url}||${sourceW}x${sourceH}||${radius}||${dpr}`
+// 优化：圆角离屏画布缓存，key = `${url}||${sourceW}x${sourceH}||${radius}||${dpr}`
 const roundImageCache = new Map();
 // 新增：图片资源缓存，区分 ImageBitmap / HTMLImageElement 降级对象
 const rawImageResourceCache = new Map();
-
 // 字体规范
 const FONT_SIYUAN = "Noto Sans SC, sans-serif";
 
-// 固定 DPR = 2
 let currentDPR = 2;
-
 function getExportDPR(width) {
   return 2;
 }
-
 // 供 annual-canvas-render.js 同步 DPR，确保 CanvasLayoutPainter 使用一致的 DPR
 export function setCurrentDPR(dpr) {
   currentDPR = dpr || 2;
 }
-
-// 工具函数
 
 export function wrapText(ctx, text, x, y, maxWidth, lineHeight, fontSize, color, font = FONT_SIYUAN, bold = false) {
   if (!text) return 0;
   const fontStr = bold ? `bold ${fontSize}px ${font}` : `${fontSize}px ${font}`;
   ctx.font = fontStr;
   ctx.fillStyle = color;
-  // 新增：行空隙上限 12px
+  // 补丁：行空隙上限 12px
   const gap = Math.min(lineHeight - fontSize, 12);
   const safeLineHeight = fontSize + gap;
   const chars = Array.from(text);
@@ -64,14 +55,14 @@ export function wrapText(ctx, text, x, y, maxWidth, lineHeight, fontSize, color,
   let totalHeight = 0;
   for (let n = 0; n < chars.length; n++) {
     const ch = chars[n];
-    // 遇到手动换行符 \n 时强制换行
+    // 新增：遇到手动换行符 \n 时强制换行
     if (ch === '\n') {
       ctx.fillText(line, x, y + totalHeight);
       line = '';
       totalHeight += safeLineHeight;
       continue;
     }
-    // 遇到 \r 时强制换行，兼容 \r\n（跳过紧随的 \n）
+    // 新增：遇到 \r 时强制换行，兼容 \r\n（跳过紧随的 \n）
     if (ch === '\r') {
       if (chars[n + 1] === '\n') {
         n++;
@@ -103,7 +94,7 @@ export function measureWrappedHeight(ctx, text, maxWidth, lineHeight, fontSize, 
   if (!text) return 0;
   const fontStr = bold ? `bold ${fontSize}px ${FONT_SIYUAN}` : `${fontSize}px ${FONT_SIYUAN}`;
   ctx.font = fontStr;
-  // 行空隙上限 12px，和绘制逻辑保持一致
+  // 补丁：行空隙上限 12px，和绘制逻辑保持一致
   const gap = Math.min(lineHeight - fontSize, 12);
   const safeLineHeight = fontSize + gap;
   const chars = Array.from(text);
@@ -111,13 +102,13 @@ export function measureWrappedHeight(ctx, text, maxWidth, lineHeight, fontSize, 
   let lines = 1;
   for (let n = 0; n < chars.length; n++) {
     const ch = chars[n];
-    // 遇到手动换行符 \n 时强制换行
+    // 新增：遇到手动换行符 \n 时强制换行
     if (ch === '\n') {
       lines++;
       line = '';
       continue;
     }
-    // 遇到 \r 时强制换行，兼容 \r\n
+    // 新增：遇到 \r 时强制换行，兼容 \r\n
     if (ch === '\r') {
       if (chars[n + 1] === '\n') {
         n++;
@@ -148,7 +139,7 @@ function createRoundImageCanvas(img, srcUrl, radius) {
   const sourceH = (img.naturalHeight ?? img.height) || 1;
   if (sourceW <= 0 || sourceH <= 0) return null;
   const dpr = currentDPR;
-  // 仅 IOS 安全熔断：单张离屏画布像素上限阈值，超过直接不生成缓存，走实时 clip 降级
+  // 补丁：仅 IOS 安全熔断，单张离屏画布像素上限阈值，超过直接不生成缓存，走实时 clip 降级
   if(IS_IOS_WEBKIT){
     const MAX_OFFSCREEN_PX = 4096 * 4096;
     const pxTotal = (sourceW * dpr) * (sourceH * dpr);
@@ -189,7 +180,7 @@ function createRoundImageCanvas(img, srcUrl, radius) {
     offCtx.restore();
   } catch (e) {
     console.warn("离屏画布绘制异常", srcUrl, e);
-    // 异常时销毁失败画布，不要留在内存
+    // 补丁：异常时销毁失败画布，不要留在内存
     offCanvas.width = 0;
     offCanvas.height = 0;
     return null;
@@ -201,7 +192,7 @@ function createRoundImageCanvas(img, srcUrl, radius) {
 // 根据图片缓存，预生成所有需要用到的圆角离屏画布
 // 提前一次性全部生成，绘制阶段不再实时计算
 async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
-  // 去重任务，只保留 src 和 radius
+  // 去重，只保留 src 和 radius
   const taskMap = new Map();
   for (const task of roundTaskList) {
     const { src, radius } = task;
@@ -218,7 +209,7 @@ async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
       taskMap.set(cacheKey, { src, radius });
     }
   }
-  // 串行预生成（移动端避免并发离屏画布抢占GPU）
+  // 串行预生成，移动端避免并发离屏画布抢占 GPU
   let roundTaskIndex = 0;
   const totalRoundTask = taskMap.size;
   for (const task of taskMap.values()) {
@@ -228,22 +219,21 @@ async function preGenerateAllRoundCanvas(imageCache, roundTaskList) {
     if (!canvas) {
       console.warn("预生成圆角画布创建失败，运行时尝试实时生成", src);
     }
-    // IOS加大离屏画布生成间隔，缓解GPU队列拥堵
+    // IOS加大离屏画布生成间隔，缓解 GPU 队列拥堵
     const delayMs = IS_IOS_WEBKIT ? 30 : 12;
     await new Promise(r => setTimeout(r, delayMs));
-    // 圆角画布阶段进度
+    // 补丁：圆角画布阶段进度
     roundTaskIndex += 1;
     if(totalRoundTask > 0){
-      // 图片加载占45，本阶段区间：45 ~ 60
+      // 图片加载占 45，本阶段区间：45 ~ 60
       const roundStagePercent = 45 + (roundTaskIndex / totalRoundTask) * 15;
       emitRenderProgress(roundStagePercent);
     }
-    // 补丁结束
   }
   // 多层帧等待，低性能移动端充分刷新渲染队列
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => setTimeout(r, 50));
-  // 仅 IOS：限制圆角离屏缓存最大数量，防止 IOS 内存爆炸
+  // 补丁：仅 IOS，限制圆角离屏缓存最大数量，防止 IOS 内存爆炸
   if(IS_IOS_WEBKIT){
     const MAX_ROUND_CACHE = 80;
     if(roundImageCache.size > MAX_ROUND_CACHE){
@@ -267,15 +257,15 @@ async function loadImagesWithLimit(urlList, limit) {
   const resultMap = new Map();
   let index = 0;
 
-  // 单张图片加载，最多重试2次，拉长重试间隔，适配国内网络抖动
+  // 单张图片加载，最多重试 2 次，拉长重试间隔，适配国内网络抖动
   async function loadSingleUrl(url, retryCount = 2) {
     try {
       const bitmap = await preloadImageBitmap(url);
-      // 移动端严格校验bitmap有效尺寸
+      // 移动端严格校验 bitmap 有效尺寸
       if (!bitmap || bitmap.width === 0 || bitmap.height === 0) {
         throw new Error("bitmap empty size");
       }
-      // IOS额外帧等待，解决bitmap resolve但显存未就绪绘制空白
+      // IOS 额外帧等待，解决 bitmap resolve 但显存未就绪绘制空白
       if(IS_IOS_WEBKIT){
         await new Promise(r => requestAnimationFrame(r));
       }
@@ -288,7 +278,7 @@ async function loadImagesWithLimit(urlList, limit) {
         return loadSingleUrl(url, retryCount - 1);
       }
       console.warn('ImageBitmap加载失败，尝试降级HTML Image：', url, err);
-      // 移动端降级：使用传统Image对象，规避各类浏览器bitmap渲染bug
+      // 补丁：移动端降级，使用传统 Image 对象，规避各类浏览器 bitmap 渲染 bug
       try {
         const img = await preloadAndDecodeImage(url);
         await new Promise(resolve => requestAnimationFrame(resolve));
@@ -308,21 +298,20 @@ async function loadImagesWithLimit(urlList, limit) {
       if (resultMap.has(url)) continue;
       const bitmap = await loadSingleUrl(url);
       resultMap.set(url, bitmap);
-      // 图片加载阶段进度
+      // 补丁：图片加载阶段进度
       const doneCount = resultMap.size;
       const totalImg = uniqueUrls.length;
       if(totalImg > 0){
         const imgStagePercent = (doneCount / totalImg) * 45;
         emitRenderProgress(imgStagePercent);
       }
-      // 补丁结束
     }
   }
 
   const workers = Array.from({ length: limit }, worker);
   await Promise.all(workers);
 
-  // 移动端容错模式：失败图片不阻断渲染
+  // 补丁：移动端容错，失败图片不阻断渲染
   const failList = [];
   for (const [u, val] of resultMap.entries()) {
     if (!val) failList.push(u);
@@ -335,7 +324,7 @@ async function loadImagesWithLimit(urlList, limit) {
   if (failList.length > 0) {
     console.warn("⚠️ 部分图片加载失败，继续渲染（空白占位）：", failList);
   }
-  // 多层帧等待，给浏览器完成光栅化，解决bitmap resolve但绘制空白
+  // 多层帧等待，完成光栅化，解决 bitmap resolve 但绘制空白
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => requestAnimationFrame(r));
   await new Promise(r => setTimeout(r, 30));
@@ -343,7 +332,6 @@ async function loadImagesWithLimit(urlList, limit) {
 }
 
 // Canvas 布局绘制器
-
 export class CanvasLayoutPainter {
   constructor(canvas, designWidth, designHeight, bgColor) {
     this.canvas = canvas;
@@ -363,7 +351,7 @@ export class CanvasLayoutPainter {
     this.ctx.scale(dpr, dpr);
     this.ctx.textBaseline = 'top';
 
-    // 图像平滑兼容补齐（移动端各浏览器）
+    // 图像平滑兼容补齐，移动端各浏览器
     this.ctx.imageSmoothingEnabled = true;
     this.ctx.imageSmoothingQuality = "high";
     this.ctx.webkitImageSmoothingEnabled = true;
@@ -517,7 +505,6 @@ export class CanvasLayoutPainter {
 }
 
 // 高度计算辅助
-
 function calcCharCardHeight(ctx, charName, cardWidth, fontSize = 14) {
   const innerPad = LAYOUT_SPACE.CHAR_CARD_INNER_PADDING;
   const imgSize = cardWidth - innerPad * 2;
@@ -547,8 +534,7 @@ function calcCharAreaHeight(ctx, charItems, containerWidth, cardWidth, gap, font
   return { height, rows, maxCardHeight };
 }
 
-// 预计算高度（用于分页）
-
+// 预计算高度，用于分页
 function calcHeaderVirtualHeight(targetWidth, appData) {
   const { baseInfo } = appData;
   const virtualCanvas = document.createElement('canvas');
@@ -585,13 +571,13 @@ function calcHeaderVirtualHeight(targetWidth, appData) {
   }
 
   cursorY += LAYOUT_SPACE.WRAP_GAP;
-  // 用完销毁虚拟画布，释放 IOS 显存
+  // 补丁：用完销毁虚拟画布，释放 IOS 显存
   virtualCanvas.width = 0;
   virtualCanvas.height = 0;
   return cursorY;
 }
 
-// 测量游戏标题行（含爱心）高度，自动处理名称换行 + 爱心换行
+// 修改：测量游戏标题行（含爱心）高度，自动处理名称换行 + 爱心换行
 function measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameName) {
   const nameFontSize = 22;
   const HEART_SIZE = 26;
@@ -600,7 +586,7 @@ function measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameName) {
   const fontStr = `bold ${nameFontSize}px ${FONT_SIYUAN}`;
   vCtx.font = fontStr;
   const textMaxWidth = gameCardW - cardInnerPad * 2;
-  // 先测量游戏名称自动换行高度
+  // 新增：先测量游戏名称自动换行高度
   const nameLineHeight = nameFontSize * 1.3;
   const nameWrapHeight = measureWrappedHeight(vCtx, gameName, textMaxWidth, nameLineHeight, nameFontSize, true);
 
@@ -621,7 +607,7 @@ function measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameName) {
   return totalTitleHeight;
 }
 
-// calcSingleGameBlockHeight
+// 修改：calcSingleGameBlockHeight
 function calcSingleGameBlockHeight(targetWidth, renderData) {
   const { gameInfo, charItems, cpItems, gameItem } = renderData;
   const virtualCanvas = document.createElement('canvas');
@@ -637,21 +623,21 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
   const gameCardW = wrapW;
   const textMaxW = gameCardW - cardInnerPad * 2;
 
-  // 读取自定义导出文本字号，默认 16px
+  // 修改：读取自定义导出文本字号，默认 16px
   const textSize = renderData.appData.exportCustomTextFontSize ?? 16;
   const lineHeight = textSize * 1.45;
 
-  // 动态计算标题高度
+  // 修改：动态计算标题高度
   const nameHeight = measureGameTitleWithHeartHeight(vCtx, cardX, gameCardW, gameInfo.name);
   const HEART_AREA_HEIGHT = 0;
 
-  // 固定间隔，间隔不再随字号变化
+  // 补丁：固定间隔，间隔不再随字号变化
   const FIX_GAMEHEAD_TOP = -5;
   const FIX_GAMEHEAD_BOTTOM = 12;
   const FIX_CHARSEC_TOP = 14;
   const FIX_CHARSEC_BOTTOM = 6;
   const FIX_CPSEC_TOP = 14;
-  // cpSectionText特殊：底部间距0px
+  // cpSectionText 特殊：底部间距 0px
   const FIX_CPSEC_BOTTOM = 0;
 
   let headTextHeight = 0;
@@ -713,14 +699,14 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
       const perRow = calcCardsPerRow(maleCardWidth, maleGap, maleContainerWidth);
       const maleRows = Math.ceil(cp.maleItems.length / perRow);
       const maleAreaH = maleRows * maxMaleH + (maleRows - 1) * maleGap;
-      // ----- 将间距移入 totalCpHeight 累加 -----
+      // 将间距移入 totalCpHeight 累加
       const rowH = Math.max(fHeight, maleAreaH);
       totalCpHeight += rowH + (LAYOUT_SPACE.CP_ROW_MARGIN || 16);
     }
     cpAreaHeight = totalCpHeight;
   }
 
-  // 叠加三处自定义文本高度
+  // 修改：叠加三处自定义文本高度
   const totalCardH = cardInnerPad * 2
     + nameHeight + HEART_AREA_HEIGHT
     + headTextHeight
@@ -728,7 +714,7 @@ function calcSingleGameBlockHeight(targetWidth, renderData) {
     + charSectionTextHeight
     + cpAreaHeight
     + cpSectionTextHeight;
-  // 测量完成销毁虚拟画布
+  // 补丁：测量完成销毁虚拟画布
   virtualCanvas.width = 0;
   virtualCanvas.height = 0;
   return totalCardH;
@@ -848,7 +834,6 @@ function splitPagesByHeight(headerHeight, gameBlockHeights, maxH) {
 }
 
 // 绘制函数
-
 async function drawHeaderBlock(painter, targetWidth, appData) {
   const { exportColor, baseInfo } = appData;
 
@@ -857,7 +842,6 @@ async function drawHeaderBlock(painter, targetWidth, appData) {
   const wrapW = Math.min(WRAP_MAX_W, targetWidth - BODY_PAD * 2);
   const wrapX = Math.max(BODY_PAD, (targetWidth - wrapW) / 2);
 
-  // 大标题在"画布上沿→第一个框上沿"区域内垂直居中
   const titleAreaH = LAYOUT_SPACE.BODY_PADDING + 42 + (LAYOUT_SPACE.SITE_TITLE_MT || 0) + (LAYOUT_SPACE.SITE_TITLE_MB || 20);
   const titleY = (titleAreaH - 42) / 2;
   painter.drawTextCenter('Otome FavList', targetWidth / 2, titleY, 42, exportColor.title, 'sans-serif', true);
@@ -908,7 +892,7 @@ async function drawHeaderBlock(painter, targetWidth, appData) {
   }
 }
 
-// drawSingleGameCard
+// 修改：drawSingleGameCard
 async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, isLastCard = false) {
   const { gameInfo, charItems, cpItems, gameItem } = renderData;
   const { exportColor } = renderData.appData || {};
@@ -982,7 +966,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     LAYOUT_STYLE.GAME_CARD_RADIUS,
     '#ffffff',
     exportColor.border,
-    2  // 大边框1px→2px，与annual模块大边框一致
+    2  // 修改：大边框1px改为2px，与 annual 模块一致
   );
 
   let drawY = cardTop + cardInnerPad;
@@ -990,7 +974,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
   const nameX = cardX + cardInnerPad;
   const nameBaselineY = drawY;
 
-  // 绘制游戏标题，自动换行
+  // 修改：绘制游戏标题，自动换行
   const usedNameHeight = wrapText(
     painter.ctx,
     gameInfo.name,
@@ -1004,7 +988,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     true
   );
 
-  // 判断爱心是否需要换行
+  // 补丁：判断爱心是否需要换行
   painter.ctx.font = `bold ${nameFontSize}px ${FONT_SIYUAN}`;
   const nameTextWidth = painter.ctx.measureText(gameInfo.name).width;
   const heartStartX = nameX + nameTextWidth + 14;
@@ -1032,7 +1016,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
     );
   }
 
-  // drawY 移动真实总标题高度
+  // 关键：drawY 移动真实总标题高度
   const totalTitleHeight = measureGameTitleWithHeartHeight(painter.ctx, cardX, gameCardW, gameInfo.name);
   drawY += totalTitleHeight;
 
@@ -1044,7 +1028,6 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       const textMaxW = gameCardW - cardInnerPad * 2;
       const textSize = renderData.appData.exportCustomTextFontSize ?? 16;
       const lineHeight = textSize * 1.45;
-      // 上方固定间隔
       drawY += FIX_GAMEHEAD_TOP;
       wrapText(
           painter.ctx,
@@ -1064,11 +1047,10 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
           textSize
       );
       drawY += textH;
-      // 下方固定间隔
       drawY += FIX_GAMEHEAD_BOTTOM;
   }
 
-  // ---- Character ----
+  // Character
   if (charItems.length > 0) {
     painter.drawText('Character', cardX + cardInnerPad, drawY, 18, '#000');
     drawY += 18 + 8;
@@ -1106,7 +1088,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
           }
         }
         if (!roundCanvas) {
-          // 降级 clip 分支强制 try-finally 保证 restore
+          // 补丁：降级 clip 分支强制 try-finally 保证 restore
           painter.ctx.save();
           try {
             painter.ctx.beginPath();
@@ -1135,7 +1117,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       const needDrawName = !(item.isHidden || item.isFD) || renderData.appData.exportShowHiddenFDName;
       if (needDrawName) {
         painter.drawTextWrapCenterInBox(
-          item.displayName || item.name,  // 补丁：使用用户选择的显示名
+          item.displayName || item.name,  // 补丁
           xPos + innerPad,
           nameBoxY,
           cardW - innerPad * 2,
@@ -1184,7 +1166,7 @@ async function drawSingleGameCard(painter, targetWidth, renderData, imageCache, 
       drawY += FIX_CHARSEC_BOTTOM;
   }
 
-  // ---- Couple ----
+  // Couple
   if (cpItems.length > 0) {
     if (charItems.length > 0) {
       drawY += 8;
@@ -1401,7 +1383,7 @@ async function drawFullContent(
     const data = renderDataList[idx];
     const isLast = (i === gameIndexList.length - 1);
     await drawSingleGameCard(painter, targetWidth, data, imageCache, isLast);
-    // 绘制阶段进度 长图/分页共用
+    // 补丁：绘制阶段进度 长图/分页共用
     const drawDone = i + 1;
     const drawTotal = gameIndexList.length;
     if(drawTotal > 0){
@@ -1409,7 +1391,6 @@ async function drawFullContent(
       const drawPercent = 60 + (drawDone / drawTotal) * 40;
       emitRenderProgress(drawPercent);
     }
-    // 补丁结束
   }
 }
 
@@ -1431,7 +1412,6 @@ function cropCanvas(sourceCanvas, designW, designH) {
 }
 
 // 长图高度计算
-
 function calcTotalVirtualHeight(targetWidth, appData, gameTemplateList, renderDataList) {
   const headerH = calcHeaderVirtualHeight(targetWidth, appData);
   let total = headerH;
@@ -1449,7 +1429,6 @@ function calcTotalVirtualHeight(targetWidth, appData, gameTemplateList, renderDa
 }
 
 // 主渲染函数
-
 export async function renderExportCanvas(
   targetWidth,
   isLongMode,
@@ -1460,7 +1439,7 @@ export async function renderExportCanvas(
 ) {
   const { exportColor, gameList } = appData;
   currentDPR = dpr || getExportDPR(targetWidth);
-  // 仅 IOS：释放 ImageBitmap 资源，避免 IOS 内存泄漏
+  // 补丁：仅 IOS，释放 ImageBitmap 资源，避免 IOS 内存泄漏
   if(IS_IOS_WEBKIT){
     for (const [k, res] of rawImageResourceCache.entries()) {
       if(res?.type === 'bitmap' && res.data && typeof res.data.close === 'function'){
@@ -1495,12 +1474,12 @@ export async function renderExportCanvas(
       for (const cid of gameItem.selectChars) {
         const char = gameInfo.charList?.find(c => c.id === cid);
         if (!char) continue;
-        // 改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
+        // 修改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
         const isSub = char.isSub ?? false;
         const isHidden = !!char.isHidden;
         const isFD = !!char.isFD;
         const isFdSub = !!char.isFdSub;
-        // 普通角色（无任何特殊标记）直接保留
+        // 普通角色无任何特殊标记，直接保留
         if (isSub || isHidden || isFD || isFdSub) {
             // 修复：隐藏/FD 可见性判断必须包含局部开关，与页面 getAllGameChar 逻辑一致
             const pass = (isSub && showSub) || (isHidden && (globalHide || localHide)) || (isFD && (globalFD || localFD)) || (isFdSub && showFdSub);
@@ -1516,7 +1495,7 @@ export async function renderExportCanvas(
         const nameIdx = Number(stored?.nameIndex ?? 0);  // 新增
         const src = allSrc[idx] || allSrc[0];
         const canvasSrc = convertR2ToJsDelivr(src);
-        // 防火墙：禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
+        // 补丁：防火墙禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
         const isBlockedUrl = (!canvasSrc)
           || (!canvasSrc.startsWith('http'))
           || canvasSrc.startsWith('https://pub-')
@@ -1525,7 +1504,7 @@ export async function renderExportCanvas(
           console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasSrc);
           continue;
         }
-        // 多名字显示名，隐藏开关或 FD 开关（角色 isFD 时）任一开启即显示隐藏名
+        // 修改：多名字显示名，隐藏开关或 FD 开关（角色 isFD 时）任一开启即显示隐藏名
         const showHide = getCharShowHide(char, globalHide, localHide, globalFD, localFD);
         const displayName = getCharDisplayName(char, nameIdx, showHide) || char.name || "";
         charItems.push({
@@ -1553,7 +1532,7 @@ export async function renderExportCanvas(
         const fNameIdx = Number(cp.femaleNameIndex ?? 0);  // 新增
         const fSrc = fAllSrc[fIdx] || fAllSrc[0];
         const canvasFSrc = convertR2ToJsDelivr(fSrc);
-        // 防火墙：禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
+        // 补丁：防火墙禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
         const isBlockedUrlF = (!canvasFSrc)
           || (!canvasFSrc.startsWith('http'))
           || canvasFSrc.startsWith('https://pub-')
@@ -1568,7 +1547,7 @@ export async function renderExportCanvas(
           for (const mi of cp.maleItems) {
             const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
             if (!mChar) continue;
-            // 改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
+            // 修改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
             const isSub = mChar.isSub ?? false;
             const isHidden = !!mChar.isHidden;
             const isFD = !!mChar.isFD;
@@ -1588,7 +1567,7 @@ export async function renderExportCanvas(
             const mNameIdx = Number(mi.nameIndex ?? 0);  // 新增
             const mSrc = mAllSrc[mIdx] || mAllSrc[0];
             const canvasMSrc = convertR2ToJsDelivr(mSrc);
-            // 防火墙：禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
+            // 补丁：防火墙禁止空值、非 http、R2 pub 地址、github raw 地址进入图片队列
             const isBlockedUrlM = (!canvasMSrc)
               || (!canvasMSrc.startsWith('http'))
               || canvasMSrc.startsWith('https://pub-')
@@ -1597,7 +1576,7 @@ export async function renderExportCanvas(
               console.error("❌ 禁止加入R2/raw地址到Canvas加载队列，已跳过", canvasMSrc);
               continue;
             }
-            // 男主多名字显示名
+            // 修改：男主多名字显示名
             const mShowHide = getCharShowHide(mChar, globalHide, localHide, globalFD, localFD);
             const mDisplayName = getCharDisplayName(mChar, mNameIdx, mShowHide) || mChar.name || "";
             maleItems.push({
@@ -1611,7 +1590,7 @@ export async function renderExportCanvas(
             allImageSrcList.push(canvasMSrc);
           }
         }
-        // 女主多名字显示名
+        // 修改：女主多名字显示名
         const fShowHide = getCharShowHide(fChar, globalHide, localHide, globalFD, localFD);
         const fDisplayName = getCharDisplayName(fChar, fNameIdx, fShowHide) || fChar.name || "";
         if (maleItems.length > 0) {
@@ -1636,7 +1615,7 @@ export async function renderExportCanvas(
     });
   }
 
-  // 兜底防火墙：再次清洗图片源列表，剔除 null/空/R2/raw 地址，防止上层逻辑穿透
+  // 补丁：兜底防火墙，再次清洗图片源列表，剔除 null/空/R2/raw 地址，防止上层逻辑穿透
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
   const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
   const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
@@ -1650,7 +1629,7 @@ export async function renderExportCanvas(
   // 去重
   allImageSrcList = [...new Set(allImageSrcList)];
 
-  // 收集所有圆角图片绘制任务（只记录 src 和 radius）
+  // 收集所有圆角图片绘制任务，只记录 src 和 radius
   const roundCanvasTasks = [];
   for (const data of renderDataList) {
     for (const item of data.charItems) {
@@ -1692,7 +1671,7 @@ export async function renderExportCanvas(
     const realCanvasW = targetWidth * dpr;
     const realCanvasH = totalHeight * dpr;
     const totalPixel = realCanvasW * realCanvasH;
-    // 仅 IOS 长图画布像素预警，超过阈值控制台警告，建议使用分页模式
+    // 补丁：仅 IOS 长图画布像素预警，超过阈值控制台警告，建议使用分页模式
     if(IS_IOS_WEBKIT){
       const SAFARI_MAX_PX = 32 * 1024 * 1024;
       if(totalPixel > SAFARI_MAX_PX){
@@ -1730,7 +1709,7 @@ export async function renderExportCanvas(
       await new Promise(r => setTimeout(r, 100));
       blob = await new Promise((resolve) => finalCanvas.toBlob(resolve, 'image/png', 1));
     }
-    // 强制 100%
+    // 补丁：强制 100%
     emitRenderProgress(100);
     const res = [blob];
     res.imageFailList = imageFailList;
@@ -1765,7 +1744,7 @@ export async function renderExportCanvas(
   for (const pagePlan of pagePlanList) {
     pageIndex += 1;
     let safeTempHeight = Math.max(maxPageHeight * 4, 6000);
-    // IOS临时画布高度硬上限，防止canvas尺寸被WebKit静默置0
+    // 补丁：IOS 临时画布高度硬上限，防止 canvas 尺寸被 WebKit 静默置 0
     if(IS_IOS_WEBKIT){
       const IOS_TEMP_CANVAS_MAX = 12000;
       if(safeTempHeight > IOS_TEMP_CANVAS_MAX){
@@ -1800,7 +1779,7 @@ export async function renderExportCanvas(
       });
     }
     if (blob) blobList.push(blob);
-    // 仅 IOS：单页绘制完成立刻释放临时画布，降低 IOS 多页内存峰值
+    // 补丁：仅 IOS，单页绘制完成立刻释放临时画布，降低 IOS 多页内存峰值
     if(IS_IOS_WEBKIT){
       canvas.width = 0;
       canvas.height = 0;
