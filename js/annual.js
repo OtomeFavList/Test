@@ -1785,7 +1785,7 @@ function renderMonthlyRow(month, idx, kind) {
             <div class="annual-monthly-header">
                 <div class="annual-monthly-side">
                     <div class="annual-monthly-label">${month.label}</div>
-                    <input class="annual-monthly-hours" type="text" placeholder="游戏时长，选填"
+                    <input class="annual-monthly-hours" type="text" placeholder="选填，游戏时长"
                            value="${month.hours || ''}" data-monthly-hours="${kind}" data-month-idx="${idx}">
                 </div>
                 <div class="annual-monthly-box">
