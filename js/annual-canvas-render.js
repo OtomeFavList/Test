@@ -923,8 +923,8 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
   // 统计时长行，仅当至少一个月有时长时占高
   const hasAnyHours = months.some(m => String(m.hours || '').trim() !== '');
   if (hasAnyHours) {
-    // 修改：上方间距进一步缩小（绘制时 shiftY(-8)）
-    contentH += MONTHLY_STATS_SIZE + 8;
+    // 修改：上方间距进一步缩小（绘制时 shiftY(-10)）
+    contentH += MONTHLY_STATS_SIZE + 10;
   }
 
   // 修改：月度模块封面尺寸用专用常量，不影响 TOP /宫格模块
@@ -1510,8 +1510,8 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     const totalHours = months.reduce((sum, m) => sum + parseMonthlyHours(m.hours), 0);
     const avgHours = totalHours / 12;
     const statsText = `总时长${fmtMonthlyHours(totalHours)}小时，平均每月${fmtMonthlyHours(avgHours)}小时`;
-    // 修改：上方间距从 shiftY(-4) 加大到 -8
-    painter.shiftY(-8);
+    // 修改：上方间距从 shiftY(-10)
+    painter.shiftY(-10);
     ctx.save();
     ctx.font = `${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;  // 改：不加粗
     ctx.fillStyle = valueColor;
