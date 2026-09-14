@@ -481,115 +481,115 @@
         <div class="annual-card-header">
             <h2>十、导出</h2>
         <button class="annual-card-fold-btn">▲</button>
+        </div>
+        <div class="annual-card-body">
+            <div class="annual-reporter-row">
+                <span class="text-light-pink">填表人：</span>
+                <input type="text" id="annual-reporter-name" placeholder="选填，生成并导出图片时显示在标题右下方">
+            </div>
+            <div class="switch-row">
+                <label class="switch">
+                    <input type="checkbox" id="annual-use-summary-title">
+                    <span class="slider"></span>
+                </label>
+                <div>
+                    <span class="text-light-pink">导出标题使用 Otome Summary Report</span>
+                    <p class="switch-desc">开启后生成并导出的图片标题为 Otome Summary Report，关闭则标题默认为 20XX Otome Annual Report。</p>
+                </div>
+            </div>
+            <div class="switch-row">
+                <label class="switch">
+                    <input type="checkbox" id="annual-use-oshi-title">
+                    <span class="slider"></span>
+                </label>
+                <div>
+                    <span class="text-light-pink">导出标题使用推しゲーム & 推しキャラ</span>
+                    <p class="switch-desc">开启后，生成并导出的图片中模块六、模块七的小标题为推しゲーム & 推しキャラ，关闭则小标题默认为ゲーム宫格 & キャラ宫格。</p>
+                </div>
+            </div>
+            <div class="switch-row">
+                <label class="switch">
+                    <input type="checkbox" id="annual-export-normal-quality">
+                    <span class="slider"></span>
+                </label>
+                <div>
+                    <span class="text-light-pink">导出普通画质</span>
+                    <p class="switch-desc">iOS 系统存在对内核与总像素的硬性限制，若使用 IOS 设备渲染失败则建议开启，总像素低、图片未超出上限时便可成功生成并导出。</p>
+                </div>
+            </div>
+            <div class="center-btn-block left-align-btn">
+                <button id="annual-btn-reset-color">恢复默认设置</button>
+            </div>
+            <!-- 颜色选择区域 -->
+            <div class="color-set-row">
+                <div class="color-item">
+                    <label class="text-light-pink">图片底色</label>
+                    <input type="color" id="annual-color-bg" value="#fff7f9">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">标题文字色</label>
+                    <input type="color" id="annual-color-title" value="#b33a3a">
+                </div>
+                <!-- 新增：小标题文字色，控制 TOP 标题 NO 标签 -->
+                <div class="color-item">
+                    <label class="text-light-pink">小标题文字色</label>
+                    <input type="color" id="annual-color-subtitle" value="#b85878">
+                </div>
+                <!-- 新增：数据统计文字色，控制年度/游玩总数等标签；数据统计数据色 -->
+                <div class="color-item">
+                    <label class="text-light-pink">数据统计文字色</label>
+                    <input type="color" id="annual-color-stattext" value="#b85878">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">数据统计数据色</label>
+                    <input type="color" id="annual-color-statdata" value="#b33a3a">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">游戏角色名文字色</label>
+                    <input type="color" id="annual-color-gamename" value="#000000">
+                </div>
+                <div class="color-item">
+                   <label class="text-light-pink">自定义文本色</label>
+                    <input type="color" id="annual-color-customtext" value="#c98fac">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">自定义文本边框色</label>
+                    <input type="color" id="annual-color-customborder" value="#eeeeee">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">卡片底色</label>
+                    <input type="color" id="annual-color-boxbg" value="#fff7f9">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">标签文字色</label>
+                    <input type="color" id="annual-color-labelcolor" value="#b85878">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">填表人文字色</label>
+                    <input type="color" id="annual-color-reportercolor" value="#b33a3a">
+                </div>
+                <div class="color-item">
+                    <label class="text-light-pink">卡片边框色</label>
+                    <input type="color" id="annual-color-border" value="#f6a5b8">
+                </div>
+            </div>
+            <div class="font-size-set-row">
+                <label for="annual-slider-custom-text-font">调节自定义文本字号</label>
+                <div id="annual-custom-text-font-value" class="font-size-value-display">16px</div>
+                <input id="annual-slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
+            </div>
+            <div class="size-select">
+                <label class="text-light-pink">导出尺寸：</label>
+                <label><input type="radio" name="annual-export-size" value="long-640">640长图</label>
+                <label><input type="radio" name="annual-export-size" value="long-810" checked>810长图</label>
+                <label><input type="radio" name="annual-export-size" value="long-1080">1080长图</label>
+            </div>
+            <div class="center-btn-block export-btn-wrap">
+                <button id="annual-btn-export-image">生成并导出图片</button>
+            </div>
+            <canvas id="annual-export-canvas" style="display:none;"></canvas>
+        </div><!-- /.annual-card-body -->
     </div>
-    <div class="annual-card-body">
-    <div class="annual-reporter-row">
-        <span class="text-light-pink">填表人：</span>
-        <input type="text" id="annual-reporter-name" placeholder="选填，生成并导出图片时显示在标题右下方">
-    </div>
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="annual-use-summary-title">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">导出标题使用 Otome Summary Report</span>
-            <p class="switch-desc">开启后生成并导出的图片标题为 Otome Summary Report，关闭则标题默认为 20XX Otome Annual Report。</p>
-        </div>
-    </div>
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="annual-use-oshi-title">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">导出标题使用推しゲーム & 推しキャラ</span>
-            <p class="switch-desc">开启后，生成并导出的图片中模块六、模块七的小标题为推しゲーム & 推しキャラ，关闭则小标题默认为ゲーム宫格 & キャラ宫格。</p>
-        </div>
-    </div>
-    <div class="switch-row">
-        <label class="switch">
-            <input type="checkbox" id="annual-export-normal-quality">
-            <span class="slider"></span>
-        </label>
-        <div>
-            <span class="text-light-pink">导出普通画质</span>
-            <p class="switch-desc">iOS 系统存在对内核与总像素的硬性限制，若使用 IOS 设备渲染失败则建议开启，总像素低、图片未超出上限时便可成功生成并导出。</p>
-        </div>
-    </div>
-    <div class="center-btn-block left-align-btn">
-        <button id="annual-btn-reset-color">恢复默认设置</button>
-    </div>
-    <!-- 颜色选择区域 -->
-    <div class="color-set-row">
-        <div class="color-item">
-            <label class="text-light-pink">图片底色</label>
-            <input type="color" id="annual-color-bg" value="#fff7f9">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">标题文字色</label>
-            <input type="color" id="annual-color-title" value="#b33a3a">
-        </div>
-        <!-- 新增：小标题文字色，控制 TOP 标题 NO 标签 -->
-        <div class="color-item">
-            <label class="text-light-pink">小标题文字色</label>
-            <input type="color" id="annual-color-subtitle" value="#b85878">
-        </div>
-        <!-- 新增：数据统计文字色，控制年度/游玩总数等标签；数据统计数据色 -->
-        <div class="color-item">
-            <label class="text-light-pink">数据统计文字色</label>
-            <input type="color" id="annual-color-stattext" value="#b85878">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">数据统计数据色</label>
-            <input type="color" id="annual-color-statdata" value="#b33a3a">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">游戏角色名文字色</label>
-            <input type="color" id="annual-color-gamename" value="#000000">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">自定义文本色</label>
-            <input type="color" id="annual-color-customtext" value="#c98fac">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">自定义文本边框色</label>
-            <input type="color" id="annual-color-customborder" value="#eeeeee">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">卡片底色</label>
-            <input type="color" id="annual-color-boxbg" value="#fff7f9">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">标签文字色</label>
-            <input type="color" id="annual-color-labelcolor" value="#b85878">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">填表人文字色</label>
-            <input type="color" id="annual-color-reportercolor" value="#b33a3a">
-        </div>
-        <div class="color-item">
-            <label class="text-light-pink">卡片边框色</label>
-            <input type="color" id="annual-color-border" value="#f6a5b8">
-        </div>
-    </div>
-    <div class="font-size-set-row">
-        <label for="annual-slider-custom-text-font">调节自定义文本字号</label>
-        <div id="annual-custom-text-font-value" class="font-size-value-display">16px</div>
-        <input id="annual-slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
-    </div>
-    <div class="size-select">
-        <label class="text-light-pink">导出尺寸：</label>
-        <label><input type="radio" name="annual-export-size" value="long-640">640长图</label>
-        <label><input type="radio" name="annual-export-size" value="long-810" checked>810长图</label>
-        <label><input type="radio" name="annual-export-size" value="long-1080">1080长图</label>
-    </div>
-    <div class="center-btn-block export-btn-wrap">
-        <button id="annual-btn-export-image">生成并导出图片</button>
-    </div>
-    <canvas id="annual-export-canvas" style="display:none;"></canvas>
-    </div><!-- /.annual-card-body -->
-</div>
 
 <!-- 新增：annual 模式悬浮滚动按钮，复用 .float-scroll-btn 样式，逻辑独立 -->
 <button id="annual-back-to-top-btn" class="float-scroll-btn back-to-add">▲</button>
