@@ -75,7 +75,7 @@ const MONTHLY_BAR_RADIUS = 4;           // 柱状条圆角
 const MONTHLY_BAR_GAP = 8;              // 柱状条上下间距
 const MONTHLY_STATS_SIZE = 16;          // 总时长/平均时长文字大小
 const MONTHLY_STATS_GAP = 12;           // 统计文字底部间距
-const MONTHLY_LABEL_SIZE = 18;          // 月份标签文字大小
+const MONTHLY_LABEL_SIZE = 22;          // 月份标签文字大小
 // 新增：月度模块导出专用封面尺寸（不影响 TOP /宫格/其他模块的 GAME_COVER_W / CHAR_COVER_SIZE）
 const MONTHLY_GAME_COVER_W = 80;       // 月度游戏封面宽度，高度随原图比例
 const MONTHLY_CHAR_COVER_SIZE = 64;     // 月度角色封面正方形边长
