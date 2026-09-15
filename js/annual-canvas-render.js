@@ -47,7 +47,7 @@ const OTHER_CARD_W = 225;              // 其他模块卡片宽度（改：容�
 const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
 const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
 const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
-const OTHER_ALSO_COVER_W = 100;               // 还玩了封面宽度（独立于TOP模块的 140）
+const OTHER_ALSO_COVER_W = GAME_COVER_W;      // 还玩了封面宽度
 const OTHER_ALSO_COVER_GAP = 16;       // 还玩了封面间距
 const OTHER_CP_COVER_SIZE = 100;    // 最喜欢的 CP 角色图
 const OTHER_SUPPORT_COVER_SIZE = 100;   // 最喜欢的配角角色图
@@ -119,12 +119,11 @@ function getImgSize(img) {
   };
 }
 
-// 游戏封面高度：按指定宽度（默认GAME_COVER_W）和原图比例自适应
-function calcGameCoverHeight(img, width) {
-  const coverW = width || GAME_COVER_W;
+// 游戏封面高度：固定宽度，按原图比例自适应
+function calcGameCoverHeight(img) {
   const { w, h } = getImgSize(img);
-  if (w <= 0 || h <= 0) return Math.round(coverW * 1.4); // 兜底竖版比例
-  return Math.round(coverW * h / w);
+  if (w <= 0 || h <= 0) return Math.round(GAME_COVER_W * 1.4); // 兜底竖版比例
+  return Math.round(GAME_COVER_W * h / w);
 }
 // 新增：月度模块游戏封面高度（宽度用 MONTHLY_GAME_COVER_W=100，不影响其他模块）
 function calcMonthlyGameCoverHeight(img) {
@@ -815,7 +814,7 @@ function calcOtherHeight(ctx, targetW, annualData, config, imageCache) {
         const idx = r * cols + c;
         if (idx >= alsoList.length) break;
         const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
-        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img, OTHER_ALSO_COVER_W));
+        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
       }
       contentH += rowMaxH;
       if (r < rows - 1) contentH += OTHER_ALSO_COVER_GAP;
@@ -1327,7 +1326,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
       for (let c = 0; c < rowCount; c++) {
         const idx = rowStart + c;
         const img = imageCache.get(toCanvasUrl(alsoList[idx].coverSrc));
-        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img, OTHER_ALSO_COVER_W));
+        rowMaxH = Math.max(rowMaxH, calcGameCoverHeight(img));
       }
       for (let c = 0; c < rowCount; c++) {
         const idx = rowStart + c;
@@ -1335,7 +1334,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const y = painter.y;
         const src = toCanvasUrl(alsoList[idx].coverSrc);
         const img = src ? imageCache.get(src) : null;
-        const coverH = calcGameCoverHeight(img, OTHER_ALSO_COVER_W);
+        const coverH = calcGameCoverHeight(img);
         drawCoverCard(painter, x, y, coverW, coverH, img, src, 6);
       }
       painter.shiftY(rowMaxH);
