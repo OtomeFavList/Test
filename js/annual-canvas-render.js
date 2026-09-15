@@ -1653,7 +1653,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     // 绘制自定义文本框
     const text = (m.text || '').trim();
     if (text) {
-      // 前一个元素（图片框或柱状条）到文本框的间距
+      // 修改：前一个元素（图片框或柱状条）到文本框的间距
       if (boxH > 0 || hasBar) {
         painter.shiftY(MONTHLY_BAR_GAP);
       }
