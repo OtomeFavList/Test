@@ -964,14 +964,14 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
     const sideH = Math.max(MONTHLY_LABEL_SIZE * 1.4, 24);
     contentH += Math.max(boxH, sideH);
     const hasBar = String(m.hours || '').trim() !== '';
-    // 柱状条：上方间距 + 柱状条高度（下方间距不再预留，改由文本框上方控制）
+    // 修改：柱状条不再预留下方间距
     if (hasBar) {
       contentH += MONTHLY_BAR_GAP + MONTHLY_BAR_HEIGHT;
     }
     // 自定义文本框
     const text = (m.text || '').trim();
     if (text) {
-      // 前一个元素（图片框或柱状条）到文本框的间距，仅当前方有元素时才添加
+      // 前一个元素（图片框或柱状条）到文本框的间距
       if (boxH > 0 || hasBar) {
         contentH += MONTHLY_BAR_GAP;
       }
@@ -1618,7 +1618,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     if (hasBar) {
       const hours = parseMonthlyHours(m.hours);
       const barW = Math.max(0, (hours / maxHours) * barMaxW);
-      // 上方间距：图片框（或月份标签行）到柱状条
+      // 修改：柱状条上方间距
       painter.shiftY(MONTHLY_BAR_GAP);
       const barY = painter.y;
       if (barW > 0) {
@@ -1653,7 +1653,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     // 绘制自定义文本框
     const text = (m.text || '').trim();
     if (text) {
-      // 前一个元素（图片框或柱状条）到文本框的间距，仅当前方有元素时才添加
+      // 修改：前一个元素（图片框或柱状条）到文本框的间距
       if (boxH > 0 || hasBar) {
         painter.shiftY(MONTHLY_BAR_GAP);
       }
