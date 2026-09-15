@@ -1733,7 +1733,7 @@ h2{
     padding:0;
     border:none;
 }
-/* 移动端缩小弹窗边距，与 big-card 移动端 padding(16px 12px) 一致 */
+/* 移动端缩小弹窗边距，与 big-card 移动端一致 */
 @media (max-width:768px){
     .modal-guide-scroll {
         padding:16px 12px !important;
