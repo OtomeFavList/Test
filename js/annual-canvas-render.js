@@ -70,7 +70,7 @@ const MONTHLY_ROW_GAP = 24;            // 月度行之间间距
 // 废弃：MONTHLY_SIDE_W 不再使用，月度模块左侧栏宽度改为动态计算最长月份标签宽度
 // const MONTHLY_SIDE_W = 160;
 const MONTHLY_BOX_PAD = 16;             // 月度图片框内边距
-const MONTHLY_BAR_HEIGHT = 16;          // 时长柱状条高度
+const MONTHLY_BAR_HEIGHT = 10;          // 长柱状条高度
 const MONTHLY_BAR_RADIUS = 4;           // 柱状条圆角
 const MONTHLY_BAR_GAP = 8;              // 柱状条上下间距
 const MONTHLY_STATS_SIZE = 16;          // 总时长/平均时长文字大小
