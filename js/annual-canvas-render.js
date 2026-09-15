@@ -42,12 +42,12 @@ const CHAR_COVER_SIZE = 120;           // 角色封面固定正方形
 const CP_COVER_SIZE = 100;             // CP 封面固定正方形
 const CP_GAP = 10;                     // CP 双图间距
 // 五、其他模块
-const OTHER_SECTION_TITLE_SIZE = 18;   // 还玩了/卡片标题/ 底部标题统一 18px
+const OTHER_SECTION_TITLE_SIZE = 18;   // 还玩了/卡片标题/底部标题统一
 const OTHER_CARD_W = 225;              // 其他模块卡片宽度（改：容纳 CP 双图 100+10+100=210）
 const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
 const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
 const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
-const OTHER_ALSO_COVER_W = GAME_COVER_W;      // 还玩了封面宽度等于模块二 140
+const OTHER_ALSO_COVER_W = 100;      // 还玩了封面宽度
 const OTHER_ALSO_COVER_GAP = 16;       // 还玩了封面间距
 const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的 CP 封面等于模块四 100
 const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角与 CP 图一致 100
