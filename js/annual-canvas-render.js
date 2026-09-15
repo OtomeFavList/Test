@@ -1497,6 +1497,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
   const labelColor = config.labelColor || config.subtitle || '#b85878';
   const valueColor = config.statdata || '#b33a3a';
   const statTextColor = config.stattext || '#b85878';
+  const hoursTextColor = config.hoursTextColor || '#b33a3a';  // 新增：时长文字色
 
   const months = getValidMonths(monthlyData);
   if (months.length === 0) return;
@@ -1515,7 +1516,7 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     painter.shiftY(-10);
     ctx.save();
     ctx.font = `${MONTHLY_STATS_SIZE}px ${FONT_SIYUAN}`;  // 改：不加粗
-    ctx.fillStyle = valueColor;
+    ctx.fillStyle = hoursTextColor;  // 修改：使用独立的时长文字色配置
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(statsText, contentX + innerW / 2, painter.y);
