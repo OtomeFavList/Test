@@ -2279,6 +2279,10 @@
     align-items: center;
     gap: 12px;
 }
+/* 月度自定义文本框 */
+.annual-custom-text-wrap textarea.annual-monthly-text {
+    min-height: 60px;
+}
 /* 封面列表 */
 .annual-monthly-items {
     display: flex;
@@ -2384,5 +2388,8 @@
     }
     .annual-monthly-box {
         padding: 12px;
+    }
+    .annual-custom-text-wrap textarea.annual-monthly-text {
+        min-height: 52px;
     }
 }
