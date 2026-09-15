@@ -49,8 +49,8 @@ const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
 const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
 const OTHER_ALSO_COVER_W = GAME_COVER_W;      // 还玩了封面宽度
 const OTHER_ALSO_COVER_GAP = 16;       // 还玩了封面间距
-const OTHER_CP_COVER_SIZE = CP_COVER_SIZE;    // 最喜欢的 CP 封面等于模块四 100
-const OTHER_SUPPORT_COVER_SIZE = CP_COVER_SIZE;   // 最喜欢的配角与 CP 图一致 100
+const OTHER_CP_COVER_SIZE = 100;    // 最喜欢的 CP 封面等于模块四 100
+const OTHER_SUPPORT_COVER_SIZE = 100;   // 最喜欢的配角与 CP 图一致 100
 const OTHER_TEXT_BOX_MIN_H = 80;       // 其他模块文本框最小高度
 const OTHER_SECTION_GAP = 20;          // 还玩了区域与卡片区间距
 // 六、七宫格模块
