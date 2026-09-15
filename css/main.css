@@ -1733,10 +1733,11 @@ h2{
     padding:0;
     border:none;
 }
-/* 移动端缩小弹窗边距 */
+/* 移动端缩小弹窗边距，与 big-card 移动端 padding(16px 12px) 一致；
+   !important 覆盖 HTML 内联样式 padding:24px 28px，解决内联样式优先级过高导致移动端规则不生效的问题 */
 @media (max-width:768px){
     .modal-guide-scroll {
-        padding:16px;
+        padding:16px 12px !important;
     }
 }
 
