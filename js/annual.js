@@ -2555,50 +2555,117 @@ function bindAnnualFloatScrollButtons() {
         // 所有模块都为空时，返回第一个
         return closest >= 0 ? closest : 0;
     }
+    // 根据视口垂直中心判断当前模块信息
+    function getCurrentModuleInfo() {
+        const modules = getAnnualModules();
+        if(modules.length === 0) return { idx: -1, inside: false, isAbove: false };
+        const viewCenter = window.scrollY + window.innerHeight / 2;
+
+        // 优先：视口中心落在某个非空模块范围内
+        for(let i = 0; i < modules.length; i++) {
+            if(isEmptyModule(modules[i])) continue;
+            const rect = modules[i].getBoundingClientRect();
+            const top = rect.top + window.scrollY;
+            const bottom = rect.bottom + window.scrollY;
+            if(viewCenter >= top && viewCenter <= bottom) {
+                return { idx: i, inside: true, isAbove: false };
+            }
+        }
+
+        // 兜底：视口中心不在任何非空模块范围内（落在空模块或模块间隙中），
+        // 找距离最近的非空模块，并记录视口在其上方还是下方
+        let closest = -1;
+        let minDist = Infinity;
+        let closestIsAbove = false;
+        for(let i = 0; i < modules.length; i++) {
+            if(isEmptyModule(modules[i])) continue;
+            const rect = modules[i].getBoundingClientRect();
+            const top = rect.top + window.scrollY;
+            const bottom = rect.bottom + window.scrollY;
+            if(viewCenter < top) {
+                const dist = top - viewCenter;
+                if(dist < minDist) { minDist = dist; closest = i; closestIsAbove = true; }
+            } else if(viewCenter > bottom) {
+                const dist = viewCenter - bottom;
+                if(dist < minDist) { minDist = dist; closest = i; closestIsAbove = false; }
+            }
+        }
+
+        if(closest >= 0) {
+            return { idx: closest, inside: false, isAbove: closestIsAbove };
+        }
+        // 所有模块都为空时，返回第一个
+        return { idx: 0, inside: false, isAbove: false };
+    }
     // ▲按钮
     upBtn.addEventListener("click", () => {
         const modules = getAnnualModules();
         if(modules.length === 0) return;
-        let idx = getCurrentModuleIndex();
+        const info = getCurrentModuleInfo();
+        const idx = info.idx;
         if(idx < 0) return;
-        // 如果当前命中的是空模块，向前找到最近的非空模块作为当前模块
-        if(isEmptyModule(modules[idx])) {
-            const nonEmptyIdx = findPrevNonEmpty(modules, idx);
-            if(nonEmptyIdx >= 0) idx = nonEmptyIdx;
-        }
-        const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
-        if(window.scrollY > currentTop + TOLERANCE) {
-            // 在模块中间：滚动到当前模块顶部
-            modules[idx].scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-            // 已在当前模块顶部：滚动到上一个非空模块顶部
+
+        if(info.inside) {
+            // 视口中心在当前非空模块范围内：保持原有逻辑
+            const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
+            if(window.scrollY > currentTop + TOLERANCE) {
+                // 在模块中间：滚动到当前模块顶部
+                modules[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+            } else {
+                // 已在当前模块顶部：滚动到上一个非空模块顶部
+                const prevIdx = findPrevNonEmpty(modules, idx - 1);
+                if(prevIdx >= 0) {
+                    modules[prevIdx].scrollIntoView({ behavior: "smooth", block: "start" });
+                } else {
+                    // 前面无非空模块：滚动到页面最顶
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+            }
+        } else if(info.isAbove) {
+            // 补丁：视口中心在最近非空模块上方
+            // 按 ▲ 往上滚：跳到上一个非空模块顶部
             const prevIdx = findPrevNonEmpty(modules, idx - 1);
             if(prevIdx >= 0) {
                 modules[prevIdx].scrollIntoView({ behavior: "smooth", block: "start" });
             } else {
-                // 前面无非空模块：滚动到页面最顶
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
+        } else {
+            // 补丁：视口中心在最近非空模块下方
+            // 按 ▲ 往上滚：直接回到该非空模块顶部
+            modules[idx].scrollIntoView({ behavior: "smooth", block: "start" });
         }
     });
     // ▼按钮
     downBtn.addEventListener("click", () => {
         const modules = getAnnualModules();
         if(modules.length === 0) return;
-        let idx = getCurrentModuleIndex();
+        const info = getCurrentModuleInfo();
+        const idx = info.idx;
         if(idx < 0) return;
-        // 如果当前命中的是空模块，向后找到最近的非空模块作为当前模块
-        if(isEmptyModule(modules[idx])) {
-            const nonEmptyIdx = findNextNonEmpty(modules, idx);
-            if(nonEmptyIdx >= 0) idx = nonEmptyIdx;
-        }
-        const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
-        const viewBottom = window.scrollY + window.innerHeight;
-        if(viewBottom < currentBottom - TOLERANCE) {
-            // 在模块中间：滚动到当前模块底部（元素底部对齐视口底部）
+
+        if(info.inside) {
+            // 视口中心在当前非空模块范围内：保持原有逻辑
+            const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
+            const viewBottom = window.scrollY + window.innerHeight;
+            if(viewBottom < currentBottom - TOLERANCE) {
+                // 在模块中间：滚动到当前模块底部
+                modules[idx].scrollIntoView({ behavior: "smooth", block: "end" });
+            } else {
+                // 已在当前模块底部：滚动到下一个非空模块底部
+                const nextIdx = findNextNonEmpty(modules, idx + 1);
+                if(nextIdx >= 0) {
+                    modules[nextIdx].scrollIntoView({ behavior: "smooth", block: "end" });
+                }
+                // 后面无非空模块：不动作
+            }
+        } else if(info.isAbove) {
+            // 补丁：视口中心在最近非空模块上方
+            // 按 ▼ 往下滚：直接滚到该非空模块底部
             modules[idx].scrollIntoView({ behavior: "smooth", block: "end" });
         } else {
-            // 已在当前模块底部：滚动到下一个非空模块底部
+            // 补丁：视口中心在最近非空模块下方
+            // 按 ▼ 往下滚：跳到下一个非空模块底部
             const nextIdx = findNextNonEmpty(modules, idx + 1);
             if(nextIdx >= 0) {
                 modules[nextIdx].scrollIntoView({ behavior: "smooth", block: "end" });
