@@ -66,7 +66,7 @@ const SUB_CARD_RADIUS = 8;             // 封面/自定义文本框圆角
 const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
 // 新增：八、九月度总结模块
 const MONTHLY_COVER_GAP = 16;          // 月度封面间距
-const MONTHLY_ROW_GAP = 16;            // 月度行之间间距
+const MONTHLY_ROW_GAP = 16;            // 月度卡片之间间距
 // 废弃：MONTHLY_SIDE_W 不再使用，月度模块左侧栏宽度改为动态计算最长月份标签宽度
 // const MONTHLY_SIDE_W = 160;
 const MONTHLY_BOX_PAD = 8;             // 月度图片框内边距
@@ -75,7 +75,7 @@ const MONTHLY_BAR_RADIUS = 4;           // 柱状条圆角
 const MONTHLY_BAR_GAP = 8;              // 柱状条上下间距
 const MONTHLY_STATS_SIZE = 16;          // 总时长/平均时长文字大小
 const MONTHLY_STATS_GAP = 12;           // 统计文字底部间距
-const MONTHLY_LABEL_SIZE = 22;          // 月份标签文字大小
+const MONTHLY_LABEL_SIZE = 16;          // 月份标签文字大小
 // 新增：月度模块导出专用封面尺寸（不影响 TOP /宫格/其他模块的 GAME_COVER_W / CHAR_COVER_SIZE）
 const MONTHLY_GAME_COVER_W = 80;       // 月度游戏封面宽度，高度随原图比例
 const MONTHLY_CHAR_COVER_SIZE = 64;     // 月度角色封面正方形边长
