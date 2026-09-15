@@ -66,7 +66,7 @@ const SUB_CARD_RADIUS = 8;             // 封面/自定义文本框圆角
 const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
 // 新增：八、九月度总结模块
 const MONTHLY_COVER_GAP = 16;          // 月度封面间距
-const MONTHLY_ROW_GAP = 24;            // 月度行之间间距
+const MONTHLY_ROW_GAP = 16;            // 月度行之间间距
 // 废弃：MONTHLY_SIDE_W 不再使用，月度模块左侧栏宽度改为动态计算最长月份标签宽度
 // const MONTHLY_SIDE_W = 160;
 const MONTHLY_BOX_PAD = 8;             // 月度图片框内边距
