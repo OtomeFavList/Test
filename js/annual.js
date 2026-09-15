@@ -2524,7 +2524,7 @@ function bindAnnualFloatScrollButtons() {
         }
         return -1;
     }
-    // 根据视口垂直中心判断当前在哪个模块（优先非空模块）
+    // 根据视口垂直中心判断当前在哪个模块（始终返回非空模块索引）
     function getCurrentModuleIndex() {
         const modules = getAnnualModules();
         if(modules.length === 0) return -1;
@@ -2537,14 +2537,8 @@ function bindAnnualFloatScrollButtons() {
             const bottom = rect.bottom + window.scrollY;
             if(viewCenter >= top && viewCenter <= bottom) return i;
         }
-        // 次优先：视口中心落在任意模块（含空模块）范围内
-        for(let i = 0; i < modules.length; i++) {
-            const rect = modules[i].getBoundingClientRect();
-            const top = rect.top + window.scrollY;
-            const bottom = rect.bottom + window.scrollY;
-            if(viewCenter >= top && viewCenter <= bottom) return i;
-        }
-        // 兜底：视口中心在模块间隙中，找距离最近的非空模块（综合顶部和底部距离）
+        // 兜底：视口中心不在任何非空模块范围内（落在空模块或模块间隙中），
+        // 找距离最近的非空模块（综合顶部和底部距离）
         let closest = -1;
         let minDist = Infinity;
         for(let i = 0; i < modules.length; i++) {
