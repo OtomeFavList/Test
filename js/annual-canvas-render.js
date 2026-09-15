@@ -1653,16 +1653,16 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
     // 绘制自定义文本框
     const text = (m.text || '').trim();
     if (text) {
-      // 修改：前一个元素（图片框或柱状条）到文本框的间距
+      // 前一个元素（图片框或柱状条）到文本框的间距
       if (boxH > 0 || hasBar) {
         painter.shiftY(MONTHLY_BAR_GAP);
       }
       const textSize = config.customTextFontSize || 16;
       const textW = innerW - TEXT_BOX_PAD * 2;
       const textH = measureWrappedHeight(ctx, text, textW, textSize * 1.55, textSize);
-      const boxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-      drawTextBox(painter, contentX, painter.y, innerW, boxH, text, config);
-      painter.shiftY(boxH);
+      const textBoxH = Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
+      drawTextBox(painter, contentX, painter.y, innerW, textBoxH, text, config);
+      painter.shiftY(textBoxH);
     }
 
     if (mi < months.length - 1) painter.shiftY(MONTHLY_ROW_GAP);
