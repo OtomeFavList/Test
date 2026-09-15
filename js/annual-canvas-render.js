@@ -964,22 +964,22 @@ function calcMonthlyHeight(ctx, targetW, monthlyData, kind, config, imageCache) 
     const sideH = Math.max(MONTHLY_LABEL_SIZE * 1.4, 24);
     contentH += Math.max(boxH, sideH);
     const hasBar = String(m.hours || '').trim() !== '';
-    // 柱状条，该月有时长才占高
+    // 柱状条：上方间距 + 柱状条高度（下方间距不再预留，改由文本框上方控制）
     if (hasBar) {
-      contentH += MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2;
-    } else if (boxH > 0) {
-      // 补丁：图片框和自定义文本框之间的间距
-      contentH += MONTHLY_BAR_GAP;
+      contentH += MONTHLY_BAR_GAP + MONTHLY_BAR_HEIGHT;
     }
     // 自定义文本框
     const text = (m.text || '').trim();
     if (text) {
+      // 前一个元素（图片框或柱状条）到文本框的间距，仅当前方有元素时才添加
+      if (boxH > 0 || hasBar) {
+        contentH += MONTHLY_BAR_GAP;
+      }
       const textSize = config.customTextFontSize || 16;
       const textW = innerW - TEXT_BOX_PAD * 2;
       const textH = measureWrappedHeight(ctx, text, textW, textSize * 1.55, textSize);
       contentH += Math.max(OTHER_TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
     }
-
     if (mi < months.length - 1) contentH += MONTHLY_ROW_GAP;
   });
 
@@ -1612,15 +1612,17 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
 
     painter.shiftY(headerH);
 
+    const hasBar = String(m.hours || '').trim() !== '' && maxHours > 0;
+
     // 绘制该月横向柱状条
-    if (String(m.hours || '').trim() !== '' && maxHours > 0) {
+    if (hasBar) {
       const hours = parseMonthlyHours(m.hours);
-      // 补丁：barMaxW 已在循环外计算（预留了 xxh 标注空间），最长月标注不溢出
       const barW = Math.max(0, (hours / maxHours) * barMaxW);
-      const barY = painter.y + MONTHLY_BAR_GAP;
+      // 上方间距：图片框（或月份标签行）到柱状条
+      painter.shiftY(MONTHLY_BAR_GAP);
+      const barY = painter.y;
       if (barW > 0) {
         ctx.save();
-        // 新增：柱状条色由配置项控制，默认 #e895a8
         ctx.fillStyle = config.barColor || '#e895a8';
         ctx.beginPath();
         const r = Math.min(MONTHLY_BAR_RADIUS, barW / 2, MONTHLY_BAR_HEIGHT / 2);
@@ -1636,25 +1638,25 @@ function drawMonthlyContent(painter, targetW, monthlyData, kind, config, imageCa
         ctx.closePath();
         ctx.fill();
         ctx.restore();
+
         ctx.save();
         ctx.font = `12px ${FONT_SIYUAN}`;
-        // 新增：xxh 标注色与柱状条统一由配置项控制
         ctx.fillStyle = config.barColor || '#e895a8';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        // 修改：标注间距用统一的 barLabelGap
         ctx.fillText(`${fmtMonthlyHours(hours)}h`, boxX + barW + barLabelGap, barY + MONTHLY_BAR_HEIGHT / 2);
         ctx.restore();
       }
-      painter.shiftY(MONTHLY_BAR_HEIGHT + MONTHLY_BAR_GAP * 2);
-    } else if (boxH > 0) {
-      // 补丁：图片框和自定义文本框之间的间距
-      painter.shiftY(MONTHLY_BAR_GAP);
+      painter.shiftY(MONTHLY_BAR_HEIGHT);
     }
 
     // 绘制自定义文本框
     const text = (m.text || '').trim();
     if (text) {
+      // 前一个元素（图片框或柱状条）到文本框的间距，仅当前方有元素时才添加
+      if (boxH > 0 || hasBar) {
+        painter.shiftY(MONTHLY_BAR_GAP);
+      }
       const textSize = config.customTextFontSize || 16;
       const textW = innerW - TEXT_BOX_PAD * 2;
       const textH = measureWrappedHeight(ctx, text, textW, textSize * 1.55, textSize);
