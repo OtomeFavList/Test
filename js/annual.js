@@ -323,6 +323,77 @@ function charHasHiddenContent(char) {
     return countCharImages(char, false, true) > countCharImages(char, false, false);
 }
 
+// ===== 新增：弹窗筛选工具函数 =====
+// 从指定弹窗读取 5 个筛选下拉框的当前值
+function getAnnualModalFilters(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return { writer: "", art: "", year: "", publisher: "", cn: "" };
+    return {
+        writer:    modal.querySelector(".annual-filter-writer")?.value || "",
+        art:       modal.querySelector(".annual-filter-art")?.value || "",
+        year:      modal.querySelector(".annual-filter-year")?.value || "",
+        publisher: modal.querySelector(".annual-filter-publisher")?.value || "",
+        cn:        modal.querySelector(".annual-filter-cn")?.value || ""
+    };
+}
+
+// 用游戏模板数据填充指定弹窗的筛选下拉框（对齐 FavList fillFilterOptions 逻辑）
+function populateAnnualFilterSelects(modalId, gameList) {
+    const modal = document.getElementById(modalId);
+    if (!modal || !Array.isArray(gameList)) return;
+    const writers = new Set();
+    const arts = new Set();
+    const years = new Set();
+    const publishers = new Set();
+    const cns = new Set();
+    gameList.forEach(g => {
+        if (!g) return;
+        if (Array.isArray(g.writer)) g.writer.forEach(w => { if (w?.name) writers.add(w.name); });
+        if (Array.isArray(g.art)) g.art.forEach(a => { if (a?.name) arts.add(a.name); });
+        if (g.year) years.add(String(g.year));
+        if (Array.isArray(g.publisher)) g.publisher.forEach(p => { if (p) publishers.add(p); });
+        if (g.cnStudio) cns.add(g.cnStudio);
+    });
+    const fillSelect = (selector, placeholder, set) => {
+        const sel = modal.querySelector(selector);
+        if (!sel) return;
+        let html = `<option value="">${placeholder}</option>`;
+        [...set].sort().forEach(v => { html += `<option value="${v}">${v}</option>`; });
+        sel.innerHTML = html;
+    };
+    fillSelect(".annual-filter-writer", "筛选编剧", writers);
+    fillSelect(".annual-filter-art", "筛选画师", arts);
+    fillSelect(".annual-filter-year", "筛选发售年份", years);
+    fillSelect(".annual-filter-publisher", "筛选开发厂商", publishers);
+    fillSelect(".annual-filter-cn", "筛选汉化厂商", cns);
+}
+
+// 重置指定弹窗的所有筛选下拉框为默认值
+function resetAnnualFilterSelects(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.querySelectorAll(".annual-filter-writer, .annual-filter-art, .annual-filter-year, .annual-filter-publisher, .annual-filter-cn")
+        .forEach(sel => { sel.value = ""; });
+}
+
+// 判断单个游戏是否匹配全部筛选条件（对齐 FavList renderGameSelectList 过滤逻辑）
+function gameMatchesAnnualFilters(game, filters) {
+    if (!game) return false;
+    if (filters.year && String(game.year) !== filters.year) return false;
+    if (filters.publisher && (!Array.isArray(game.publisher) || !game.publisher.includes(filters.publisher))) return false;
+    if (filters.cn && game.cnStudio !== filters.cn) return false;
+    if (filters.writer) {
+        const writerNames = Array.isArray(game.writer) ? game.writer.map(o => o.name) : [];
+        if (!writerNames.includes(filters.writer)) return false;
+    }
+    if (filters.art) {
+        const artNames = Array.isArray(game.art) ? game.art.map(o => o.name) : [];
+        if (!artNames.includes(filters.art)) return false;
+    }
+    return true;
+}
+// ===== 筛选工具函数结束 =====
+
 // 单个游戏 TOP 条目 UI 显隐状态
 function refreshTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
@@ -424,7 +495,9 @@ function renderGameList(wrap, keyword) {
     }
 
     const kw = (keyword ?? "").toLowerCase().trim();
+    const filters = getAnnualModalFilters("annual-global-game-modal");
     const filtered = gameTemplateList.filter(g=>{
+        if(!gameMatchesAnnualFilters(g, filters)) return false;
         if(!kw) return true;
         return String(g.name).toLowerCase().includes(kw);
     });
@@ -535,7 +608,8 @@ function renderCharModalGameList(wrap, keyword) {
 
     // 关键词为空：原始逻辑，只渲染游戏列表
     if (!kw) {
-        const filtered = [...gameTemplateList];
+        const filters = getAnnualModalFilters("annual-global-char-modal");
+        const filtered = gameTemplateList.filter(g => gameMatchesAnnualFilters(g, filters));
         const { sortFilterOptionList } = window.Core || {};
         let sorted = filtered;
         if (typeof sortFilterOptionList === 'function') {
@@ -565,7 +639,9 @@ function renderCharModalGameList(wrap, keyword) {
     const matchedCharacters = [];
     const matchedGames = new Set();
 
+    const filters = getAnnualModalFilters("annual-global-char-modal");
     for(const game of gameTemplateList) {
+        if(!gameMatchesAnnualFilters(game, filters)) continue;
         const gameNameLow = String(game.name).toLowerCase();
         const matchGame = gameNameLow.includes(kw);
         if(matchGame) matchedGames.add(game.id);
@@ -1086,6 +1162,9 @@ function openAnnualGlobalCharModal(targetIndex, context){
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
+    // 新增：填充并重置筛选下拉框（角色弹窗仅普通游戏）
+    populateAnnualFilterSelects("annual-global-char-modal", getGameTemplateState_BaseOnly().list);
+    resetAnnualFilterSelects("annual-global-char-modal");
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     // 重置开关 DOM 勾选，对齐 HTML 真实 id
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
@@ -1141,6 +1220,9 @@ function openAnnualGlobalGameModal(targetIndex, context){
     const searchInput = modal.querySelector(".annual-global-search-input");
     const listWrap = modal.querySelector(".annual-global-game-list");
     searchInput.value = "";
+    // 新增：填充并重置筛选下拉框（游戏弹窗含 FD 游戏）
+    populateAnnualFilterSelects("annual-global-game-modal", getGameTemplateState_WithFD().list);
+    resetAnnualFilterSelects("annual-global-game-modal");
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     renderGameList(listWrap, "");
 }
@@ -2687,7 +2769,10 @@ function renderCpModalGameList(wrap, keyword) {
         return;
     }
     const kw = (keyword ?? "").toLowerCase().trim();
-    const filtered = gameTemplateList.filter(g=> !kw || String(g.name).toLowerCase().includes(kw));
+    const filters = getAnnualModalFilters("annual-global-cp-modal");
+    const filtered = gameTemplateList.filter(g=>
+        gameMatchesAnnualFilters(g, filters) && (!kw || String(g.name).toLowerCase().includes(kw))
+    );
     const { sortFilterOptionList } = window.Core || {};
     let sorted;
     if (typeof sortFilterOptionList === 'function') {
@@ -3017,6 +3102,9 @@ function openAnnualGlobalCpModal(targetIndex, context){
     switchCpModalView("gameList");
     const searchInput = modal.querySelector(".annual-global-cp-search-input");
     searchInput.value = "";
+    // 新增：填充并重置筛选下拉框（CP 弹窗仅普通游戏）
+    populateAnnualFilterSelects("annual-global-cp-modal", getGameTemplateState_BaseOnly().list);
+    resetAnnualFilterSelects("annual-global-cp-modal");
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
      "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
@@ -3787,6 +3875,31 @@ export function initAnnualModule(){
                 const data = kind === "game" ? annualData.gameMonthly : annualData.charMonthly;
                 data.months[mIdx].text = monthlyTextInput.value;
                 saveAnnualData();
+                return;
+            }
+        });
+
+        // 新增：三个弹窗筛选下拉框 change 事件委托
+        document.addEventListener("change", (e) => {
+            // 游戏弹窗筛选
+            if (e.target.closest("#annual-global-game-modal .annual-filter-group")) {
+                const modal = document.getElementById("annual-global-game-modal");
+                const kw = modal.querySelector(".annual-global-search-input")?.value || "";
+                renderGameList(modal.querySelector(".annual-global-game-list"), kw);
+                return;
+            }
+            // 角色弹窗筛选（仅游戏列表视图生效）
+            if (e.target.closest("#annual-global-char-modal .annual-filter-group")) {
+                const modal = document.getElementById("annual-global-char-modal");
+                const kw = modal.querySelector(".annual-global-char-search-input")?.value || "";
+                renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), kw);
+                return;
+            }
+            // CP 弹窗筛选
+            if (e.target.closest("#annual-global-cp-modal .annual-filter-group")) {
+                const modal = document.getElementById("annual-global-cp-modal");
+                const kw = modal.querySelector(".annual-global-cp-search-input")?.value || "";
+                renderCpModalGameList(modal.querySelector(".annual-global-cp-game-list"), kw);
                 return;
             }
         });
