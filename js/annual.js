@@ -323,7 +323,7 @@ function charHasHiddenContent(char) {
     return countCharImages(char, false, true) > countCharImages(char, false, false);
 }
 
-// ===== 新增：弹窗筛选工具函数 =====
+// 新增：弹窗筛选工具函数
 // 从指定弹窗读取 5 个筛选下拉框的当前值
 function getAnnualModalFilters(modalId) {
     const modal = document.getElementById(modalId);
@@ -337,7 +337,7 @@ function getAnnualModalFilters(modalId) {
     };
 }
 
-// 用游戏模板数据填充指定弹窗的筛选下拉框（对齐 FavList fillFilterOptions 逻辑）
+// 用游戏模板数据填充指定弹窗的筛选下拉框
 function populateAnnualFilterSelects(modalId, gameList) {
     const modal = document.getElementById(modalId);
     if (!modal || !Array.isArray(gameList)) return;
@@ -376,7 +376,7 @@ function resetAnnualFilterSelects(modalId) {
         .forEach(sel => { sel.value = ""; });
 }
 
-// 判断单个游戏是否匹配全部筛选条件（对齐 FavList renderGameSelectList 过滤逻辑）
+// 判断单个游戏是否匹配全部筛选条件
 function gameMatchesAnnualFilters(game, filters) {
     if (!game) return false;
     if (filters.year && String(game.year) !== filters.year) return false;
@@ -392,7 +392,6 @@ function gameMatchesAnnualFilters(game, filters) {
     }
     return true;
 }
-// ===== 筛选工具函数结束 =====
 
 // 单个游戏 TOP 条目 UI 显隐状态
 function refreshTopItemUi(itemDom, dataItem) {
