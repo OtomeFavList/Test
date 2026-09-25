@@ -18,6 +18,8 @@
     --other-label-color: #b85878;
     --other-reporter-color: #b33a3a;
     --other-image-border-color: #eeeeee;
+    --other-input-font-size: 14px;
+    --other-custom-text-font-size: 15px;
     background-color: var(--other-export-bg, #fff7f9);
     max-width: 1200px;
     margin: 0 auto;
@@ -189,7 +191,7 @@
     padding: 6px 10px;
     border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 6px;
-    font-size: 14px;
+    font-size: var(--other-input-font-size, 14px);
     color: var(--other-input-text-color, #000000);
     background: #fcfcfc;
     width: 160px;
@@ -363,7 +365,7 @@
     border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 8px;
     background: #fcfcfc;
-    font-size: 14px;
+    font-size: var(--other-input-font-size, 14px);
     color: var(--other-input-text-color, #000000);
     resize: vertical;
     box-sizing: border-box;
@@ -579,7 +581,7 @@
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 8px;
     background: #fcfcfc;
-    font-size: 15px;
+    font-size: var(--other-custom-text-font-size, 15px);
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
@@ -661,6 +663,62 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+/* 字号调节滑块轨道（复用 Annual 同款逻辑，进度变量为 --other-slider-progress） */
+.mode-wrap[data-mode="other"] .font-size-set-row input[type="range"] {
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    z-index: 2;
+    position: relative;
+}
+.mode-wrap[data-mode="other"] .font-size-set-row input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background-color: #fff7f9;
+    background-image: linear-gradient(to right, #e895a8 0%, #e895a8 100%);
+    background-repeat: no-repeat;
+    background-size: var(--other-slider-progress, 0%) 100%;
+}
+.mode-wrap[data-mode="other"] .font-size-set-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e895a8;
+    border: none;
+    cursor: pointer;
+    margin-top: -5px;
+}
+@-moz-document url-prefix() {
+    .mode-wrap[data-mode="other"] .font-size-set-row input[type="range"] {
+        position: relative;
+    }
+    .mode-wrap[data-mode="other"] .font-size-set-row input[type="range"]::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 6px;
+        border-radius: 999px;
+        background: #fff7f9;
+        z-index: -1;
+    }
+    .mode-wrap[data-mode="other"] .font-size-set-row input[type="range"]::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 6px;
+        border-radius: 999px;
+        background: #e895a8;
+        width: var(--other-slider-progress, 0%);
+        z-index: -1;
+    }
 }
 
 /* 快照导出模式 */
