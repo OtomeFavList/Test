@@ -878,6 +878,8 @@ function renderCharModalCharList() {
         if(!char) return;
         const div = document.createElement("div");
         div.className = "char-item";
+        div.dataset.gameId = charModalCurrentGameId;
+        div.dataset.charId = char.id;
         // 新增：多立绘切换逻辑
         const allSrc = getAnnualCharAvailImages(char);
         const imgKey = `${charModalCurrentGameId}-${char.id}`;
@@ -3915,4 +3917,8 @@ export function initAnnualModule(){
 
 if(typeof window !== "undefined"){
     window.initAnnualModule = initAnnualModule;
+    window.openAnnualGlobalCharModal = openAnnualGlobalCharModal;
+    window.openAnnualGlobalCpModal = openAnnualGlobalCpModal;
+    window.closeAnnualGlobalCharModal = closeAnnualGlobalCharModal;
+    window.closeAnnualGlobalCpModal = closeAnnualGlobalCpModal;
 }
