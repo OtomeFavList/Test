@@ -10,15 +10,27 @@
     --other-export-border: #f6a5b8;
     --other-export-boxbg: #fff7f9;
     --other-export-labelcolor: #b85878;
+    --other-default-text-color: #b85878;
+    --other-input-text-color: #000000;
+    --other-heart-color: #e895a8;
+    --other-radar-color: #e895a8;
+    --other-card-bg: #fff7f9;
+    --other-label-color: #b85878;
+    --other-reporter-color: #b33a3a;
+    --other-image-border-color: #eeeeee;
     background-color: var(--other-export-bg, #fff7f9);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+    box-sizing: border-box;
 }
 
 .mode-wrap[data-mode="other"] .big-card {
     border-color: var(--other-export-border, #f6a5b8);
 }
 .mode-wrap[data-mode="other"] .big-card h2 {
-    color: var(--other-export-subtitle, #b85878);
-    border-left-color: var(--other-export-subtitle, #b85878);
+    color: var(--other-export-title, #b33a3a);
+    border-left-color: var(--other-export-title, #b33a3a);
 }
 
 /* Other 模式副标题 */
@@ -89,8 +101,8 @@
 
 /* Rero 游戏卡片 */
 .other-rero-card {
-    background: #ffffff;
-    border: 1px solid #f6a5b8;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid var(--other-export-border, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
     margin: 16px 0;
@@ -108,7 +120,7 @@
 .other-rero-game-name {
     font-size: 22px;
     font-weight: 700;
-    color: var(--other-export-gamename, #000000);
+    color: var(--other-input-text-color, #000000);
     word-break: break-all;
     margin: 0;
 }
@@ -148,7 +160,7 @@
     width: 100%;
     height: auto;
     border-radius: 8px;
-    border: 1px solid #eee;
+    border: 1px solid var(--other-image-border-color, #eee);
     display: block;
 }
 .other-rero-fields {
@@ -168,16 +180,17 @@
 }
 .other-rero-field-label {
     font-size: 15px;
-    color: var(--other-export-labelcolor, #b85878);
+    color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     white-space: nowrap;
     min-width: 56px;
 }
 .other-rero-field-input {
     padding: 6px 10px;
-    border: 1px solid #eee;
+    border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 6px;
     font-size: 14px;
+    color: var(--other-input-text-color, #000000);
     background: #fcfcfc;
     width: 160px;
     box-sizing: border-box;
@@ -193,7 +206,7 @@
     align-items: center;
     gap: 6px;
     font-size: 14px;
-    color: #666;
+    color: var(--other-default-text-color, #b85878);
 }
 .other-rero-checkbox-wrap input[type="checkbox"] {
     width: 18px;
@@ -261,27 +274,47 @@
     min-width: 220px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 6px;
-    background: var(--other-export-boxbg, #fff7f9);
-    border: 1px solid #eee;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 8px;
     padding: 10px 12px;
 }
-
-/* 五维图 */
-.other-dim-row {
+.other-radar-wrap {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    width: 100%;
+}
+.other-radar-chart {
+    display: flex;
+    justify-content: center;
+}
+.other-radar-chart svg {
+    display: block;
+    overflow: visible;
+}
+.other-radar-chart .radar-label {
+    fill: var(--other-default-text-color, #b85878);
+    font-family: "Noto Sans SC", sans-serif;
+}
+.other-dim-name-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
 }
 .other-dim-name {
-    width: 56px;
-    font-size: 13px;
-    color: var(--other-export-labelcolor, #b85878);
+    width: 48px;
+    font-size: 11px;
+    color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     border: 1px dashed transparent;
     border-radius: 4px;
-    padding: 2px 4px;
+    padding: 2px 2px;
     background: transparent;
     text-align: center;
     box-sizing: border-box;
@@ -291,35 +324,19 @@
     border-color: #f6a5b8;
     background: #fff;
 }
-.other-dim-levels {
-    display: flex;
-    gap: 3px;
-    flex: 1;
-}
-.other-dim-level {
-    flex: 1;
-    height: 18px;
-    border: 1px solid #e2e2e2;
-    border-radius: 3px;
-    background: #fff;
-    cursor: pointer;
-    padding: 0 !important;
-    min-width: 0;
-    transition: 0.1s;
-}
-.other-dim-level:hover {
-    border-color: #e895a8;
-}
-.other-dim-level.filled {
-    background: #e895a8;
-    border-color: #e895a8;
-}
 
 /* 喜爱度爱心 */
 .other-rero-hearts {
     display: flex;
     gap: 4px;
     align-items: center;
+}
+.other-rero-hearts .heart {
+    color: #ddd;
+    transition: color 0.15s;
+}
+.other-rero-hearts .heart.active {
+    color: var(--other-heart-color, #e895a8);
 }
 
 /* 文本字段区 */
@@ -336,18 +353,18 @@
 }
 .other-rero-text-field label {
     font-size: 15px;
-    color: var(--other-export-labelcolor, #b85878);
+    color: var(--other-default-text-color, #b85878);
     font-weight: bold;
 }
 .other-rero-text-field textarea {
     width: 100%;
     min-height: 60px;
     padding: 8px 10px;
-    border: 1px solid var(--other-export-customborder, #eee);
+    border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 14px;
-    color: var(--other-export-customtext, #c98fac);
+    color: var(--other-input-text-color, #000000);
     resize: vertical;
     box-sizing: border-box;
 }
@@ -371,8 +388,8 @@
     gap: 12px;
 }
 .other-char-tag-card {
-    background: var(--other-export-boxbg, #fff7f9);
-    border: 1px solid #eee;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 12px;
     padding: 12px;
     display: flex;
@@ -384,7 +401,7 @@
     text-align: center;
     font-size: 14px;
     font-weight: bold;
-    color: var(--other-export-labelcolor, #b85878);
+    color: var(--other-label-color, #b85878);
 }
 .other-char-tag-body {
     flex: 1;
@@ -466,8 +483,8 @@
     gap: 12px;
 }
 .other-text-card {
-    background: var(--other-export-boxbg, #fff7f9);
-    border: 1px solid #eee;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 12px;
     padding: 12px;
     display: flex;
@@ -479,7 +496,7 @@
     text-align: center;
     font-size: 14px;
     font-weight: bold;
-    color: var(--other-export-labelcolor, #b85878);
+    color: var(--other-label-color, #b85878);
 }
 .other-text-card-body {
     position: relative;
@@ -551,7 +568,7 @@
 .other-rero-impression-wrap label {
     display: block;
     font-size: 15px;
-    color: var(--other-export-labelcolor, #b85878);
+    color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     margin-bottom: 6px;
 }
@@ -598,8 +615,8 @@
 
 /* 模块二 Impression 卡片 */
 .other-impression-card {
-    background: #ffffff;
-    border: 1px solid #f6a5b8;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid var(--other-export-border, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
     margin: 16px 0;
@@ -615,7 +632,7 @@
 .other-impression-game-name {
     font-size: 20px;
     font-weight: 700;
-    color: var(--other-export-gamename, #000000);
+    color: var(--other-input-text-color, #000000);
     word-break: break-all;
     margin: 0;
 }
@@ -654,7 +671,6 @@
 .snapshot-container.export-snapshot .other-char-tag-remove,
 .snapshot-container.export-snapshot .other-text-card-remove,
 .snapshot-container.export-snapshot .other-grade-btn,
-.snapshot-container.export-snapshot .other-dim-level,
 .snapshot-container.export-snapshot .other-rero-impression-wrap .resize-handle,
 .snapshot-container.export-snapshot .other-text-card-body .resize-handle {
     display: none !important;
@@ -662,14 +678,6 @@
 /* 快照模式下 SABCDE 已选等级保留显示 */
 .snapshot-container.export-snapshot .other-grade-btn.active {
     display: flex !important;
-}
-.snapshot-container.export-snapshot .other-dim-level.filled {
-    display: block !important;
-}
-/* 快照模式下维度名不可编辑外观 */
-.snapshot-container.export-snapshot .other-dim-name {
-    border-color: transparent;
-    background: transparent;
 }
 
 /* 移动端适配 */
@@ -700,9 +708,13 @@
         min-width: 0;
         width: 100%;
     }
+    .other-radar-chart svg {
+        width: 180px;
+        height: 180px;
+    }
     .other-dim-name {
-        width: 48px;
-        font-size: 12px;
+        width: 44px;
+        font-size: 10px;
     }
     .other-char-tag-grid {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
