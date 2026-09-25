@@ -13,6 +13,14 @@ const OTHER_CONFIG_KEY = 'other-export-config';
 
 const GRADES = ['S', 'A', 'B', 'C', 'D', 'E'];
 const DEFAULT_DIMS = ['剧情', '角色', '配音', '音乐', '画风'];
+// Repo 固定角色标签卡片（第8个"最喜欢的CP"走CP弹窗，其余走角色弹窗）
+const REPO_FIXED_CHAR_LABELS = [
+  '盲狙', '最喜欢', '外貌最喜欢', '声音最喜欢', '人设最喜欢',
+  '剧情最喜欢', '最喜欢的Sub', '最喜欢的CP', '最能共情',
+  '相处最舒服', '过程最开心', '过程最心痛', '最希望转正'
+];
+// Repo 固定文本卡片
+const REPO_FIXED_TEXT_LABELS = ['最喜欢的台词', '最喜欢的场景', '最喜欢的结局'];
 
 const otherExportDefault = {
   bg: "#fff7f9",
@@ -41,6 +49,8 @@ const HEART_SVG = '<svg width="26" height="26" viewBox="0 0 24 24" fill="current
 let otherData = null;
 let otherConfig = null;
 let otherAddTarget = null; // "repo" | "impression" | null
+// Repo 角色卡片弹窗目标：{ gameIdx, cardIdx, type: 'char'|'cp' }
+let otherRepoCharTarget = null;
 
 // 新增：合并本篇 + FD 游戏列表
 function isGameTemplateReady() {
@@ -126,7 +136,7 @@ function createReroGameData(gameId) {
   return {
     gameId: gameId,
     duration: "",
-    completed: false,
+    completed: null,
     startDate: "",
     endDate: "",
     sweetness: "",
@@ -138,7 +148,18 @@ function createReroGameData(gameId) {
     cons: "",
     strategyOrder: "",
     favorOrder: "",
-    impression: ""
+    impression: "",
+    // 角色标签卡片：13固定 + 自定义
+    repoCharCards: REPO_FIXED_CHAR_LABELS.map(label => ({
+      label: label,
+      type: label === '最喜欢的CP' ? 'cp' : 'char',
+      gameId: '', charId: '', charName: '', coverSrc: '',
+      femaleId: '', maleId: '', femaleName: '', maleName: '', femaleCoverSrc: '', maleCoverSrc: ''
+    })),
+    repoCustomCharCards: [{ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' }],
+    // 文本卡片：3固定 + 自定义
+    repoTextCards: REPO_FIXED_TEXT_LABELS.map(label => ({ label: label, text: '' })),
+    repoCustomTextCards: [{ label: '', text: '' }]
   };
 }
 
@@ -156,33 +177,26 @@ function renderFiveDim(dims) {
   const cy = size / 2;
   const R = 68;
   const levels = 5;
-  // 从最上方顺时针：剧情(-90°) 角色(-18°) 配音(54°) 音乐(126°) 画风(198°)
   const angles = [-90, -18, 54, 126, 198];
-
   function pt(angleDeg, radius) {
     const rad = angleDeg * Math.PI / 180;
     return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
   }
-
-  // 同心五边形网格
   let grid = '';
   for (let l = 1; l <= levels; l++) {
     const r = R * l / levels;
     const pts = angles.map(a => pt(a, r).join(',')).join(' ');
     grid += `<polygon points="${pts}" fill="none" stroke="#d8d8d8" stroke-width="1"/>`;
   }
-  // 轴线
   let axes = '';
   angles.forEach(a => {
     const [x, y] = pt(a, R);
     axes += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#d8d8d8" stroke-width="1"/>`;
   });
-  // 数据多边形
   const dataPts = dims.map((d, i) => {
     const r = R * (d.level || 0) / levels;
     return pt(angles[i], r).join(',');
   }).join(' ');
-  // 可点击等级圆点（透明命中区）
   let hits = '';
   dims.forEach((d, i) => {
     for (let l = 1; l <= levels; l++) {
@@ -195,20 +209,14 @@ function renderFiveDim(dims) {
             + `style="cursor:pointer"/>`;
     }
   });
-  // 维度标签
-  let labels = '';
+  // 维度名标签：改为HTML input，定位在SVG外层，距离 R+30（更远），可直接点击编辑
+  let labelInputs = '';
   dims.forEach((d, i) => {
-    const [x, y] = pt(angles[i], R + 16);
-    labels += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" `
-             + `class="radar-label" font-size="13" font-weight="bold">${d.name}</text>`;
+    const [x, y] = pt(angles[i], R + 30);
+    labelInputs += `<input type="text" class="radar-label-input" value="${d.name}" `
+                 + `data-dim-idx="${i}" `
+                 + `style="left:${x}px;top:${y}px;" />`;
   });
-  // 维度名编辑行（紧凑排列，保留可编辑性）
-  let nameEditors = '<div class="other-dim-name-row">';
-  dims.forEach((d, i) => {
-    nameEditors += `<input class="other-dim-name" type="text" value="${d.name}" data-dim-idx="${i}">`;
-  });
-  nameEditors += '</div>';
-
   return `
     <div class="other-radar-wrap">
       <div class="other-radar-chart">
@@ -217,12 +225,86 @@ function renderFiveDim(dims) {
           ${axes}
           <polygon points="${dataPts}" fill="var(--other-radar-color, #e895a8)" fill-opacity="0.25" stroke="var(--other-radar-color, #e895a8)" stroke-width="2" style="pointer-events:none"/>
           ${hits}
-          ${labels}
         </svg>
       </div>
-      ${nameEditors}
+      ${labelInputs}
     </div>
   `;
+}
+
+// 渲染 Repo 角色标签卡片（固定13 + 自定义）
+function renderRepoCharCards(gameData) {
+  const allCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
+  let html = '<div class="other-repo-char-card-grid">';
+  allCards.forEach((card, idx) => {
+    const isCustom = idx >= (gameData.repoCharCards?.length || 0);
+    const isCp = card.type === 'cp';
+    // 卡片 body：有角色显示图片+删除，无角色显示+按钮
+    let bodyHtml;
+    if (isCp) {
+      if (card.maleId && card.femaleId) {
+        bodyHtml = `
+          <div class="other-repo-cp-preview">
+            <img src="${card.femaleCoverSrc && (card.femaleCoverSrc.startsWith('http') || card.femaleCoverSrc.startsWith('blob:')) ? card.femaleCoverSrc : getWebImageUrl(card.femaleCoverSrc)}" alt="${card.femaleName}">
+            <img src="${card.maleCoverSrc && (card.maleCoverSrc.startsWith('http') || card.maleCoverSrc.startsWith('blob:')) ? card.maleCoverSrc : getWebImageUrl(card.maleCoverSrc)}" alt="${card.maleName}">
+          </div>
+          <button class="other-repo-card-clear" data-repo-char-clear="${idx}">×</button>`;
+      } else {
+        bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}" data-repo-card-type="cp">+</button>`;
+      }
+    } else {
+      if (card.charId) {
+        bodyHtml = `
+          <div class="other-repo-char-preview">
+            <img src="${card.coverSrc && (card.coverSrc.startsWith('http') || card.coverSrc.startsWith('blob:')) ? card.coverSrc : getWebImageUrl(card.coverSrc)}" alt="${card.charName}">
+          </div>
+          <button class="other-repo-card-clear" data-repo-char-clear="${idx}">×</button>`;
+      } else {
+        bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}" data-repo-card-type="char">+</button>`;
+      }
+    }
+    // 标签：固定卡片显示纯文本，自定义卡片显示可编辑 textarea
+    const labelHtml = isCustom
+      ? `<textarea class="other-repo-card-label-edit" data-repo-char-label="${idx}" placeholder="自定义标签" rows="1">${card.label || ''}</textarea>`
+      : `<div class="other-repo-card-label">${card.label}</div>`;
+    const removeBtn = isCustom
+      ? `<button class="other-repo-card-remove" data-repo-char-remove="${idx}">×</button>`
+      : '';
+    html += `
+      <div class="other-repo-char-card ${isCp ? 'cp-card' : ''}">
+        ${removeBtn}
+        ${labelHtml}
+        <div class="other-repo-card-body">${bodyHtml}</div>
+      </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+// 渲染 Repo 文本卡片（固定3 + 自定义）
+function renderRepoTextCards(gameData) {
+  const allCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
+  let html = '<div class="other-repo-text-card-grid">';
+  allCards.forEach((card, idx) => {
+    const isCustom = idx >= (gameData.repoTextCards?.length || 0);
+    const labelHtml = isCustom
+      ? `<textarea class="other-repo-card-label-edit" data-repo-text-label="${idx}" placeholder="自定义标签" rows="1">${card.label || ''}</textarea>`
+      : `<div class="other-repo-card-label">${card.label}</div>`;
+    const removeBtn = isCustom
+      ? `<button class="other-repo-card-remove" data-repo-text-remove="${idx}">×</button>`
+      : '';
+    html += `
+      <div class="other-repo-text-card">
+        ${removeBtn}
+        ${labelHtml}
+        <div class="other-repo-text-card-body">
+          <textarea class="other-repo-text-card-textarea" data-repo-text-content="${idx}" placeholder="自定义文本">${card.text || ''}</textarea>
+          <div class="resize-handle"></div>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  return html;
 }
 
 // 喜爱度爱心
@@ -236,13 +318,15 @@ function renderHearts(love) {
 function renderReroCard(gameData) {
   const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
   if (!gameInfo) return "";
-
   const coverSrc = gameInfo.cover || gameInfo.image || gameInfo.img || "";
   const coverUrl = coverSrc ? getWebImageUrl(coverSrc) : "";
   const safeName = gameInfo.name || gameData.gameId;
-
+  const gid = gameData.gameId;
+  // 全通：是/否双勾选框（completed: true=是, false=否, null=未选）
+  const yesChecked = gameData.completed === true ? 'checked' : '';
+  const noChecked = gameData.completed === false ? 'checked' : '';
   return `
-  <div class="other-rero-card" data-game-id="${gameData.gameId}">
+  <div class="other-rero-card" data-game-id="${gid}">
     <div class="other-rero-header">
       <h3 class="other-rero-game-name">${safeName}</h3>
       <button class="other-rero-delete-btn" data-action="delete">×</button>
@@ -251,35 +335,40 @@ function renderReroCard(gameData) {
       <div class="other-rero-cover-wrap">
         <img class="other-rero-cover" src="${coverUrl}" alt="${safeName}" decoding="async">
       </div>
-      <div class="other-rero-fields">
-        <div class="other-rero-field-row">
-          <span class="other-rero-field-label">时长</span>
-          <input class="other-rero-field-input" type="text" data-field="duration" value="${gameData.duration || ''}" placeholder="游玩时长">
-          <div class="other-rero-checkbox-wrap">
-            <input type="checkbox" id="other-completed-${gameData.gameId}" data-field="completed" ${gameData.completed ? 'checked' : ''}>
-            <label for="other-completed-${gameData.gameId}">全通</label>
-          </div>
-        </div>
-        <div class="other-rero-field-row">
-          <span class="other-rero-field-label">开始日期</span>
-          <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY.MM.DD">
-        </div>
-        <div class="other-rero-field-row">
-          <span class="other-rero-field-label">结束日期</span>
-          <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY.MM.DD">
-        </div>
-        <div class="other-rero-dual-grade-row">
+      <div class="other-rero-fields-and-radar">
+        <div class="other-rero-fields">
           <div class="other-rero-field-row">
-            <span class="other-rero-field-label">甜度</span>
-            <div class="other-grade-group">${renderGradeGroup('sweetness', gameData.sweetness)}</div>
+            <span class="other-rero-field-label">时长</span>
+            <input class="other-rero-field-input" type="text" data-field="duration" value="${gameData.duration || ''}" placeholder="小时">
+            <div class="other-rero-completed-wrap">
+              <span class="other-rero-completed-label">全通</span>
+              <div class="other-rero-yn-group">
+                <input type="checkbox" id="other-completed-yes-${gid}" data-completed-yn="yes" ${yesChecked}>
+                <label for="other-completed-yes-${gid}" class="other-rero-yn-label">是</label>
+                <input type="checkbox" id="other-completed-no-${gid}" data-completed-yn="no" ${noChecked}>
+                <label for="other-completed-no-${gid}" class="other-rero-yn-label">否</label>
+              </div>
+            </div>
           </div>
           <div class="other-rero-field-row">
-            <span class="other-rero-field-label">虐度</span>
-            <div class="other-grade-group">${renderGradeGroup('bitterness', gameData.bitterness)}</div>
+            <span class="other-rero-field-label">开始日期</span>
+            <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY-MM-DD">
           </div>
-        </div>
-        <div class="other-rero-rating-combo">
-          <div class="other-rero-rating-left">
+          <div class="other-rero-field-row">
+            <span class="other-rero-field-label">结束日期</span>
+            <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY-MM-DD">
+          </div>
+          <div class="other-rero-dual-grade-row">
+            <div class="other-rero-field-row">
+              <span class="other-rero-field-label">甜度</span>
+              <div class="other-grade-group">${renderGradeGroup('sweetness', gameData.sweetness)}</div>
+            </div>
+            <div class="other-rero-field-row">
+              <span class="other-rero-field-label">虐度</span>
+              <div class="other-grade-group">${renderGradeGroup('bitterness', gameData.bitterness)}</div>
+            </div>
+          </div>
+          <div class="other-rero-rating-left-only">
             <div class="other-rero-field-row">
               <span class="other-rero-field-label">总评</span>
               <div class="other-grade-group">${renderGradeGroup('overall', gameData.overall)}</div>
@@ -289,29 +378,45 @@ function renderReroCard(gameData) {
               <div class="other-rero-hearts">${renderHearts(gameData.love)}</div>
             </div>
           </div>
-          <div class="other-rero-five-dim">
-            ${renderFiveDim(gameData.fiveDim)}
-          </div>
+        </div>
+        <div class="other-rero-five-dim">
+          ${renderFiveDim(gameData.fiveDim)}
         </div>
       </div>
     </div>
     <div class="other-rero-text-fields">
       <div class="other-rero-text-field">
         <label>优点</label>
-        <textarea data-field="pros" placeholder="优点">${gameData.pros || ''}</textarea>
+        <div class="other-rero-textarea-wrap">
+          <textarea data-field="pros" placeholder="优点">${gameData.pros || ''}</textarea>
+          <div class="resize-handle"></div>
+        </div>
       </div>
       <div class="other-rero-text-field">
         <label>缺点</label>
-        <textarea data-field="cons" placeholder="缺点">${gameData.cons || ''}</textarea>
+        <div class="other-rero-textarea-wrap">
+          <textarea data-field="cons" placeholder="缺点">${gameData.cons || ''}</textarea>
+          <div class="resize-handle"></div>
+        </div>
       </div>
       <div class="other-rero-text-field">
         <label>攻略顺序</label>
-        <textarea data-field="strategyOrder" placeholder="攻略顺序">${gameData.strategyOrder || ''}</textarea>
+        <div class="other-rero-textarea-wrap">
+          <textarea data-field="strategyOrder" placeholder="攻略顺序">${gameData.strategyOrder || ''}</textarea>
+          <div class="resize-handle"></div>
+        </div>
       </div>
       <div class="other-rero-text-field">
         <label>好感顺序</label>
-        <textarea data-field="favorOrder" placeholder="好感顺序">${gameData.favorOrder || ''}</textarea>
+        <div class="other-rero-textarea-wrap">
+          <textarea data-field="favorOrder" placeholder="好感顺序">${gameData.favorOrder || ''}</textarea>
+          <div class="resize-handle"></div>
+        </div>
       </div>
+    </div>
+    <div class="other-repo-cards-section">
+      ${renderRepoCharCards(gameData)}
+      ${renderRepoTextCards(gameData)}
     </div>
     <div class="other-rero-impression-wrap">
       <label>感想</label>
@@ -331,7 +436,7 @@ function renderRepoModule() {
     return;
   }
   if (otherData.repoGames.length === 0) {
-    container.innerHTML = '<p class="empty-hint" style="text-align:center;color:var(--other-default-text-color,#b85878);padding:24px 0;font-size:15px;">点击上方「+ 添加游戏」按钮添加 Repo 游戏</p>';
+    container.innerHTML = '';
     return;
   }
   container.innerHTML = otherData.repoGames.map(g => renderReroCard(g)).join("");
@@ -456,19 +561,150 @@ function bindModalInterceptor() {
   });
 }
 
+// Repo 角色弹窗拦截器：捕获角色选择，写入 otherData
+function bindRepoCharModalInterceptor() {
+  const modal = document.getElementById('annual-global-char-modal');
+  if (!modal) return;
+  modal.addEventListener('click', function (e) {
+    if (!otherRepoCharTarget || otherRepoCharTarget.type !== 'char') return;
+    const charItem = e.target.closest('.char-item');
+    if (!charItem) return;
+    // 跳过切换按钮
+    if (e.target.closest('.char-switch-btn, .char-name-switch-btn')) return;
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    const gameId = charItem.dataset.gameId;
+    const charId = charItem.dataset.charId;
+    const charName = charItem.querySelector('.char-name-text')?.textContent || '';
+    const coverSrc = charItem.querySelector('img')?.getAttribute('src') || '';
+    const { gameIdx, cardIdx } = otherRepoCharTarget;
+    const gameData = otherData.repoGames[gameIdx];
+    if (!gameData) return;
+    const fixedLen = gameData.repoCharCards?.length || 0;
+    let target;
+    if (cardIdx < fixedLen) {
+      target = gameData.repoCharCards[cardIdx];
+    } else {
+      target = gameData.repoCustomCharCards?.[cardIdx - fixedLen];
+    }
+    if (target) {
+      target.gameId = gameId;
+      target.charId = charId;
+      target.charName = charName;
+      // coverSrc 是 getWebImageUrl 后的URL，需要还原为原始路径
+      // 这里直接存URL，渲染时用 getWebImageUrl 会二次处理导致错误
+      // 改为从 annual.js 的图片索引读取原始 src——但拦截器拿不到
+      // 折中：存当前显示的 src（已是 web URL），渲染时不再套 getWebImageUrl
+      target.coverSrc = coverSrc;
+    }
+    // 如果是最后一个自定义卡片且已填充，追加新空白卡片
+    if (cardIdx >= fixedLen) {
+      const customIdx = cardIdx - fixedLen;
+      if (customIdx === (gameData.repoCustomCharCards?.length || 0) - 1) {
+        gameData.repoCustomCharCards.push({ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' });
+      }
+    }
+    saveOtherData();
+    renderRepoModule();
+    // 关闭弹窗
+    modal.classList.remove('active');
+    if (typeof window.closeAnnualGlobalCharModal === 'function') {
+      // 不直接调用 close 函数（它会清理 annual 上下文），只清除标记
+    }
+    otherRepoCharTarget = null;
+  }, true);
+  // 关闭按钮/遮罩：清除标记
+  const clearTarget = () => { otherRepoCharTarget = null; };
+  const closeBtn = modal.querySelector('.annual-modal-close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', clearTarget);
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) clearTarget();
+  });
+}
+
+// Repo CP弹窗拦截器：捕获男主选择，写入 otherData
+function bindRepoCpModalInterceptor() {
+  const modal = document.getElementById('annual-global-cp-modal');
+  if (!modal) return;
+  modal.addEventListener('click', function (e) {
+    if (!otherRepoCharTarget || otherRepoCharTarget.type !== 'cp') return;
+    const maleItem = e.target.closest('.annual-cp-male-item');
+    if (!maleItem) return;
+    if (e.target.closest('.char-switch-btn, .char-name-switch-btn')) return;
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    const gameId = maleItem.dataset.gameId;
+    const femaleId = maleItem.dataset.fid;
+    const maleId = maleItem.dataset.mid;
+    const maleName = maleItem.querySelector('.char-name-text')?.textContent || '';
+    const maleCoverSrc = maleItem.querySelector('img')?.getAttribute('src') || '';
+    // 女主信息从选中的女主卡片读取
+    const femaleCard = modal.querySelector('.annual-cp-female-card.selected');
+    const femaleName = femaleCard?.querySelector('.char-name-text')?.textContent || '';
+    const femaleCoverSrc = femaleCard?.querySelector('img')?.getAttribute('src') || '';
+    const { gameIdx, cardIdx } = otherRepoCharTarget;
+    const gameData = otherData.repoGames[gameIdx];
+    if (!gameData) return;
+    const fixedLen = gameData.repoCharCards?.length || 0;
+    let target;
+    if (cardIdx < fixedLen) {
+      target = gameData.repoCharCards[cardIdx];
+    } else {
+      target = gameData.repoCustomCharCards?.[cardIdx - fixedLen];
+    }
+    if (target) {
+      target.gameId = gameId;
+      target.femaleId = femaleId;
+      target.maleId = maleId;
+      target.femaleName = femaleName;
+      target.maleName = maleName;
+      target.femaleCoverSrc = femaleCoverSrc;
+      target.maleCoverSrc = maleCoverSrc;
+    }
+    saveOtherData();
+    renderRepoModule();
+    modal.classList.remove('active');
+    otherRepoCharTarget = null;
+  }, true);
+  const clearTarget = () => { otherRepoCharTarget = null; };
+  const closeBtn = modal.querySelector('.annual-modal-close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', clearTarget);
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) clearTarget();
+  });
+}
+
 // Rero 卡片交互
 function bindReroCardEvents() {
   const repoContainer = document.getElementById('other-repo-game-container');
   if (!repoContainer) return;
 
-  // input 事件：文本框实时保存
+  // 工具：根据 card 元素获取 gameData
+  function getGameDataFromCard(card) {
+    const gameId = card.dataset.gameId;
+    return otherData.repoGames.find(g => g.gameId === gameId);
+  }
+  // 工具：获取角色卡片（固定+自定义合并）的真实引用
+  function getCharCardRef(gameData, idx) {
+    const fixedLen = gameData.repoCharCards?.length || 0;
+    if (idx < fixedLen) return gameData.repoCharCards[idx];
+    return gameData.repoCustomCharCards?.[idx - fixedLen];
+  }
+  // 工具：获取文本卡片引用
+  function getTextCardRef(gameData, idx) {
+    const fixedLen = gameData.repoTextCards?.length || 0;
+    if (idx < fixedLen) return gameData.repoTextCards[idx];
+    return gameData.repoCustomTextCards?.[idx - fixedLen];
+  }
+
+  // input 事件
   repoContainer.addEventListener('input', function (e) {
     const card = e.target.closest('.other-rero-card');
     if (!card) return;
-    const gameId = card.dataset.gameId;
-    const gameData = otherData.repoGames.find(g => g.gameId === gameId);
+    const gameData = getGameDataFromCard(card);
     if (!gameData) return;
 
+    // 普通字段
     const field = e.target.dataset.field;
     const textFields = ['duration', 'startDate', 'endDate', 'pros', 'cons', 'strategyOrder', 'favorOrder', 'impression'];
     if (field && textFields.includes(field)) {
@@ -476,35 +712,91 @@ function bindReroCardEvents() {
       saveOtherData();
       return;
     }
-
-    // 五维维度名修改
+    // 五维维度名直接编辑（radar-label-input）
     const dimIdx = e.target.dataset.dimIdx;
-    if (dimIdx !== undefined && e.target.classList.contains('other-dim-name')) {
+    if (dimIdx !== undefined && e.target.classList.contains('radar-label-input')) {
       const idx = Number(dimIdx);
       if (gameData.fiveDim && gameData.fiveDim[idx]) {
         gameData.fiveDim[idx].name = e.target.value;
         saveOtherData();
       }
+      return;
+    }
+    // 角色卡片自定义标签
+    const charLabelIdx = e.target.dataset.repoCharLabel;
+    if (charLabelIdx !== undefined) {
+      const idx = Number(charLabelIdx);
+      const target = getCharCardRef(gameData, idx);
+      if (target) { target.label = e.target.value; saveOtherData(); }
+      return;
+    }
+    // 文本卡片自定义标签
+    const textLabelIdx = e.target.dataset.repoTextLabel;
+    if (textLabelIdx !== undefined) {
+      const idx = Number(textLabelIdx);
+      const target = getTextCardRef(gameData, idx);
+      if (target) { target.label = e.target.value; saveOtherData(); }
+      return;
+    }
+    // 文本卡片内容
+    const textContentIdx = e.target.dataset.repoTextContent;
+    if (textContentIdx !== undefined) {
+      const idx = Number(textContentIdx);
+      const target = getTextCardRef(gameData, idx);
+      if (target) { target.text = e.target.value; saveOtherData(); }
+      return;
     }
   });
 
-  // click 事件：评级/爱心/五维/删除
+  // blur 事件：自定义角色卡片标签失焦时追加新卡片
+  repoContainer.addEventListener('blur', function (e) {
+    const card = e.target.closest('.other-rero-card');
+    if (!card) return;
+    const gameData = getGameDataFromCard(card);
+    if (!gameData) return;
+    const charLabelIdx = e.target.dataset.repoCharLabel;
+    if (charLabelIdx !== undefined && e.target.value.trim() !== '') {
+      const idx = Number(charLabelIdx);
+      const customLen = gameData.repoCustomCharCards?.length || 0;
+      const fixedLen = gameData.repoCharCards?.length || 0;
+      // 仅当是最后一个自定义卡片时追加
+      if (idx === fixedLen + customLen - 1) {
+        gameData.repoCustomCharCards.push({ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' });
+        saveOtherData();
+        renderRepoModule();
+      }
+      return;
+    }
+    const textLabelIdx = e.target.dataset.repoTextLabel;
+    if (textLabelIdx !== undefined && e.target.value.trim() !== '') {
+      const idx = Number(textLabelIdx);
+      const customLen = gameData.repoCustomTextCards?.length || 0;
+      const fixedLen = gameData.repoTextCards?.length || 0;
+      if (idx === fixedLen + customLen - 1) {
+        gameData.repoCustomTextCards.push({ label: '', text: '' });
+        saveOtherData();
+        renderRepoModule();
+      }
+      return;
+    }
+  }, true);
+
+  // click 事件
   repoContainer.addEventListener('click', function (e) {
     const card = e.target.closest('.other-rero-card');
     if (!card) return;
-    const gameId = card.dataset.gameId;
-    const gameData = otherData.repoGames.find(g => g.gameId === gameId);
+    const gameData = getGameDataFromCard(card);
     if (!gameData) return;
+    const gameIdx = otherData.repoGames.findIndex(g => g.gameId === card.dataset.gameId);
 
-    // 删除
+    // 删除游戏
     if (e.target.closest('[data-action="delete"]')) {
-      otherData.repoGames = otherData.repoGames.filter(g => g.gameId !== gameId);
+      otherData.repoGames = otherData.repoGames.filter(g => g.gameId !== card.dataset.gameId);
       saveOtherData();
       renderRepoModule();
       return;
     }
-
-    // SABCDE 评级（再次点击同一等级取消）
+    // SABCDE 评级
     const gradeBtn = e.target.closest('.other-grade-btn');
     if (gradeBtn) {
       const field = gradeBtn.dataset.grade;
@@ -517,8 +809,7 @@ function bindReroCardEvents() {
       });
       return;
     }
-
-    // 爱心评分（再次点击同一颗取消）
+    // 爱心评分
     const heart = e.target.closest('.heart');
     if (heart) {
       const val = Number(heart.dataset.love);
@@ -530,8 +821,7 @@ function bindReroCardEvents() {
       });
       return;
     }
-
-    // 雷达图等级圆点点击（再次点击同一等级清零）
+    // 雷达图等级圆点
     const radarHit = e.target.closest('.radar-level-hit');
     if (radarHit) {
       const idx = Number(radarHit.dataset.dimIdx);
@@ -546,17 +836,100 @@ function bindReroCardEvents() {
       }
       return;
     }
+    // 角色卡片 + 按钮（打开角色/CP弹窗）
+    const charAddBtn = e.target.closest('[data-repo-char-add]');
+    if (charAddBtn) {
+      const idx = Number(charAddBtn.dataset.repoCharAdd);
+      const cardType = charAddBtn.dataset.repoCardType;
+      otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: cardType };
+      if (cardType === 'cp') {
+        if (typeof window.openAnnualGlobalCpModal === 'function') {
+          window.openAnnualGlobalCpModal(null, 'otherRepoCp');
+        }
+      } else {
+        if (typeof window.openAnnualGlobalCharModal === 'function') {
+          window.openAnnualGlobalCharModal(null, 'otherRepoChar');
+        }
+      }
+      return;
+    }
+    // 角色卡片图片清除 ×
+    const charClearBtn = e.target.closest('[data-repo-char-clear]');
+    if (charClearBtn) {
+      const idx = Number(charClearBtn.dataset.repoCharClear);
+      const target = getCharCardRef(gameData, idx);
+      if (target) {
+        if (target.type === 'cp') {
+          Object.assign(target, { gameId: '', femaleId: '', maleId: '', femaleName: '', maleName: '', femaleCoverSrc: '', maleCoverSrc: '' });
+        } else {
+          Object.assign(target, { gameId: '', charId: '', charName: '', coverSrc: '' });
+        }
+      }
+      saveOtherData();
+      renderRepoModule();
+      return;
+    }
+    // 自定义角色卡片整卡删除 ×
+    const charRemoveBtn = e.target.closest('[data-repo-char-remove]');
+    if (charRemoveBtn) {
+      const idx = Number(charRemoveBtn.dataset.repoCharRemove);
+      const fixedLen = gameData.repoCharCards?.length || 0;
+      const customIdx = idx - fixedLen;
+      if (customIdx >= 0) {
+        gameData.repoCustomCharCards.splice(customIdx, 1);
+        if (gameData.repoCustomCharCards.length === 0) {
+          gameData.repoCustomCharCards.push({ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' });
+        }
+        saveOtherData();
+        renderRepoModule();
+      }
+      return;
+    }
+    // 自定义文本卡片整卡删除 ×
+    const textRemoveBtn = e.target.closest('[data-repo-text-remove]');
+    if (textRemoveBtn) {
+      const idx = Number(textRemoveBtn.dataset.repoTextRemove);
+      const fixedLen = gameData.repoTextCards?.length || 0;
+      const customIdx = idx - fixedLen;
+      if (customIdx >= 0) {
+        gameData.repoCustomTextCards.splice(customIdx, 1);
+        if (gameData.repoCustomTextCards.length === 0) {
+          gameData.repoCustomTextCards.push({ label: '', text: '' });
+        }
+        saveOtherData();
+        renderRepoModule();
+      }
+      return;
+    }
   });
 
-  // change 事件：全通勾选（键盘/点击均触发，比 click 更可靠）
+  // change 事件：全通是/否互斥勾选
   repoContainer.addEventListener('change', function (e) {
     const card = e.target.closest('.other-rero-card');
     if (!card) return;
-    const gameId = card.dataset.gameId;
-    const gameData = otherData.repoGames.find(g => g.gameId === gameId);
+    const gameData = getGameDataFromCard(card);
     if (!gameData) return;
-    if (e.target.dataset.field === 'completed') {
-      gameData.completed = e.target.checked;
+    const ynVal = e.target.dataset.completedYn;
+    if (ynVal) {
+      const ynGroup = e.target.closest('.other-rero-yn-group');
+      const yesInput = ynGroup.querySelector('[data-completed-yn="yes"]');
+      const noInput = ynGroup.querySelector('[data-completed-yn="no"]');
+      if (ynVal === 'yes') {
+        if (e.target.checked) {
+          // 选"是"：取消"否"
+          if (noInput) noInput.checked = false;
+          gameData.completed = true;
+        } else {
+          gameData.completed = null;
+        }
+      } else if (ynVal === 'no') {
+        if (e.target.checked) {
+          if (yesInput) yesInput.checked = false;
+          gameData.completed = false;
+        } else {
+          gameData.completed = null;
+        }
+      }
       saveOtherData();
     }
   });
@@ -807,10 +1180,10 @@ function bindExportConfig() {
 
 // 文本框拖拽手柄（自定义文本框）
 function bindTextareaResize() {
-  document.querySelectorAll('.mode-wrap[data-mode="other"] .other-rero-impression-wrap .resize-handle').forEach(handle => {
+  document.querySelectorAll('.mode-wrap[data-mode="other"] .other-rero-impression-wrap .resize-handle, .mode-wrap[data-mode="other"] .other-rero-textarea-wrap .resize-handle, .mode-wrap[data-mode="other"] .other-repo-text-card-body .resize-handle').forEach(handle => {
     if (handle.dataset.resizeBinded === "1") return;
     handle.dataset.resizeBinded = "1";
-    const wrap = handle.closest('.other-rero-impression-wrap');
+    const wrap = handle.closest('.other-rero-impression-wrap, .other-rero-textarea-wrap, .other-repo-text-card-body');
     if (!wrap) return;
     const textarea = wrap.querySelector('textarea');
     if (!textarea) return;
@@ -852,6 +1225,8 @@ export function initOtherModule() {
   bindFoldButtons();
   bindOtherScrollButtons();
   bindModalInterceptor();
+  bindRepoCharModalInterceptor();
+  bindRepoCpModalInterceptor();
   bindReroCardEvents();
   bindImpressionEvents();
   bindExportConfig();
