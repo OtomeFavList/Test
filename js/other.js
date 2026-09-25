@@ -332,7 +332,7 @@ function renderRepoModule() {
     return;
   }
   if (otherData.repoGames.length === 0) {
-    container.innerHTML = '';
+    container.innerHTML = '<p class="empty-hint" style="text-align:center;color:var(--other-default-text-color,#b85878);padding:24px 0;font-size:15px;">点击上方「+ 添加游戏」按钮添加 Repo 游戏</p>';
     return;
   }
   container.innerHTML = otherData.repoGames.map(g => renderReroCard(g)).join("");
@@ -345,7 +345,7 @@ function renderImpressionModule() {
   const container = document.getElementById('other-impression-game-container');
   if (!container) return;
   if (otherData.impressionGames.length === 0) {
-    container.innerHTML = '';
+    container.innerHTML = '<p class="empty-hint" style="text-align:center;color:var(--other-default-text-color,#b85878);padding:24px 0;font-size:15px;">点击上方「+ 添加游戏」按钮添加 Impression 游戏</p>';
     return;
   }
   container.innerHTML = otherData.impressionGames.map(g => {
