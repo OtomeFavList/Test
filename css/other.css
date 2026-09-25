@@ -366,7 +366,7 @@
 .other-rero-textarea-wrap textarea {
     width: 100%;
     min-height: 60px;
-    padding: 8px 10px;
+    padding: 8px 10px 26px 10px;
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 6px;
     font-size: var(--other-input-font-size, 14px);
@@ -376,13 +376,26 @@
 }
 .other-rero-textarea-wrap .resize-handle {
     position: absolute;
-    bottom: 2px;
-    right: 4px;
+    right: 0px;
+    bottom: 0px;
+    width: 24px;
+    height: 24px;
+    cursor: ns-resize;
+    z-index: 2;
+}
+.other-rero-textarea-wrap .resize-handle::after {
+    content: "";
+    display: block;
     width: 14px;
     height: 14px;
-    cursor: ns-resize;
-    opacity: 0.5;
-    background: linear-gradient(135deg, transparent 50%, #999 50%, #999 60%, transparent 60%, transparent 70%, #999 70%, #999 80%, transparent 80%);
+    background-color: #b33a3a;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+.other-rero-textarea-wrap .resize-handle:active::after {
+    opacity: 0.7;
 }
 
 /* 角色标签卡片组（Repo 用） */
@@ -391,8 +404,8 @@
 }
 .other-repo-char-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
     margin-bottom: 14px;
 }
 .other-repo-char-card {
@@ -404,158 +417,206 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 .other-repo-card-label {
-    font-size: 12px;
+    font-size: 15px;
     font-weight: bold;
     color: var(--other-label-color, #b85878);
     text-align: center;
-    line-height: 1.3;
-    word-break: break-all;
+    line-height: 1.4;
+    word-break: break-word;
+    width: 100%;
 }
 .other-repo-card-label-edit {
     width: 100%;
-    border: none;
-    background: transparent;
-    text-align: center;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: bold;
+    text-align: center;
+    border: 1px dashed #ddd;
+    border-radius: 6px;
+    padding: 4px 6px;
+    box-sizing: border-box;
+    background: #fcfcfc;
     color: var(--other-label-color, #b85878);
     resize: none;
+    overflow: hidden;
     outline: none;
-    padding: 0;
-    line-height: 1.3;
+    line-height: 1.4;
+    display: block;
 }
 .other-repo-card-label-edit:focus {
-    background: #fff;
-    border: 1px solid var(--other-export-border, #f6a5b8);
-    border-radius: 4px;
+    outline: none;
+    border-color: #f6a5b8;
 }
 .other-repo-card-body {
-    width: 100%;
+    width: 140px;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 80px;
     position: relative;
+    border-radius: 8px;
+    overflow: hidden;
 }
 .other-repo-char-preview {
-    width: 70px;
-    height: 90px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 8px;
 }
 .other-repo-char-preview img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    display: block;
 }
 .other-repo-cp-preview {
     display: flex;
-    gap: 2px;
-}
-.other-repo-cp-preview img {
-    width: 38px;
-    height: 52px;
-    object-fit: cover;
-    border-radius: 3px;
-}
-.other-repo-card-add {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px dashed var(--other-export-border, #f6a5b8);
-    background: transparent;
-    color: var(--other-label-color, #b85878);
-    font-size: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
+    gap: 8px;
     justify-content: center;
 }
+.other-repo-cp-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+.other-repo-card-add {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
 .other-repo-card-add:hover {
-    background: rgba(246, 165, 184, 0.1);
+    background: #992e2e !important;
+    color: #ffffff !important;
 }
 .other-repo-card-clear {
     position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #b33a3a;
     border-radius: 50%;
-    border: none;
-    background: #e895a8;
-    color: #fff;
-    font-size: 12px;
+    background: #fff;
+    color: #b33a3a;
+    font-size: 13px;
     cursor: pointer;
+    padding: 0 0 2px 0;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    line-height: 1;
+    box-sizing: border-box;
+    z-index: 10;
+}
+.other-repo-card-clear:hover {
+    background: #992e2e;
+    color: #fff;
 }
 .other-repo-card-remove {
     position: absolute;
-    top: 2px;
-    right: 4px;
-    width: 18px;
-    height: 18px;
-    border: none;
-    background: transparent;
-    color: #999;
-    font-size: 14px;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #b33a3a;
+    border-radius: 50%;
+    background: #fff;
+    color: #b33a3a;
+    font-size: 13px;
     cursor: pointer;
-    z-index: 2;
+    padding: 0 0 2px 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    z-index: 10;
 }
 .other-repo-card-remove:hover {
-    color: #e895a8;
+    background: #992e2e;
+    color: #fff;
 }
 
 /* 文本卡片组（Repo 用） */
 .other-repo-text-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
+    gap: 16px;
 }
 .other-repo-text-card {
     position: relative;
-    background: transparent;
-    border: 1px solid var(--other-export-customborder, #eee);
-    border-radius: 8px;
-    padding: 8px;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 14px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
 }
 .other-repo-text-card .other-repo-card-label {
-    font-size: 13px;
-    text-align: left;
+    font-size: 15px;
+    text-align: center;
+    font-weight: bold;
+    color: var(--other-label-color, #b85878);
 }
 .other-repo-text-card-body {
-    position: relative;
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    position: relative;
 }
 .other-repo-text-card-textarea {
     width: 100%;
-    min-height: 60px;
-    padding: 8px 10px;
+    min-height: 80px;
+    box-sizing: border-box;
+    padding: 8px 10px 26px 10px;
     border: 1px solid var(--other-export-customborder, #eee);
-    border-radius: 6px;
+    border-radius: 8px;
+    background: #fcfcfc;
     font-size: var(--other-custom-text-font-size, 15px);
     color: var(--other-export-customtext, #c98fac);
-    resize: none;
-    box-sizing: border-box;
-    background: transparent;
+    resize: none !important;
+    overflow: auto;
 }
 .other-repo-text-card-body .resize-handle {
     position: absolute;
-    bottom: 2px;
-    right: 4px;
+    right: 0px;
+    bottom: 0px;
+    width: 24px;
+    height: 24px;
+    cursor: ns-resize;
+    z-index: 2;
+}
+.other-repo-text-card-body .resize-handle::after {
+    content: "";
+    display: block;
     width: 14px;
     height: 14px;
-    cursor: ns-resize;
-    opacity: 0.5;
-    background: linear-gradient(135deg, transparent 50%, #999 50%, #999 60%, transparent 60%, transparent 70%, #999 70%, #999 80%, transparent 80%);
+    background-color: #b33a3a;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+.other-repo-text-card-body .resize-handle:active::after {
+    opacity: 0.7;
 }
 
 /* 感想文本框 */
@@ -817,15 +878,60 @@
         margin-top: 4px;
     }
     .other-repo-char-card-grid {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+        gap: 10px !important;
+    }
+    .other-repo-card-body {
+        width: 90px !important;
+        height: 90px !important;
+    }
+    .other-repo-card-label {
+        font-size: 15px;
+    }
+    .other-repo-card-label-edit {
+        font-size: 15px;
+        padding: 3px 6px;
+    }
+    .other-repo-card-add {
+        width: 26px;
+        height: 26px;
+        font-size: 18px;
+    }
+    .other-repo-card-clear,
+    .other-repo-card-remove {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        top: -6px;
+        right: -6px;
     }
     .other-repo-text-card-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 10px !important;
+    }
+    .other-repo-text-card {
+        padding: 10px;
     }
 }
 
 @media (min-width: 769px) and (max-width: 1200px) {
     .other-rero-cover-wrap {
         width: 130px;
+    }
+}
+
+/* 移动端放大拖拽热区（对齐 Annual 模式） */
+@media (max-width: 1200px) {
+    .other-rero-textarea-wrap .resize-handle,
+    .other-repo-text-card-body .resize-handle {
+        width: 32px;
+        height: 32px;
+    }
+    .other-rero-textarea-wrap .resize-handle::after,
+    .other-repo-text-card-body .resize-handle::after {
+        right: 0px;
+        bottom: 4px;
+        width: 16px;
+        height: 16px;
     }
 }
