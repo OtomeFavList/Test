@@ -1,4 +1,4 @@
-// 年度报告模块 annual.js
+// 年度报告模式 annual.js
 // 存储 key: annual-report-data，与喜好表数据隔离
 
 // 修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加 window 全局变量兜底
