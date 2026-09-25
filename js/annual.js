@@ -103,6 +103,8 @@ const getDefaultAnnualData = () => ({
         favCp: null,
         favSupport: null,
         favLine: "",
+        favPlotLine: "",        // 新增：最喜欢的剧情线
+        favRomanceLine: "",     // 新增：最喜欢的感情线
         favMusic: "",
         favHe: "",
         favBe: "",
