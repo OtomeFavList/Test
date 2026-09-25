@@ -933,6 +933,20 @@
                     <input type="color" id="other-color-image-border" value="#eeeeee">
                 </div>
             </div>
+            <div class="font-size-set-row">
+                <label for="other-slider-input-font">调节填写内容字号</label>
+                <div id="other-input-font-value" class="font-size-value-display">16px</div>
+                <input id="other-slider-input-font" type="range" min="14" max="42" step="1" value="16">
+            </div>
+            <div class="font-size-set-row">
+                <label for="other-slider-custom-text-font">调节自定义文本字号</label>
+                <div id="other-custom-text-font-value" class="font-size-value-display">16px</div>
+                <input id="other-slider-custom-text-font" type="range" min="14" max="42" step="1" value="16">
+            </div>
+            <div class="other-reporter-row" style="margin:12px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <label style="font-size:14px;color:var(--other-default-text-color,#b85878);font-weight:bold;">填表人</label>
+                <input type="text" id="other-reporter-name" placeholder="选填" style="padding:6px 10px;border:1px solid var(--other-image-border-color,#eee);border-radius:6px;font-size:14px;width:160px;">
+            </div>
             <div class="size-select">
                 <label class="text-light-pink">导出尺寸：</label>
                 <label><input type="radio" name="other-export-size" value="long-640">640长图</label>
