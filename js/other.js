@@ -30,7 +30,6 @@ const otherExportDefault = {
   imageBorderColor: "#eeeeee",
   border: "#f6a5b8",
   normalQuality: false,
-  exportSize: "long-810",
   inputFontSize: 16,
   customTextFontSize: 16
 };
@@ -345,7 +344,7 @@ function renderImpressionModule() {
   const container = document.getElementById('other-impression-game-container');
   if (!container) return;
   if (otherData.impressionGames.length === 0) {
-    container.innerHTML = '<p class="empty-hint" style="text-align:center;color:var(--other-default-text-color,#b85878);padding:24px 0;font-size:15px;">点击上方「+ 添加游戏」按钮添加 Impression 游戏</p>';
+    container.innerHTML = '';
     return;
   }
   container.innerHTML = otherData.impressionGames.map(g => {
@@ -795,19 +794,8 @@ function bindExportConfig() {
         if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${otherExportDefault.customTextFontSize}px`);
         updateSliderProgress(sliderCustomTextFont);
       }
-      document.querySelectorAll('input[name="other-export-size"]').forEach(r => {
-        r.checked = (r.value === otherExportDefault.exportSize);
-      });
     };
   }
-  // 导出尺寸
-  document.querySelectorAll('input[name="other-export-size"]').forEach(radio => {
-    if (radio.value === otherConfig.exportSize) radio.checked = true;
-    radio.onchange = () => {
-      otherConfig.exportSize = radio.value;
-      saveOtherConfig();
-    };
-  });
   // 导出按钮
   const exportBtn = document.getElementById('other-btn-export-image');
   if (exportBtn) {
