@@ -12,18 +12,23 @@ const OTHER_DATA_KEY = 'other-report-data';
 const OTHER_CONFIG_KEY = 'other-export-config';
 
 const GRADES = ['S', 'A', 'B', 'C', 'D', 'E'];
-const DEFAULT_DIMS = ['剧情', '画风', '音乐', '配音', '角色'];
+const DEFAULT_DIMS = ['剧情', '角色', '配音', '音乐', '画风'];
 
 const otherExportDefault = {
   bg: "#fff7f9",
   title: "#b33a3a",
-  subtitle: "#b85878",
-  gamename: "#000000",
+  defaultTextColor: "#b85878",
+  inputTextColor: "#000000",
+  heartColor: "#e895a8",
+  radarColor: "#e895a8",
+  cardBg: "#fff7f9",
+  labelColor: "#b85878",
   customtext: "#c98fac",
   customborder: "#eeeeee",
+  reporterName: "",
+  reporterColor: "#b33a3a",
+  imageBorderColor: "#eeeeee",
   border: "#f6a5b8",
-  boxbg: "#fff7f9",
-  labelcolor: "#b85878",
   normalQuality: false,
   exportSize: "long-810"
 };
@@ -84,7 +89,31 @@ function loadOtherConfig() {
   } catch (e) {
     otherConfig = {};
   }
+  // 旧字段迁移
+  if (otherConfig.boxbg !== undefined && otherConfig.cardBg === undefined) {
+    otherConfig.cardBg = otherConfig.boxbg;
+  }
+  if (otherConfig.labelcolor !== undefined && otherConfig.labelColor === undefined) {
+    otherConfig.labelColor = otherConfig.labelcolor;
+  }
+  if (otherConfig.subtitle !== undefined && otherConfig.title !== undefined) {
+    // 小标题色并入标题色，保留旧值作为默认内容文字色兜底
+    if (otherConfig.defaultTextColor === undefined) {
+      otherConfig.defaultTextColor = otherConfig.subtitle;
+    }
+  }
+  if (otherConfig.gamename !== undefined && otherConfig.inputTextColor === undefined) {
+    otherConfig.inputTextColor = otherConfig.gamename;
+  }
   otherConfig = { ...otherExportDefault, ...otherConfig };
+  // 三位十六进制色修复（input[type=color] 只接受六位）
+  ['customborder', 'cardBg', 'imageBorderColor'].forEach(key => {
+    if (otherConfig[key] && /^#[0-9a-fA-F]{3}$/.test(otherConfig[key])) {
+      otherConfig[key] = "#" + otherConfig[key][1].repeat(2)
+                       + otherConfig[key][2].repeat(2)
+                       + otherConfig[key][3].repeat(2);
+    }
+  });
 }
 
 function saveOtherConfig() {
@@ -121,16 +150,78 @@ function renderGradeGroup(field, value) {
 
 // 五维图
 function renderFiveDim(dims) {
-  return dims.map((dim, idx) => `
-    <div class="other-dim-row">
-      <input class="other-dim-name" type="text" value="${dim.name}" data-dim-idx="${idx}">
-      <div class="other-dim-levels">
-        ${[1, 2, 3, 4, 5].map(l =>
-          `<button class="other-dim-level ${dim.level >= l ? 'filled' : ''}" data-dim-idx="${idx}" data-level="${l}"></button>`
-        ).join("")}
+  const size = 210;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = 68;
+  const levels = 5;
+  // 从最上方顺时针：剧情(-90°) 角色(-18°) 配音(54°) 音乐(126°) 画风(198°)
+  const angles = [-90, -18, 54, 126, 198];
+
+  function pt(angleDeg, radius) {
+    const rad = angleDeg * Math.PI / 180;
+    return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+  }
+
+  // 同心五边形网格
+  let grid = '';
+  for (let l = 1; l <= levels; l++) {
+    const r = R * l / levels;
+    const pts = angles.map(a => pt(a, r).join(',')).join(' ');
+    grid += `<polygon points="${pts}" fill="none" stroke="#d8d8d8" stroke-width="1"/>`;
+  }
+  // 轴线
+  let axes = '';
+  angles.forEach(a => {
+    const [x, y] = pt(a, R);
+    axes += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#d8d8d8" stroke-width="1"/>`;
+  });
+  // 数据多边形
+  const dataPts = dims.map((d, i) => {
+    const r = R * (d.level || 0) / levels;
+    return pt(angles[i], r).join(',');
+  }).join(' ');
+  // 可点击等级圆点（透明命中区）
+  let hits = '';
+  dims.forEach((d, i) => {
+    for (let l = 1; l <= levels; l++) {
+      const [x, y] = pt(angles[i], R * l / levels);
+      const isActive = (d.level || 0) >= l;
+      hits += `<circle cx="${x}" cy="${y}" r="7" `
+            + `fill="${isActive ? 'var(--other-radar-color, #e895a8)' : '#ffffff'}" `
+            + `stroke="var(--other-radar-color, #e895a8)" stroke-width="1.5" `
+            + `class="radar-level-hit" data-dim-idx="${i}" data-level="${l}" `
+            + `style="cursor:pointer"/>`;
+    }
+  });
+  // 维度标签
+  let labels = '';
+  dims.forEach((d, i) => {
+    const [x, y] = pt(angles[i], R + 16);
+    labels += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" `
+             + `class="radar-label" font-size="13" font-weight="bold">${d.name}</text>`;
+  });
+  // 维度名编辑行（紧凑排列，保留可编辑性）
+  let nameEditors = '<div class="other-dim-name-row">';
+  dims.forEach((d, i) => {
+    nameEditors += `<input class="other-dim-name" type="text" value="${d.name}" data-dim-idx="${i}">`;
+  });
+  nameEditors += '</div>';
+
+  return `
+    <div class="other-radar-wrap">
+      <div class="other-radar-chart">
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+          ${grid}
+          ${axes}
+          <polygon points="${dataPts}" fill="var(--other-radar-color, #e895a8)" fill-opacity="0.25" stroke="var(--other-radar-color, #e895a8)" stroke-width="2" style="pointer-events:none"/>
+          ${hits}
+          ${labels}
+        </svg>
       </div>
+      ${nameEditors}
     </div>
-  `).join("");
+  `;
 }
 
 // 喜爱度爱心
@@ -239,7 +330,7 @@ function renderRepoModule() {
     return;
   }
   if (otherData.repoGames.length === 0) {
-    container.innerHTML = '<p class="empty-hint">尚未添加游戏</p>';
+    container.innerHTML = '';
     return;
   }
   container.innerHTML = otherData.repoGames.map(g => renderReroCard(g)).join("");
@@ -252,7 +343,7 @@ function renderImpressionModule() {
   const container = document.getElementById('other-impression-game-container');
   if (!container) return;
   if (otherData.impressionGames.length === 0) {
-    container.innerHTML = '<p class="empty-hint">尚未添加游戏</p>';
+    container.innerHTML = '';
     return;
   }
   container.innerHTML = otherData.impressionGames.map(g => {
@@ -273,13 +364,14 @@ function renderImpressionModule() {
 function openOtherGameModal(target) {
   otherAddTarget = target;
   const modal = document.getElementById('annual-global-game-modal');
-  if (!modal) return;
-  // annual.js 未将 openAnnualGlobalGameModal 挂载到 window，始终走兜底分支
+  if (!modal) {
+    console.warn("[other] 年度游戏弹窗不存在，无法打开");
+    return;
+  }
   modal.classList.add('active');
   document.body.classList.add('modal-lock');
   const searchInput = modal.querySelector('.annual-global-search-input');
   if (searchInput) searchInput.value = "";
-  // 重置筛选下拉框（复用 annual.js 的重置逻辑，避免上次筛选残留）
   modal.querySelectorAll(".annual-filter-writer, .annual-filter-art, .annual-filter-year, .annual-filter-publisher, .annual-filter-cn")
     .forEach(sel => { sel.value = ""; });
   const combinedList = getCombinedGameList();
@@ -287,10 +379,11 @@ function openOtherGameModal(target) {
   if (listEl && combinedList.length > 0) {
     renderOtherModalGameList(listEl, combinedList, "");
   }
-  // 填充筛选框（含 FD 游戏的编剧/画师/年份等）
   if (typeof fillFilterOptions === "function") {
-    try { fillFilterOptions(combinedList, modal); } catch (e) { /* 旧版不支持 scope，忽略 */ }
+    try { fillFilterOptions(combinedList, modal); } catch (e) { /* 忽略 */ }
   }
+  // 标记弹窗当前由 Other 模式接管，供搜索 input 委托判断
+  modal.dataset.otherModalActive = "1";
 }
 
 // 兜底：渲染弹窗游戏列表
@@ -352,6 +445,8 @@ function bindModalInterceptor() {
   const clearTarget = () => {
     otherAddTarget = null;
     document.body.classList.remove('modal-lock');
+    const m = document.getElementById('annual-global-game-modal');
+    if (m) delete m.dataset.otherModalActive;
   };
   const closeBtn = modal.querySelector('.annual-modal-close-btn');
   if (closeBtn) closeBtn.addEventListener('click', clearTarget);
@@ -435,18 +530,18 @@ function bindReroCardEvents() {
       return;
     }
 
-    // 五维等级（再次点击同一等级清零）
-    const dimLevel = e.target.closest('.other-dim-level');
-    if (dimLevel) {
-      const idx = Number(dimLevel.dataset.dimIdx);
-      const level = Number(dimLevel.dataset.level);
+    // 雷达图等级圆点点击（再次点击同一等级清零）
+    const radarHit = e.target.closest('.radar-level-hit');
+    if (radarHit) {
+      const idx = Number(radarHit.dataset.dimIdx);
+      const level = Number(radarHit.dataset.level);
       if (gameData.fiveDim && gameData.fiveDim[idx]) {
         gameData.fiveDim[idx].level = gameData.fiveDim[idx].level === level ? 0 : level;
         saveOtherData();
-        const row = dimLevel.closest('.other-dim-row');
-        row.querySelectorAll('.other-dim-level').forEach(btn => {
-          btn.classList.toggle('filled', Number(btn.dataset.level) <= gameData.fiveDim[idx].level);
-        });
+        const radarWrap = card.querySelector('.other-radar-wrap');
+        if (radarWrap) {
+          radarWrap.outerHTML = renderFiveDim(gameData.fiveDim);
+        }
       }
       return;
     }
@@ -575,19 +670,21 @@ function bindOtherScrollButtons() {
 // 导出配置
 function bindExportConfig() {
   const wrap = document.querySelector('.mode-wrap[data-mode="other"]');
-
   const colorMap = [
-    { id: 'other-color-bg',         key: 'bg',         cssVar: '--other-export-bg' },
-    { id: 'other-color-title',      key: 'title',      cssVar: '--other-export-title' },
-    { id: 'other-color-subtitle',   key: 'subtitle',   cssVar: '--other-export-subtitle' },
-    { id: 'other-color-gamename',   key: 'gamename',   cssVar: '--other-export-gamename' },
-    { id: 'other-color-customtext', key: 'customtext', cssVar: '--other-export-customtext' },
-    { id: 'other-color-customborder', key: 'customborder', cssVar: '--other-export-customborder' },
-    { id: 'other-color-boxbg',      key: 'boxbg',      cssVar: '--other-export-boxbg' },
-    { id: 'other-color-labelcolor', key: 'labelcolor', cssVar: '--other-export-labelcolor' },
-    { id: 'other-color-border',     key: 'border',     cssVar: '--other-export-border' }
+    { id: 'other-color-bg',              key: 'bg',              cssVar: '--other-export-bg' },
+    { id: 'other-color-title',           key: 'title',           cssVar: '--other-export-title' },
+    { id: 'other-color-default-text',    key: 'defaultTextColor',cssVar: '--other-default-text-color' },
+    { id: 'other-color-input-text',      key: 'inputTextColor',  cssVar: '--other-input-text-color' },
+    { id: 'other-color-heart',           key: 'heartColor',      cssVar: '--other-heart-color' },
+    { id: 'other-color-radar',           key: 'radarColor',      cssVar: '--other-radar-color' },
+    { id: 'other-color-card-bg',         key: 'cardBg',          cssVar: '--other-card-bg' },
+    { id: 'other-color-label',           key: 'labelColor',      cssVar: '--other-label-color' },
+    { id: 'other-color-customtext',      key: 'customtext',      cssVar: '--other-export-customtext' },
+    { id: 'other-color-customborder',    key: 'customborder',    cssVar: '--other-export-customborder' },
+    { id: 'other-color-reporter',        key: 'reporterColor',   cssVar: '--other-reporter-color' },
+    { id: 'other-color-image-border',    key: 'imageBorderColor',cssVar: '--other-image-border-color' },
+    { id: 'other-color-border',          key: 'border',          cssVar: '--other-export-border' }
   ];
-
   colorMap.forEach(item => {
     const dom = document.getElementById(item.id);
     if (!dom) return;
@@ -596,10 +693,22 @@ function bindExportConfig() {
     dom.oninput = () => {
       otherConfig[item.key] = dom.value;
       if (wrap) wrap.style.setProperty(item.cssVar, dom.value);
+      // 标题色同时控制小标题（模块 h2）
+      if (item.key === 'title' && wrap) {
+        wrap.style.setProperty('--other-export-subtitle', dom.value);
+      }
       saveOtherConfig();
     };
   });
-
+  // 填表人姓名
+  const reporterNameInput = document.getElementById('other-reporter-name');
+  if (reporterNameInput) {
+    reporterNameInput.value = otherConfig.reporterName || '';
+    reporterNameInput.oninput = () => {
+      otherConfig.reporterName = reporterNameInput.value;
+      saveOtherConfig();
+    };
+  }
   // 普通画质开关
   const normalQuality = document.getElementById('other-export-normal-quality');
   if (normalQuality) {
@@ -609,7 +718,6 @@ function bindExportConfig() {
       saveOtherConfig();
     };
   }
-
   // 恢复默认
   const resetBtn = document.getElementById('other-btn-reset-color');
   if (resetBtn) {
@@ -623,13 +731,14 @@ function bindExportConfig() {
           if (wrap) wrap.style.setProperty(item.cssVar, dom.value);
         }
       });
+      if (wrap) wrap.style.setProperty('--other-export-subtitle', otherConfig.title);
+      if (reporterNameInput) reporterNameInput.value = '';
       if (normalQuality) normalQuality.checked = false;
       document.querySelectorAll('input[name="other-export-size"]').forEach(r => {
         r.checked = (r.value === otherExportDefault.exportSize);
       });
     };
   }
-
   // 导出尺寸
   document.querySelectorAll('input[name="other-export-size"]').forEach(radio => {
     if (radio.value === otherConfig.exportSize) radio.checked = true;
@@ -638,7 +747,6 @@ function bindExportConfig() {
       saveOtherConfig();
     };
   });
-
   // 导出按钮
   const exportBtn = document.getElementById('other-btn-export-image');
   if (exportBtn) {
@@ -699,11 +807,38 @@ export function initOtherModule() {
   bindImpressionEvents();
   bindExportConfig();
   bindTextareaResize();
-  // +添加游戏按钮
-  const repoAddBtn = document.getElementById('other-repo-add-game-btn');
-  if (repoAddBtn) repoAddBtn.onclick = () => openOtherGameModal('repo');
-  const impAddBtn = document.getElementById('other-impression-add-game-btn');
-  if (impAddBtn) impAddBtn.onclick = () => openOtherGameModal('impression');
+  // +添加游戏按钮：使用 document 事件委托，避免时序或 ID 匹配问题导致无反应
+  if (!window._otherAddBtnBound) {
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('#other-repo-add-game-btn')) {
+        e.stopPropagation();
+        openOtherGameModal('repo');
+        return;
+      }
+      if (e.target.closest('#other-impression-add-game-btn')) {
+        e.stopPropagation();
+        openOtherGameModal('impression');
+        return;
+      }
+    });
+    window._otherAddBtnBound = true;
+  }
+  // 新增：Other 模式接管弹窗时，搜索框使用 Other 自己的渲染，避免 annual.js 覆盖
+  if (!window._otherModalSearchBound) {
+    document.addEventListener('input', function(e) {
+      const searchInput = e.target.closest('.annual-global-search-input');
+      if (!searchInput) return;
+      const modal = document.getElementById('annual-global-game-modal');
+      if (!modal || modal.dataset.otherModalActive !== "1") return;
+      if (!otherAddTarget) return;
+      e.stopPropagation();
+      const listEl = modal.querySelector('.annual-global-game-list');
+      if (listEl) {
+        renderOtherModalGameList(listEl, getCombinedGameList(), searchInput.value);
+      }
+    });
+    window._otherModalSearchBound = true;
+  }
 
   // 游戏模板就绪后渲染卡片；未就绪则轮询等待（最多 2 秒）
   function tryRender() {
