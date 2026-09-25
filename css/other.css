@@ -920,7 +920,7 @@
     }
 }
 
-/* 移动端放大拖拽热区（对齐 Annual 模式） */
+/* 移动端放大拖拽热区 */
 @media (max-width: 1200px) {
     .other-rero-textarea-wrap .resize-handle,
     .other-repo-text-card-body .resize-handle {
