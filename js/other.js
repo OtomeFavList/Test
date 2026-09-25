@@ -254,7 +254,7 @@ function renderReroCard(gameData) {
       <div class="other-rero-fields">
         <div class="other-rero-field-row">
           <span class="other-rero-field-label">时长</span>
-          <input class="other-rero-field-input" type="text" data-field="duration" value="${gameData.duration || ''}" placeholder="小时">
+          <input class="other-rero-field-input" type="text" data-field="duration" value="${gameData.duration || ''}" placeholder="游玩时长">
           <div class="other-rero-checkbox-wrap">
             <input type="checkbox" id="other-completed-${gameData.gameId}" data-field="completed" ${gameData.completed ? 'checked' : ''}>
             <label for="other-completed-${gameData.gameId}">全通</label>
@@ -262,11 +262,11 @@ function renderReroCard(gameData) {
         </div>
         <div class="other-rero-field-row">
           <span class="other-rero-field-label">开始日期</span>
-          <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY-MM-DD">
+          <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY.MM.DD">
         </div>
         <div class="other-rero-field-row">
           <span class="other-rero-field-label">结束日期</span>
-          <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY-MM-DD">
+          <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY.MM.DD">
         </div>
         <div class="other-rero-dual-grade-row">
           <div class="other-rero-field-row">
