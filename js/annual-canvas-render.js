@@ -599,6 +599,8 @@ function hasOtherContent(annualData) {
   const customCharValid = (o.customCharCards || []).some(c => c && (c.charId || (c.label || '').trim()));
   if (customCharValid) return true;  // 新增
   if ((o.favLine || '').trim()) return true;
+  if ((o.favPlotLine || '').trim()) return true;      // 新增：最喜欢的剧情线
+  if ((o.favRomanceLine || '').trim()) return true;   // 新增：最喜欢的感情线
   if ((o.favMusic || '').trim()) return true;
   if ((o.favHe || '').trim()) return true;
   if ((o.favBe || '').trim()) return true;
@@ -628,6 +630,8 @@ function getOtherCards(annualData) {
     }
   });
   if ((o.favLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的台词', text: o.favLine });
+  if ((o.favPlotLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的剧情线', text: o.favPlotLine });       // 新增
+  if ((o.favRomanceLine || '').trim()) cards.push({ type: 'text', title: '最喜欢的感情线', text: o.favRomanceLine }); // 新增
   if ((o.favMusic || '').trim()) cards.push({ type: 'text', title: '最喜欢的OP/ED/BGM', text: o.favMusic });
   if ((o.favHe || '').trim()) cards.push({ type: 'text', title: '最喜欢的HE', text: o.favHe });
   if ((o.favBe || '').trim()) cards.push({ type: 'text', title: '最喜欢的BE', text: o.favBe });
