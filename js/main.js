@@ -953,38 +953,36 @@ export function sortStaffByLang(list) {
 
 // 筛选下拉菜单填充函数
 /* 修复：筛选下拉填充：保留 HTML 原生顶部 placeholder option，只追加数据选项，不再覆盖 HTML 提示文字
- * 排序规则：中文 A-Z →英文 A-Z →日文五十音；发售年份数字降序 */
-export function fillFilterOptions(gameList) {
+ * 排序规则：中文 A-Z →英文 A-Z →日文五十音；发售年份数字降序
+ * 新增：可选 scope 参数，传入容器元素或选择器字符串时在该容器内按 class 查询 select，
+ *       供 Annual 弹窗等非 FavList 场景复用；不传时保持原有 getElementById 行为 */
+export function fillFilterOptions(gameList, scope) {
     if (!Array.isArray(gameList) || gameList.length === 0) return;
-
+    // scope 解析：传入字符串当选择器查询，传入元素直接使用，不传则为 null（走 getElementById 原路径）
+    const root = scope ? (typeof scope === 'string' ? document.querySelector(scope) : scope) : null;
     const yearSet = new Set(),
         pubSet = new Set(),
         cnSet = new Set();
     let writerObjList = [];
     let artObjList = [];
-
     gameList.forEach(g => {
         if (!g) return;
         yearSet.add(g.year);
-
         if (Array.isArray(g.publisher)) {
             g.publisher.forEach(name => name && pubSet.add(name));
         }
         cnSet.add(g.cnStudio);
-
         if (Array.isArray(g.writer)) {
             g.writer.forEach(obj => {
                 if (obj?.name) writerObjList.push({ name: obj.name, lang: obj.lang });
             });
         }
-
         if (Array.isArray(g.art)) {
             g.art.forEach(obj => {
                 if (obj?.name) artObjList.push({ name: obj.name, lang: obj.lang });
             });
         }
     });
-
     // 新增：人员对象数组按 name 去重，消除下拉重复项
     function uniqueStaffByName(list) {
         const seen = new Set();
@@ -995,18 +993,16 @@ export function fillFilterOptions(gameList) {
             return true;
         });
     }
-
     const writerSortedObjs = sortStaffByLang(uniqueStaffByName(writerObjList));
     const artSortedObjs = sortStaffByLang(uniqueStaffByName(artObjList));
     const writerSorted = writerSortedObjs.map(o => o.name);
     const artSorted = artSortedObjs.map(o => o.name);
-
     const pubSorted = sortFilterOptionList([...pubSet]);
     const cnSorted = sortFilterOptionList([...cnSet]);
     const yearSorted = [...yearSet].sort((a, b) => Number(a) - Number(b));
-
-    const fillSelect = (id, dataArr) => {
-        const sel = document.getElementById(id);
+    // 修改：fillSelect 同时接收 FavList 的 id 和 Annual 的 class，根据 root 是否存在决定查询方式
+    const fillSelect = (favId, annualCls, dataArr) => {
+        const sel = root ? root.querySelector(annualCls) : document.getElementById(favId);
         if (!sel) return;
         const firstOpt = sel.querySelector('option');
         sel.innerHTML = '';
@@ -1018,12 +1014,11 @@ export function fillFilterOptions(gameList) {
             sel.appendChild(opt);
         });
     };
-
-    fillSelect("filter-writer", writerSorted);
-    fillSelect("filter-art", artSorted);
-    fillSelect("filter-year", yearSorted);
-    fillSelect("filter-publisher", pubSorted);
-    fillSelect("filter-cn", cnSorted);
+    fillSelect("filter-writer", ".annual-filter-writer", writerSorted);
+    fillSelect("filter-art", ".annual-filter-art", artSorted);
+    fillSelect("filter-year", ".annual-filter-year", yearSorted);
+    fillSelect("filter-publisher", ".annual-filter-publisher", pubSorted);
+    fillSelect("filter-cn", ".annual-filter-cn", cnSorted);
 }
 
 // HTML 模板渲染函数
