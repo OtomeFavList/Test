@@ -170,6 +170,7 @@
 }
 .other-rero-fields-and-radar {
     flex: 1;
+    min-width: 0;
     display: flex;
     gap: 16px;
     align-items: center;
@@ -279,19 +280,6 @@
     align-items: center;
 }
 
-/* 总评五维图组合行 */
-.other-rero-rating-combo {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-}
-.other-rero-rating-left {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    flex-shrink: 0;
-}
 .other-rero-rating-left-only {
     display: flex;
     flex-direction: column;
@@ -299,6 +287,7 @@
 }
 .other-rero-five-dim {
     flex-shrink: 0;
+    min-width: 240px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -318,10 +307,6 @@
 .other-radar-chart svg {
     display: block;
     overflow: visible;
-}
-.other-radar-chart .radar-label {
-    fill: var(--other-default-text-color, #b85878);
-    font-family: "Noto Sans SC", sans-serif;
 }
 .radar-label-input {
     position: absolute;
@@ -398,191 +383,6 @@
     cursor: ns-resize;
     opacity: 0.5;
     background: linear-gradient(135deg, transparent 50%, #999 50%, #999 60%, transparent 60%, transparent 70%, #999 70%, #999 80%, transparent 80%);
-}
-
-/* 角色标签卡片组 */
-.other-rero-section-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: var(--other-export-subtitle, #b85878);
-    margin: 18px 0 10px;
-    padding-left: 10px;
-    border-left: 4px solid var(--other-export-subtitle, #b85878);
-}
-.other-char-tag-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-}
-.other-char-tag-card {
-    background: var(--other-card-bg, #fff7f9);
-    border: 1px solid var(--other-image-border-color, #eee);
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    position: relative;
-}
-.other-char-tag-label {
-    text-align: center;
-    font-size: 14px;
-    font-weight: bold;
-    color: var(--other-label-color, #b85878);
-}
-.other-char-tag-body {
-    flex: 1;
-    min-height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-.other-char-tag-body .char-card-item {
-    width: 90px;
-    min-height: 120px;
-}
-.other-char-tag-body .char-card-item .char-card-img-box {
-    width: 100%;
-}
-.other-char-tag-add-btn {
-    width: 28px;
-    height: 28px;
-    border: 1px solid #b33a3a;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 20px;
-    color: #b33a3a;
-    cursor: pointer;
-    padding: 0 !important;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.other-char-tag-add-btn:hover {
-    background: #992e2e !important;
-    color: #fff !important;
-}
-.other-char-tag-remove {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
-    border: 1px solid #b33a3a;
-    border-radius: 50%;
-    background: #fff;
-    color: #b33a3a;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    z-index: 10;
-}
-.other-char-tag-remove:hover {
-    background: #992e2e;
-    color: #fff;
-}
-
-/* 自定义角色卡片标签可编辑 */
-.other-char-tag-card.other-custom-char-card .other-char-tag-label {
-    width: 100%;
-    border: 1px dashed #ddd;
-    border-radius: 6px;
-    padding: 3px 6px;
-    box-sizing: border-box;
-    background: #fff;
-}
-.other-char-tag-card.other-custom-char-card .other-char-tag-label:focus {
-    outline: none;
-    border-color: #f6a5b8;
-}
-
-/* 文本卡片组 */
-.other-text-card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 12px;
-}
-.other-text-card {
-    background: var(--other-card-bg, #fff7f9);
-    border: 1px solid var(--other-image-border-color, #eee);
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    position: relative;
-}
-.other-text-card-title {
-    text-align: center;
-    font-size: 14px;
-    font-weight: bold;
-    color: var(--other-label-color, #b85878);
-}
-.other-text-card-body {
-    position: relative;
-    width: 100%;
-}
-.other-text-card-body textarea {
-    width: 100%;
-    min-height: 80px;
-    padding: 8px 10px 26px 10px;
-    border: 1px solid var(--other-export-customborder, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
-    font-size: 14px;
-    color: var(--other-export-customtext, #c98fac);
-    resize: none !important;
-    overflow: auto;
-    box-sizing: border-box;
-}
-.other-text-card-body textarea:focus {
-    outline: none;
-    border-color: #f6a5b8;
-}
-.other-text-card-remove {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
-    border: 1px solid #b33a3a;
-    border-radius: 50%;
-    background: #fff;
-    color: #b33a3a;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    z-index: 10;
-}
-.other-text-card-remove:hover {
-    background: #992e2e;
-    color: #fff;
-}
-
-/* 自定义文本卡片标签可编辑 */
-.other-text-card.other-custom-text-card .other-text-card-title {
-    width: 100%;
-    border: 1px dashed #ddd;
-    border-radius: 6px;
-    padding: 3px 6px;
-    box-sizing: border-box;
-    background: #fff;
-}
-.other-text-card.other-custom-text-card .other-text-card-title:focus {
-    outline: none;
-    border-color: #f6a5b8;
 }
 
 /* 角色标签卡片组（Repo 用） */
@@ -922,7 +722,12 @@
 .snapshot-container.export-snapshot .other-text-card-remove,
 .snapshot-container.export-snapshot .other-grade-btn,
 .snapshot-container.export-snapshot .other-rero-impression-wrap .resize-handle,
-.snapshot-container.export-snapshot .other-text-card-body .resize-handle {
+.snapshot-container.export-snapshot .other-text-card-body .resize-handle,
+.snapshot-container.export-snapshot .other-rero-textarea-wrap .resize-handle,
+.snapshot-container.export-snapshot .other-repo-text-card-body .resize-handle,
+.snapshot-container.export-snapshot .other-repo-card-add,
+.snapshot-container.export-snapshot .other-repo-card-clear,
+.snapshot-container.export-snapshot .other-repo-card-remove {
     display: none !important;
 }
 /* 快照模式下 SABCDE 已选等级保留显示 */
@@ -961,18 +766,6 @@
     .other-radar-chart svg {
         width: 180px;
         height: 180px;
-    }
-    .other-dim-name {
-        width: 44px;
-        font-size: 10px;
-    }
-    .other-char-tag-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 10px;
-    }
-    .other-text-card-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 10px;
     }
     .other-card-fold-btn {
         width: 26px;
@@ -1034,8 +827,5 @@
 @media (min-width: 769px) and (max-width: 1200px) {
     .other-rero-cover-wrap {
         width: 130px;
-    }
-    .other-char-tag-grid {
-        grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
     }
 }
