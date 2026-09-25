@@ -1396,7 +1396,21 @@ z-index: -999;
                 }
             }
             await safeInitAnnual();
-
+            // 初始化 Other 模块
+            async function safeInitOther(){
+                let retry = 0;
+                while(typeof window.initOtherModule !== "function" && retry < 20){
+                    await new Promise(r=>setTimeout(r,50));
+                    retry++;
+                }
+                if(typeof window.initOtherModule === "function"){
+                    window.initOtherModule();
+                    console.log("✅Other 模块已初始化");
+                }else{
+                    console.warn("⚠️Other 模块初始化失败，window.initOtherModule仍然未定义");
+                }
+            }
+            await safeInitOther();
             // 清掉进度回调，防止内存残留
             window.onGameLoadProgress = null;
         };
@@ -1523,6 +1537,8 @@ z-index: -999;
 
 <!-- 新增：年度报告脚本 -->
 <script type="module" src="./js/annual.js"></script>
+<!-- 新增：Other 模式脚本 -->
+<script type="module" src="./js/other.js"></script>
 
 <!-- 修改：年度报告全局游戏选择弹窗，body 直接子节点 -->
 <div id="annual-global-game-modal">
