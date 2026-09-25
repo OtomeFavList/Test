@@ -669,16 +669,15 @@ function bindOtherScrollButtons() {
   });
 }
 
-// 滑块进度条更新（复用 Annual 同款逻辑，进度变量名改为 --other-slider-progress）
-function updateOtherSliderProgress(sliderEl) {
-  if (!sliderEl) return;
-  const min = Number(sliderEl.min) || 14;
-  const max = Number(sliderEl.max) || 42;
+// 滑块进度条更新（与 Annual 模式完全同款逻辑；CSS 进度变量因选择器作用域不同使用 --other-slider-progress）
+function updateSliderProgress(sliderEl) {
+  const min = Number(sliderEl.min);
+  const max = Number(sliderEl.max);
   const val = Number(sliderEl.value);
   const percent = ((val - min) / (max - min)) * 100;
   const rowWrap = sliderEl.closest('.font-size-set-row');
   if (rowWrap) {
-    rowWrap.style.setProperty('--other-slider-progress', percent + '%');
+    rowWrap.style.setProperty('--other-slider-progress', `${percent}%`);
   }
 }
 
@@ -715,35 +714,37 @@ function bindExportConfig() {
       saveOtherConfig();
     };
   });
-  // 字号滑块：填写内容字号（作用于 input + 优点/缺点/攻略顺序/好感顺序 textarea）
-  const inputFontSlider = document.getElementById('other-slider-input-font');
-  const inputFontValue = document.getElementById('other-input-font-value');
-  if (inputFontSlider) {
-    inputFontSlider.value = otherConfig.inputFontSize || otherExportDefault.inputFontSize;
-    if (inputFontValue) inputFontValue.textContent = inputFontSlider.value + 'px';
-    if (wrap) wrap.style.setProperty('--other-input-font-size', inputFontSlider.value + 'px');
-    updateOtherSliderProgress(inputFontSlider);
-    inputFontSlider.oninput = () => {
-      otherConfig.inputFontSize = Number(inputFontSlider.value);
-      if (inputFontValue) inputFontValue.textContent = inputFontSlider.value + 'px';
-      if (wrap) wrap.style.setProperty('--other-input-font-size', inputFontSlider.value + 'px');
-      updateOtherSliderProgress(inputFontSlider);
+  // 字号滑块：填写内容字号（与 Annual 同款绑定逻辑；作用于时长/日期 input 及 优点/缺点/攻略顺序/好感顺序 textarea）
+  const sliderInputFont = document.getElementById('other-slider-input-font');
+  const inputFontValueDisplay = document.getElementById('other-input-font-value');
+  if (sliderInputFont && inputFontValueDisplay) {
+    sliderInputFont.value = otherConfig.inputFontSize;
+    inputFontValueDisplay.textContent = `${otherConfig.inputFontSize}px`;
+    if (wrap) wrap.style.setProperty('--other-input-font-size', `${otherConfig.inputFontSize}px`);
+    updateSliderProgress(sliderInputFont);
+    sliderInputFont.oninput = () => {
+      const val = Number(sliderInputFont.value);
+      otherConfig.inputFontSize = val;
+      inputFontValueDisplay.textContent = `${val}px`;
+      if (wrap) wrap.style.setProperty('--other-input-font-size', `${val}px`);
+      updateSliderProgress(sliderInputFont);
       saveOtherConfig();
     };
   }
-  // 字号滑块：自定义文本字号（作用于感想 textarea）
-  const customTextFontSlider = document.getElementById('other-slider-custom-text-font');
-  const customTextFontValue = document.getElementById('other-custom-text-font-value');
-  if (customTextFontSlider) {
-    customTextFontSlider.value = otherConfig.customTextFontSize || otherExportDefault.customTextFontSize;
-    if (customTextFontValue) customTextFontValue.textContent = customTextFontSlider.value + 'px';
-    if (wrap) wrap.style.setProperty('--other-custom-text-font-size', customTextFontSlider.value + 'px');
-    updateOtherSliderProgress(customTextFontSlider);
-    customTextFontSlider.oninput = () => {
-      otherConfig.customTextFontSize = Number(customTextFontSlider.value);
-      if (customTextFontValue) customTextFontValue.textContent = customTextFontSlider.value + 'px';
-      if (wrap) wrap.style.setProperty('--other-custom-text-font-size', customTextFontSlider.value + 'px');
-      updateOtherSliderProgress(customTextFontSlider);
+  // 字号滑块：自定义文本字号（与 Annual 同款绑定逻辑；作用于感想 textarea）
+  const sliderCustomTextFont = document.getElementById('other-slider-custom-text-font');
+  const customTextFontValueDisplay = document.getElementById('other-custom-text-font-value');
+  if (sliderCustomTextFont && customTextFontValueDisplay) {
+    sliderCustomTextFont.value = otherConfig.customTextFontSize;
+    customTextFontValueDisplay.textContent = `${otherConfig.customTextFontSize}px`;
+    if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${otherConfig.customTextFontSize}px`);
+    updateSliderProgress(sliderCustomTextFont);
+    sliderCustomTextFont.oninput = () => {
+      const val = Number(sliderCustomTextFont.value);
+      otherConfig.customTextFontSize = val;
+      customTextFontValueDisplay.textContent = `${val}px`;
+      if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${val}px`);
+      updateSliderProgress(sliderCustomTextFont);
       saveOtherConfig();
     };
   }
@@ -781,18 +782,18 @@ function bindExportConfig() {
       if (wrap) wrap.style.setProperty('--other-export-subtitle', otherConfig.title);
       if (reporterNameInput) reporterNameInput.value = '';
       if (normalQuality) normalQuality.checked = false;
-      // 重置字号滑块到默认值
-      if (inputFontSlider) {
-        inputFontSlider.value = otherExportDefault.inputFontSize;
-        if (inputFontValue) inputFontValue.textContent = otherExportDefault.inputFontSize + 'px';
-        if (wrap) wrap.style.setProperty('--other-input-font-size', otherExportDefault.inputFontSize + 'px');
-        updateOtherSliderProgress(inputFontSlider);
+      // 重置字号滑块到默认值（与 Annual 同款重置逻辑）
+      if (sliderInputFont && inputFontValueDisplay) {
+        sliderInputFont.value = otherExportDefault.inputFontSize;
+        inputFontValueDisplay.textContent = `${otherExportDefault.inputFontSize}px`;
+        if (wrap) wrap.style.setProperty('--other-input-font-size', `${otherExportDefault.inputFontSize}px`);
+        updateSliderProgress(sliderInputFont);
       }
-      if (customTextFontSlider) {
-        customTextFontSlider.value = otherExportDefault.customTextFontSize;
-        if (customTextFontValue) customTextFontValue.textContent = otherExportDefault.customTextFontSize + 'px';
-        if (wrap) wrap.style.setProperty('--other-custom-text-font-size', otherExportDefault.customTextFontSize + 'px');
-        updateOtherSliderProgress(customTextFontSlider);
+      if (sliderCustomTextFont && customTextFontValueDisplay) {
+        sliderCustomTextFont.value = otherExportDefault.customTextFontSize;
+        customTextFontValueDisplay.textContent = `${otherExportDefault.customTextFontSize}px`;
+        if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${otherExportDefault.customTextFontSize}px`);
+        updateSliderProgress(sliderCustomTextFont);
       }
       document.querySelectorAll('input[name="other-export-size"]').forEach(r => {
         r.checked = (r.value === otherExportDefault.exportSize);
