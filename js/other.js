@@ -36,6 +36,31 @@ let otherData = null;
 let otherConfig = null;
 let otherAddTarget = null; // "repo" | "impression" | null
 
+// 新增：合并本篇 + FD 游戏列表
+function isGameTemplateReady() {
+  const core = window.Core;
+  if (core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true) {
+    return true;
+  }
+  return Array.isArray(window.__gameTemplateList) &&
+         window.__gameTemplateList.length > 0 &&
+         window.__gameTemplateReady === true;
+}
+
+function getCombinedGameList() {
+  let baseList = [];
+  const core = window.Core;
+  if (core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true) {
+    baseList = core.gameTemplateList;
+  } else if (Array.isArray(window.__gameTemplateList) && window.__gameTemplateList.length > 0) {
+    baseList = window.__gameTemplateList;
+  } else if (Array.isArray(gameTemplateList)) {
+    baseList = gameTemplateList;
+  }
+  const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
+  return [...baseList, ...fdList];
+}
+
 // 数据持久化
 function loadOtherData() {
   try {
@@ -117,7 +142,7 @@ function renderHearts(love) {
 
 // Rero 卡片
 function renderReroCard(gameData) {
-  const gameInfo = gameTemplateList.find(g => g.id === gameData.gameId);
+  const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
   if (!gameInfo) return "";
 
   const coverSrc = gameInfo.cover || gameInfo.image || gameInfo.img || "";
@@ -209,6 +234,10 @@ function renderReroCard(gameData) {
 function renderRepoModule() {
   const container = document.getElementById('other-repo-game-container');
   if (!container) return;
+  if (!isGameTemplateReady()) {
+    container.innerHTML = '<p class="empty-hint">游戏数据加载中，请稍候…</p>';
+    return;
+  }
   if (otherData.repoGames.length === 0) {
     container.innerHTML = '<p class="empty-hint">尚未添加游戏</p>';
     return;
@@ -227,7 +256,7 @@ function renderImpressionModule() {
     return;
   }
   container.innerHTML = otherData.impressionGames.map(g => {
-    const gameInfo = gameTemplateList.find(x => x.id === g.gameId);
+    const gameInfo = getCombinedGameList().find(x => x.id === g.gameId);
     const name = gameInfo ? gameInfo.name : g.gameId;
     return `
     <div class="other-impression-card" data-game-id="${g.gameId}">
@@ -245,26 +274,22 @@ function openOtherGameModal(target) {
   otherAddTarget = target;
   const modal = document.getElementById('annual-global-game-modal');
   if (!modal) return;
-
-  if (typeof window.openAnnualGlobalGameModal === "function") {
-    window.openAnnualGlobalGameModal("other-" + target);
-    return;
-  }
-
+  // annual.js 未将 openAnnualGlobalGameModal 挂载到 window，始终走兜底分支
   modal.classList.add('active');
   document.body.classList.add('modal-lock');
-
   const searchInput = modal.querySelector('.annual-global-search-input');
   if (searchInput) searchInput.value = "";
-
+  // 重置筛选下拉框（复用 annual.js 的重置逻辑，避免上次筛选残留）
+  modal.querySelectorAll(".annual-filter-writer, .annual-filter-art, .annual-filter-year, .annual-filter-publisher, .annual-filter-cn")
+    .forEach(sel => { sel.value = ""; });
+  const combinedList = getCombinedGameList();
   const listEl = modal.querySelector('.annual-global-game-list');
-  if (listEl && Array.isArray(gameTemplateList)) {
-    renderOtherModalGameList(listEl, gameTemplateList, "");
+  if (listEl && combinedList.length > 0) {
+    renderOtherModalGameList(listEl, combinedList, "");
   }
-
-  // 填充筛选框（fillFilterOptions 若支持 scope 参数则生效）
+  // 填充筛选框（含 FD 游戏的编剧/画师/年份等）
   if (typeof fillFilterOptions === "function") {
-    try { fillFilterOptions(gameTemplateList, modal); } catch (e) { /* 旧版不支持 scope，忽略 */ }
+    try { fillFilterOptions(combinedList, modal); } catch (e) { /* 旧版不支持 scope，忽略 */ }
   }
 }
 
@@ -274,7 +299,9 @@ function renderOtherModalGameList(listEl, gameList, keyword) {
   const filtered = gameList.filter(g =>
     !kw || (g.name && g.name.toLowerCase().includes(kw))
   );
-  listEl.innerHTML = filtered.map((game, idx) =>
+  // 对齐 annual.js：按名称中英日排序
+  const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+  listEl.innerHTML = sorted.map((game, idx) =>
     `<div class="game-option-item" data-game-id="${game.id}">${renderGameSelectItem(game, idx)}</div>`
   ).join("");
 }
@@ -321,8 +348,11 @@ function bindModalInterceptor() {
     otherAddTarget = null;
   }, true);
 
-  // 关闭按钮 / 点击遮罩：清除 Other 标记
-  const clearTarget = () => { otherAddTarget = null; };
+  // 关闭按钮 / 点击遮罩：清除 Other 标记 + 解除页面滚动锁定
+  const clearTarget = () => {
+    otherAddTarget = null;
+    document.body.classList.remove('modal-lock');
+  };
   const closeBtn = modal.querySelector('.annual-modal-close-btn');
   if (closeBtn) closeBtn.addEventListener('click', clearTarget);
   modal.addEventListener('click', function (e) {
@@ -362,7 +392,7 @@ function bindReroCardEvents() {
     }
   });
 
-  // click 事件：评级/爱心/五维/全通/删除
+  // click 事件：评级/爱心/五维/删除
   repoContainer.addEventListener('click', function (e) {
     const card = e.target.closest('.other-rero-card');
     if (!card) return;
@@ -375,14 +405,6 @@ function bindReroCardEvents() {
       otherData.repoGames = otherData.repoGames.filter(g => g.gameId !== gameId);
       saveOtherData();
       renderRepoModule();
-      return;
-    }
-
-    // 全通勾选
-    const completedBox = e.target.closest('[data-field="completed"]');
-    if (completedBox) {
-      gameData.completed = completedBox.checked;
-      saveOtherData();
       return;
     }
 
@@ -427,6 +449,19 @@ function bindReroCardEvents() {
         });
       }
       return;
+    }
+  });
+
+  // change 事件：全通勾选（键盘/点击均触发，比 click 更可靠）
+  repoContainer.addEventListener('change', function (e) {
+    const card = e.target.closest('.other-rero-card');
+    if (!card) return;
+    const gameId = card.dataset.gameId;
+    const gameData = otherData.repoGames.find(g => g.gameId === gameId);
+    if (!gameData) return;
+    if (e.target.dataset.field === 'completed') {
+      gameData.completed = e.target.checked;
+      saveOtherData();
     }
   });
 }
@@ -656,10 +691,7 @@ function bindTextareaResize() {
 export function initOtherModule() {
   loadOtherData();
   loadOtherConfig();
-
-  renderRepoModule();
-  renderImpressionModule();
-
+  // 先绑定所有事件（不依赖游戏数据）
   bindFoldButtons();
   bindOtherScrollButtons();
   bindModalInterceptor();
@@ -667,15 +699,32 @@ export function initOtherModule() {
   bindImpressionEvents();
   bindExportConfig();
   bindTextareaResize();
-
   // +添加游戏按钮
   const repoAddBtn = document.getElementById('other-repo-add-game-btn');
   if (repoAddBtn) repoAddBtn.onclick = () => openOtherGameModal('repo');
-
   const impAddBtn = document.getElementById('other-impression-add-game-btn');
   if (impAddBtn) impAddBtn.onclick = () => openOtherGameModal('impression');
 
-  console.log("✅Other 模块已初始化");
+  // 游戏模板就绪后渲染卡片；未就绪则轮询等待（最多 2 秒）
+  function tryRender() {
+    if (isGameTemplateReady()) {
+      renderRepoModule();
+      renderImpressionModule();
+      console.log("✅Other 模块已初始化");
+    } else {
+      let pollCount = 0;
+      const pollTimer = setInterval(() => {
+        pollCount++;
+        if (isGameTemplateReady() || pollCount >= 40) {
+          clearInterval(pollTimer);
+          renderRepoModule();
+          renderImpressionModule();
+          console.log("✅Other 模块已初始化");
+        }
+      }, 50);
+    }
+  }
+  tryRender();
 }
 
 window.initOtherModule = initOtherModule;
