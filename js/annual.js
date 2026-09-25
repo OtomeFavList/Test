@@ -2,7 +2,7 @@
 // 存储 key: annual-report-data，与喜好表数据隔离
 
 // 修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加 window 全局变量兜底
-import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide, switchCharImageWithLoading } from '/js/main.js';
+import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide, switchCharImageWithLoading, fillFilterOptions } from '/js/main.js';
 import { renderAllAnnualModules } from './annual-canvas-render.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
@@ -335,37 +335,6 @@ function getAnnualModalFilters(modalId) {
         publisher: modal.querySelector(".annual-filter-publisher")?.value || "",
         cn:        modal.querySelector(".annual-filter-cn")?.value || ""
     };
-}
-
-// 用游戏模板数据填充指定弹窗的筛选下拉框
-function populateAnnualFilterSelects(modalId, gameList) {
-    const modal = document.getElementById(modalId);
-    if (!modal || !Array.isArray(gameList)) return;
-    const writers = new Set();
-    const arts = new Set();
-    const years = new Set();
-    const publishers = new Set();
-    const cns = new Set();
-    gameList.forEach(g => {
-        if (!g) return;
-        if (Array.isArray(g.writer)) g.writer.forEach(w => { if (w?.name) writers.add(w.name); });
-        if (Array.isArray(g.art)) g.art.forEach(a => { if (a?.name) arts.add(a.name); });
-        if (g.year) years.add(String(g.year));
-        if (Array.isArray(g.publisher)) g.publisher.forEach(p => { if (p) publishers.add(p); });
-        if (g.cnStudio) cns.add(g.cnStudio);
-    });
-    const fillSelect = (selector, placeholder, set) => {
-        const sel = modal.querySelector(selector);
-        if (!sel) return;
-        let html = `<option value="">${placeholder}</option>`;
-        [...set].sort().forEach(v => { html += `<option value="${v}">${v}</option>`; });
-        sel.innerHTML = html;
-    };
-    fillSelect(".annual-filter-writer", "筛选编剧", writers);
-    fillSelect(".annual-filter-art", "筛选画师", arts);
-    fillSelect(".annual-filter-year", "筛选发售年份", years);
-    fillSelect(".annual-filter-publisher", "筛选开发厂商", publishers);
-    fillSelect(".annual-filter-cn", "筛选汉化厂商", cns);
 }
 
 // 重置指定弹窗的所有筛选下拉框为默认值
@@ -1161,8 +1130,8 @@ function openAnnualGlobalCharModal(targetIndex, context){
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
-    // 新增：填充并重置筛选下拉框（角色弹窗仅普通游戏）
-    populateAnnualFilterSelects("annual-global-char-modal", getGameTemplateState_BaseOnly().list);
+    // 新增：填充并重置筛选下拉框
+    fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
     resetAnnualFilterSelects("annual-global-char-modal");
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     // 重置开关 DOM 勾选，对齐 HTML 真实 id
@@ -1219,8 +1188,8 @@ function openAnnualGlobalGameModal(targetIndex, context){
     const searchInput = modal.querySelector(".annual-global-search-input");
     const listWrap = modal.querySelector(".annual-global-game-list");
     searchInput.value = "";
-    // 新增：填充并重置筛选下拉框（游戏弹窗含 FD 游戏）
-    populateAnnualFilterSelects("annual-global-game-modal", getGameTemplateState_WithFD().list);
+    // 新增：填充并重置筛选下拉框
+    fillFilterOptions(getGameTemplateState_WithFD().list, modal);
     resetAnnualFilterSelects("annual-global-game-modal");
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     renderGameList(listWrap, "");
@@ -3101,8 +3070,8 @@ function openAnnualGlobalCpModal(targetIndex, context){
     switchCpModalView("gameList");
     const searchInput = modal.querySelector(".annual-global-cp-search-input");
     searchInput.value = "";
-    // 新增：填充并重置筛选下拉框（CP 弹窗仅普通游戏）
-    populateAnnualFilterSelects("annual-global-cp-modal", getGameTemplateState_BaseOnly().list);
+    // 新增：填充并重置筛选下拉框
+    fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
     resetAnnualFilterSelects("annual-global-cp-modal");
     // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
