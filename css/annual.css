@@ -182,7 +182,7 @@
 /* 新增：游戏弹窗搜索框外层固定容器，不参与滚动 */
 #annual-global-game-modal .annual-modal-search-bar-wrap {
     flex-shrink: 0;
-    padding: 0 12px 8px 12px;
+    padding: 0 20px 8px 20px;
 }
 #annual-global-game-modal .annual-modal-scroll-wrap {
     flex: 1;
@@ -231,11 +231,11 @@
 
 /* input 和列表容器，补回原来的 padding */
 .annual-global-search-input {
-    width:calc(100% - 40px);
-    margin:0 20px 0 20px; /* 删除底部 margin，交给外层 search-bar-wrap */
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
+    width:100%;
+    margin:0 0 10px 0;
+    padding:10px;
+    border:1px solid #eee;
+    border-radius:8px;
     background:#fcfcfc;
     font-size:15px;
     box-sizing: border-box;
@@ -541,9 +541,13 @@
     /* 修改：移动端游戏弹窗 input 边距由外层 scroll-wrap 控制 */
     .annual-global-search-input {
         width: 100%;
-        margin: 0;
-        padding: 11px 14px; /* 高度和角色弹窗一致 */
+        margin: 0 0 10px 0;
+        padding: 10px;
         font-size: 14px;
+    }
+    /* 新增：移动端游戏弹窗筛选框外层去掉左右 padding，由 scroll-wrap 统一控制 */
+    #annual-global-game-modal .annual-modal-search-bar-wrap {
+        padding: 0 0 8px 0;
     }
     /* 复用 main.css 手机端 game-option-item 布局 */
     .annual-global-game-list .game-option-item {
@@ -620,18 +624,26 @@
     /* 角色弹窗搜索框：外框宽度与游戏列表外框对齐，margin:0 + width:100%，由 scroll-wrap 统一 12px 缩进 */
     .annual-global-char-search-input {
         width: 100% !important;
-        margin: 0 !important;
-        padding: 11px 12px;
+        margin: 0 0 10px 0 !important;
+        padding: 10px !important;
         font-size: 14px;
         box-sizing: border-box !important;
+    }
+    /* 新增：移动端角色弹窗筛选框去掉左右 margin，由 scroll-wrap 统一控制 */
+    #annual-global-char-modal .filter-group.annual-filter-group {
+        margin: 0 0 10px 0 !important;
     }
     /* 新增：CP 弹窗搜索框同步对齐 */
     .annual-global-cp-search-input {
         width: 100% !important;
-        margin: 0 !important;
-        padding: 11px 12px;
+        margin: 0 0 10px 0 !important;
+        padding: 10px !important;
         font-size: 14px;
         box-sizing: border-box !important;
+    }
+    /* 新增：移动端 CP 弹窗筛选框去掉左右 margin，由 scroll-wrap 统一控制 */
+    #annual-global-cp-modal .filter-group.annual-filter-group {
+        margin: 0 0 10px 0 !important;
     }
     /* 开关：外框宽度与搜索框、游戏列表一致，左右 padding/margin 为 0，由 scroll-wrap 统一 12px 缩进 */
     .annual-modal-global-switch-group {
@@ -1136,23 +1148,31 @@
 .annual-global-char-search-input {
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
+    padding:10px;
+    border:1px solid #eee;
+    border-radius:8px;
     background:#fcfcfc;
     font-size:15px;
     box-sizing: border-box;
+}
+/* 新增：角色弹窗筛选框左右 margin 20px，与搜索框和全局开关组对齐 */
+#annual-global-char-modal .filter-group.annual-filter-group {
+    margin: 0 20px 10px 20px;
 }
 /* 新增：CP 弹窗搜索框 PC 端和角色弹窗一致 */
 .annual-global-cp-search-input {
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
+    padding:10px;
+    border:1px solid #eee;
+    border-radius:8px;
     background:#fcfcfc;
     font-size:15px;
     box-sizing: border-box;
+}
+/* 新增：CP 弹窗筛选框左右 margin 20px，与搜索框和全局开关组对齐 */
+#annual-global-cp-modal .filter-group.annual-filter-group {
+    margin: 0 20px 10px 20px;
 }
 /* 视图容器：两个互斥视图 */
 .annual-modal-view-container {
@@ -1668,9 +1688,9 @@
 .annual-global-cp-search-input {
     width:calc(100% - 40px);
     margin:0 20px 10px 20px;
-    padding:11px 14px;
-    border:1px solid #ddd;
-    border-radius: 10px;
+    padding:10px;
+    border:1px solid #eee;
+    border-radius:8px;
     background:#fcfcfc;
     font-size:15px;
     box-sizing: border-box;
