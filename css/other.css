@@ -334,8 +334,8 @@
     align-items: center;
 }
 .other-rero-hearts .heart {
-    color: #ddd;
-    transition: color 0.15s;
+    color: #cccccc;
+    transition: 0.2s;
 }
 .other-rero-hearts .heart.active {
     color: var(--other-heart-color, #e895a8);
