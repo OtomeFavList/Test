@@ -26,6 +26,9 @@
 .mode-wrap[data-mode="other"] .big-card {
     border-color: var(--other-export-border, #f6a5b8);
     margin-top: 0;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 .mode-wrap[data-mode="other"] .big-card + .big-card {
     margin-top: 30px;
@@ -657,12 +660,6 @@
     border: none;
     cursor: pointer;
     border-radius: 6px;
-}
-.other-export-config .size-select {
-    margin: 16px 0;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
 }
 
 /* 字号调节滑块轨道（复用 Annual 同款逻辑，进度变量为 --other-slider-progress） */
