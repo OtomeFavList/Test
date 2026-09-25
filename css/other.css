@@ -106,7 +106,7 @@
 
 /* Rero 游戏卡片 */
 .other-rero-card {
-    background: var(--other-card-bg, #fff7f9);
+    background: transparent;
     border: 1px solid var(--other-export-border, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
@@ -168,12 +168,18 @@
     border: 1px solid var(--other-image-border-color, #eee);
     display: block;
 }
+.other-rero-fields-and-radar {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
 .other-rero-fields {
     flex: 1;
-    min-width: 280px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    min-width: 0;
 }
 
 /* 字段 */
@@ -205,19 +211,31 @@
     border-color: #f6a5b8;
 }
 
-/* 全通勾选 */
-.other-rero-checkbox-wrap {
+/* 全通是/否勾选框样式 */
+.other-rero-completed-wrap {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: var(--other-default-text-color, #b85878);
+    gap: 8px;
+    margin-left: auto;
 }
-.other-rero-checkbox-wrap input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+.other-rero-completed-label {
+    font-weight: bold;
+    color: var(--other-default-text-color, #b85878);
+    white-space: nowrap;
+}
+.other-rero-yn-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.other-rero-yn-label {
+    font-weight: normal;
+    color: var(--other-input-text-color, #000);
+    font-size: 14px;
     cursor: pointer;
-    accent-color: #e895a8;
+}
+.other-rero-yn-group input[type="checkbox"] {
+    cursor: pointer;
 }
 
 /* SABCDE 评级方块 */
@@ -274,17 +292,16 @@
     gap: 12px;
     flex-shrink: 0;
 }
-.other-rero-five-dim {
-    flex: 1;
-    min-width: 220px;
+.other-rero-rating-left-only {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+}
+.other-rero-five-dim {
+    flex-shrink: 0;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    background: var(--other-card-bg, #fff7f9);
-    border: 1px solid var(--other-image-border-color, #eee);
-    border-radius: 8px;
-    padding: 10px 12px;
+    justify-content: center;
 }
 .other-radar-wrap {
     display: flex;
@@ -292,6 +309,7 @@
     align-items: center;
     gap: 4px;
     width: 100%;
+    position: relative;
 }
 .other-radar-chart {
     display: flex;
@@ -305,29 +323,25 @@
     fill: var(--other-default-text-color, #b85878);
     font-family: "Noto Sans SC", sans-serif;
 }
-.other-dim-name-row {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-}
-.other-dim-name {
-    width: 48px;
-    font-size: 11px;
-    color: var(--other-default-text-color, #b85878);
-    font-weight: bold;
-    border: 1px dashed transparent;
-    border-radius: 4px;
-    padding: 2px 2px;
+.radar-label-input {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border: none;
     background: transparent;
     text-align: center;
-    box-sizing: border-box;
-}
-.other-dim-name:focus {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--other-default-text-color, #b85878);
+    width: 48px;
+    padding: 2px 0;
     outline: none;
-    border-color: #f6a5b8;
+    cursor: text;
+    z-index: 2;
+}
+.radar-label-input:focus {
     background: #fff;
+    border: 1px solid var(--other-export-border, #f6a5b8);
+    border-radius: 4px;
 }
 
 /* 喜爱度爱心 */
@@ -352,30 +366,38 @@
     gap: 12px;
 }
 .other-rero-text-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 .other-rero-text-field label {
-    font-size: 15px;
+    display: block;
+    font-size: 14px;
     color: var(--other-default-text-color, #b85878);
-    font-weight: bold;
+    margin-bottom: 4px;
 }
-.other-rero-text-field textarea {
+.other-rero-textarea-wrap {
+    position: relative;
+}
+.other-rero-textarea-wrap textarea {
     width: 100%;
     min-height: 60px;
     padding: 8px 10px;
-    border: 1px solid var(--other-image-border-color, #eee);
-    border-radius: 8px;
-    background: #fcfcfc;
+    border: 1px solid var(--other-export-customborder, #eee);
+    border-radius: 6px;
     font-size: var(--other-input-font-size, 14px);
-    color: var(--other-input-text-color, #000000);
-    resize: vertical;
+    color: var(--other-input-text-color, #000);
+    resize: none;
     box-sizing: border-box;
 }
-.other-rero-text-field textarea:focus {
-    outline: none;
-    border-color: #f6a5b8;
+.other-rero-textarea-wrap .resize-handle {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    cursor: ns-resize;
+    opacity: 0.5;
+    background: linear-gradient(135deg, transparent 50%, #999 50%, #999 60%, transparent 60%, transparent 70%, #999 70%, #999 80%, transparent 80%);
 }
 
 /* 角色标签卡片组 */
@@ -561,6 +583,179 @@
 .other-text-card.other-custom-text-card .other-text-card-title:focus {
     outline: none;
     border-color: #f6a5b8;
+}
+
+/* 角色标签卡片组（Repo 用） */
+.other-repo-cards-section {
+    margin-top: 16px;
+}
+.other-repo-char-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.other-repo-char-card {
+    position: relative;
+    background: var(--other-card-bg, #fff7f9);
+    border: 1px solid var(--other-export-border, #f6a5b8);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.other-repo-card-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--other-label-color, #b85878);
+    text-align: center;
+    line-height: 1.3;
+    word-break: break-all;
+}
+.other-repo-card-label-edit {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--other-label-color, #b85878);
+    resize: none;
+    outline: none;
+    padding: 0;
+    line-height: 1.3;
+}
+.other-repo-card-label-edit:focus {
+    background: #fff;
+    border: 1px solid var(--other-export-border, #f6a5b8);
+    border-radius: 4px;
+}
+.other-repo-card-body {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    position: relative;
+}
+.other-repo-char-preview {
+    width: 70px;
+    height: 90px;
+    overflow: hidden;
+    border-radius: 4px;
+}
+.other-repo-char-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.other-repo-cp-preview {
+    display: flex;
+    gap: 2px;
+}
+.other-repo-cp-preview img {
+    width: 38px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 3px;
+}
+.other-repo-card-add {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px dashed var(--other-export-border, #f6a5b8);
+    background: transparent;
+    color: var(--other-label-color, #b85878);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.other-repo-card-add:hover {
+    background: rgba(246, 165, 184, 0.1);
+}
+.other-repo-card-clear {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: #e895a8;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.other-repo-card-remove {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: #999;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 2;
+}
+.other-repo-card-remove:hover {
+    color: #e895a8;
+}
+
+/* 文本卡片组（Repo 用） */
+.other-repo-text-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+.other-repo-text-card {
+    position: relative;
+    background: transparent;
+    border: 1px solid var(--other-export-customborder, #eee);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.other-repo-text-card .other-repo-card-label {
+    font-size: 13px;
+    text-align: left;
+}
+.other-repo-text-card-body {
+    position: relative;
+    flex: 1;
+}
+.other-repo-text-card-textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1px solid var(--other-export-customborder, #eee);
+    border-radius: 6px;
+    font-size: var(--other-custom-text-font-size, 15px);
+    color: var(--other-export-customtext, #c98fac);
+    resize: none;
+    box-sizing: border-box;
+    background: transparent;
+}
+.other-repo-text-card-body .resize-handle {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    cursor: ns-resize;
+    opacity: 0.5;
+    background: linear-gradient(135deg, transparent 50%, #999 50%, #999 60%, transparent 60%, transparent 70%, #999 70%, #999 80%, transparent 80%);
 }
 
 /* 感想文本框 */
@@ -815,6 +1010,24 @@
         bottom: 4px;
         width: 16px;
         height: 16px;
+    }
+    /* 五维图改为上下排列 */
+    .other-rero-fields-and-radar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .other-rero-five-dim {
+        margin-top: 12px;
+    }
+    .other-rero-completed-wrap {
+        margin-left: 0;
+        margin-top: 4px;
+    }
+    .other-repo-char-card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+    .other-repo-text-card-grid {
+        grid-template-columns: 1fr;
     }
 }
 
