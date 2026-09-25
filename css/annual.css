@@ -182,7 +182,7 @@
 /* 新增：游戏弹窗搜索框外层固定容器，不参与滚动 */
 #annual-global-game-modal .annual-modal-search-bar-wrap {
     flex-shrink: 0;
-    padding: 0 20px 8px 20px;
+    padding: 0 32px 8px 32px;
 }
 #annual-global-game-modal .annual-modal-scroll-wrap {
     flex: 1;
@@ -545,9 +545,9 @@
         padding: 10px;
         font-size: 14px;
     }
-    /* 新增：移动端游戏弹窗筛选框外层去掉左右 padding，由 scroll-wrap 统一控制 */
+    /* 新增：移动端游戏弹窗筛选框外层左右 padding 12px，与角色/CP弹窗 scroll-wrap 缩进对齐 */
     #annual-global-game-modal .annual-modal-search-bar-wrap {
-        padding: 0 0 8px 0;
+        padding: 0 12px 8px 12px;
     }
     /* 复用 main.css 手机端 game-option-item 布局 */
     .annual-global-game-list .game-option-item {
@@ -583,7 +583,7 @@
         padding: 10px 0 10px 0 !important;
         margin: 0 !important;
         min-height:260px;
-        max-height:42vh !important;
+        max-height:60vh !important;
         overflow-y:auto !important;
         width: 100% !important;
         box-sizing: border-box !important;
