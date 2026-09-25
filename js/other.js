@@ -13,14 +13,19 @@ const OTHER_CONFIG_KEY = 'other-export-config';
 
 const GRADES = ['S', 'A', 'B', 'C', 'D', 'E'];
 const DEFAULT_DIMS = ['剧情', '角色', '配音', '音乐', '画风'];
-// Repo 固定角色标签卡片（第8个"最喜欢的CP"走CP弹窗，其余走角色弹窗）
+// Repo 固定角色标签卡片（全部走角色弹窗；"最喜欢的CP"已移至文本卡片组）
 const REPO_FIXED_CHAR_LABELS = [
   '盲狙', '最喜欢', '外貌最喜欢', '声音最喜欢', '人设最喜欢',
-  '剧情最喜欢', '最喜欢的Sub', '最喜欢的CP', '最能共情',
+  '剧情最喜欢', '最喜欢的Sub', '最能共情',
   '相处最舒服', '过程最开心', '过程最心痛', '最希望转正'
 ];
-// Repo 固定文本卡片
-const REPO_FIXED_TEXT_LABELS = ['最喜欢的台词', '最喜欢的场景', '最喜欢的结局'];
+// Repo 固定文本卡片（第一个"最喜欢的CP"走CP弹窗，其余为普通文本卡片）
+const REPO_FIXED_TEXT_LABELS = [
+  { label: '最喜欢的CP', type: 'cp' },
+  { label: '最喜欢的台词', type: 'text' },
+  { label: '最喜欢的场景', type: 'text' },
+  { label: '最喜欢的结局', type: 'text' }
+];
 
 const otherExportDefault = {
   bg: "#fff7f9",
@@ -87,6 +92,28 @@ function loadOtherData() {
   }
   if (!Array.isArray(otherData.repoGames)) otherData.repoGames = [];
   if (!Array.isArray(otherData.impressionGames)) otherData.impressionGames = [];
+
+  // 数据迁移：将旧版 repoCharCards 中的"最喜欢的CP"卡片移至 repoTextCards 开头，并补全 type 字段
+  otherData.repoGames.forEach(game => {
+    if (Array.isArray(game.repoCharCards)) {
+      const cpIdx = game.repoCharCards.findIndex(c => c.label === '最喜欢的CP' || c.type === 'cp');
+      if (cpIdx >= 0) {
+        const cpCard = game.repoCharCards.splice(cpIdx, 1)[0];
+        cpCard.type = 'cp';
+        if (!Array.isArray(game.repoTextCards)) game.repoTextCards = [];
+        game.repoTextCards = game.repoTextCards.map(c => ({ type: 'text', ...c }));
+        game.repoTextCards.unshift(cpCard);
+      } else if (Array.isArray(game.repoTextCards)) {
+        game.repoTextCards = game.repoTextCards.map((c, i) => ({
+          type: (i === 0 && c.label === '最喜欢的CP') ? 'cp' : 'text',
+          ...c
+        }));
+      }
+    }
+    if (Array.isArray(game.repoCustomTextCards)) {
+      game.repoCustomTextCards = game.repoCustomTextCards.map(c => ({ type: 'text', ...c }));
+    }
+  });
 }
 
 function saveOtherData() {
@@ -149,17 +176,26 @@ function createReroGameData(gameId) {
     strategyOrder: "",
     favorOrder: "",
     impression: "",
-    // 角色标签卡片：13固定 + 自定义
+    // 角色标签卡片：12固定 + 自定义（全部为角色类型）
     repoCharCards: REPO_FIXED_CHAR_LABELS.map(label => ({
       label: label,
-      type: label === '最喜欢的CP' ? 'cp' : 'char',
-      gameId: '', charId: '', charName: '', coverSrc: '',
-      femaleId: '', maleId: '', femaleName: '', maleName: '', femaleCoverSrc: '', maleCoverSrc: ''
+      type: 'char',
+      gameId: '', charId: '', charName: '', coverSrc: ''
     })),
     repoCustomCharCards: [{ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' }],
-    // 文本卡片：3固定 + 自定义
-    repoTextCards: REPO_FIXED_TEXT_LABELS.map(label => ({ label: label, text: '' })),
-    repoCustomTextCards: [{ label: '', text: '' }]
+    // 文本卡片：4固定（含1个CP卡片） + 自定义
+    repoTextCards: REPO_FIXED_TEXT_LABELS.map(item => {
+      if (item.type === 'cp') {
+        return {
+          label: item.label,
+          type: 'cp',
+          gameId: '', femaleId: '', maleId: '', femaleName: '', maleName: '',
+          femaleCoverSrc: '', maleCoverSrc: ''
+        };
+      }
+      return { label: item.label, type: 'text', text: '' };
+    }),
+    repoCustomTextCards: [{ label: '', type: 'text', text: '' }]
   };
 }
 
@@ -232,36 +268,22 @@ function renderFiveDim(dims) {
   `;
 }
 
-// 渲染 Repo 角色标签卡片（固定13 + 自定义）
+// 渲染 Repo 角色标签卡片（固定12 + 自定义）
 function renderRepoCharCards(gameData) {
   const allCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
   let html = '<div class="other-repo-char-card-grid">';
   allCards.forEach((card, idx) => {
     const isCustom = idx >= (gameData.repoCharCards?.length || 0);
-    const isCp = card.type === 'cp';
-    // 卡片 body：有角色显示图片+删除，无角色显示+按钮
+    // 卡片 body：有角色显示图片+清除，无角色显示+按钮（全部走角色弹窗）
     let bodyHtml;
-    if (isCp) {
-      if (card.maleId && card.femaleId) {
-        bodyHtml = `
-          <div class="other-repo-cp-preview">
-            <img src="${card.femaleCoverSrc && (card.femaleCoverSrc.startsWith('http') || card.femaleCoverSrc.startsWith('blob:')) ? card.femaleCoverSrc : getWebImageUrl(card.femaleCoverSrc)}" alt="${card.femaleName}">
-            <img src="${card.maleCoverSrc && (card.maleCoverSrc.startsWith('http') || card.maleCoverSrc.startsWith('blob:')) ? card.maleCoverSrc : getWebImageUrl(card.maleCoverSrc)}" alt="${card.maleName}">
-          </div>
-          <button class="other-repo-card-clear" data-repo-char-clear="${idx}">×</button>`;
-      } else {
-        bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}" data-repo-card-type="cp">+</button>`;
-      }
+    if (card.charId) {
+      bodyHtml = `
+        <div class="other-repo-char-preview">
+          <img src="${card.coverSrc && (card.coverSrc.startsWith('http') || card.coverSrc.startsWith('blob:')) ? card.coverSrc : getWebImageUrl(card.coverSrc)}" alt="${card.charName}">
+        </div>
+        <button class="other-repo-card-clear" data-repo-char-clear="${idx}">×</button>`;
     } else {
-      if (card.charId) {
-        bodyHtml = `
-          <div class="other-repo-char-preview">
-            <img src="${card.coverSrc && (card.coverSrc.startsWith('http') || card.coverSrc.startsWith('blob:')) ? card.coverSrc : getWebImageUrl(card.coverSrc)}" alt="${card.charName}">
-          </div>
-          <button class="other-repo-card-clear" data-repo-char-clear="${idx}">×</button>`;
-      } else {
-        bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}" data-repo-card-type="char">+</button>`;
-      }
+      bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}">+</button>`;
     }
     // 标签：固定卡片显示纯文本，自定义卡片显示可编辑 textarea
     const labelHtml = isCustom
@@ -270,37 +292,55 @@ function renderRepoCharCards(gameData) {
     const removeBtn = isCustom
       ? `<button class="other-repo-card-remove" data-repo-char-remove="${idx}">×</button>`
       : '';
+    // DOM顺序：封面在上、标签在下（复刻模块七）
     html += `
-      <div class="other-repo-char-card ${isCp ? 'cp-card' : ''}">
+      <div class="other-repo-char-card">
         ${removeBtn}
-        ${labelHtml}
         <div class="other-repo-card-body">${bodyHtml}</div>
+        ${labelHtml}
       </div>`;
   });
   html += '</div>';
   return html;
 }
 
-// 渲染 Repo 文本卡片（固定3 + 自定义）
+// 渲染 Repo 文本卡片（固定4 + 自定义）
 function renderRepoTextCards(gameData) {
   const allCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
   let html = '<div class="other-repo-text-card-grid">';
   allCards.forEach((card, idx) => {
     const isCustom = idx >= (gameData.repoTextCards?.length || 0);
+    const isCp = card.type === 'cp';
+    // 标签：固定卡片显示纯文本，自定义卡片显示可编辑 textarea
     const labelHtml = isCustom
       ? `<textarea class="other-repo-card-label-edit" data-repo-text-label="${idx}" placeholder="自定义标签" rows="1">${card.label || ''}</textarea>`
       : `<div class="other-repo-card-label">${card.label}</div>`;
     const removeBtn = isCustom
       ? `<button class="other-repo-card-remove" data-repo-text-remove="${idx}">×</button>`
       : '';
+    // 内容区：CP卡片显示男女主图片预览或+按钮；普通文本卡片显示textarea+拖拽手柄
+    let bodyHtml;
+    if (isCp) {
+      if (card.maleId && card.femaleId) {
+        bodyHtml = `
+          <div class="other-repo-cp-preview">
+            <img src="${card.femaleCoverSrc && (card.femaleCoverSrc.startsWith('http') || card.femaleCoverSrc.startsWith('blob:')) ? card.femaleCoverSrc : getWebImageUrl(card.femaleCoverSrc)}" alt="${card.femaleName}">
+            <img src="${card.maleCoverSrc && (card.maleCoverSrc.startsWith('http') || card.maleCoverSrc.startsWith('blob:')) ? card.maleCoverSrc : getWebImageUrl(card.maleCoverSrc)}" alt="${card.maleName}">
+          </div>
+          <button class="other-repo-card-clear" data-repo-text-cp-clear="${idx}">×</button>`;
+      } else {
+        bodyHtml = `<button class="other-repo-card-add" data-repo-text-cp-add="${idx}">+</button>`;
+      }
+    } else {
+      bodyHtml = `
+        <textarea class="other-repo-text-card-textarea" data-repo-text-content="${idx}" placeholder="自定义文本">${card.text || ''}</textarea>
+        <div class="resize-handle"></div>`;
+    }
     html += `
       <div class="other-repo-text-card">
         ${removeBtn}
         ${labelHtml}
-        <div class="other-repo-text-card-body">
-          <textarea class="other-repo-text-card-textarea" data-repo-text-content="${idx}" placeholder="自定义文本">${card.text || ''}</textarea>
-          <div class="resize-handle"></div>
-        </div>
+        <div class="other-repo-text-card-body">${bodyHtml}</div>
       </div>`;
   });
   html += '</div>';
@@ -645,12 +685,13 @@ function bindRepoCpModalInterceptor() {
     const { gameIdx, cardIdx } = otherRepoCharTarget;
     const gameData = otherData.repoGames[gameIdx];
     if (!gameData) return;
-    const fixedLen = gameData.repoCharCards?.length || 0;
+    // CP卡片现在在文本卡片组中，fixedLen取文本卡片固定数量
+    const fixedLen = gameData.repoTextCards?.length || 0;
     let target;
     if (cardIdx < fixedLen) {
-      target = gameData.repoCharCards[cardIdx];
+      target = gameData.repoTextCards[cardIdx];
     } else {
-      target = gameData.repoCustomCharCards?.[cardIdx - fixedLen];
+      target = gameData.repoCustomTextCards?.[cardIdx - fixedLen];
     }
     if (target) {
       target.gameId = gameId;
@@ -738,12 +779,12 @@ function bindReroCardEvents() {
       if (target) { target.label = e.target.value; saveOtherData(); }
       return;
     }
-    // 文本卡片内容
+    // 文本卡片内容（CP卡片无textarea，跳过）
     const textContentIdx = e.target.dataset.repoTextContent;
     if (textContentIdx !== undefined) {
       const idx = Number(textContentIdx);
       const target = getTextCardRef(gameData, idx);
-      if (target) { target.text = e.target.value; saveOtherData(); }
+      if (target && target.type !== 'cp') { target.text = e.target.value; saveOtherData(); }
       return;
     }
   });
@@ -773,7 +814,7 @@ function bindReroCardEvents() {
       const customLen = gameData.repoCustomTextCards?.length || 0;
       const fixedLen = gameData.repoTextCards?.length || 0;
       if (idx === fixedLen + customLen - 1) {
-        gameData.repoCustomTextCards.push({ label: '', text: '' });
+        gameData.repoCustomTextCards.push({ label: '', type: 'text', text: '' });
         saveOtherData();
         renderRepoModule();
       }
@@ -836,21 +877,36 @@ function bindReroCardEvents() {
       }
       return;
     }
-    // 角色卡片 + 按钮（打开角色/CP弹窗）
+    // 角色卡片 + 按钮（打开角色弹窗）
     const charAddBtn = e.target.closest('[data-repo-char-add]');
     if (charAddBtn) {
       const idx = Number(charAddBtn.dataset.repoCharAdd);
-      const cardType = charAddBtn.dataset.repoCardType;
-      otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: cardType };
-      if (cardType === 'cp') {
-        if (typeof window.openAnnualGlobalCpModal === 'function') {
-          window.openAnnualGlobalCpModal(null, 'otherRepoCp');
-        }
-      } else {
-        if (typeof window.openAnnualGlobalCharModal === 'function') {
-          window.openAnnualGlobalCharModal(null, 'otherRepoChar');
-        }
+      otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'char' };
+      if (typeof window.openAnnualGlobalCharModal === 'function') {
+        window.openAnnualGlobalCharModal(null, 'otherRepoChar');
       }
+      return;
+    }
+    // 文本卡片 CP + 按钮（打开CP弹窗）
+    const textCpAddBtn = e.target.closest('[data-repo-text-cp-add]');
+    if (textCpAddBtn) {
+      const idx = Number(textCpAddBtn.dataset.repoTextCpAdd);
+      otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'cp' };
+      if (typeof window.openAnnualGlobalCpModal === 'function') {
+        window.openAnnualGlobalCpModal(null, 'otherRepoCp');
+      }
+      return;
+    }
+    // 文本卡片 CP 图片清除 ×
+    const textCpClearBtn = e.target.closest('[data-repo-text-cp-clear]');
+    if (textCpClearBtn) {
+      const idx = Number(textCpClearBtn.dataset.repoTextCpClear);
+      const target = getTextCardRef(gameData, idx);
+      if (target) {
+        Object.assign(target, { gameId: '', femaleId: '', maleId: '', femaleName: '', maleName: '', femaleCoverSrc: '', maleCoverSrc: '' });
+      }
+      saveOtherData();
+      renderRepoModule();
       return;
     }
     // 角色卡片图片清除 ×
@@ -894,7 +950,7 @@ function bindReroCardEvents() {
       if (customIdx >= 0) {
         gameData.repoCustomTextCards.splice(customIdx, 1);
         if (gameData.repoCustomTextCards.length === 0) {
-          gameData.repoCustomTextCards.push({ label: '', text: '' });
+          gameData.repoCustomTextCards.push({ label: '', type: 'text', text: '' });
         }
         saveOtherData();
         renderRepoModule();
