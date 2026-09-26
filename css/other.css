@@ -502,13 +502,12 @@
     outline: none;
     border-color: #f6a5b8;
 }
-/* 改：自定义卡片标签的预填内容完全复用 Annual 自定义标签 placeholder 样式，
-   覆盖全局 placeholder 的 font-size:16px / opacity:0.5 */
+/* 自定义卡片标签的预填内容：font-size/font-weight/opacity 覆盖全局规则，
+   color 不设置，继承浏览器默认灰色，与 Annual 自定义标签 placeholder 完全一致 */
 .mode-wrap[data-mode="other"] .other-repo-card-label-edit::placeholder {
     font-weight: bold;
     font-size: 15px;
     opacity: 1;
-    color: var(--other-label-color, #b85878);
 }
 .other-repo-card-body {
     width: 140px;
@@ -646,6 +645,7 @@
 .other-repo-text-card .other-repo-card-label-edit {
     padding: 4px 8px;
     background: #fff;
+    line-height: normal;
 }
 .other-repo-text-card-body {
     flex: 1;
