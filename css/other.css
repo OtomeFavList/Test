@@ -502,7 +502,7 @@
     outline: none;
     border-color: #f6a5b8;
 }
-/* 自定义卡片标签的预填内容：font-size/font-weight/opacity 覆盖全局规则，
+/* 改：自定义卡片标签的预填内容font-size/font-weight/opacity 覆盖全局规则，
    color 不设置，继承浏览器默认灰色，与 Annual 自定义标签 placeholder 完全一致 */
 .mode-wrap[data-mode="other"] .other-repo-card-label-edit::placeholder {
     font-weight: bold;
