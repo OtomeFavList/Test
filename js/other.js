@@ -274,28 +274,29 @@ function renderRepoCharCards(gameData) {
   let html = '<div class="other-repo-char-card-grid">';
   allCards.forEach((card, idx) => {
     const isCustom = idx >= (gameData.repoCharCards?.length || 0);
-    // 卡片 body：有角色显示图片+清除，无角色显示+按钮（全部走角色弹窗）
+    // 复用Annual模块七逻辑：有图或自定义卡片显示×按钮；有图点击清除，无图自定义点击删除整卡
+    const showRemoveBtn = !!card.charId || isCustom;
+    const removeBtn = showRemoveBtn
+      ? `<button class="other-repo-card-remove" data-repo-char-remove="${idx}">×</button>`
+      : '';
+    // 卡片 body：有角色显示图片+×，无角色显示+按钮（自定义卡片额外带×删除整卡）
     let bodyHtml;
     if (card.charId) {
       bodyHtml = `
         <div class="other-repo-char-preview">
           <img src="${card.coverSrc && (card.coverSrc.startsWith('http') || card.coverSrc.startsWith('blob:')) ? card.coverSrc : getWebImageUrl(card.coverSrc)}" alt="${card.charName}">
         </div>
-        <button class="other-repo-card-clear" data-repo-char-clear="${idx}">×</button>`;
+        ${removeBtn}`;
     } else {
-      bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}">+</button>`;
+      bodyHtml = `<button class="other-repo-card-add" data-repo-char-add="${idx}">+</button>${removeBtn}`;
     }
     // 标签：固定卡片显示纯文本，自定义卡片显示可编辑 textarea
     const labelHtml = isCustom
       ? `<textarea class="other-repo-card-label-edit" data-repo-char-label="${idx}" placeholder="自定义标签" rows="1">${card.label || ''}</textarea>`
       : `<div class="other-repo-card-label">${card.label}</div>`;
-    const removeBtn = isCustom
-      ? `<button class="other-repo-card-remove" data-repo-char-remove="${idx}">×</button>`
-      : '';
     // DOM顺序：封面在上、标签在下（复刻模块七）
     html += `
       <div class="other-repo-char-card">
-        ${removeBtn}
         <div class="other-repo-card-body">${bodyHtml}</div>
         ${labelHtml}
       </div>`;
@@ -984,38 +985,30 @@ function bindReroCardEvents() {
       renderRepoModule();
       return;
     }
-    // 角色卡片图片清除 ×
-    const charClearBtn = e.target.closest('[data-repo-char-clear]');
-    if (charClearBtn) {
-      const idx = Number(charClearBtn.dataset.repoCharClear);
+    // 角色卡片 × 按钮（复用Annual模块七逻辑：有图清除图片，无图自定义删除整卡）
+    const charRemoveBtn = e.target.closest('[data-repo-char-remove]');
+    if (charRemoveBtn) {
+      const idx = Number(charRemoveBtn.dataset.repoCharRemove);
       const target = getCharCardRef(gameData, idx);
-      if (target) {
-        if (target.type === 'cp') {
-          Object.assign(target, { gameId: '', femaleId: '', maleId: '', femaleName: '', maleName: '', femaleCoverSrc: '', maleCoverSrc: '' });
-        } else {
-          Object.assign(target, { gameId: '', charId: '', charName: '', coverSrc: '' });
+      if (!target) return;
+      if (target.charId) {
+        // 有图：清除角色图片
+        Object.assign(target, { gameId: '', charId: '', charName: '', coverSrc: '' });
+      } else {
+        // 无图（自定义卡片）：删除整卡
+        const fixedLen = gameData.repoCharCards?.length || 0;
+        const customIdx = idx - fixedLen;
+        if (customIdx >= 0) {
+          gameData.repoCustomCharCards.splice(customIdx, 1);
+          // 复用 Annual 模块五逻辑：确保至少保留一个完全空白的可操作自定义卡片
+          const hasEmpty = gameData.repoCustomCharCards.some(c => !c.label.trim() && !c.charId);
+          if (!hasEmpty) {
+            gameData.repoCustomCharCards.push({ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' });
+          }
         }
       }
       saveOtherData();
       renderRepoModule();
-      return;
-    }
-    // 自定义角色卡片整卡删除 ×
-    const charRemoveBtn = e.target.closest('[data-repo-char-remove]');
-    if (charRemoveBtn) {
-      const idx = Number(charRemoveBtn.dataset.repoCharRemove);
-      const fixedLen = gameData.repoCharCards?.length || 0;
-      const customIdx = idx - fixedLen;
-      if (customIdx >= 0) {
-        gameData.repoCustomCharCards.splice(customIdx, 1);
-        // 复用 Annual 模块五逻辑：确保至少保留一个完全空白的可操作自定义卡片
-        const hasEmpty = gameData.repoCustomCharCards.some(c => !c.label.trim() && !c.charId);
-        if (!hasEmpty) {
-          gameData.repoCustomCharCards.push({ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' });
-        }
-        saveOtherData();
-        renderRepoModule();
-      }
       return;
     }
     // 自定义文本卡片整卡删除 ×
