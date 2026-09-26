@@ -235,7 +235,6 @@
     color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     white-space: nowrap;
-    min-width: 64px;
     text-align: left;
     display: inline-block;
 }
@@ -254,7 +253,7 @@
     outline: none;
     border-color: #f6a5b8;
 }
-/* 文字框提示文字：16px，不加粗（与填写内容区分） */
+/* 文字框提示文字 */
 .mode-wrap[data-mode="other"] input::placeholder,
 .mode-wrap[data-mode="other"] textarea::placeholder {
     font-size: 16px;
@@ -262,7 +261,7 @@
     opacity: 0.5;
 }
 
-/* 全通是/否方形按钮（与 SABCDE 同款样式） */
+/* 全通是/否方形按钮 */
 .other-rero-yn-group {
     display: flex;
     align-items: center;
@@ -456,7 +455,7 @@
     opacity: 0.7;
 }
 
-/* 角色标签卡片组（Repo 用） */
+/* 角色标签卡片组 */
 .other-repo-cards-section {
     margin-top: 16px;
 }
@@ -503,7 +502,7 @@
     outline: none;
     border-color: #f6a5b8;
 }
-/* 自定义卡片标签的预填内容（placeholder）加粗，覆盖全局 placeholder 的 font-weight: normal */
+/* 新增：自定义卡片标签的预填内容加粗，覆盖全局 placeholder 的 font-weight: normal */
 .mode-wrap[data-mode="other"] .other-repo-card-label-edit::placeholder {
     font-weight: bold;
 }
@@ -519,7 +518,7 @@
     border: 1px solid #f6a5b8;
     background: #fff;
 }
-/* 有角色图片时：边框改为 #eeeeee（对齐 Annual 模块七 .annual-grid-cover-box.filled） */
+/* 新增：有角色图片时边框改为 #eeeeee */
 .other-repo-card-body:has(.other-repo-char-preview) {
     border: 1px solid #eeeeee;
     background: #fff;
@@ -617,7 +616,7 @@
     color: #fff;
 }
 
-/* 文本卡片组（Repo 用） */
+/* 文本卡片组 */
 .other-repo-text-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -639,7 +638,7 @@
     font-weight: bold;
     color: var(--other-label-color, #b85878);
 }
-/* 文本卡片的自定义标签：对齐 Annual 模块五 .annual-other-custom-label */
+/* 文本卡片的自定义标签 */
 .other-repo-text-card .other-repo-card-label-edit {
     padding: 4px 8px;
     background: #fff;
@@ -790,7 +789,7 @@
     border-radius: 6px;
 }
 
-/* 字号调节滑块轨道（复用 Annual 同款逻辑，进度变量为 --other-slider-progress） */
+/* 字号调节滑块轨道 */
 .mode-wrap[data-mode="other"] .font-size-set-row input[type="range"] {
     background: transparent;
     -webkit-appearance: none;
@@ -870,8 +869,6 @@
 
 /* 移动端适配 */
 @media (max-width: 768px) {
-    /* 移动端收窄卡片左右内边距，让角色卡片网格容器宽度足以放下3列，
-       复用 Annual 模块七 auto-fill + minmax(90px,1fr) 的动态分列效果 */
     .other-rero-card {
         padding-left: 12px;
         padding-right: 12px;
@@ -939,7 +936,6 @@
         width: 16px;
         height: 16px;
     }
-    /* 字段区+五维图整体单独一行，不再强制与封面并排，避免内容溢出卡片框 */
     .other-rero-fields-and-radar {
         flex: 0 0 100%;
         width: 100%;
@@ -969,11 +965,9 @@
     .other-repo-card-label-edit {
         font-size: 15px;
     }
-    /* 角色卡片自定义标签：对齐 Annual 模块七，移动端不覆盖 padding，继承 PC 端 4px 6px */
     .other-repo-char-card .other-repo-card-label-edit {
         padding: 4px 6px;
     }
-    /* 文本卡片自定义标签：对齐 Annual 模块五 .annual-other-custom-label 移动端 3px 6px */
     .other-repo-text-card .other-repo-card-label-edit {
         padding: 3px 6px;
     }
