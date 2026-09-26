@@ -1282,8 +1282,47 @@ function bindExportConfig() {
   // 导出按钮
   const exportBtn = document.getElementById('other-btn-export-image');
   if (exportBtn) {
-    exportBtn.onclick = () => {
-      alert("Other 模式导出功能开发中…");
+    exportBtn.onclick = async () => {
+      if (!otherData || (!otherData.repoGames?.length && !otherData.impressionGames?.length)) {
+        alert("暂无数据可导出");
+        return;
+      }
+      if (typeof window.renderAllOtherGames !== 'function') {
+        alert("导出模块未加载，请检查 other-canvas-render.js 是否引入");
+        return;
+      }
+      exportBtn.disabled = true;
+      const originalText = exportBtn.textContent;
+      exportBtn.textContent = "导出中…";
+      try {
+        const gameList = getCombinedGameList();
+        const dpr = otherConfig.normalQuality ? 1 : 2;
+        const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
+        if (results.length === 0) {
+          alert("未生成任何图片");
+          return;
+        }
+        // 依次下载
+        for (let i = 0; i < results.length; i++) {
+          const r = results[i];
+          const url = URL.createObjectURL(r.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const safeName = (r.gameName || 'game').replace(/[\\/:*?"<>|]/g, '_');
+          a.download = `Other_${r.moduleType}_${safeName}_${i + 1}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          await new Promise(resolve => setTimeout(resolve, 300));
+          URL.revokeObjectURL(url);
+        }
+      } catch (err) {
+        console.error("Other 导出失败:", err);
+        alert("导出失败：" + (err.message || err));
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = originalText;
+      }
     };
   }
 }
