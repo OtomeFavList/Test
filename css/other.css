@@ -232,6 +232,7 @@
     font-weight: bold;
     white-space: nowrap;
     min-width: 64px;
+    text-align: right;
 }
 .other-rero-field-input {
     padding: 6px 10px;
@@ -961,11 +962,6 @@
     .other-repo-text-card .other-repo-card-label-edit {
         padding: 3px 6px;
     }
-    .other-repo-card-add {
-        width: 26px;
-        height: 26px;
-        font-size: 18px;
-    }
     .other-repo-card-clear,
     .other-repo-card-remove {
         width: 20px;
@@ -977,9 +973,6 @@
     .other-repo-text-card-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
         gap: 10px !important;
-    }
-    .other-repo-text-card {
-        padding: 10px;
     }
 }
 
