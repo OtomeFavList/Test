@@ -957,6 +957,7 @@ function bindReroCardEvents() {
     // 角色卡片 + 按钮（打开角色弹窗，复用 Annual 模式弹窗函数）
     const charAddBtn = e.target.closest('[data-repo-char-add]');
     if (charAddBtn) {
+      e.stopPropagation();
       const idx = Number(charAddBtn.dataset.repoCharAdd);
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'char' };
       window.openAnnualGlobalCharModal(null, 'otherRepoChar');
@@ -965,6 +966,7 @@ function bindReroCardEvents() {
     // 文本卡片 CP + 按钮（打开CP弹窗，复用 Annual 模式弹窗函数）
     const textCpAddBtn = e.target.closest('[data-repo-text-cp-add]');
     if (textCpAddBtn) {
+      e.stopPropagation();
       const idx = Number(textCpAddBtn.dataset.repoTextCpAdd);
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'cp' };
       window.openAnnualGlobalCpModal(null, 'otherRepoCp');
