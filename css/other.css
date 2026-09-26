@@ -18,8 +18,8 @@
     --other-label-color: #b85878;
     --other-reporter-color: #b33a3a;
     --other-image-border-color: #eeeeee;
-    --other-input-font-size: 14px;
-    --other-custom-text-font-size: 15px;
+    --other-input-font-size: 16px;
+    --other-custom-text-font-size: 16px;
     background-color: var(--other-export-bg, #fff7f9);
 }
 
@@ -150,6 +150,42 @@
     color: #ffffff !important;
 }
 
+/* 游戏卡片头部按钮组（折叠+删除并排） */
+.other-rero-header-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+/* 游戏卡片折叠按钮（复用删除按钮尺寸/边框，符号为▲▼） */
+.other-rero-fold-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.other-rero-fold-btn:hover {
+    background: #992e2e !important;
+    color: #ffffff !important;
+}
+/* 折叠状态：隐藏内容区，仅保留头部 */
+.other-rero-card.other-folded .other-rero-card-content {
+    display: none;
+}
+.other-impression-card.other-folded .other-impression-card-content {
+    display: none;
+}
+
 /* Rero 主体：左封面 + 右字段 */
 .other-rero-body {
     display: flex;
@@ -201,7 +237,8 @@
     padding: 6px 10px;
     border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 6px;
-    font-size: var(--other-input-font-size, 14px);
+    font-size: var(--other-input-font-size, 16px);
+    font-weight: bold;
     color: var(--other-input-text-color, #000000);
     background: #fcfcfc;
     width: 160px;
@@ -212,31 +249,37 @@
     border-color: #f6a5b8;
 }
 
-/* 全通是/否勾选框样式 */
-.other-rero-completed-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: auto;
-}
-.other-rero-completed-label {
-    font-weight: bold;
-    color: var(--other-default-text-color, #b85878);
-    white-space: nowrap;
-}
+/* 全通是/否方形按钮（与 SABCDE 同款样式） */
 .other-rero-yn-group {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
-.other-rero-yn-label {
-    font-weight: normal;
-    color: var(--other-input-text-color, #000);
-    font-size: 14px;
+.other-yn-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fff;
+    color: #999;
+    font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    transition: 0.15s;
 }
-.other-rero-yn-group input[type="checkbox"] {
-    cursor: pointer;
+.other-yn-btn:hover {
+    border-color: #e895a8;
+    color: #e895a8;
+    background: #fff0f3;
+}
+.other-yn-btn.active {
+    background: #e895a8;
+    color: #fff;
+    border-color: #e895a8;
 }
 
 /* SABCDE 评级方块 */
@@ -369,7 +412,8 @@
     padding: 8px 10px 26px 10px;
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 6px;
-    font-size: var(--other-input-font-size, 14px);
+    font-size: var(--other-input-font-size, 16px);
+    font-weight: bold;
     color: var(--other-input-text-color, #000);
     resize: none;
     box-sizing: border-box;
@@ -590,7 +634,8 @@
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 8px;
     background: #fcfcfc;
-    font-size: var(--other-custom-text-font-size, 15px);
+    font-size: var(--other-custom-text-font-size, 16px);
+    font-weight: bold;
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
@@ -640,7 +685,8 @@
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 8px;
     background: #fcfcfc;
-    font-size: var(--other-custom-text-font-size, 15px);
+    font-size: var(--other-custom-text-font-size, 16px);
+    font-weight: bold;
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
@@ -873,9 +919,10 @@
     .other-rero-five-dim {
         margin-top: 12px;
     }
-    .other-rero-completed-wrap {
-        margin-left: 0;
-        margin-top: 4px;
+    .other-yn-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
     }
     .other-repo-char-card-grid {
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
