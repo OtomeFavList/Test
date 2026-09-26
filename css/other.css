@@ -231,14 +231,14 @@
     color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     white-space: nowrap;
-    min-width: 56px;
+    min-width: 64px;
 }
 .other-rero-field-input {
     padding: 6px 10px;
     border: 1px solid var(--other-image-border-color, #eee);
     border-radius: 6px;
     font-size: var(--other-input-font-size, 16px);
-    font-weight: bold;
+    font-weight: normal;
     color: var(--other-input-text-color, #000000);
     background: #fcfcfc;
     width: 160px;
@@ -421,7 +421,7 @@
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 6px;
     font-size: var(--other-input-font-size, 16px);
-    font-weight: bold;
+    font-weight: normal;
     color: var(--other-input-text-color, #000);
     resize: none;
     box-sizing: border-box;
@@ -650,7 +650,7 @@
     border: 1px solid var(--other-export-customborder, #eee);
     border-radius: 8px;
     background: #fcfcfc;
-    font-size: var(--other-custom-text-font-size, 16px);
+    font-size: 15px;
     font-weight: normal;
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
@@ -702,7 +702,7 @@
     border-radius: 8px;
     background: #fcfcfc;
     font-size: var(--other-custom-text-font-size, 16px);
-    font-weight: bold;
+    font-weight: normal;
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
