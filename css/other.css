@@ -651,6 +651,7 @@
 .other-repo-text-card-textarea {
     width: 100%;
     min-height: 80px;
+    align-self: stretch;
     box-sizing: border-box;
     padding: 8px 10px 26px 10px;
     border: 1px solid var(--other-export-customborder, #eee);
