@@ -232,7 +232,7 @@
     font-weight: bold;
     white-space: nowrap;
     min-width: 64px;
-    text-align: right;
+    text-align: left;
     display: inline-block;
 }
 .other-rero-field-input {
@@ -499,6 +499,10 @@
     outline: none;
     border-color: #f6a5b8;
 }
+/* 自定义卡片标签的预填内容（placeholder）加粗，覆盖全局 placeholder 的 font-weight: normal */
+.mode-wrap[data-mode="other"] .other-repo-card-label-edit::placeholder {
+    font-weight: bold;
+}
 .other-repo-card-body {
     width: 140px;
     height: 140px;
@@ -562,8 +566,8 @@
 }
 .other-repo-card-clear {
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: 4px;
+    right: 4px;
     width: 22px;
     height: 22px;
     border: 1px solid #b33a3a;
@@ -653,7 +657,6 @@
     border-radius: 8px;
     background: #fcfcfc;
     font-size: 15px;
-    font-weight: normal;
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
@@ -963,7 +966,6 @@
     .other-repo-text-card .other-repo-card-label-edit {
         padding: 3px 6px;
     }
-    .other-repo-card-clear,
     .other-repo-card-remove {
         width: 20px;
         height: 20px;
