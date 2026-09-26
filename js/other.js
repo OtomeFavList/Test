@@ -30,8 +30,10 @@ const REPO_FIXED_TEXT_LABELS = [
 const otherExportDefault = {
   bg: "#fff7f9",
   title: "#b33a3a",
+  gamename: "#000000",
   defaultTextColor: "#b85878",
   inputTextColor: "#000000",
+  activeFillColor: "#e895a8",
   heartColor: "#e895a8",
   radarColor: "#e895a8",
   cardBg: "#fff7f9",
@@ -1165,8 +1167,10 @@ function bindExportConfig() {
   const colorMap = [
     { id: 'other-color-bg',              key: 'bg',              cssVar: '--other-export-bg' },
     { id: 'other-color-title',           key: 'title',           cssVar: '--other-export-title' },
+    { id: 'other-color-gamename',        key: 'gamename',        cssVar: '--other-export-gamename' },
     { id: 'other-color-default-text',    key: 'defaultTextColor',cssVar: '--other-default-text-color' },
     { id: 'other-color-input-text',      key: 'inputTextColor',  cssVar: '--other-input-text-color' },
+    { id: 'other-color-active-fill',     key: 'activeFillColor', cssVar: '--other-active-fill-color' },
     { id: 'other-color-heart',           key: 'heartColor',      cssVar: '--other-heart-color' },
     { id: 'other-color-radar',           key: 'radarColor',      cssVar: '--other-radar-color' },
     { id: 'other-color-card-bg',         key: 'cardBg',          cssVar: '--other-card-bg' },
