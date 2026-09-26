@@ -232,7 +232,7 @@
     font-weight: bold;
     white-space: nowrap;
     min-width: 64px;
-    text-align: right;
+    text-align: left;
     display: inline-block;
 }
 .other-rero-field-input {
