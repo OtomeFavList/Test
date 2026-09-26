@@ -233,6 +233,7 @@
     white-space: nowrap;
     min-width: 64px;
     text-align: right;
+    display: inline-block;
 }
 .other-rero-field-input {
     padding: 6px 10px;
