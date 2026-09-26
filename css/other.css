@@ -908,10 +908,20 @@
         height: 26px;
         font-size: 18px;
     }
+    .other-rero-fold-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 18px;
+    }
     .site-title.other-active h1 {
         font-size: 30px;
     }
     .other-rero-game-name {
+        font-size: 18px;
+    }
+    .other-rero-delete-btn {
+        width: 26px;
+        height: 26px;
         font-size: 18px;
     }
     /* 悬浮按钮移动端缩小 */
@@ -981,6 +991,10 @@
         font-size: 12px;
         top: -6px;
         right: -6px;
+    }
+    .other-repo-cp-preview img {
+        width: 60px;
+        height: 60px;
     }
     .other-repo-text-card-grid {
         grid-template-columns: 1fr !important;
