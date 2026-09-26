@@ -661,6 +661,8 @@ function renderCharModalGameList(wrap, keyword) {
     for(const {game, char} of matchedCharacters){
         const div = document.createElement("div");
         div.className = "char-item search-result-char-item";
+        div.dataset.gameId = game.id;
+        div.dataset.charId = char.id;
         // 新增：搜索结果角色卡片支持多立绘切换
         // 搜索视图只有全局开关生效，局部开关传 false
         const availUnits = getAvailableCharImages(char, charModalGlobal.hideChar, charModalGlobal.fdChar, false, false);
