@@ -227,7 +227,7 @@
     flex-wrap: wrap;
 }
 .other-rero-field-label {
-    font-size: 15px;
+    font-size: 16px;
     color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     white-space: nowrap;
@@ -243,7 +243,6 @@
     background: #fcfcfc;
     width: 160px;
     box-sizing: border-box;
-    margin-left: auto;
 }
 .other-rero-field-input:focus {
     outline: none;
@@ -262,7 +261,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-left: auto;
 }
 .other-yn-btn {
     width: 36px;
@@ -272,7 +270,7 @@
     background: #fff;
     color: #999;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: normal;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -296,7 +294,6 @@
     display: flex;
     gap: 6px;
     align-items: center;
-    margin-left: auto;
 }
 .other-grade-btn {
     width: 36px;
@@ -306,7 +303,7 @@
     background: #fff;
     color: #999;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: normal;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -387,7 +384,6 @@
     display: flex;
     gap: 4px;
     align-items: center;
-    margin-left: auto;
 }
 .other-rero-hearts .heart {
     color: #cccccc;
@@ -410,7 +406,8 @@
 }
 .other-rero-text-field label {
     display: block;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: bold;
     color: var(--other-default-text-color, #b85878);
     margin-bottom: 4px;
 }
@@ -684,7 +681,7 @@
 }
 .other-rero-impression-wrap label {
     display: block;
-    font-size: 15px;
+    font-size: 16px;
     color: var(--other-default-text-color, #b85878);
     font-weight: bold;
     margin-bottom: 6px;
