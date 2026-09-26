@@ -12,6 +12,7 @@
     --other-export-labelcolor: #b85878;
     --other-default-text-color: #b85878;
     --other-input-text-color: #000000;
+    --other-active-fill-color: #e895a8;
     --other-heart-color: #e895a8;
     --other-radar-color: #e895a8;
     --other-card-bg: #fff7f9;
@@ -129,7 +130,7 @@
 .other-rero-game-name {
     font-size: 22px;
     font-weight: 700;
-    color: var(--other-input-text-color, #000000);
+    color: var(--other-export-gamename, #000000);
     word-break: break-all;
     margin: 0;
 }
@@ -289,9 +290,9 @@
     background: #fff0f3;
 }
 .other-yn-btn.active {
-    background: #e895a8;
+    background: var(--other-active-fill-color, #e895a8);
     color: #fff;
-    border-color: #e895a8;
+    border-color: var(--other-active-fill-color, #e895a8);
 }
 
 /* SABCDE 评级方块 */
@@ -322,9 +323,9 @@
     background: #fff0f3;
 }
 .other-grade-btn.active {
-    background: #e895a8;
+    background: var(--other-active-fill-color, #e895a8);
     color: #fff;
-    border-color: #e895a8;
+    border-color: var(--other-active-fill-color, #e895a8);
 }
 
 /* 甜度/虐度评级 */
@@ -768,7 +769,7 @@
 .other-impression-game-name {
     font-size: 20px;
     font-weight: 700;
-    color: var(--other-input-text-color, #000000);
+    color: var(--other-export-gamename, #000000);
     word-break: break-all;
     margin: 0;
 }
