@@ -362,41 +362,42 @@ function renderReroCard(gameData) {
   const coverUrl = coverSrc ? getWebImageUrl(coverSrc) : "";
   const safeName = gameInfo.name || gameData.gameId;
   const gid = gameData.gameId;
-  // 全通：是/否双勾选框（completed: true=是, false=否, null=未选）
-  const yesChecked = gameData.completed === true ? 'checked' : '';
-  const noChecked = gameData.completed === false ? 'checked' : '';
   return `
   <div class="other-rero-card" data-game-id="${gid}">
     <div class="other-rero-header">
       <h3 class="other-rero-game-name">${safeName}</h3>
-      <button class="other-rero-delete-btn" data-action="delete">×</button>
+      <div class="other-rero-header-btns">
+        <button class="other-rero-fold-btn" data-action="fold-rero">▲</button>
+        <button class="other-rero-delete-btn" data-action="delete">×</button>
+      </div>
     </div>
+    <div class="other-rero-card-content">
     <div class="other-rero-body">
       <div class="other-rero-cover-wrap">
         <img class="other-rero-cover" src="${coverUrl}" alt="${safeName}" decoding="async">
       </div>
       <div class="other-rero-fields-and-radar">
         <div class="other-rero-fields">
-          <div class="other-rero-field-row">
-            <span class="other-rero-field-label">时长</span>
-            <input class="other-rero-field-input" type="text" data-field="duration" value="${gameData.duration || ''}" placeholder="小时">
-            <div class="other-rero-completed-wrap">
-              <span class="other-rero-completed-label">全通</span>
+          <div class="other-rero-dual-grade-row">
+            <div class="other-rero-field-row">
+              <span class="other-rero-field-label">时长</span>
+              <input class="other-rero-field-input" type="text" data-field="duration" value="${gameData.duration || ''}" placeholder="h/小时">
+            </div>
+            <div class="other-rero-field-row">
+              <span class="other-rero-field-label">全通</span>
               <div class="other-rero-yn-group">
-                <input type="checkbox" id="other-completed-yes-${gid}" data-completed-yn="yes" ${yesChecked}>
-                <label for="other-completed-yes-${gid}" class="other-rero-yn-label">是</label>
-                <input type="checkbox" id="other-completed-no-${gid}" data-completed-yn="no" ${noChecked}>
-                <label for="other-completed-no-${gid}" class="other-rero-yn-label">否</label>
+                <button class="other-yn-btn ${gameData.completed === true ? 'active' : ''}" data-completed-yn="yes">是</button>
+                <button class="other-yn-btn ${gameData.completed === false ? 'active' : ''}" data-completed-yn="no">否</button>
               </div>
             </div>
           </div>
           <div class="other-rero-field-row">
             <span class="other-rero-field-label">开始日期</span>
-            <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY-MM-DD">
+            <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY.MM.DD">
           </div>
           <div class="other-rero-field-row">
             <span class="other-rero-field-label">结束日期</span>
-            <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY-MM-DD">
+            <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY.MM.DD">
           </div>
           <div class="other-rero-dual-grade-row">
             <div class="other-rero-field-row">
@@ -463,6 +464,7 @@ function renderReroCard(gameData) {
       <textarea data-field="impression" placeholder="自定义文本">${gameData.impression || ''}</textarea>
       <div class="resize-handle"></div>
     </div>
+    </div>
   </div>
   `;
 }
@@ -499,8 +501,12 @@ function renderImpressionModule() {
     <div class="other-impression-card" data-game-id="${g.gameId}">
       <div class="other-impression-header">
         <h3 class="other-impression-game-name">${name}</h3>
-        <button class="other-rero-delete-btn" data-action="delete-impression">×</button>
+        <div class="other-rero-header-btns">
+          <button class="other-rero-fold-btn" data-action="fold-impression">▲</button>
+          <button class="other-rero-delete-btn" data-action="delete-impression">×</button>
+        </div>
       </div>
+      <div class="other-impression-card-content"></div>
     </div>`;
   }).join("");
 }
@@ -830,6 +836,13 @@ function bindReroCardEvents() {
     if (!gameData) return;
     const gameIdx = otherData.repoGames.findIndex(g => g.gameId === card.dataset.gameId);
 
+    // 游戏卡片折叠/展开
+    if (e.target.closest('[data-action="fold-rero"]')) {
+      card.classList.toggle('other-folded');
+      const btn = e.target.closest('[data-action="fold-rero"]');
+      btn.textContent = card.classList.contains('other-folded') ? '▼' : '▲';
+      return;
+    }
     // 删除游戏
     if (e.target.closest('[data-action="delete"]')) {
       otherData.repoGames = otherData.repoGames.filter(g => g.gameId !== card.dataset.gameId);
@@ -847,6 +860,23 @@ function bindReroCardEvents() {
       const group = gradeBtn.closest('.other-grade-group');
       group.querySelectorAll('.other-grade-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.value === gameData[field]);
+      });
+      return;
+    }
+    // 全通是/否方形按钮（互斥选择，再次点击取消）
+    const ynBtn = e.target.closest('.other-yn-btn');
+    if (ynBtn) {
+      const ynVal = ynBtn.dataset.completedYn;
+      if (ynVal === 'yes') {
+        gameData.completed = gameData.completed === true ? null : true;
+      } else {
+        gameData.completed = gameData.completed === false ? null : false;
+      }
+      saveOtherData();
+      const ynGroup = ynBtn.closest('.other-rero-yn-group');
+      ynGroup.querySelectorAll('.other-yn-btn').forEach(btn => {
+        const v = btn.dataset.completedYn;
+        btn.classList.toggle('active', (v === 'yes' && gameData.completed === true) || (v === 'no' && gameData.completed === false));
       });
       return;
     }
@@ -958,37 +988,6 @@ function bindReroCardEvents() {
       return;
     }
   });
-
-  // change 事件：全通是/否互斥勾选
-  repoContainer.addEventListener('change', function (e) {
-    const card = e.target.closest('.other-rero-card');
-    if (!card) return;
-    const gameData = getGameDataFromCard(card);
-    if (!gameData) return;
-    const ynVal = e.target.dataset.completedYn;
-    if (ynVal) {
-      const ynGroup = e.target.closest('.other-rero-yn-group');
-      const yesInput = ynGroup.querySelector('[data-completed-yn="yes"]');
-      const noInput = ynGroup.querySelector('[data-completed-yn="no"]');
-      if (ynVal === 'yes') {
-        if (e.target.checked) {
-          // 选"是"：取消"否"
-          if (noInput) noInput.checked = false;
-          gameData.completed = true;
-        } else {
-          gameData.completed = null;
-        }
-      } else if (ynVal === 'no') {
-        if (e.target.checked) {
-          if (yesInput) yesInput.checked = false;
-          gameData.completed = false;
-        } else {
-          gameData.completed = null;
-        }
-      }
-      saveOtherData();
-    }
-  });
 }
 
 // Impression 模块交互
@@ -996,6 +995,15 @@ function bindImpressionEvents() {
   const container = document.getElementById('other-impression-game-container');
   if (!container) return;
   container.addEventListener('click', function (e) {
+    // 游戏卡片折叠/展开
+    if (e.target.closest('[data-action="fold-impression"]')) {
+      const card = e.target.closest('.other-impression-card');
+      if (!card) return;
+      card.classList.toggle('other-folded');
+      const btn = e.target.closest('[data-action="fold-impression"]');
+      btn.textContent = card.classList.contains('other-folded') ? '▼' : '▲';
+      return;
+    }
     if (e.target.closest('[data-action="delete-impression"]')) {
       const card = e.target.closest('.other-impression-card');
       if (!card) return;
