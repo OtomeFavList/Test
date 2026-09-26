@@ -1099,9 +1099,13 @@ function switchCharModalView(mode){
     const modal = document.getElementById("annual-global-char-modal");
     const inner = modal.querySelector(".annual-global-modal-inner");
     const backBtn = modal.querySelector(".annual-modal-back-btn");
+    // 新增：页面二（角色列表）隐藏筛选框，页面一（游戏列表）恢复显示
+    const filterGroup = modal.querySelector(".filter-group.annual-filter-group");
+    if(filterGroup){
+        filterGroup.style.display = (mode === "charList") ? "none" : "";
+    }
     // 清除旧视图 class
     inner.classList.remove("char-modal-gamelist-view", "char-modal-charlist-view");
-
     if(mode === "gameList"){
         inner.classList.add("char-modal-gamelist-view");
         backBtn.style.display = "none";
@@ -3047,6 +3051,11 @@ function switchCpModalView(mode){
     const modal = document.getElementById("annual-global-cp-modal");
     const inner = modal.querySelector(".annual-global-modal-inner");
     const backBtn = modal.querySelector(".annual-cp-modal-back-btn");
+    // 新增：页面二（女主列表）隐藏筛选框，页面一（游戏列表）恢复显示
+    const filterGroup = modal.querySelector(".filter-group.annual-filter-group");
+    if(filterGroup){
+        filterGroup.style.display = (mode === "femaleList") ? "none" : "";
+    }
     inner.classList.remove("cp-modal-gamelist-view", "cp-modal-femalelist-view");
     if(mode === "gameList"){
         inner.classList.add("cp-modal-gamelist-view");
