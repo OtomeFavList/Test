@@ -458,14 +458,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
 }
 .other-repo-char-card {
     position: relative;
-    background: var(--other-card-bg, #fff7f9);
-    border: 1px solid var(--other-export-border, #f6a5b8);
-    border-radius: 8px;
-    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -482,7 +478,7 @@
 }
 .other-repo-card-label-edit {
     width: 100%;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     text-align: center;
     border: 1px dashed #ddd;
@@ -509,7 +505,14 @@
     justify-content: center;
     position: relative;
     border-radius: 8px;
-    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid #f6a5b8;
+    background: #fff;
+}
+/* 有角色图片时：边框改为 #eeeeee（对齐 Annual 模块七 .annual-grid-cover-box.filled） */
+.other-repo-card-body:has(.other-repo-char-preview) {
+    border: 1px solid #eeeeee;
+    background: #fff;
 }
 .other-repo-char-preview {
     width: 100%;
@@ -626,6 +629,11 @@
     font-weight: bold;
     color: var(--other-label-color, #b85878);
 }
+/* 文本卡片的自定义标签：对齐 Annual 模块五 .annual-other-custom-label */
+.other-repo-text-card .other-repo-card-label-edit {
+    padding: 4px 8px;
+    background: #fff;
+}
 .other-repo-text-card-body {
     flex: 1;
     display: flex;
@@ -643,7 +651,7 @@
     border-radius: 8px;
     background: #fcfcfc;
     font-size: var(--other-custom-text-font-size, 16px);
-    font-weight: bold;
+    font-weight: normal;
     color: var(--other-export-customtext, #c98fac);
     resize: none !important;
     overflow: auto;
@@ -945,6 +953,13 @@
     }
     .other-repo-card-label-edit {
         font-size: 15px;
+    }
+    /* 角色卡片自定义标签：对齐 Annual 模块七，移动端不覆盖 padding，继承 PC 端 4px 6px */
+    .other-repo-char-card .other-repo-card-label-edit {
+        padding: 4px 6px;
+    }
+    /* 文本卡片自定义标签：对齐 Annual 模块五 .annual-other-custom-label 移动端 3px 6px */
+    .other-repo-text-card .other-repo-card-label-edit {
         padding: 3px 6px;
     }
     .other-repo-card-add {
