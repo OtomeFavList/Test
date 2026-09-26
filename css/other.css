@@ -243,10 +243,18 @@
     background: #fcfcfc;
     width: 160px;
     box-sizing: border-box;
+    margin-left: auto;
 }
 .other-rero-field-input:focus {
     outline: none;
     border-color: #f6a5b8;
+}
+/* 文字框提示文字：16px，不加粗（与填写内容区分） */
+.mode-wrap[data-mode="other"] input::placeholder,
+.mode-wrap[data-mode="other"] textarea::placeholder {
+    font-size: 16px;
+    font-weight: normal;
+    opacity: 0.5;
 }
 
 /* 全通是/否方形按钮（与 SABCDE 同款样式） */
@@ -254,6 +262,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-left: auto;
 }
 .other-yn-btn {
     width: 36px;
@@ -287,6 +296,7 @@
     display: flex;
     gap: 6px;
     align-items: center;
+    margin-left: auto;
 }
 .other-grade-btn {
     width: 36px;
@@ -377,6 +387,7 @@
     display: flex;
     gap: 4px;
     align-items: center;
+    margin-left: auto;
 }
 .other-rero-hearts .heart {
     color: #cccccc;
@@ -474,7 +485,7 @@
 }
 .other-repo-card-label-edit {
     width: 100%;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
     text-align: center;
     border: 1px dashed #ddd;
