@@ -826,6 +826,21 @@ function bindReroCardEvents() {
       }
       return;
     }
+    // 文本卡片正文：失焦时如果是最后一个自定义卡片且内容非空，追加新空白卡片
+    // （复用 Annual 模块五逻辑：标签和正文任一非空且是最后一个，即触发追加）
+    const textContentIdx = e.target.dataset.repoTextContent;
+    if (textContentIdx !== undefined && e.target.value.trim() !== '') {
+      const idx = Number(textContentIdx);
+      const fixedLen = gameData.repoTextCards?.length || 0;
+      const customLen = gameData.repoCustomTextCards?.length || 0;
+      // 仅自定义卡片（合并索引 >= fixedLen）且是最后一个时追加
+      if (idx >= fixedLen && idx === fixedLen + customLen - 1) {
+        gameData.repoCustomTextCards.push({ label: '', type: 'text', text: '' });
+        saveOtherData();
+        renderRepoModule();
+      }
+      return;
+    }
   }, true);
 
   // click 事件
@@ -963,7 +978,9 @@ function bindReroCardEvents() {
       const customIdx = idx - fixedLen;
       if (customIdx >= 0) {
         gameData.repoCustomCharCards.splice(customIdx, 1);
-        if (gameData.repoCustomCharCards.length === 0) {
+        // 复用 Annual 模块五逻辑：确保至少保留一个完全空白的可操作自定义卡片
+        const hasEmpty = gameData.repoCustomCharCards.some(c => !c.label.trim() && !c.charId);
+        if (!hasEmpty) {
           gameData.repoCustomCharCards.push({ label: '', type: 'char', gameId: '', charId: '', charName: '', coverSrc: '' });
         }
         saveOtherData();
@@ -979,7 +996,9 @@ function bindReroCardEvents() {
       const customIdx = idx - fixedLen;
       if (customIdx >= 0) {
         gameData.repoCustomTextCards.splice(customIdx, 1);
-        if (gameData.repoCustomTextCards.length === 0) {
+        // 复用 Annual 模块五逻辑：确保至少保留一个完全空白的可操作自定义卡片
+        const hasEmpty = gameData.repoCustomTextCards.some(c => !c.label.trim() && !(c.text && c.text.trim()));
+        if (!hasEmpty) {
           gameData.repoCustomTextCards.push({ label: '', type: 'text', text: '' });
         }
         saveOtherData();
