@@ -58,6 +58,10 @@
     font-size: 42px;
     color: var(--other-export-title, #b33a3a);
 }
+/* Other 模式下隐藏使用指南按钮 */
+.site-title.other-active .guide-btn-block {
+    display: none;
+}
 
 /* 模块折叠按钮 */
 .other-card-fold-btn {
