@@ -865,6 +865,12 @@
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+    /* 移动端收窄卡片左右内边距，让角色卡片网格容器宽度足以放下3列，
+       复用 Annual 模块七 auto-fill + minmax(90px,1fr) 的动态分列效果 */
+    .other-rero-card {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
     .other-rero-cover-wrap {
         width: 100px;
     }
