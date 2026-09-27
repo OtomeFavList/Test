@@ -1300,7 +1300,15 @@ async function renderOtherRepoGameCanvas(designW, gameData, gameInfo, config, dp
   emitRenderProgress(5);
   let imageUrls = collectRepoGameImages(gameData, gameInfo);
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
-  imageUrls = imageUrls.filter(src => SAFE_URL_PATTERN.test(src));
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
   imageUrls = [...new Set(imageUrls)];
   const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
   const imageCache = loadRet.resultMap;
@@ -1433,7 +1441,15 @@ async function renderOtherBriefPageCanvas(designW, pageGameDataList, pageGameInf
   // 收集并加载封面图片
   let imageUrls = collectBriefPageImages(pageGameDataList, pageGameInfoList);
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
-  imageUrls = imageUrls.filter(src => SAFE_URL_PATTERN.test(src));
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
   imageUrls = [...new Set(imageUrls)];
   const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
   const imageCache = loadRet.resultMap;
