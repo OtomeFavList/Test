@@ -155,7 +155,7 @@ function loadOtherConfig() {
   }
   otherConfig = { ...otherExportDefault, ...otherConfig };
   // 三位十六进制色修复（input[type=color] 只接受六位）
-  ['customborder', 'cardBg', 'imageBorderColor'].forEach(key => {
+  ['customborder', 'cardBg', 'imageBorderColor', 'labelColor', 'reporterColor'].forEach(key => {
     if (otherConfig[key] && /^#[0-9a-fA-F]{3}$/.test(otherConfig[key])) {
       otherConfig[key] = "#" + otherConfig[key][1].repeat(2)
                        + otherConfig[key][2].repeat(2)
@@ -369,6 +369,16 @@ function renderHearts(love) {
   ).join("");
 }
 
+// 新增：自定义标签 textarea 自动调整高度
+// 对齐 Annual：解决 input 单行无法换行、长标签被截断看不到的问题
+function autoResizeCustomLabel(textarea) {
+  if (!textarea) return;
+  textarea.style.resize = 'none';
+  textarea.style.overflow = 'hidden';
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
 // Rero 卡片
 function renderReroCard(gameData) {
   const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
@@ -501,6 +511,10 @@ function renderRepoModule() {
   requestAnimationFrame(bindTextareaResize);
   // 复用 Annual 模式：渲染后直接绑定自定义卡片标签/正文的失焦追加事件
   bindRepoCustomCardBlur();
+  // 渲染后对已有内容的自定义标签执行自动增高
+  container.querySelectorAll('.other-repo-card-label-edit').forEach(ta => {
+    if (ta.value.trim()) autoResizeCustomLabel(ta);
+  });
 }
 
 // 复用 Annual 模式 renderOtherCustomCards 的直接绑定模式：
@@ -613,7 +627,6 @@ function openOtherGameModal(target) {
     return;
   }
   modal.classList.add('active');
-  document.body.classList.add('modal-lock');
   const searchInput = modal.querySelector('.annual-global-search-input');
   if (searchInput) searchInput.value = "";
   modal.querySelectorAll(".annual-filter-writer, .annual-filter-art, .annual-filter-year, .annual-filter-publisher, .annual-filter-cn")
@@ -681,14 +694,12 @@ function bindModalInterceptor() {
 
     // 关闭弹窗
     modal.classList.remove('active');
-    document.body.classList.remove('modal-lock');
     otherAddTarget = null;
   }, true);
 
   // 关闭按钮 / 点击遮罩：清除 Other 标记 + 解除页面滚动锁定
   const clearTarget = () => {
     otherAddTarget = null;
-    document.body.classList.remove('modal-lock');
     const m = document.getElementById('annual-global-game-modal');
     if (m) delete m.dataset.otherModalActive;
   };
@@ -867,6 +878,7 @@ function bindReroCardEvents() {
       const idx = Number(charLabelIdx);
       const target = getCharCardRef(gameData, idx);
       if (target) { target.label = e.target.value; saveOtherData(); }
+      autoResizeCustomLabel(e.target);
       return;
     }
     // 文本卡片自定义标签
@@ -875,6 +887,7 @@ function bindReroCardEvents() {
       const idx = Number(textLabelIdx);
       const target = getTextCardRef(gameData, idx);
       if (target) { target.label = e.target.value; saveOtherData(); }
+      autoResizeCustomLabel(e.target);
       return;
     }
     // 文本卡片内容（CP卡片无textarea，跳过）
@@ -1090,10 +1103,8 @@ function bindOtherScrollButtons() {
   const topBtn = document.getElementById('other-back-to-top-btn');
   const bottomBtn = document.getElementById('other-scroll-to-bottom-btn');
   if (!topBtn || !bottomBtn) return;
-
   const TOLERANCE = 30;
   const EMPTY_HEIGHT = 140;
-
   function getModules() {
     const wrap = document.querySelector('.mode-wrap[data-mode="other"]');
     return wrap ? Array.from(wrap.querySelectorAll('.big-card')) : [];
@@ -1107,56 +1118,96 @@ function bindOtherScrollButtons() {
     for (let i = from; i < modules.length; i++) if (!isEmpty(modules[i])) return i;
     return -1;
   }
-  function getCurrentIndex(modules) {
-    if (modules.length === 0) return -1;
+  // 对齐 Annual：根据视口垂直中心判断当前模块信息，含 inside/isAbove 边界判断
+  function getCurrentModuleInfo() {
+    const modules = getModules();
+    if (modules.length === 0) return { idx: -1, inside: false, isAbove: false };
     const viewCenter = window.scrollY + window.innerHeight / 2;
+    // 优先：视口中心落在某个非空模块范围内
     for (let i = 0; i < modules.length; i++) {
       if (isEmpty(modules[i])) continue;
       const rect = modules[i].getBoundingClientRect();
       const top = rect.top + window.scrollY;
       const bottom = rect.bottom + window.scrollY;
-      if (viewCenter >= top && viewCenter <= bottom) return i;
+      if (viewCenter >= top && viewCenter <= bottom) {
+        return { idx: i, inside: true, isAbove: false };
+      }
     }
+    // 兜底：视口中心不在任何非空模块范围内，找距离最近的非空模块并记录在其上方还是下方
+    let closest = -1;
+    let minDist = Infinity;
+    let closestIsAbove = false;
     for (let i = 0; i < modules.length; i++) {
+      if (isEmpty(modules[i])) continue;
       const rect = modules[i].getBoundingClientRect();
       const top = rect.top + window.scrollY;
       const bottom = rect.bottom + window.scrollY;
-      if (viewCenter >= top && viewCenter <= bottom) return i;
+      if (viewCenter < top) {
+        const dist = top - viewCenter;
+        if (dist < minDist) { minDist = dist; closest = i; closestIsAbove = true; }
+      } else if (viewCenter > bottom) {
+        const dist = viewCenter - bottom;
+        if (dist < minDist) { minDist = dist; closest = i; closestIsAbove = false; }
+      }
     }
-    return 0;
+    if (closest >= 0) {
+      return { idx: closest, inside: false, isAbove: closestIsAbove };
+    }
+    return { idx: 0, inside: false, isAbove: false };
   }
-
+  // ▲按钮
   topBtn.addEventListener('click', function () {
     const modules = getModules();
     if (modules.length === 0) return;
-    let idx = getCurrentIndex(modules);
-    if (isEmpty(modules[idx])) {
-      const prev = findPrev(modules, idx);
-      if (prev >= 0) idx = prev;
-    }
-    const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
-    if (window.scrollY > currentTop + TOLERANCE) {
-      modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
+    const info = getCurrentModuleInfo();
+    const idx = info.idx;
+    if (idx < 0) return;
+    if (info.inside) {
+      const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
+      if (window.scrollY > currentTop + TOLERANCE) {
+        modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        const prev = findPrev(modules, idx - 1);
+        if (prev >= 0) {
+          modules[prev].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    } else if (info.isAbove) {
+      // 视口中心在最近非空模块上方：往上滚跳到上一个非空模块顶部
       const prev = findPrev(modules, idx - 1);
-      if (prev >= 0) modules[prev].scrollIntoView({ behavior: 'smooth', block: 'start' });
-      else window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (prev >= 0) {
+        modules[prev].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      // 视口中心在最近非空模块下方：往上滚直接回到该非空模块顶部
+      modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
-
+  // ▼按钮
   bottomBtn.addEventListener('click', function () {
     const modules = getModules();
     if (modules.length === 0) return;
-    let idx = getCurrentIndex(modules);
-    if (isEmpty(modules[idx])) {
-      const next = findNext(modules, idx);
-      if (next >= 0) idx = next;
-    }
-    const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
-    const viewBottom = window.scrollY + window.innerHeight;
-    if (viewBottom < currentBottom - TOLERANCE) {
+    const info = getCurrentModuleInfo();
+    const idx = info.idx;
+    if (idx < 0) return;
+    if (info.inside) {
+      const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
+      const viewBottom = window.scrollY + window.innerHeight;
+      if (viewBottom < currentBottom - TOLERANCE) {
+        modules[idx].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else {
+        const next = findNext(modules, idx + 1);
+        if (next >= 0) modules[next].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    } else if (info.isAbove) {
+      // 视口中心在最近非空模块上方：往下滚直接滚到该非空模块底部
       modules[idx].scrollIntoView({ behavior: 'smooth', block: 'end' });
     } else {
+      // 视口中心在最近非空模块下方：往下滚跳到下一个非空模块底部
       const next = findNext(modules, idx + 1);
       if (next >= 0) modules[next].scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
@@ -1173,6 +1224,17 @@ function updateSliderProgress(sliderEl) {
   if (rowWrap) {
     rowWrap.style.setProperty('--other-slider-progress', `${percent}%`);
   }
+}
+
+// 新增：将需要影响 mode-wrap 外部元素（整个页面背景、site-title 标题）的颜色同步到 .wrap
+// 因 .site-title 和 .mode-switch-wrap 在 .mode-wrap 外面，继承不到 mode-wrap 上的变量
+function applyOtherPageColors() {
+  const wrapEl = document.querySelector('.wrap');
+  if (!wrapEl) return;
+  wrapEl.style.backgroundColor = otherConfig.bg;
+  wrapEl.style.setProperty("--other-export-title", otherConfig.title);
+  // 同步设置 body 背景色，让视口两侧也跟着变色
+  document.body.style.backgroundColor = otherConfig.bg;
 }
 
 // 新增：Other 模式导出预计耗时计算（对齐 Annual calcAnnualEstimateSec 逻辑）
@@ -1402,9 +1464,15 @@ function bindExportConfig() {
       if (item.key === 'title' && wrap) {
         wrap.style.setProperty('--other-export-subtitle', dom.value);
       }
+      // 背景色/标题色变化时同步到 .wrap 和 body
+      if (item.key === 'bg' || item.key === 'title') {
+        applyOtherPageColors();
+      }
       saveOtherConfig();
     };
   });
+  // 初始化时同步页面背景和标题色
+  applyOtherPageColors();
   // 字号滑块：填写内容字号（只影响导出图片，不影响网页显示）
   const sliderInputFont = document.getElementById('other-slider-input-font');
   const inputFontValueDisplay = document.getElementById('other-input-font-value');
@@ -1642,6 +1710,25 @@ export function initOtherModule() {
       }
     });
     window._otherModalSearchBound = true;
+  }
+
+  // 新增：模式切换监听，切回 FavList 时重置 .wrap 背景和标题变量，切回 Other 时重新应用
+  if (!window._otherModeSwitchBound) {
+    document.querySelectorAll('.mode-switch-wrap .mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wrapEl = document.querySelector('.wrap');
+        if (!wrapEl) return;
+        if (btn.dataset.mode === 'other') {
+          applyOtherPageColors();
+        } else {
+          // 切回非 Other 模式时重置 .wrap 和 body 的背景色，恢复原页面样式
+          wrapEl.style.backgroundColor = '';
+          wrapEl.style.removeProperty('--other-export-title');
+          document.body.style.backgroundColor = '';
+        }
+      });
+    });
+    window._otherModeSwitchBound = true;
   }
 
   // 游戏模板就绪后渲染卡片；未就绪则轮询等待（最多 2 秒）
