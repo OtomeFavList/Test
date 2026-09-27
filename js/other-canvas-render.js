@@ -105,7 +105,13 @@ function toCanvasUrl(src) {
   if (!src) return '';
   let url;
   if (/^https?:\/\//.test(src)) {
-    url = src;
+    // 已经是完整URL：R2地址需转jsDelivr才能跨域绘制；jsDelivr或其他安全URL直接用
+    if (/^https:\/\/pub-/.test(src)) {
+      const converted = convertR2ToJsDelivr(src);
+      url = (converted && isSafeUrl(converted)) ? converted : '';
+    } else {
+      url = src;
+    }
   } else {
     url = getWebImageUrl(src);
     if (url && /^https:\/\/pub-/.test(url)) {
@@ -298,7 +304,8 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
     noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
-    const textSize = config.customTextFontSize || 16;
+    // 统一用 inputFontSize，与 calcRepoGameHeight / drawRepoGameCard 的高度计算保持一致
+    const textSize = config.inputFontSize || config.customTextFontSize || 16;
     if (centerText) {
       drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
         boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
