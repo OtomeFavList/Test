@@ -1116,7 +1116,7 @@ function switchCharModalView(mode){
 }
 
 // 打开角色选择弹窗
-function openAnnualGlobalCharModal(targetIndex, context){
+function openAnnualGlobalCharModal(targetIndex, context, directGame){
     if(!_annualRealInitialized && isGameTemplateReady()){
         realInitAnnualModule();
     }
@@ -1125,24 +1125,42 @@ function openAnnualGlobalCharModal(targetIndex, context){
     const modal = document.getElementById("annual-global-char-modal");
     if(!modal) return;
     modal.classList.add("active");
-    // 初始化弹窗状态
-    charModalViewMode = "gameList";
-    charModalCurrentGameId = null;
+    // 初始化弹窗状态（全局/局部开关逻辑 + 索引缓存，无论页面一/二都需要）
     charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    // 补丁：每次打开弹窗清空立绘索引缓存，避免上次选择残留
     annualCharImgIndex.clear();
-    // 补丁：清空名字索引缓存
     annualCharNameIndex.clear();
+
+    // 新增：directGame 传入时，跳过页面一（游戏搜索列表），直接进入页面二（角色列表）
+    // 供 Other 模式＋按钮使用；Annual 模式不传此参数，走原有逻辑
+    if (directGame && directGame.id) {
+        charModalViewMode = "charList";
+        charModalCurrentGameId = directGame.id;
+        // 重置局部开关（逻辑 + DOM 同步），防止跨游戏残留
+        resetCharModalLocalSwitches();
+        switchCharModalView("charList");
+        // 重置全局开关 DOM 勾选
+        modal.querySelector("#annual-modal-global-sub-char").checked = false;
+        modal.querySelector("#annual-modal-global-hide-char").checked = false;
+        modal.querySelector("#annual-modal-global-fd-game").checked = false;
+        const globalFdSubEl = modal.querySelector("#annual-modal-global-fd-sub-char");
+        if (globalFdSubEl) globalFdSubEl.checked = false;
+        // 预填筛选下拉框（用户点返回按钮回到页面一时可用）
+        fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
+        resetAnnualFilterSelects("annual-global-char-modal");
+        renderCharModalCharList();
+        return;
+    }
+
+    // 原有逻辑：页面一（游戏搜索列表）
+    charModalViewMode = "gameList";
+    charModalCurrentGameId = null;
     switchCharModalView("gameList");
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
-    // 新增：填充并重置筛选下拉框
     fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
     resetAnnualFilterSelects("annual-global-char-modal");
-    // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
-    // 重置开关 DOM 勾选，对齐 HTML 真实 id
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
     modal.querySelector("#annual-modal-global-hide-char").checked = false;
     modal.querySelector("#annual-modal-global-fd-game").checked = false;
@@ -3066,27 +3084,47 @@ function switchCpModalView(mode){
     }
 }
 
-function openAnnualGlobalCpModal(targetIndex, context){
+function openAnnualGlobalCpModal(targetIndex, context, directGame){
     if(!_annualRealInitialized && isGameTemplateReady()) realInitAnnualModule();
     _activeModalContext = context || "cpTop";
     activeCpTopItemIndex = (_activeModalContext === "cpTop") ? targetIndex : null;
     const modal = document.getElementById("annual-global-cp-modal");
     if(!modal) return;
     modal.classList.add("active");
-    cpModalViewMode = "gameList";
-    cpModalCurrentGameId = null;
-    cpModalCurrentFemaleId = null;
     cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     annualCpImgIndex.clear();
     annualCpNameIndex.clear();
+
+    // 新增：directGame 传入时，跳过页面一（游戏搜索列表），直接进入页面二（女主列表）
+    // 供 Other 模式 CP＋按钮使用；Annual 模式不传此参数，走原有逻辑
+    if (directGame && directGame.id) {
+        cpModalViewMode = "femaleList";
+        cpModalCurrentGameId = directGame.id;
+        cpModalCurrentFemaleId = null;
+        resetCpModalLocalSwitches();
+        switchCpModalView("femaleList");
+        // 重置全局开关 DOM 勾选
+        ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
+         "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char"].forEach(sel=>{
+            const el = modal.querySelector(sel); if(el) el.checked = false;
+        });
+        // 预填筛选下拉框（用户点返回按钮回到页面一时可用）
+        fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
+        resetAnnualFilterSelects("annual-global-cp-modal");
+        renderCpModalFemaleList();
+        return;
+    }
+
+    // 原有逻辑：页面一（游戏搜索列表）
+    cpModalViewMode = "gameList";
+    cpModalCurrentGameId = null;
+    cpModalCurrentFemaleId = null;
     switchCpModalView("gameList");
     const searchInput = modal.querySelector(".annual-global-cp-search-input");
     searchInput.value = "";
-    // 新增：填充并重置筛选下拉框
     fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
     resetAnnualFilterSelects("annual-global-cp-modal");
-    // 修复：移除自动 focus，避免移动端打开弹窗时自动弹出软键盘，由用户手动点击搜索栏
     ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
      "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
      "#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
