@@ -968,24 +968,24 @@ function bindReroCardEvents() {
       }
       return;
     }
-    // 角色卡片 + 按钮（直接传入当前游戏信息，跳过游戏搜索页，直接显示角色列表页面二）
+    // 角色卡片 + 按钮（directGame 作为第三参数传入，直接显示角色列表页面二，跳过游戏搜索页）
     const charAddBtn = e.target.closest('[data-repo-char-add]');
     if (charAddBtn) {
       e.stopPropagation();
       const idx = Number(charAddBtn.dataset.repoCharAdd);
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'char' };
       const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
-      window.openAnnualGlobalCharModal(gameInfo || null, 'otherRepoChar');
+      window.openAnnualGlobalCharModal(null, 'otherRepoChar', gameInfo || null);
       return;
     }
-    // 文本卡片 CP + 按钮（直接传入当前游戏信息，跳过游戏搜索页，直接显示CP选择页面二）
+    // 文本卡片 CP + 按钮（directGame 作为第三参数传入，直接显示女主列表页面二，跳过游戏搜索页）
     const textCpAddBtn = e.target.closest('[data-repo-text-cp-add]');
     if (textCpAddBtn) {
       e.stopPropagation();
       const idx = Number(textCpAddBtn.dataset.repoTextCpAdd);
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'cp' };
       const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
-      window.openAnnualGlobalCpModal(gameInfo || null, 'otherRepoCp');
+      window.openAnnualGlobalCpModal(null, 'otherRepoCp', gameInfo || null);
       return;
     }
     // 文本卡片 CP 图片清除 ×
