@@ -406,23 +406,23 @@ function renderReroCard(gameData) {
               </div>
             </div>
           </div>
-          <div class="other-rero-field-row">
-            <span class="other-rero-field-label">开始日期</span>
-            <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY.MM.DD">
-          </div>
-          <div class="other-rero-field-row">
-            <span class="other-rero-field-label">结束日期</span>
-            <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY.MM.DD">
-          </div>
           <div class="other-rero-dual-grade-row">
             <div class="other-rero-field-row">
-              <span class="other-rero-field-label">甜度</span>
-              <div class="other-grade-group">${renderGradeGroup('sweetness', gameData.sweetness)}</div>
+              <span class="other-rero-field-label">开始日期</span>
+              <input class="other-rero-field-input" type="text" data-field="startDate" value="${gameData.startDate || ''}" placeholder="YYYY.MM.DD">
             </div>
             <div class="other-rero-field-row">
-              <span class="other-rero-field-label">虐度</span>
-              <div class="other-grade-group">${renderGradeGroup('bitterness', gameData.bitterness)}</div>
+              <span class="other-rero-field-label">结束日期</span>
+              <input class="other-rero-field-input" type="text" data-field="endDate" value="${gameData.endDate || ''}" placeholder="YYYY.MM.DD">
             </div>
+          </div>
+          <div class="other-rero-field-row">
+            <span class="other-rero-field-label">甜度</span>
+            <div class="other-grade-group">${renderGradeGroup('sweetness', gameData.sweetness)}</div>
+          </div>
+          <div class="other-rero-field-row">
+            <span class="other-rero-field-label">虐度</span>
+            <div class="other-grade-group">${renderGradeGroup('bitterness', gameData.bitterness)}</div>
           </div>
           <div class="other-rero-rating-left-only">
             <div class="other-rero-field-row">
