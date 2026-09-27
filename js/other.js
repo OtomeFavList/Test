@@ -1391,36 +1391,32 @@ function bindExportConfig() {
       saveOtherConfig();
     };
   });
-  // 字号滑块：填写内容字号（与 Annual 同款绑定逻辑；作用于时长/日期 input 及 优点/缺点/攻略顺序/好感顺序 textarea）
+  // 字号滑块：填写内容字号（只影响导出图片，不影响网页显示）
   const sliderInputFont = document.getElementById('other-slider-input-font');
   const inputFontValueDisplay = document.getElementById('other-input-font-value');
   if (sliderInputFont && inputFontValueDisplay) {
     sliderInputFont.value = otherConfig.inputFontSize;
     inputFontValueDisplay.textContent = `${otherConfig.inputFontSize}px`;
-    if (wrap) wrap.style.setProperty('--other-input-font-size', `${otherConfig.inputFontSize}px`);
     updateSliderProgress(sliderInputFont);
     sliderInputFont.oninput = () => {
       const val = Number(sliderInputFont.value);
       otherConfig.inputFontSize = val;
       inputFontValueDisplay.textContent = `${val}px`;
-      if (wrap) wrap.style.setProperty('--other-input-font-size', `${val}px`);
       updateSliderProgress(sliderInputFont);
       saveOtherConfig();
     };
   }
-  // 字号滑块：自定义文本字号（与 Annual 同款绑定逻辑；作用于感想 textarea）
+  // 字号滑块：自定义文本字号（只影响导出图片，不影响网页显示）
   const sliderCustomTextFont = document.getElementById('other-slider-custom-text-font');
   const customTextFontValueDisplay = document.getElementById('other-custom-text-font-value');
   if (sliderCustomTextFont && customTextFontValueDisplay) {
     sliderCustomTextFont.value = otherConfig.customTextFontSize;
     customTextFontValueDisplay.textContent = `${otherConfig.customTextFontSize}px`;
-    if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${otherConfig.customTextFontSize}px`);
     updateSliderProgress(sliderCustomTextFont);
     sliderCustomTextFont.oninput = () => {
       const val = Number(sliderCustomTextFont.value);
       otherConfig.customTextFontSize = val;
       customTextFontValueDisplay.textContent = `${val}px`;
-      if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${val}px`);
       updateSliderProgress(sliderCustomTextFont);
       saveOtherConfig();
     };
@@ -1459,17 +1455,15 @@ function bindExportConfig() {
       if (wrap) wrap.style.setProperty('--other-export-subtitle', otherConfig.title);
       if (reporterNameInput) reporterNameInput.value = '';
       if (normalQuality) normalQuality.checked = false;
-      // 重置字号滑块到默认值（与 Annual 同款重置逻辑）
+      // 重置字号滑块到默认值（只重置配置和显示，不操作网页CSS变量）
       if (sliderInputFont && inputFontValueDisplay) {
         sliderInputFont.value = otherExportDefault.inputFontSize;
         inputFontValueDisplay.textContent = `${otherExportDefault.inputFontSize}px`;
-        if (wrap) wrap.style.setProperty('--other-input-font-size', `${otherExportDefault.inputFontSize}px`);
         updateSliderProgress(sliderInputFont);
       }
       if (sliderCustomTextFont && customTextFontValueDisplay) {
         sliderCustomTextFont.value = otherExportDefault.customTextFontSize;
         customTextFontValueDisplay.textContent = `${otherExportDefault.customTextFontSize}px`;
-        if (wrap) wrap.style.setProperty('--other-custom-text-font-size', `${otherExportDefault.customTextFontSize}px`);
         updateSliderProgress(sliderCustomTextFont);
       }
     };
