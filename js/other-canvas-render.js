@@ -83,6 +83,9 @@ const IMPRESSION_MIN_H = 72;
 const SECTION_GAP = 14;
 const BODY_TO_TEXTFIELD_GAP = 8;  // 主体行（含五维图）与文本字段区（优点/缺点等）之间的额外间距
 const GAME_NAME_MB = 12;
+// 简评表
+const BRIEF_GAMES_PER_PAGE = 3;  // 每张简评表至多放置3个游戏
+const BRIEF_CARD_GAP = 16;       // 简评表中游戏卡片之间的间距
 
 // 缓存
 const roundImageCache = new Map();
@@ -533,6 +536,17 @@ function collectRepoGameImages(gameData, gameInfo) {
   return [...new Set(urls)];
 }
 
+// 简评表图片收集（仅需游戏封面，不需要角色/CP图片）
+function collectBriefPageImages(gameDataList, gameInfoList) {
+  const urls = [];
+  const push = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
+  gameDataList.forEach((gameData, i) => {
+    const gameInfo = gameInfoList[i];
+    if (gameInfo?.cover) push(gameInfo.cover);
+  });
+  return [...new Set(urls)];
+}
+
 // 高度计算
 function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache) {
   const wrapW = getWrapW(targetW);
@@ -713,6 +727,59 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
   contentH += coverH;
   h += CARD_PAD * 2 + contentH;
   return h;
+}
+
+// 简评表单游戏高度计算（仅游戏名+主体行，不含文本字段区/角色卡片/文字卡片/感想）
+// 返回 0 表示该游戏无任何简评内容，应跳过
+function calcBriefGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const innerW = wrapW - CARD_PAD * 2;
+  const inputSize = config.inputFontSize || 16;
+  // 内容存在性判断
+  const hasDuration = !!(gameData.duration && String(gameData.duration).trim());
+  const hasCompleted = gameData.completed === true || gameData.completed === false;
+  const hasStartDate = !!(gameData.startDate && String(gameData.startDate).trim());
+  const hasEndDate = !!(gameData.endDate && String(gameData.endDate).trim());
+  const hasSweetness = !!gameData.sweetness;
+  const hasBitterness = !!gameData.bitterness;
+  const hasOverall = !!gameData.overall;
+  const hasLove = gameData.love && gameData.love > 0;
+  const hasRadar = (gameData.fiveDim || []).some(d => (d.level || 0) > 0);
+  if (!hasDuration && !hasCompleted && !hasStartDate && !hasEndDate &&
+      !hasSweetness && !hasBitterness && !hasOverall && !hasLove && !hasRadar) {
+    return 0;
+  }
+  let contentH = 0;
+  // 游戏名
+  const gameName = gameInfo?.name || gameData.gameId || '';
+  const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
+  contentH += nameH + GAME_NAME_MB;
+  // 主体行（与 calcRepoGameHeight 完全一致的逻辑）
+  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
+  const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+  const coverH = calcGameCoverHeight(coverImg, COVER_W);
+  const fieldW = innerW - COVER_W - 12;
+  const radarGap = 16;
+  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4, inputSize * 1.4);
+  const fieldRows = [];
+  if (hasDuration || hasCompleted) fieldRows.push(1);
+  if (hasStartDate || hasEndDate) fieldRows.push(2);
+  if (hasSweetness) fieldRows.push(3);
+  if (hasBitterness) fieldRows.push(4);
+  if (hasOverall) fieldRows.push(5);
+  if (hasLove) fieldRows.push(6);
+  const fieldAreaH = fieldRows.length > 0
+    ? fieldRows.length * fieldRowH + (fieldRows.length - 1) * FIELD_ROW_GAP
+    : 0;
+  const rowsBeforeSweetness = ((hasDuration || hasCompleted) ? 1 : 0) + ((hasStartDate || hasEndDate) ? 1 : 0);
+  const radarTopOffset = rowsBeforeSweetness > 0
+    ? rowsBeforeSweetness * fieldRowH + (rowsBeforeSweetness - 1) * FIELD_ROW_GAP
+    : 0;
+  const radarBottomOffset = hasRadar ? (radarTopOffset + RADAR_BOX_W) : 0;
+  const bodyContentH = Math.max(fieldAreaH, radarBottomOffset);
+  const bodyRowH = Math.max(coverH, bodyContentH);
+  contentH += bodyRowH;
+  return CARD_PAD * 2 + contentH;
 }
 
 // 绘制函数
@@ -1064,6 +1131,129 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
   painter.y = cardTop + cardH;
 }
 
+// 简评表单游戏绘制（仅游戏名+主体行，不含文本字段区/角色卡片/文字卡片/感想）
+function drawBriefGameCard(painter, targetW, gameData, gameInfo, config, imageCache) {
+  const wrapW = getWrapW(targetW);
+  const wrapX = getWrapX(targetW, wrapW);
+  const innerW = wrapW - CARD_PAD * 2;
+  const contentX = wrapX + CARD_PAD;
+  const ctx = painter.ctx;
+  const cardTop = painter.y;
+  const cardH = calcBriefGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache);
+  if (cardH <= 0) return; // 无内容，跳过
+  const inputSize = config.inputFontSize || 16;
+  const labelColor = config.defaultTextColor || '#b85878';
+  const valueColor = config.inputTextColor || '#000000';
+  // 卡片外框
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+  painter.y = cardTop + CARD_PAD;
+  // 游戏名
+  const gameName = gameInfo?.name || gameData.gameId || '';
+  wrapText(ctx, gameName, contentX, painter.y, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE,
+    config.gamename || '#000000', FONT_SIYUAN, true);
+  const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
+  painter.shiftY(nameH + GAME_NAME_MB);
+  // 主体行
+  const bodyTop = painter.y;
+  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
+  const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+  const coverH = calcGameCoverHeight(coverImg, COVER_W);
+  drawCoverCard(painter, contentX, bodyTop, COVER_W, coverH, coverImg, coverSrc, 6);
+  // 字段区
+  const fieldX = contentX + COVER_W + 12;
+  const fieldW = innerW - COVER_W - 12;
+  const hasRadar = (gameData.fiveDim || []).some(d => (d.level || 0) > 0);
+  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4, inputSize * 1.4);
+  const labelCenterOffset = (fieldRowH - LABEL_SIZE) / 2;
+  const gradeCenterOffset = (fieldRowH - GRADE_SIZE) / 2;
+  const heartCenterOffset = (fieldRowH - HEART_SIZE) / 2;
+  let fy = bodyTop;
+  function drawFieldLabel(text, x, y) {
+    ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
+    ctx.fillStyle = labelColor;
+    ctx.fillText(text, x, y + labelCenterOffset);
+    return ctx.measureText(text).width;
+  }
+  function drawFieldValue(text, x, y, size) {
+    const s = size || inputSize;
+    const offset = (fieldRowH - s) / 2;
+    ctx.font = `${s}px ${FONT_SIYUAN}`;
+    ctx.fillStyle = valueColor;
+    ctx.fillText(text, x, y + offset);
+  }
+  // 行1：时长 + 全通
+  const hasDuration = !!(gameData.duration && String(gameData.duration).trim());
+  const hasCompleted = gameData.completed === true || gameData.completed === false;
+  if (hasDuration || hasCompleted) {
+    if (hasDuration) {
+      const lw = drawFieldLabel('时长', fieldX, fy);
+      drawFieldValue(String(gameData.duration).trim(), fieldX + lw + LABEL_VALUE_GAP, fy, FIELD_VALUE_SIZE);
+    }
+    if (hasCompleted) {
+      const halfW = fieldW / 2;
+      const ynX = fieldX + halfW;
+      const lw = drawFieldLabel('全通', ynX, fy);
+      drawYnGroup(ctx, ynX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.completed, config);
+    }
+    fy += fieldRowH + FIELD_ROW_GAP;
+  }
+  // 行2：开始日期 + 结束日期
+  const hasStartDate = !!(gameData.startDate && String(gameData.startDate).trim());
+  const hasEndDate = !!(gameData.endDate && String(gameData.endDate).trim());
+  if (hasStartDate || hasEndDate) {
+    const halfW = fieldW / 2;
+    if (hasStartDate) {
+      const lw = drawFieldLabel('开始日期', fieldX, fy);
+      drawFieldValue(String(gameData.startDate).trim(), fieldX + lw + LABEL_VALUE_GAP, fy, FIELD_VALUE_SIZE);
+    }
+    if (hasEndDate) {
+      const endX = fieldX + halfW;
+      const lw = drawFieldLabel('结束日期', endX, fy);
+      drawFieldValue(String(gameData.endDate).trim(), endX + lw + LABEL_VALUE_GAP, fy, FIELD_VALUE_SIZE);
+    }
+    fy += fieldRowH + FIELD_ROW_GAP;
+  }
+  // 雷达图
+  if (hasRadar) {
+    ctx.save();
+    ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
+    const sweetLabelW = ctx.measureText('甜度').width;
+    ctx.restore();
+    const gradeGroupX = fieldX + sweetLabelW + LABEL_VALUE_GAP;
+    const eLeftEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP);
+    const cardRightEdge = fieldX + fieldW;
+    const radarCx = (eLeftEdge + cardRightEdge) / 2;
+    const radarCy = fy + RADAR_BOX_W / 2;
+    drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
+  }
+  // 行3：甜度
+  if (gameData.sweetness) {
+    const lw = drawFieldLabel('甜度', fieldX, fy);
+    drawGradeGroup(ctx, fieldX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.sweetness, config);
+    fy += fieldRowH + FIELD_ROW_GAP;
+  }
+  // 行4：虐度
+  if (gameData.bitterness) {
+    const lw = drawFieldLabel('虐度', fieldX, fy);
+    drawGradeGroup(ctx, fieldX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.bitterness, config);
+    fy += fieldRowH + FIELD_ROW_GAP;
+  }
+  // 行5：总评
+  if (gameData.overall) {
+    const lw = drawFieldLabel('总评', fieldX, fy);
+    drawGradeGroup(ctx, fieldX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.overall, config);
+    fy += fieldRowH + FIELD_ROW_GAP;
+  }
+  // 行6：喜爱度
+  if (gameData.love && gameData.love > 0) {
+    const lw = drawFieldLabel('喜爱度', fieldX, fy);
+    painter.drawHeartRate(fieldX + lw + LABEL_VALUE_GAP, fy + heartCenterOffset,
+      gameData.love, HEART_SIZE, HEART_GAP, config.heartColor || '#e895a8', '#cccccc');
+    fy += fieldRowH + FIELD_ROW_GAP;
+  }
+  painter.y = cardTop + cardH;
+}
+
 // 主入口
 async function renderOtherRepoGameCanvas(designW, gameData, gameInfo, config, dpr) {
   DPR = dpr || 2;
@@ -1196,6 +1386,88 @@ async function renderOtherImpressionGameCanvas(designW, gameData, gameInfo, conf
   return blob;
 }
 
+// 简评表单页渲染（每页至多 BRIEF_GAMES_PER_PAGE 个游戏）
+async function renderOtherBriefPageCanvas(designW, pageGameDataList, pageGameInfoList, pageIndex, config, dpr) {
+  DPR = dpr || 2;
+  setCurrentDPR(DPR);
+  if (IS_IOS_WEBKIT) {
+    for (const [, res] of rawImageResourceCache.entries()) {
+      if (res?.type === 'bitmap' && res.data && typeof res.data.close === 'function') {
+        try { res.data.close(); } catch (e) {}
+      }
+    }
+    roundImageCache.clear();
+    rawImageResourceCache.clear();
+  }
+  emitRenderProgress(5);
+  // 收集并加载封面图片
+  let imageUrls = collectBriefPageImages(pageGameDataList, pageGameInfoList);
+  const SAFE_URL_PATTERN = /^(http|https):\/\//;
+  imageUrls = imageUrls.filter(src => SAFE_URL_PATTERN.test(src));
+  imageUrls = [...new Set(imageUrls)];
+  const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
+  const imageCache = loadRet.resultMap;
+  await new Promise(r => setTimeout(r, 30));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  emitRenderProgress(50);
+  // 计算总高度
+  const vCanvas = document.createElement('canvas');
+  const vCtx = vCanvas.getContext('2d');
+  const titleAreaH = getBodyPad() + TITLE_SIZE + getTitleMb();
+  let cardsTotalH = 0;
+  const validCards = [];
+  for (let i = 0; i < pageGameDataList.length; i++) {
+    const ch = calcBriefGameHeight(vCtx, designW, pageGameDataList[i], pageGameInfoList[i], config, imageCache);
+    if (ch > 0) {
+      validCards.push({ gameData: pageGameDataList[i], gameInfo: pageGameInfoList[i], cardH: ch });
+    }
+  }
+  vCanvas.width = 0; vCanvas.height = 0;
+  if (validCards.length === 0) return null;
+  for (let i = 0; i < validCards.length; i++) {
+    cardsTotalH += validCards[i].cardH;
+    if (i < validCards.length - 1) cardsTotalH += BRIEF_CARD_GAP;
+  }
+  const totalH = titleAreaH + cardsTotalH + getBodyPad();
+  if (IS_IOS_WEBKIT) {
+    const totalPixel = (designW * DPR) * (totalH * DPR);
+    if (totalPixel > 32 * 1024 * 1024) {
+      console.warn(`⚠️ other 简评表 IOS 画布像素超限风险：${totalPixel}`);
+    }
+  }
+  emitRenderProgress(65);
+  // 绘制
+  const canvasHeight = totalH;
+  const canvas = document.createElement('canvas');
+  const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
+  drawBigTitle(painter, designW, 'Otome Repo', config);
+  for (let i = 0; i < validCards.length; i++) {
+    drawBriefGameCard(painter, designW, validCards[i].gameData, validCards[i].gameInfo, config, imageCache);
+    if (i < validCards.length - 1) painter.shiftY(BRIEF_CARD_GAP);
+  }
+  emitRenderProgress(100);
+  const finalH = painter.getY() + getBodyPad();
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = designW * DPR;
+  outputCanvas.height = Math.max(finalH, designW * 0.4) * DPR;
+  const oCtx = outputCanvas.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = "high";
+  oCtx.fillStyle = config.bg || '#fff7f9';
+  oCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+  oCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+  let blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  if (IS_IOS_WEBKIT && !blob) {
+    await new Promise(r => setTimeout(r, 100));
+    blob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/png', 1));
+  }
+  if (IS_IOS_WEBKIT) {
+    canvas.width = 0; canvas.height = 0;
+    outputCanvas.width = 0; outputCanvas.height = 0;
+  }
+  return blob;
+}
+
 // 批量导出
 export async function renderAllOtherGames(designW, otherData, gameTemplateList, config, dpr) {
   const results = [];
@@ -1223,9 +1495,40 @@ export async function renderAllOtherGames(designW, otherData, gameTemplateList, 
   return results;
 }
 
+// 简评表批量导出：将 Repo 游戏按每页至多3个分组，逐页渲染
+export async function renderAllOtherBriefGames(designW, otherData, gameTemplateList, config, dpr) {
+  const results = [];
+  const effectiveDpr = dpr || (config.normalQuality ? 1 : 2);
+  const repoGames = otherData?.repoGames || [];
+  // 过滤出有对应游戏模板的游戏
+  const validGames = [];
+  for (const gameData of repoGames) {
+    const gameInfo = gameTemplateList.find(g => g.id === gameData.gameId);
+    if (gameInfo) validGames.push({ gameData, gameInfo });
+  }
+  // 按每页至多 BRIEF_GAMES_PER_PAGE 个分组
+  const totalPages = Math.ceil(validGames.length / BRIEF_GAMES_PER_PAGE);
+  for (let p = 0; p < totalPages; p++) {
+    const pageGames = validGames.slice(p * BRIEF_GAMES_PER_PAGE, (p + 1) * BRIEF_GAMES_PER_PAGE);
+    const pageGameDataList = pageGames.map(g => g.gameData);
+    const pageGameInfoList = pageGames.map(g => g.gameInfo);
+    const blob = await renderOtherBriefPageCanvas(designW, pageGameDataList, pageGameInfoList, p, config, effectiveDpr);
+    if (blob) {
+      results.push({
+        moduleType: 'brief',
+        gameId: `brief_page_${p + 1}`,
+        gameName: `简评表第${p + 1}页`,
+        blob
+      });
+    }
+  }
+  return results;
+}
+
 // 挂载到 window
 if (typeof window !== 'undefined') {
   window.renderOtherRepoGameCanvas = renderOtherRepoGameCanvas;
   window.renderOtherImpressionGameCanvas = renderOtherImpressionGameCanvas;
   window.renderAllOtherGames = renderAllOtherGames;
+  window.renderAllOtherBriefGames = renderAllOtherBriefGames;
 }
