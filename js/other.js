@@ -58,6 +58,13 @@ let otherConfig = null;
 let otherAddTarget = null; // "repo" | "impression" | null
 // Repo 角色卡片弹窗目标：{ gameIdx, cardIdx, type: 'char'|'cp' }
 let otherRepoCharTarget = null;
+// 导出渲染锁，防止重复点击
+let _otherIsRendering = false;
+// 导出预览弹窗状态
+let _otherPreviewResults = [];
+let _otherPreviewUrls = [];
+let _otherPreviewBound = false;
+let _otherCurrentPage = 0;
 
 // 新增：合并本篇 + FD 游戏列表
 function isGameTemplateReady() {
@@ -1161,6 +1168,194 @@ function updateSliderProgress(sliderEl) {
   }
 }
 
+// 新增：Other 模式导出预计耗时计算（对齐 Annual calcAnnualEstimateSec 逻辑）
+function calcOtherEstimateSec() {
+  const IS_IOS_WEBKIT = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /Android/.test(navigator.userAgent);
+  let gameCount = 0;
+  let imgCount = 0;
+  const repoGames = otherData?.repoGames || [];
+  gameCount += repoGames.length;
+  repoGames.forEach(g => {
+    imgCount += 1; // 游戏封面
+    (g.repoCharCards || []).forEach(c => { if (c.charId) imgCount++; });
+    (g.repoCustomCharCards || []).forEach(c => { if (c.charId) imgCount++; });
+    (g.repoTextCards || []).forEach(c => {
+      if (c.type === 'cp' && c.femaleId && c.maleId) imgCount += 2;
+    });
+    (g.repoCustomTextCards || []).forEach(c => {
+      if (c.type === 'cp' && c.femaleId && c.maleId) imgCount += 2;
+    });
+  });
+  const impGames = otherData?.impressionGames || [];
+  gameCount += impGames.length;
+  impGames.forEach(() => { imgCount += 1; }); // 封面
+  let gameCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
+  if (IS_IOS_WEBKIT) {
+    gameCost = 1.2; imgCost = 0.85;
+    networkBufferSec = 4.8;
+    roundCanvasOverheadSec = Math.min(8, imgCount * 0.030);
+  } else if (isAndroid) {
+    gameCost = 0.6; imgCost = 0.40;
+    networkBufferSec = 2.6;
+    roundCanvasOverheadSec = Math.min(4, imgCount * 0.012);
+  } else {
+    gameCost = 0.4; imgCost = 0.25;
+    networkBufferSec = 1.8;
+    roundCanvasOverheadSec = Math.min(2.5, imgCount * 0.012);
+  }
+  const baseEstimate = gameCount * gameCost + imgCount * imgCost;
+  const fallbackProbability = 0.30;
+  const fallbackPerImageSec = 0.6;
+  const fallbackEstimate = imgCount * fallbackProbability * fallbackPerImageSec;
+  let sec = Math.ceil(baseEstimate + networkBufferSec + roundCanvasOverheadSec + fallbackEstimate);
+  sec = IS_IOS_WEBKIT ? Math.max(2, Math.min(45, sec)) : Math.max(1, Math.min(35, sec));
+  return sec;
+}
+
+// 新增：在预览弹窗中显示 loading + 预计时间 + 进度，返回进度监听器
+function showOtherPreviewLoading(scrollWrap) {
+  const estimateSec = calcOtherEstimateSec();
+  scrollWrap.innerHTML = `
+    <div class="preview-inner-loading">
+      <div class="loading-spinner"></div>
+      <p>正在生成预览，请稍候…<br>预计耗时：${estimateSec}s</p>
+      <p class="render-progress-text" style="margin-top:8px;font-size:14px;">进度：0%</p>
+    </div>
+  `;
+  const progressHandler = function(e) {
+    const p = e.detail.percent.toFixed(0);
+    const progressDom = scrollWrap.querySelector('.render-progress-text');
+    if (progressDom) progressDom.textContent = `进度：${p}%`;
+  };
+  window.addEventListener('other-canvas-progress', progressHandler);
+  return progressHandler;
+}
+
+// 新增：渲染单张预览图 + 上一张/下一张切换控件（对齐 Annual renderAnnualPreviewPage）
+function renderOtherPreviewPage(pageIndex) {
+  _otherCurrentPage = pageIndex;
+  const modal = document.getElementById("export-preview-modal");
+  const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+  const totalPage = _otherPreviewResults.length;
+  const currentUrl = _otherPreviewUrls[pageIndex];
+  let paginationHtml = "";
+  if (totalPage > 1) {
+    paginationHtml = `
+    <div class="preview-pagination-bar" style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:center;">
+      <button class="preview-prev-page" ${pageIndex <= 0 ? 'disabled' : ''}>上一张</button>
+      <span>第 ${pageIndex + 1} / ${totalPage} 张</span>
+      <button class="preview-next-page" ${pageIndex >= totalPage - 1 ? 'disabled' : ''}>下一张</button>
+    </div>`;
+  }
+  scrollWrap.innerHTML = `
+    <img class="preview-img-item" src="${currentUrl}" alt="Other 导出预览">
+    ${paginationHtml}
+  `;
+  const prevBtn = scrollWrap.querySelector(".preview-prev-page");
+  const nextBtn = scrollWrap.querySelector(".preview-next-page");
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      if (pageIndex > 0) renderOtherPreviewPage(pageIndex - 1);
+    };
+  }
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      if (pageIndex < totalPage - 1) renderOtherPreviewPage(pageIndex + 1);
+    };
+  }
+}
+
+// 新增：Other 模式预览弹窗管理（对齐 Annual showAnnualPreviewModal）
+function showOtherPreviewModal(results) {
+  _otherPreviewResults = results;
+  _otherCurrentPage = 0;
+  const downloadBtn = document.getElementById("preview-download-btn");
+  // 清理旧 URL
+  _otherPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+  _otherPreviewUrls = results.map(r => URL.createObjectURL(r.blob));
+  // 渲染第 1 张
+  renderOtherPreviewPage(0);
+  downloadBtn.disabled = false;
+  // 用 onclick 赋值覆盖下载按钮，防止 Annual 的下载监听器同时触发
+  downloadBtn.onclick = async () => {
+    for (let i = 0; i < _otherPreviewResults.length; i++) {
+      const r = _otherPreviewResults[i];
+      const url = URL.createObjectURL(r.blob);
+      const a = document.createElement("a");
+      const safeName = (r.gameName || 'game').replace(/[\\/:*?"<>|]/g, '_');
+      a.download = `Other_${r.moduleType}_${safeName}_${i + 1}.png`;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      if (i < _otherPreviewResults.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+  };
+  // 绑定弹窗按钮（只绑定一次）
+  if (!_otherPreviewBound) {
+    bindOtherPreviewButtons();
+    _otherPreviewBound = true;
+  }
+}
+
+// 新增：绑定 Other 模式预览弹窗按钮（对齐 Annual bindAnnualPreviewButtons）
+// 关闭/遮罩用 addEventListener（与 Annual 共存，各清各的 URL）；
+// 重新生成用 onclick 赋值（覆盖 Annual 的）
+function bindOtherPreviewButtons() {
+  const closeBtn = document.getElementById("preview-close-btn");
+  const regenBtn = document.getElementById("preview-regen-btn");
+  const modal = document.getElementById("export-preview-modal");
+  // 关闭
+  closeBtn.addEventListener("click", () => {
+    modal.classList.remove("active");
+    document.body.classList.remove("modal-lock");
+    _otherPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+    _otherPreviewUrls = [];
+    _otherPreviewResults = [];
+  });
+  // 遮罩点击关闭
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeBtn.click();
+  });
+  // 重新生成（onclick 赋值，覆盖 Annual 的）
+  regenBtn.onclick = async () => {
+    if (_otherIsRendering) return;
+    const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+    const downloadBtn = document.getElementById("preview-download-btn");
+    downloadBtn.disabled = true;
+    const progressHandler = showOtherPreviewLoading(scrollWrap);
+    let unlockTimer = null;
+    _otherIsRendering = true;
+    unlockTimer = setTimeout(() => {
+      _otherIsRendering = false;
+      console.warn("[other]重新生成超时，强制解除渲染锁");
+    }, 15000);
+    try {
+      const gameList = getCombinedGameList();
+      const dpr = otherConfig.normalQuality ? 1 : 2;
+      const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
+      if (!results || results.length === 0) {
+        alert("没有可导出的内容。");
+        return;
+      }
+      showOtherPreviewModal(results);
+    } catch (err) {
+      console.error("Other 重新生成失败", err);
+      alert("重新生成失败：" + (err?.message || "未知错误"));
+    } finally {
+      if (typeof progressHandler !== 'undefined') {
+        window.removeEventListener('other-canvas-progress', progressHandler);
+      }
+      if (unlockTimer) clearTimeout(unlockTimer);
+      _otherIsRendering = false;
+    }
+  };
+}
+
 // 导出配置
 function bindExportConfig() {
   const wrap = document.querySelector('.mode-wrap[data-mode="other"]');
@@ -1279,10 +1474,11 @@ function bindExportConfig() {
       }
     };
   }
-  // 导出按钮
+  // 导出按钮（复用 Annual 预览弹窗模式：渲染锁 + loading + 预览 + 下载）
   const exportBtn = document.getElementById('other-btn-export-image');
   if (exportBtn) {
     exportBtn.onclick = async () => {
+      if (exportBtn.disabled || _otherIsRendering) return;
       if (!otherData || (!otherData.repoGames?.length && !otherData.impressionGames?.length)) {
         alert("暂无数据可导出");
         return;
@@ -1291,35 +1487,45 @@ function bindExportConfig() {
         alert("导出模块未加载，请检查 other-canvas-render.js 是否引入");
         return;
       }
-      exportBtn.disabled = true;
+      let unlockTimer = null;
+      _otherIsRendering = true;
+      unlockTimer = setTimeout(() => {
+        _otherIsRendering = false;
+        console.warn("[other]渲染超时，强制解除渲染锁");
+      }, 15000);
       const originalText = exportBtn.textContent;
-      exportBtn.textContent = "导出中…";
+      exportBtn.disabled = true;
+      exportBtn.textContent = "生成中…";
+      // 打开预览弹窗，先显示 loading + 预计时间 + 进度
+      const modal = document.getElementById("export-preview-modal");
+      const scrollWrap = modal.querySelector(".preview-scroll-wrap");
+      const downloadBtn = document.getElementById("preview-download-btn");
+      modal.classList.add("active");
+      document.body.classList.add("modal-lock");
+      downloadBtn.disabled = true;
+      const progressHandler = showOtherPreviewLoading(scrollWrap);
       try {
         const gameList = getCombinedGameList();
         const dpr = otherConfig.normalQuality ? 1 : 2;
         const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
-        if (results.length === 0) {
-          alert("未生成任何图片");
+        if (!results || results.length === 0) {
+          alert("没有可导出的内容，请先在各模块中添加数据。");
+          modal.classList.remove("active");
+          document.body.classList.remove("modal-lock");
           return;
         }
-        // 依次下载
-        for (let i = 0; i < results.length; i++) {
-          const r = results[i];
-          const url = URL.createObjectURL(r.blob);
-          const a = document.createElement('a');
-          a.href = url;
-          const safeName = (r.gameName || 'game').replace(/[\\/:*?"<>|]/g, '_');
-          a.download = `Other_${r.moduleType}_${safeName}_${i + 1}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          await new Promise(resolve => setTimeout(resolve, 300));
-          URL.revokeObjectURL(url);
-        }
+        showOtherPreviewModal(results);
       } catch (err) {
-        console.error("Other 导出失败:", err);
-        alert("导出失败：" + (err.message || err));
+        console.error("Other 导出失败", err);
+        alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情。");
+        modal.classList.remove("active");
+        document.body.classList.remove("modal-lock");
       } finally {
+        if (typeof progressHandler !== 'undefined') {
+          window.removeEventListener('other-canvas-progress', progressHandler);
+        }
+        if (unlockTimer) clearTimeout(unlockTimer);
+        _otherIsRendering = false;
         exportBtn.disabled = false;
         exportBtn.textContent = originalText;
       }
