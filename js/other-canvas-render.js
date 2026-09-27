@@ -889,18 +889,33 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 雷达图：以甜度行E按钮右边框为起点，到卡片大边框之间左右居中
+  // 雷达图：整体左移，使最左端维度标签的第一个字与上方"全通"/"结束日期"对齐
   if (hasRadar) {
+    const dims = gameData.fiveDim || [];
+    // 找到最左端的维度（角度 cos 值最小，即最偏左）
+    let leftmostIdx = 0;
+    let minCos = Math.cos(RADAR_ANGLES[0] * Math.PI / 180);
+    for (let i = 1; i < RADAR_ANGLES.length && i < dims.length; i++) {
+      const c = Math.cos(RADAR_ANGLES[i] * Math.PI / 180);
+      if (c < minCos) { minCos = c; leftmostIdx = i; }
+    }
+    // 测量最左端维度标签的宽度（与 drawRadarChart 内部字体一致：bold 12px）
     ctx.save();
-    ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
-    const sweetLabelW = ctx.measureText('甜度').width;
+    ctx.font = `bold ${RADAR_LABEL_SIZE}px ${FONT_SIYUAN}`;
+    const leftLabelW = ctx.measureText(dims[leftmostIdx]?.name || '').width;
     ctx.restore();
-    const gradeGroupX = fieldX + sweetLabelW + LABEL_VALUE_GAP;
-    const eRightEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP) + GRADE_SIZE;
+    // 目标左边缘：与右半列字段标签（全通/结束日期）起始位置对齐
+    const targetLeftX = fieldX + fieldW / 2;
+    // 标签中心 x = radarCx + (RADAR_R + 22) * cos(angle)
+    // 标签左边缘 = 标签中心 x - 标签宽度 / 2
+    // 令标签左边缘 = targetLeftX，解出 radarCx
+    let radarCx = targetLeftX - (RADAR_R + 22) * minCos + leftLabelW / 2;
+    // 上限保护：雷达图最右端（含标签）不超出卡片大边框
     const cardRightEdge = fieldX + fieldW;
-    const radarCx = (eRightEdge + cardRightEdge) / 2;
+    const maxCx = cardRightEdge - (RADAR_R + 22) - 20;
+    if (radarCx > maxCx) radarCx = maxCx;
     const radarCy = fy + RADAR_BOX_W / 2;
-    drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
+    drawRadarChart(ctx, radarCx, radarCy, dims, config);
   }
   // 行3：甜度
   if (gameData.sweetness) {
@@ -1213,18 +1228,33 @@ function drawBriefGameCard(painter, targetW, gameData, gameInfo, config, imageCa
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 雷达图：以甜度行E按钮右边框为起点，到卡片大边框之间左右居中
+  // 雷达图：整体左移，使最左端维度标签的第一个字与上方"全通"/"结束日期"对齐
   if (hasRadar) {
+    const dims = gameData.fiveDim || [];
+    // 找到最左端的维度（角度 cos 值最小，即最偏左）
+    let leftmostIdx = 0;
+    let minCos = Math.cos(RADAR_ANGLES[0] * Math.PI / 180);
+    for (let i = 1; i < RADAR_ANGLES.length && i < dims.length; i++) {
+      const c = Math.cos(RADAR_ANGLES[i] * Math.PI / 180);
+      if (c < minCos) { minCos = c; leftmostIdx = i; }
+    }
+    // 测量最左端维度标签的宽度（与 drawRadarChart 内部字体一致：bold 12px）
     ctx.save();
-    ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
-    const sweetLabelW = ctx.measureText('甜度').width;
+    ctx.font = `bold ${RADAR_LABEL_SIZE}px ${FONT_SIYUAN}`;
+    const leftLabelW = ctx.measureText(dims[leftmostIdx]?.name || '').width;
     ctx.restore();
-    const gradeGroupX = fieldX + sweetLabelW + LABEL_VALUE_GAP;
-    const eRightEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP) + GRADE_SIZE;
+    // 目标左边缘：与右半列字段标签（全通/结束日期）起始位置对齐
+    const targetLeftX = fieldX + fieldW / 2;
+    // 标签中心 x = radarCx + (RADAR_R + 22) * cos(angle)
+    // 标签左边缘 = 标签中心 x - 标签宽度 / 2
+    // 令标签左边缘 = targetLeftX，解出 radarCx
+    let radarCx = targetLeftX - (RADAR_R + 22) * minCos + leftLabelW / 2;
+    // 上限保护：雷达图最右端（含标签）不超出卡片大边框
     const cardRightEdge = fieldX + fieldW;
-    const radarCx = (eRightEdge + cardRightEdge) / 2;
+    const maxCx = cardRightEdge - (RADAR_R + 22) - 20;
+    if (radarCx > maxCx) radarCx = maxCx;
     const radarCy = fy + RADAR_BOX_W / 2;
-    drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
+    drawRadarChart(ctx, radarCx, radarCy, dims, config);
   }
   // 行3：甜度
   if (gameData.sweetness) {
