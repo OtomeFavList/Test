@@ -33,7 +33,7 @@ const CARD_PAD = 16;
 const CARD_RADIUS = 12;
 const CARD_BORDER_W = 1;
 
-// 封面 / 子卡片
+// 封面/子卡片
 const COVER_W = 110;
 const SUB_CARD_RADIUS = 8;
 const SUB_CARD_BORDER = '#eee';
@@ -59,13 +59,13 @@ const TEXT_FIELD_GAP = 12;
 const TEXT_BOX_PAD = 8;
 const TEXT_BOX_MIN_H = 48;
 
-// 角色卡片网格（完全复用Annual模块七 charGrid）
+// 角色卡片网格
 const CHAR_CARD_SIZE = 120;
 const CHAR_CARD_GAP = 16;
 const CHAR_LABEL_SIZE = 18;
 const CHAR_LABEL_GAP = 8;
 
-// 文本卡片网格（完全复用Annual模块五 other cards）
+// 文本卡片网格
 const TEXT_CARD_W = 225;
 const TEXT_CARD_GAP = 16;
 const TEXT_CARD_PAD = 14;
@@ -105,7 +105,6 @@ function toCanvasUrl(src) {
   if (!src) return '';
   let url;
   if (/^https?:\/\//.test(src)) {
-    // 已经是完整URL：R2地址需转jsDelivr才能跨域绘制；jsDelivr或其他安全URL直接用
     if (/^https:\/\/pub-/.test(src)) {
       const converted = convertR2ToJsDelivr(src);
       url = (converted && isSafeUrl(converted)) ? converted : '';
@@ -516,12 +515,12 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   contentH += nameH + GAME_NAME_MB;
 
-  // 主体行：封面 + 字段区（雷达图移到下方独立一行）
+  // 主体行：封面 + 字段区
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
   const coverH = calcGameCoverHeight(coverImg, COVER_W);
 
-  // 字段区动态行：有值才显示（对应需求⑧）
+  // 字段区动态行
   const fieldRows = [];
   const hasDuration = !!(gameData.duration && String(gameData.duration).trim());
   const hasCompleted = gameData.completed === true || gameData.completed === false;
@@ -539,13 +538,13 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   const bodyRowH = Math.max(coverH, fieldAreaH);
   contentH += bodyRowH + SECTION_GAP;
 
-  // 雷达图（有五维数据才显示，独立一行居中）
+  // 雷达图
   const hasRadar = (gameData.fiveDim || []).some(d => (d.level || 0) > 0);
   if (hasRadar) {
     contentH += RADAR_BOX_W + SECTION_GAP;
   }
 
-  // 文本字段区（对应需求⑤：优点/缺点2列，攻略顺序/好感顺序各全宽一行；空的不生成⑧）
+  // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
   const hasCons = !!(gameData.cons && String(gameData.cons).trim());
@@ -577,7 +576,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += SECTION_GAP;
   }
 
-  // 角色卡片网格（复用Annual模块七尺寸+行高算法）
+  // 角色卡片网格
   const allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
   const validCharCards = allCharCards.filter(c => c.charId);
   if (validCharCards.length > 0) {
@@ -600,7 +599,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += gridH + SECTION_GAP;
   }
 
-  // 文字卡片网格（复用Annual模块五尺寸；空卡片不生成⑧）
+  // 文字卡片网格
   const allTextCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
   const validTextCards = allTextCards.filter(c => {
     if (c.type === 'cp') return !!(c.femaleId && c.maleId);
@@ -639,7 +638,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += tcGridH + SECTION_GAP;
   }
 
-  // 感想（空的不生成⑧）
+  // 感想
   if (gameData.impression && String(gameData.impression).trim()) {
     const impLabelH = LABEL_SIZE * 1.4 + 6;
     const impTextH = measureWrappedHeight(ctx, gameData.impression, innerW - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
@@ -659,7 +658,7 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
   const gameName = gameInfo?.name || gameData.gameId || '';
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   contentH += nameH + GAME_NAME_MB;
-  // 封面（居中）
+  // 封面
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
   const coverH = calcGameCoverHeight(coverImg, 180);
@@ -714,7 +713,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   painter.shiftY(nameH + GAME_NAME_MB);
 
-  // ===== 主体行：封面 + 字段区 =====
+  // 主体行：封面 + 字段区
   const bodyTop = painter.y;
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
@@ -743,7 +742,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     ctx.fillText(text, x, y + valueCenterOffset);
   }
 
-  // 行1：时长 + 全通（有值才显示）
+  // 行1：时长 + 全通
   const hasDuration = !!(gameData.duration && String(gameData.duration).trim());
   const hasCompleted = gameData.completed === true || gameData.completed === false;
   if (hasDuration || hasCompleted) {
@@ -774,7 +773,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     fy += fieldRowH + FIELD_ROW_GAP;
   }
 
-  // 行4：甜度 + 虐度（同一行，各占半宽，对应需求③）
+  // 行4：甜度 + 虐度
   if (gameData.sweetness || gameData.bitterness) {
     const halfW = fieldW / 2;
     if (gameData.sweetness) {
@@ -789,14 +788,14 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     fy += fieldRowH + FIELD_ROW_GAP;
   }
 
-  // 行5：总评（单独一行，对应需求③）
+  // 行5：总评
   if (gameData.overall) {
     const lw = drawFieldLabel('总评', fieldX, fy);
     drawGradeGroup(ctx, fieldX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.overall, config);
     fy += fieldRowH + FIELD_ROW_GAP;
   }
 
-  // 行6：喜爱度（单独一行，对应需求③）
+  // 行6：喜爱度
   if (gameData.love && gameData.love > 0) {
     const lw = drawFieldLabel('喜爱度', fieldX, fy);
     painter.drawHeartRate(fieldX + lw + LABEL_VALUE_GAP, fy + heartCenterOffset,
@@ -808,7 +807,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const bodyRowH = Math.max(coverH, fieldAreaH);
   painter.shiftY(bodyRowH + SECTION_GAP);
 
-  // ===== 雷达图（独立一行居中，有数据才显示）=====
+  // 雷达图
   const hasRadar = (gameData.fiveDim || []).some(d => (d.level || 0) > 0);
   if (hasRadar) {
     const radarCx = contentX + innerW / 2;
@@ -817,7 +816,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     painter.shiftY(RADAR_BOX_W + SECTION_GAP);
   }
 
-  // ===== 文本字段区（对应需求⑤：优点/缺点2列，攻略顺序/好感顺序各全宽一行）=====
+  // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
   const hasCons = !!(gameData.cons && String(gameData.cons).trim());
@@ -854,7 +853,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     painter.shiftY(SECTION_GAP);
   }
 
-  // ===== 角色卡片网格（完全复用Annual模块七 charGrid）=====
+  // 角色卡片网格
   const allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
   const validCharCards = allCharCards.filter(c => c.charId);
   if (validCharCards.length > 0) {
@@ -864,7 +863,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     const rowTotalW = charCols * CHAR_CARD_SIZE + (charCols - 1) * CHAR_CARD_GAP;
     const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
     for (let r = 0; r < charRows; r++) {
-      // 先求该行最大标签高度（与Annual模块七算法一致）
+      // 先求该行最大标签高度
       let rowMaxLabelH = 0;
       for (let c = 0; c < charCols; c++) {
         const idx = r * charCols + c;
@@ -882,7 +881,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
         const src = toCanvasUrl(card.coverSrc);
         const img = src ? imageCache.get(src) : null;
         drawCoverCard(painter, x, y, CHAR_CARD_SIZE, CHAR_CARD_SIZE, img, src, 6);
-        // 标签统一对齐到该行封面底部（与Annual模块七一致）
+        // 标签统一对齐到该行封面底部
         const labelY = y + CHAR_CARD_SIZE + CHAR_LABEL_GAP;
         drawCenteredText(ctx, card.label || '', x + CHAR_CARD_SIZE / 2, labelY,
           CHAR_CARD_SIZE, labelLineH, CHAR_LABEL_SIZE,
@@ -894,7 +893,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     painter.shiftY(SECTION_GAP);
   }
 
-  // ===== 文字卡片网格（完全复用Annual模块五 other cards）=====
+  // 文字卡片网格
   const allTextCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
   const validTextCards = allTextCards.filter(c => {
     if (c.type === 'cp') return !!(c.femaleId && c.maleId);
@@ -904,7 +903,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     const tcCols = Math.max(1, Math.floor((innerW + TEXT_CARD_GAP) / (TEXT_CARD_W + TEXT_CARD_GAP)));
     const tcRows = Math.ceil(validTextCards.length / tcCols);
     const titleLineH = TEXT_CARD_TITLE_SIZE * 1.4;
-    // 预计算每行高度（与Annual模块五一致）
+    // 预计算每行高度
     const rowHeights = [];
     for (let r = 0; r < tcRows; r++) {
       let rowMax = 0;
@@ -936,16 +935,16 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
         const card = validTextCards[idx];
         const x = contentX + rowOffset + c * (TEXT_CARD_W + TEXT_CARD_GAP);
         const y = painter.y;
-        // 卡片背景（复用Annual模块五的 boxBgColor 配置，兼容 cardBg）
+        // 卡片背景
         painter.drawRoundRect(x, y, TEXT_CARD_W, rowH, 12, config.cardBg || config.boxBgColor || '#fff7f9', '#eee', 1);
-        // 标题（字号18，与Annual模块五一致）
+        // 标题
         const titleY = y + TEXT_CARD_PAD;
         const titleActualH = drawCenteredText(ctx, card.label || '', x + TEXT_CARD_W / 2, titleY,
           TEXT_CARD_W - TEXT_CARD_PAD * 2, titleLineH, TEXT_CARD_TITLE_SIZE,
           config.labelColor || '#b85878', true);
         const contentY = titleY + titleActualH + TEXT_CARD_TITLE_MB;
         if (card.type === 'cp') {
-          // CP 双图（尺寸100，间距10，与Annual模块五一致）
+          // CP 双图
           const fSrc = toCanvasUrl(card.femaleCoverSrc);
           const mSrc = toCanvasUrl(card.maleCoverSrc);
           const fImg = fSrc ? imageCache.get(fSrc) : null;
@@ -955,7 +954,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
           drawCoverCard(painter, startX, contentY, CP_SIZE, CP_SIZE, fImg, fSrc, 6);
           drawCoverCard(painter, startX + CP_SIZE + CP_GAP, contentY, CP_SIZE, CP_SIZE, mImg, mSrc, 6);
         } else {
-          // 文本框（noBorder+居中，填满剩余空间，与Annual模块五一致）
+          // 文本框
           const textAreaW = TEXT_CARD_W - TEXT_CARD_PAD * 2;
           const availableH = (y + rowH - TEXT_CARD_PAD) - contentY;
           const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
@@ -969,7 +968,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     painter.shiftY(SECTION_GAP);
   }
 
-  // ===== 感想（空的不生成）=====
+  // 感想
   if (gameData.impression && String(gameData.impression).trim()) {
     ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
     ctx.fillStyle = labelColor;
@@ -998,14 +997,14 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
   painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
   painter.y = cardTop + CARD_PAD;
 
-  // 游戏名（居中）
+  // 游戏名
   const gameName = gameInfo?.name || gameData.gameId || '';
   drawCenteredText(ctx, gameName, contentX + innerW / 2, painter.y, innerW,
     GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, config.gamename || '#000000', true);
   const nameH = measureCenteredTextHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE);
   painter.shiftY(nameH + GAME_NAME_MB);
 
-  // 封面（居中）
+  // 封面
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
   const coverW = 180;
