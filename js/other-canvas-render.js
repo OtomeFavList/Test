@@ -309,19 +309,15 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
     // 优点/缺点/攻略顺序/好感顺序传入 inputSize（填写内容字号）
     const size = textSize || config.customTextFontSize || 16;
     const color = textColor || config.customtext || '#c98fac';
-    // 垂直居中：计算文字实际视觉高度，若小于框内高度则上下居中（仅文本字段区使用）
+    // 垂直居中：计算文字实际高度，若小于框内高度则上下居中（仅文本字段区使用）
     let textY = y + TEXT_BOX_PAD;
     if (verticalCenter) {
       // 测量前显式设置正确字号字体，避免受上一步标签绘制的 bold 14px 残留影响
       painter.ctx.font = `${size}px ${FONT_SIYUAN}`;
-      const lineHeight = size * 1.55;
-      const measuredH = measureWrappedHeight(painter.ctx, text, boxW - TEXT_BOX_PAD * 2, lineHeight, size);
-      // 视觉高度 = 测量高度 - 最后一行的行高余量（最后一行下方不需要完整行高）
-      // 否则用 measuredH 居中会导致文字整体偏上 (lineHeight - size) / 2
-      const visualH = measuredH > 0 ? measuredH - (lineHeight - size) : 0;
+      const measuredH = measureWrappedHeight(painter.ctx, text, boxW - TEXT_BOX_PAD * 2, size * 1.55, size);
       const innerH = boxH - TEXT_BOX_PAD * 2;
-      if (visualH < innerH) {
-        textY = y + (boxH - visualH) / 2;
+      if (measuredH < innerH) {
+        textY = y + (boxH - measuredH) / 2;
       }
     }
     if (centerText) {
@@ -866,8 +862,8 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     ctx.font = `${inputSize}px ${FONT_SIYUAN}`;
     const textH = measureWrappedHeight(ctx, text, w - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
     const boxH = Math.max(TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-    // 优点/缺点/攻略顺序/好感顺序：文字色用填写内容文字色，字号用填写内容字号，内容水平+垂直居中
-    drawTextBox(painter, x, boxY, w, boxH, text, config, false, true, valueColor, inputSize, true);
+    // 优点/缺点/攻略顺序/好感顺序：文字色用填写内容文字色，字号用填写内容字号，内容垂直居中
+    drawTextBox(painter, x, boxY, w, boxH, text, config, false, false, valueColor, inputSize, true);
     return tfLabelH + boxH;
   }
   if (hasPros || hasCons) {
