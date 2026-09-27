@@ -254,10 +254,14 @@ function renderFiveDim(dims) {
             + `style="cursor:pointer"/>`;
     }
   });
-  // 维度名标签：改为HTML input，定位在SVG外层，距离 R+30（更远），可直接点击编辑
+  // 维度名标签：改为HTML input，定位在SVG外层，可直接点击编辑
+  // 移动端标签离圆圈更远（R+40），防止点击最外层圆圈时误触标签触发编辑
+  // 桌面端保持 R+30
+  const isMobileRadar = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const labelRadius = isMobileRadar ? R + 40 : R + 30;
   let labelInputs = '';
   dims.forEach((d, i) => {
-    const [x, y] = pt(angles[i], R + 30);
+    const [x, y] = pt(angles[i], labelRadius);
     labelInputs += `<input type="text" class="radar-label-input" value="${d.name}" `
                  + `data-dim-idx="${i}" `
                  + `style="left:${x}px;top:${y}px;" />`;
@@ -964,22 +968,24 @@ function bindReroCardEvents() {
       }
       return;
     }
-    // 角色卡片 + 按钮（打开角色弹窗，复用 Annual 模式弹窗函数）
+    // 角色卡片 + 按钮（直接传入当前游戏信息，跳过游戏搜索页，直接显示角色列表页面二）
     const charAddBtn = e.target.closest('[data-repo-char-add]');
     if (charAddBtn) {
       e.stopPropagation();
       const idx = Number(charAddBtn.dataset.repoCharAdd);
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'char' };
-      window.openAnnualGlobalCharModal(null, 'otherRepoChar');
+      const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
+      window.openAnnualGlobalCharModal(gameInfo || null, 'otherRepoChar');
       return;
     }
-    // 文本卡片 CP + 按钮（打开CP弹窗，复用 Annual 模式弹窗函数）
+    // 文本卡片 CP + 按钮（直接传入当前游戏信息，跳过游戏搜索页，直接显示CP选择页面二）
     const textCpAddBtn = e.target.closest('[data-repo-text-cp-add]');
     if (textCpAddBtn) {
       e.stopPropagation();
       const idx = Number(textCpAddBtn.dataset.repoTextCpAdd);
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'cp' };
-      window.openAnnualGlobalCpModal(null, 'otherRepoCp');
+      const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
+      window.openAnnualGlobalCpModal(gameInfo || null, 'otherRepoCp');
       return;
     }
     // 文本卡片 CP 图片清除 ×
