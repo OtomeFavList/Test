@@ -63,7 +63,7 @@ const TEXT_BOX_MIN_H = 48;
 // 角色卡片网格（略微缩小，正好一行5个）
 const CHAR_CARD_SIZE = 112;  // 120→112
 const CHAR_CARD_GAP = 12;    // 16→12
-const CHAR_LABEL_SIZE = 16;  // 18→16
+const CHAR_LABEL_SIZE = 14;  // 16→14，固定文字统一14px
 const CHAR_LABEL_GAP = 6;    // 8→6
 
 // 文本卡片网格（略微缩小，正好一行3个）
@@ -71,7 +71,7 @@ const TEXT_CARD_W = 200;      // 225→200
 const TEXT_CARD_GAP = 12;     // 16→12
 const TEXT_CARD_PAD = 12;     // 14→12
 const TEXT_CARD_TITLE_MB = 8; // 10→8
-const TEXT_CARD_TITLE_SIZE = 16; // 18→16
+const TEXT_CARD_TITLE_SIZE = 14; // 16→14，固定文字统一14px
 const TEXT_CARD_BOX_MIN_H = 72; // 80→72
 const CP_SIZE = 88;            // 100→88
 const CP_GAP = 8;              // 10→8
