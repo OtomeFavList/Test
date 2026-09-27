@@ -81,6 +81,7 @@ const IMPRESSION_MIN_H = 72;
 
 // 区块间距
 const SECTION_GAP = 14;
+const BODY_TO_TEXTFIELD_GAP = 8;  // 主体行（含五维图）与文本字段区（优点/缺点等）之间的额外间距
 const GAME_NAME_MB = 12;
 
 // 缓存
@@ -311,6 +312,8 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
     // 垂直居中：计算文字实际高度，若小于框内高度则上下居中（仅文本字段区使用）
     let textY = y + TEXT_BOX_PAD;
     if (verticalCenter) {
+      // 测量前显式设置正确字号字体，避免受上一步标签绘制的 bold 14px 残留影响
+      painter.ctx.font = `${size}px ${FONT_SIYUAN}`;
       const measuredH = measureWrappedHeight(painter.ctx, text, boxW - TEXT_BOX_PAD * 2, size * 1.55, size);
       const innerH = boxH - TEXT_BOX_PAD * 2;
       if (measuredH < innerH) {
@@ -571,14 +574,15 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
 
   const bodyContentH = Math.max(fieldAreaH, radarBottomOffset);
   const bodyRowH = Math.max(coverH, bodyContentH);
-  contentH += bodyRowH + SECTION_GAP;
-
+  contentH += bodyRowH + SECTION_GAP + BODY_TO_TEXTFIELD_GAP;
   // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
   const hasCons = !!(gameData.cons && String(gameData.cons).trim());
   const hasStrategy = !!(gameData.strategyOrder && String(gameData.strategyOrder).trim());
   const hasFavor = !!(gameData.favorOrder && String(gameData.favorOrder).trim());
+  // 测量文本字段内容前，显式设置正确字号字体，避免受上方字段标签绘制的字体残留影响
+  ctx.font = `${inputSize}px ${FONT_SIYUAN}`;
   if (hasPros || hasCons) {
     const tfColW = (innerW - TEXT_FIELD_GAP) / 2;
     let rowMaxH = 0;
@@ -842,7 +846,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const fieldAreaH = fy - bodyTop;
   const radarBottomOffset = hasRadar ? (RADAR_BOX_W + ((hasDuration || hasCompleted || hasStartDate || hasEndDate) ? (fieldRowH + FIELD_ROW_GAP) : 0)) : 0;
   const bodyRowH = Math.max(coverH, fieldAreaH, radarBottomOffset);
-  painter.shiftY(bodyRowH + SECTION_GAP);
+  painter.shiftY(bodyRowH + SECTION_GAP + BODY_TO_TEXTFIELD_GAP);
   // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
@@ -854,6 +858,8 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     ctx.fillStyle = labelColor;
     ctx.fillText(label, x, painter.y);
     const boxY = painter.y + tfLabelH;
+    // 测量文本高度前切换到填写内容字号，避免用 bold 14px 标签字体测算导致 boxH 偏差
+    ctx.font = `${inputSize}px ${FONT_SIYUAN}`;
     const textH = measureWrappedHeight(ctx, text, w - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
     const boxH = Math.max(TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
     // 优点/缺点/攻略顺序/好感顺序：文字色用填写内容文字色，字号用填写内容字号，内容垂直居中
