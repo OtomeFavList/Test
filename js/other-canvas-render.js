@@ -300,24 +300,33 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
   }
 }
 
-function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText, textColor) {
+function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText, textColor, textSize, verticalCenter) {
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
     noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
-    const textSize = config.inputFontSize || config.customTextFontSize || 16;
-    // textColor 未传时默认用自定义文本色（文字卡片/感想）；
-    // 优点/缺点/攻略顺序/好感顺序传入 inputTextColor（填写内容文字色）
+    // textSize 未传时默认用自定义文本字号（文字卡片/感想）；
+    // 优点/缺点/攻略顺序/好感顺序传入 inputSize（填写内容字号）
+    const size = textSize || config.customTextFontSize || 16;
     const color = textColor || config.customtext || '#c98fac';
+    // 垂直居中：计算文字实际高度，若小于框内高度则上下居中（仅文本字段区使用）
+    let textY = y + TEXT_BOX_PAD;
+    if (verticalCenter) {
+      const measuredH = measureWrappedHeight(painter.ctx, text, boxW - TEXT_BOX_PAD * 2, size * 1.55, size);
+      const innerH = boxH - TEXT_BOX_PAD * 2;
+      if (measuredH < innerH) {
+        textY = y + (boxH - measuredH) / 2;
+      }
+    }
     if (centerText) {
-      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
-        boxW - TEXT_BOX_PAD * 2, textSize * 1.55, textSize,
+      drawCenteredText(painter.ctx, text, x + boxW / 2, textY,
+        boxW - TEXT_BOX_PAD * 2, size * 1.55, size,
         color, false);
     } else {
       wrapText(
         painter.ctx, text,
-        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
+        x + TEXT_BOX_PAD, textY,
         boxW - TEXT_BOX_PAD * 2,
-        textSize * 1.55, textSize,
+        size * 1.55, size,
         color
       );
     }
@@ -511,6 +520,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   let h = getBodyPad() + TITLE_SIZE + getTitleMb();
   let contentH = 0;
   const inputSize = config.inputFontSize || 16;
+  const customTextSize = config.customTextFontSize || 16;
   // 游戏名
   const gameName = gameInfo?.name || gameData.gameId || '';
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
@@ -641,7 +651,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
           ch += CP_SIZE;
         } else {
           const textAreaW = TEXT_CARD_W - TEXT_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
-          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, inputSize * 1.55, inputSize);
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, customTextSize * 1.55, customTextSize);
           ch += Math.max(TEXT_CARD_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
         }
         rowMax = Math.max(rowMax, ch);
@@ -659,7 +669,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   // 感想
   if (gameData.impression && String(gameData.impression).trim()) {
     const impLabelH = LABEL_SIZE * 1.4 + 6;
-    const impTextH = measureWrappedHeight(ctx, gameData.impression, innerW - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
+    const impTextH = measureWrappedHeight(ctx, gameData.impression, innerW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize);
     contentH += impLabelH + Math.max(IMPRESSION_MIN_H, impTextH + TEXT_BOX_PAD * 2);
   }
   h += CARD_PAD * 2 + contentH;
@@ -716,6 +726,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_PAD * 2;
   const cardH = CARD_PAD * 2 + cardContentH;
   const inputSize = config.inputFontSize || 16;
+  const customTextSize = config.customTextFontSize || 16;
   const labelColor = config.defaultTextColor || '#b85878';
   const valueColor = config.inputTextColor || '#000000';
   // 卡片外框
@@ -767,7 +778,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
       drawFieldValue(String(gameData.duration).trim(), fieldX + lw + LABEL_VALUE_GAP, fy, FIELD_VALUE_SIZE);
     }
     if (hasCompleted) {
-      const halfW = leftColW / 2;
+      const halfW = fieldW / 2;
       const ynX = fieldX + halfW;
       const lw = drawFieldLabel('全通', ynX, fy);
       drawYnGroup(ctx, ynX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.completed, config);
@@ -778,7 +789,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const hasStartDate = !!(gameData.startDate && String(gameData.startDate).trim());
   const hasEndDate = !!(gameData.endDate && String(gameData.endDate).trim());
   if (hasStartDate || hasEndDate) {
-    const halfW = leftColW / 2;
+    const halfW = fieldW / 2;
     if (hasStartDate) {
       const lw = drawFieldLabel('开始日期', fieldX, fy);
       drawFieldValue(String(gameData.startDate).trim(), fieldX + lw + LABEL_VALUE_GAP, fy, FIELD_VALUE_SIZE);
@@ -790,10 +801,16 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 雷达图
+  // 雷达图：以甜度行E按钮左边框为起点，到卡片大边框之间左右居中
   if (hasRadar) {
-    const radarAreaX = fieldX + leftColW + radarGap;
-    const radarCx = radarAreaX + RADAR_BOX_W / 2;
+    ctx.save();
+    ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
+    const sweetLabelW = ctx.measureText('甜度').width;
+    ctx.restore();
+    const gradeGroupX = fieldX + sweetLabelW + LABEL_VALUE_GAP;
+    const eLeftEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP);
+    const cardRightEdge = fieldX + fieldW;
+    const radarCx = (eLeftEdge + cardRightEdge) / 2;
     const radarCy = fy + RADAR_BOX_W / 2;
     drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
   }
@@ -839,8 +856,8 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     const boxY = painter.y + tfLabelH;
     const textH = measureWrappedHeight(ctx, text, w - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
     const boxH = Math.max(TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-    // 优点/缺点/攻略顺序/好感顺序的文字色用填写内容文字色 inputTextColor
-    drawTextBox(painter, x, boxY, w, boxH, text, config, false, false, valueColor);
+    // 优点/缺点/攻略顺序/好感顺序：文字色用填写内容文字色，字号用填写内容字号，内容垂直居中
+    drawTextBox(painter, x, boxY, w, boxH, text, config, false, false, valueColor, inputSize, true);
     return tfLabelH + boxH;
   }
   if (hasPros || hasCons) {
@@ -925,7 +942,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
           ch += CP_SIZE;
         } else {
           const textAreaW = TEXT_CARD_W - TEXT_CARD_PAD * 2 - TEXT_BOX_PAD * 2;
-          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, inputSize * 1.55, inputSize);
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW, customTextSize * 1.55, customTextSize);
           ch += Math.max(TEXT_CARD_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
         }
         rowMax = Math.max(rowMax, ch);
@@ -964,7 +981,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
           // 文本框
           const textAreaW = TEXT_CARD_W - TEXT_CARD_PAD * 2;
           const availableH = (y + rowH - TEXT_CARD_PAD) - contentY;
-          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
+          const textH = measureWrappedHeight(ctx, card.text || '', textAreaW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize);
           const boxH = Math.max(TEXT_CARD_BOX_MIN_H, textH + TEXT_BOX_PAD * 2, availableH);
           drawTextBox(painter, x + TEXT_CARD_PAD, contentY, textAreaW, boxH, card.text || '', config, true, true);
         }
@@ -980,7 +997,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     ctx.fillStyle = labelColor;
     ctx.fillText('感想', contentX, painter.y);
     const impBoxY = painter.y + LABEL_SIZE * 1.4 + 6;
-    const impTextH = measureWrappedHeight(ctx, gameData.impression, innerW - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
+    const impTextH = measureWrappedHeight(ctx, gameData.impression, innerW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize);
     const impBoxH = Math.max(IMPRESSION_MIN_H, impTextH + TEXT_BOX_PAD * 2);
     drawTextBox(painter, contentX, impBoxY, innerW, impBoxH, gameData.impression, config);
   }
