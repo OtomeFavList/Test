@@ -516,7 +516,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   contentH += nameH + GAME_NAME_MB;
 
-  // ===== 主体行：封面(左) + 字段区(中左) + 雷达图(中右，从甜度行顶端开始) =====
+  // 主体行
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
   const coverH = calcGameCoverHeight(coverImg, COVER_W);
@@ -528,8 +528,8 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   // 有雷达图时字段区左侧留出空间给雷达图；无雷达图时字段占满
   const leftColW = hasRadar ? (fieldW - RADAR_BOX_W - radarGap) : fieldW;
 
-  // 字段行定义（新布局）：
-  // 行1: 时长+全通  行2: 开始日期+结束日期  行3: 甜度  行4: 虐度  行5: 总评  行6: 喜爱度
+  // 字段行定义
+  // 行1: 时长+全通，行2: 开始日期+结束日期，行3: 甜度，行4: 虐度，行5: 总评，行6: 喜爱度
   const hasDuration = !!(gameData.duration && String(gameData.duration).trim());
   const hasCompleted = gameData.completed === true || gameData.completed === false;
   const hasStartDate = !!(gameData.startDate && String(gameData.startDate).trim());
@@ -552,8 +552,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     ? fieldRows.length * fieldRowH + (fieldRows.length - 1) * FIELD_ROW_GAP
     : 0;
 
-  // 雷达图从"甜度"行（行3）顶端开始
-  // 计算甜度行之前有几行（行1时长+行2日期）
+  // 雷达图
   const rowsBeforeSweetness = ((hasDuration || hasCompleted) ? 1 : 0) + ((hasStartDate || hasEndDate) ? 1 : 0);
   const radarTopOffset = rowsBeforeSweetness > 0
     ? rowsBeforeSweetness * fieldRowH + (rowsBeforeSweetness - 1) * FIELD_ROW_GAP
@@ -564,7 +563,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   const bodyRowH = Math.max(coverH, bodyContentH);
   contentH += bodyRowH + SECTION_GAP;
 
-  // ===== 文本字段区（优点/缺点/攻略顺序/好感顺序，字号受 inputFontSize 控制）=====
+  // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
   const hasCons = !!(gameData.cons && String(gameData.cons).trim());
@@ -595,7 +594,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += SECTION_GAP;
   }
 
-  // ===== 角色卡片网格（缩小后一行5个）=====
+  // 角色卡片网格
   const allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
   const validCharCards = allCharCards.filter(c => c.charId);
   if (validCharCards.length > 0) {
@@ -618,7 +617,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += gridH + SECTION_GAP;
   }
 
-  // ===== 文字卡片网格（缩小后一行3个）=====
+  // 文字卡片网格
   const allTextCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
   const validTextCards = allTextCards.filter(c => {
     if (c.type === 'cp') return !!(c.femaleId && c.maleId);
@@ -657,7 +656,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += tcGridH + SECTION_GAP;
   }
 
-  // ===== 感想（文字色用 customtext）=====
+  // 感想
   if (gameData.impression && String(gameData.impression).trim()) {
     const impLabelH = LABEL_SIZE * 1.4 + 6;
     const impTextH = measureWrappedHeight(ctx, gameData.impression, innerW - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
@@ -728,7 +727,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     config.gamename || '#000000', FONT_SIYUAN, true);
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   painter.shiftY(nameH + GAME_NAME_MB);
-  // 主体行：封面(左) + 字段区(中左) + 雷达图(中右)
+  // 主体行
   const bodyTop = painter.y;
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
@@ -759,7 +758,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     ctx.fillStyle = valueColor;
     ctx.fillText(text, x, y + offset);
   }
-  // 行1：时长 + 全通（时长值用固定字号 FIELD_VALUE_SIZE，不受滑块控制）
+  // 行1：时长 + 全通
   const hasDuration = !!(gameData.duration && String(gameData.duration).trim());
   const hasCompleted = gameData.completed === true || gameData.completed === false;
   if (hasDuration || hasCompleted) {
@@ -775,7 +774,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 行2：开始日期 + 结束日期（同一行，各占半宽；值用固定字号不受滑块控制）
+  // 行2：开始日期 + 结束日期
   const hasStartDate = !!(gameData.startDate && String(gameData.startDate).trim());
   const hasEndDate = !!(gameData.endDate && String(gameData.endDate).trim());
   if (hasStartDate || hasEndDate) {
@@ -791,20 +790,20 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 雷达图：以"甜度"文字上端为起点，在右侧剩余空间中左右对齐居中
+  // 雷达图
   if (hasRadar) {
     const radarAreaX = fieldX + leftColW + radarGap;
     const radarCx = radarAreaX + RADAR_BOX_W / 2;
     const radarCy = fy + RADAR_BOX_W / 2;
     drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
   }
-  // 行3：甜度（单独一行）
+  // 行3：甜度
   if (gameData.sweetness) {
     const lw = drawFieldLabel('甜度', fieldX, fy);
     drawGradeGroup(ctx, fieldX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.sweetness, config);
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 行4：虐度（单独一行，在甜度下面）
+  // 行4：虐度
   if (gameData.bitterness) {
     const lw = drawFieldLabel('虐度', fieldX, fy);
     drawGradeGroup(ctx, fieldX + lw + LABEL_VALUE_GAP, fy + gradeCenterOffset, gameData.bitterness, config);
@@ -840,7 +839,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     const boxY = painter.y + tfLabelH;
     const textH = measureWrappedHeight(ctx, text, w - TEXT_BOX_PAD * 2, inputSize * 1.55, inputSize);
     const boxH = Math.max(TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2);
-    // 优点/缺点/攻略顺序/好感顺序的文字色用"填写内容文字色"inputTextColor
+    // 优点/缺点/攻略顺序/好感顺序的文字色用填写内容文字色 inputTextColor
     drawTextBox(painter, x, boxY, w, boxH, text, config, false, false, valueColor);
     return tfLabelH + boxH;
   }
