@@ -1009,22 +1009,41 @@ async function renderOtherImpressionGameCanvas(designW, gameData, gameInfo, conf
     roundImageCache.clear();
     rawImageResourceCache.clear();
   }
+  emitRenderProgress(5);
   const coverSrc = toCanvasUrl(gameInfo?.cover || '');
   let imageUrls = coverSrc ? [coverSrc] : [];
+  const SAFE_URL_PATTERN = /^(http|https):\/\//;
+  const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
+  const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
+  imageUrls = imageUrls.filter(src => {
+    if (!src) return false;
+    if (!SAFE_URL_PATTERN.test(src)) return false;
+    if (BLOCK_R2_PUB_PATTERN.test(src)) return false;
+    if (BLOCK_RAW_PATTERN.test(src)) return false;
+    return true;
+  });
+  imageUrls = [...new Set(imageUrls)];
   const loadRet = await loadImagesWithLimit(imageUrls, MAX_IMAGE_CONCURRENCY);
   const imageCache = loadRet.resultMap;
-
+  await new Promise(r => setTimeout(r, 30));
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  emitRenderProgress(65);
   const vCanvas = document.createElement('canvas');
   const vCtx = vCanvas.getContext('2d');
   const totalH = calcImpressionGameHeight(vCtx, designW, gameData, gameInfo, config, imageCache);
   vCanvas.width = 0; vCanvas.height = 0;
-
+  if (IS_IOS_WEBKIT) {
+    const totalPixel = (designW * DPR) * (totalH * DPR);
+    if (totalPixel > 32 * 1024 * 1024) {
+      console.warn(`⚠️ other Impression IOS 画布像素超限风险：${totalPixel}`);
+    }
+  }
   const canvasHeight = totalH + getBodyPad();
   const canvas = document.createElement('canvas');
   const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
   drawBigTitle(painter, designW, 'Otome Impression', config);
   drawImpressionGameCard(painter, designW, gameData, gameInfo, config, imageCache);
-
+  emitRenderProgress(100);
   const finalH = painter.getY() + getBodyPad();
   const outputCanvas = document.createElement('canvas');
   outputCanvas.width = designW * DPR;
