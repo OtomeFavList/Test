@@ -3284,8 +3284,8 @@ function bindAnnualPreviewButtons() {
         if (e.target === modal) closeBtn.click();
     });
 
-    // 重新生成
-    regenBtn.addEventListener("click", async () => {
+    // 重新生成（改为 onclick 赋值，便于 Other 模式覆盖，避免双模式同时触发）
+    regenBtn.onclick = async () => {
         if (_annualIsRendering) return;
         const scrollWrap = modal.querySelector(".preview-scroll-wrap");
         downloadBtn.disabled = true;
@@ -3321,7 +3321,7 @@ function bindAnnualPreviewButtons() {
             if (unlockTimer) clearTimeout(unlockTimer);
             _annualIsRendering = false;
         }
-    });
+    };
 
     // 导出图片（下载所有模块）已移至 showAnnualPreviewModal 中通过 onclick 赋值，
     // 防止与 FavList 模式的下载监听器冲突导致同时导出两种图片
