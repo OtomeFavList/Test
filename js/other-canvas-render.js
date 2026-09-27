@@ -309,28 +309,45 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
     // 优点/缺点/攻略顺序/好感顺序传入 inputSize（填写内容字号）
     const size = textSize || config.customTextFontSize || 16;
     const color = textColor || config.customtext || '#c98fac';
-    // 垂直居中：计算文字实际高度，若小于框内高度则上下居中（仅文本字段区使用）
-    let textY = y + TEXT_BOX_PAD;
+    const lineHeight = size * 1.55;
+    const textAreaW = boxW - TEXT_BOX_PAD * 2;
     if (verticalCenter) {
-      // 测量前显式设置正确字号字体，避免受上一步标签绘制的 bold 14px 残留影响
-      painter.ctx.font = `${size}px ${FONT_SIYUAN}`;
-      const measuredH = measureWrappedHeight(painter.ctx, text, boxW - TEXT_BOX_PAD * 2, size * 1.55, size);
-      const innerH = boxH - TEXT_BOX_PAD * 2;
-      if (measuredH < innerH) {
-        textY = y + (boxH - measuredH) / 2;
+      // 自行换行并用 top baseline 绘制，按实际视觉高度精确垂直居中
+      const ctx = painter.ctx;
+      ctx.save();
+      ctx.font = `${size}px ${FONT_SIYUAN}`;
+      ctx.fillStyle = color;
+      ctx.textBaseline = 'top';
+      // 手动换行
+      const chars = Array.from(text);
+      let line = '';
+      const lines = [];
+      for (let n = 0; n < chars.length; n++) {
+        const ch = chars[n];
+        if (ch === '\n') { lines.push(line); line = ''; continue; }
+        if (ch === '\r') { if (chars[n+1]==='\n') n++; lines.push(line); line=''; continue; }
+        if (line && ctx.measureText(line + ch).width > textAreaW) {
+          lines.push(line); line = ch;
+        } else {
+          line += ch;
+        }
       }
-    }
-    if (centerText) {
-      drawCenteredText(painter.ctx, text, x + boxW / 2, textY,
-        boxW - TEXT_BOX_PAD * 2, size * 1.55, size,
-        color, false);
+      if (line) lines.push(line);
+      // 实际视觉高度：最后一行用字号高度，行间用行高
+      const visualH = lines.length > 1 ? (lines.length - 1) * lineHeight + size : size;
+      const textY = y + Math.max(TEXT_BOX_PAD, (boxH - visualH) / 2);
+      lines.forEach((l, i) => {
+        ctx.fillText(l, x + TEXT_BOX_PAD, textY + i * lineHeight);
+      });
+      ctx.restore();
+    } else if (centerText) {
+      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
+        textAreaW, lineHeight, size, color, false);
     } else {
       wrapText(
         painter.ctx, text,
-        x + TEXT_BOX_PAD, textY,
-        boxW - TEXT_BOX_PAD * 2,
-        size * 1.55, size,
-        color
+        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
+        textAreaW, lineHeight, size, color
       );
     }
   }
@@ -891,9 +908,11 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     const charCols = Math.max(1, Math.floor((innerW + CHAR_CARD_GAP) / (CHAR_CARD_SIZE + CHAR_CARD_GAP)));
     const charRows = Math.ceil(validCharCards.length / charCols);
     const labelLineH = CHAR_LABEL_SIZE * 1.4;
-    const rowTotalW = charCols * CHAR_CARD_SIZE + (charCols - 1) * CHAR_CARD_GAP;
-    const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
     for (let r = 0; r < charRows; r++) {
+      // 按该行实际卡片数计算居中偏移（最后一行卡片数可能不足）
+      const cardsInRow = Math.min(charCols, validCharCards.length - r * charCols);
+      const rowTotalW = cardsInRow * CHAR_CARD_SIZE + (cardsInRow - 1) * CHAR_CARD_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
       // 先求该行最大标签高度
       let rowMaxLabelH = 0;
       for (let c = 0; c < charCols; c++) {
@@ -955,9 +974,11 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
       }
       rowHeights.push(rowMax);
     }
-    const rowTotalW = tcCols * TEXT_CARD_W + (tcCols - 1) * TEXT_CARD_GAP;
-    const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
     for (let r = 0; r < tcRows; r++) {
+      // 按该行实际卡片数计算居中偏移（最后一行卡片数可能不足）
+      const cardsInRow = Math.min(tcCols, validTextCards.length - r * tcCols);
+      const rowTotalW = cardsInRow * TEXT_CARD_W + (cardsInRow - 1) * TEXT_CARD_GAP;
+      const rowOffset = Math.max(0, (innerW - rowTotalW) / 2);
       const rowH = rowHeights[r];
       for (let c = 0; c < tcCols; c++) {
         const idx = r * tcCols + c;
