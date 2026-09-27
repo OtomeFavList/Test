@@ -889,16 +889,16 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 雷达图：以甜度行E按钮左边框为起点，到卡片大边框之间左右居中
+  // 雷达图：以甜度行E按钮右边框为起点，到卡片大边框之间左右居中
   if (hasRadar) {
     ctx.save();
     ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
     const sweetLabelW = ctx.measureText('甜度').width;
     ctx.restore();
     const gradeGroupX = fieldX + sweetLabelW + LABEL_VALUE_GAP;
-    const eLeftEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP);
+    const eRightEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP) + GRADE_SIZE;
     const cardRightEdge = fieldX + fieldW;
-    const radarCx = (eLeftEdge + cardRightEdge) / 2;
+    const radarCx = (eRightEdge + cardRightEdge) / 2;
     const radarCy = fy + RADAR_BOX_W / 2;
     drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
   }
@@ -1213,16 +1213,16 @@ function drawBriefGameCard(painter, targetW, gameData, gameInfo, config, imageCa
     }
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  // 雷达图
+  // 雷达图：以甜度行E按钮右边框为起点，到卡片大边框之间左右居中
   if (hasRadar) {
     ctx.save();
     ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
     const sweetLabelW = ctx.measureText('甜度').width;
     ctx.restore();
     const gradeGroupX = fieldX + sweetLabelW + LABEL_VALUE_GAP;
-    const eLeftEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP);
+    const eRightEdge = gradeGroupX + 5 * (GRADE_SIZE + GRADE_GAP) + GRADE_SIZE;
     const cardRightEdge = fieldX + fieldW;
-    const radarCx = (eLeftEdge + cardRightEdge) / 2;
+    const radarCx = (eRightEdge + cardRightEdge) / 2;
     const radarCy = fy + RADAR_BOX_W / 2;
     drawRadarChart(ctx, radarCx, radarCy, gameData.fiveDim || [], config);
   }
