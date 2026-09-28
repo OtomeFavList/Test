@@ -45,7 +45,7 @@ const otherExportDefault = {
   imageBorderColor: "#eeeeee",
   border: "#f6a5b8",
   normalQuality: false,
-  exportBrief: false,
+  exportBrief: true,
   inputFontSize: 16,
   customTextFontSize: 16
 };
@@ -1587,7 +1587,7 @@ function bindExportConfig() {
       });
       if (wrap) wrap.style.setProperty('--other-export-subtitle', otherConfig.title);
       if (reporterNameInput) reporterNameInput.value = '';
-      if (exportBrief) exportBrief.checked = false;
+      if (exportBrief) exportBrief.checked = true;
       if (normalQuality) normalQuality.checked = false;
       // 重置字号滑块到默认值（只重置配置和显示，不操作网页CSS变量）
       if (sliderInputFont && inputFontValueDisplay) {
