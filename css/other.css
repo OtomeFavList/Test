@@ -775,58 +775,6 @@
 }
 
 /* ===== 模块二 Impression 完整样式 ===== */
-
-/* 横板图片区域：宽度铺满，高度随原比例 */
-.other-imp-info-img-wrap {
-    position: relative;
-    width: 100%;
-    margin-bottom: 12px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #f5f5f5;
-}
-.other-imp-info-img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-/* 底部淡出效果 */
-.other-imp-info-fade {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 60px;
-    background: linear-gradient(to bottom, rgba(255,247,249,0) 0%, var(--other-export-bg, #fff7f9) 100%);
-    pointer-events: none;
-}
-/* 横板图左右切换按钮（复用角色图切换键样式，dom 名不同） */
-.other-imp-info-img-wrap .other-imp-img-switch {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(0,0,0,0.4);
-    color: #fff;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
-    z-index: 3;
-    transition: background 0.2s;
-}
-.other-imp-info-img-wrap .other-imp-img-switch:hover {
-    background: rgba(0,0,0,0.6);
-}
-.other-imp-info-prev { left: 12px; }
-.other-imp-info-next { right: 12px; }
-
 /* 4个单独开关（复用 Annual 弹窗页面二开关样式） */
 .other-imp-switches {
     display: flex;
@@ -1301,9 +1249,6 @@
         flex: 1;
         text-align: left;
         font-size: 14px;
-    }
-    .other-imp-info-fade {
-        height: 40px;
     }
     .other-imp-switch-label {
         font-size: 13px;
