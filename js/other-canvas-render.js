@@ -87,13 +87,6 @@ const GAME_NAME_MB = 12;
 // 简评表
 const BRIEF_GAMES_PER_PAGE = 3;  // 每张简评表至多放置3个游戏
 const BRIEF_CARD_GAP = 16;       // 简评表中游戏卡片之间的间距
-// Impression 导出
-const IMP_PRODUCT_IMG_DIR = 'product';  // 横板产品图目录
-const IMP_FADE_H = 48;                   // 图片下方淡出高度
-const IMP_CHAR_IMG_W = 100;              // 导出角色图宽度
-const IMP_GROUP_GAP = 16;                // 角色组之间间距
-const IMP_CELL_GAP = 10;                 // 角色组内列间距
-const IMP_TEXTAREA_MIN_H = 100;          // Before/After 文本框最小高度
 
 // 缓存
 const roundImageCache = new Map();
@@ -555,28 +548,6 @@ function collectBriefPageImages(gameDataList, gameInfoList) {
   return [...new Set(urls)];
 }
 
-// hex 颜色转 rgba
-function hexToRgba(hex, alpha) {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-// Impression 图片收集：横板产品图 + 角色立绘
-function collectImpressionGameImages(gameData, gameInfo) {
-  const urls = [];
-  const push = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
-  // 横板产品图：product/001.jpg
-  if (gameData?.gameId) {
-    push(`${IMP_PRODUCT_IMG_DIR}/${gameData.gameId}.jpg`);
-  }
-  (gameData.chars || []).forEach(c => {
-    if (c.charId && c.coverSrc) push(c.coverSrc);
-  });
-  return [...new Set(urls)];
-}
-
 // 高度计算
 function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache) {
   const wrapW = getWrapW(targetW);
@@ -764,41 +735,16 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
   const wrapW = getWrapW(targetW);
   const innerW = wrapW - CARD_PAD * 2;
   let h = getBodyPad() + TITLE_SIZE + getTitleMb();
-  const customTextSize = config.customTextFontSize || 16;
-  // 横板产品图
-  const productSrc = toCanvasUrl(`${IMP_PRODUCT_IMG_DIR}/${gameData.gameId}.jpg`);
-  const productImg = productSrc ? imageCache.get(productSrc) : null;
-  const productH = productImg ? calcGameCoverHeight(productImg, innerW) : Math.round(innerW * 0.4);
-  let contentH = productH;
-  // 淡出区域与表格重叠，表格从淡出区域中部开始，不额外加高度
-  // 表格：只计算开关开启的角色行
-  const activeChars = (gameData.chars || []).filter((c, i) => gameData.charSwitches?.[i]);
-  if (activeChars.length > 0) {
-    const groupW = (innerW - IMP_GROUP_GAP) / 2;
-    const textColW = (groupW - IMP_CHAR_IMG_W - IMP_CELL_GAP * 2) / 2;
-    const rows = Math.ceil(activeChars.length / 2);
-    let tableH = 0;
-    ctx.font = `${customTextSize}px ${FONT_SIYUAN}`;
-    for (let r = 0; r < rows; r++) {
-      let rowMaxH = IMP_TEXTAREA_MIN_H;
-      for (let c = 0; c < 2; c++) {
-        const idx = r * 2 + c;
-        if (idx >= activeChars.length) break;
-        const char = activeChars[idx];
-        const charImgSrc = toCanvasUrl(char.coverSrc);
-        const charImg = charImgSrc ? imageCache.get(charImgSrc) : null;
-        const charImgH = charImg ? calcGameCoverHeight(charImg, IMP_CHAR_IMG_W) : IMP_CHAR_IMG_W * 1.4;
-        const beforeH = char.beforeText ? measureWrappedHeight(ctx, char.beforeText, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const afterH = char.afterText ? measureWrappedHeight(ctx, char.afterText, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const textMaxH = Math.max(IMP_TEXTAREA_MIN_H, Math.max(beforeH, afterH) + TEXT_BOX_PAD * 2);
-        rowMaxH = Math.max(rowMaxH, charImgH + 32, textMaxH + 20);
-      }
-      tableH += rowMaxH;
-      if (r < rows - 1) tableH += IMP_GROUP_GAP;
-    }
-    // 表格从淡出区域中部开始，额外高度 = 表格高度 - 淡出高度的一半
-    contentH += Math.max(0, tableH - IMP_FADE_H / 2);
-  }
+  let contentH = 0;
+  // 游戏名
+  const gameName = gameInfo?.name || gameData.gameId || '';
+  const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
+  contentH += nameH + GAME_NAME_MB;
+  // 封面
+  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
+  const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+  const coverH = calcGameCoverHeight(coverImg, 180);
+  contentH += coverH;
   h += CARD_PAD * 2 + contentH;
   return h;
 }
@@ -1212,123 +1158,30 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
   const innerW = wrapW - CARD_PAD * 2;
   const contentX = wrapX + CARD_PAD;
   const ctx = painter.ctx;
+
   const cardTop = painter.y;
   const totalH = calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache);
   const cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_PAD * 2;
   const cardH = CARD_PAD * 2 + cardContentH;
-  const customTextSize = config.customTextFontSize || 16;
-  const customTextColor = config.customtext || '#c98fac';
-  const customBorder = config.customborder || '#eee';
-  const labelColor = config.defaultTextColor || '#b85878';
-  // 卡片外框
+
   painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
   painter.y = cardTop + CARD_PAD;
-  // 横板产品图（铺满宽度，无圆角边框）
-  const productSrc = toCanvasUrl(`${IMP_PRODUCT_IMG_DIR}/${gameData.gameId}.jpg`);
-  const productImg = productSrc ? imageCache.get(productSrc) : null;
-  const productH = productImg ? calcGameCoverHeight(productImg, innerW) : Math.round(innerW * 0.4);
-  if (productImg) {
-    ctx.save();
-    try {
-      const resInfo = rawImageResourceCache.get(productSrc);
-      const drawTarget = resInfo?.type === 'image' ? resInfo.data : productImg;
-      ctx.drawImage(drawTarget, contentX, painter.y, innerW, productH);
-    } finally { ctx.restore(); }
-  } else {
-    ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(contentX, painter.y, innerW, productH);
-  }
-  // 图片下方淡出效果（从透明到背景色）
-  const fadeStartY = painter.y + productH - IMP_FADE_H;
-  const fadeEndY = painter.y + productH;
-  const gradient = ctx.createLinearGradient(0, fadeStartY, 0, fadeEndY);
-  gradient.addColorStop(0, hexToRgba(config.bg || '#fff7f9', 0));
-  gradient.addColorStop(1, config.bg || '#fff7f9');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(contentX, fadeStartY, innerW, IMP_FADE_H);
-  // 表格从淡出区域中部开始
-  let tableY = painter.y + productH - IMP_FADE_H / 2;
-  // 三列表格：只渲染开关开启的角色
-  const activeChars = [];
-  (gameData.chars || []).forEach((c, i) => {
-    if (gameData.charSwitches?.[i]) activeChars.push({ char: c, idx: i });
-  });
-  if (activeChars.length > 0) {
-    const groupW = (innerW - IMP_GROUP_GAP) / 2;
-    const textColW = (groupW - IMP_CHAR_IMG_W - IMP_CELL_GAP * 2) / 2;
-    const rows = Math.ceil(activeChars.length / 2);
-    ctx.font = `${customTextSize}px ${FONT_SIYUAN}`;
-    for (let r = 0; r < rows; r++) {
-      // 先计算行高
-      let rowMaxH = IMP_TEXTAREA_MIN_H;
-      for (let c = 0; c < 2; c++) {
-        const ai = r * 2 + c;
-        if (ai >= activeChars.length) break;
-        const char = activeChars[ai].char;
-        const charImgSrc = toCanvasUrl(char.coverSrc);
-        const charImg = charImgSrc ? imageCache.get(charImgSrc) : null;
-        const charImgH = charImg ? calcGameCoverHeight(charImg, IMP_CHAR_IMG_W) : IMP_CHAR_IMG_W * 1.4;
-        const beforeH = char.beforeText ? measureWrappedHeight(ctx, char.beforeText, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const afterH = char.afterText ? measureWrappedHeight(ctx, char.afterText, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const textMaxH = Math.max(IMP_TEXTAREA_MIN_H, Math.max(beforeH, afterH) + TEXT_BOX_PAD * 2);
-        rowMaxH = Math.max(rowMaxH, charImgH + 32, textMaxH + 20);
-      }
-      // 绘制该行两个角色组
-      for (let c = 0; c < 2; c++) {
-        const ai = r * 2 + c;
-        if (ai >= activeChars.length) break;
-        const char = activeChars[ai].char;
-        const gx = contentX + c * (groupW + IMP_GROUP_GAP);
-        // Character 列：角色图
-        const charImgSrc = toCanvasUrl(char.coverSrc);
-        const charImg = charImgSrc ? imageCache.get(charImgSrc) : null;
-        const charImgH = charImg ? calcGameCoverHeight(charImg, IMP_CHAR_IMG_W) : IMP_CHAR_IMG_W * 1.4;
-        const charY = tableY + (rowMaxH - charImgH) / 2;
-        if (charImg) {
-          ctx.save();
-          try {
-            ctx.beginPath();
-            ctx.roundRect(gx, charY, IMP_CHAR_IMG_W, charImgH, 8);
-            ctx.clip();
-            const resInfo = rawImageResourceCache.get(charImgSrc);
-            const drawTarget = resInfo?.type === 'image' ? resInfo.data : charImg;
-            ctx.drawImage(drawTarget, gx, charY, IMP_CHAR_IMG_W, charImgH);
-          } finally { ctx.restore(); }
-          ctx.strokeStyle = SUB_CARD_BORDER;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.roundRect(gx, charY, IMP_CHAR_IMG_W, charImgH, 8);
-          ctx.stroke();
-        }
-        // Before 列
-        const beforeX = gx + IMP_CHAR_IMG_W + IMP_CELL_GAP;
-        const beforeBoxH = Math.max(IMP_TEXTAREA_MIN_H, (char.beforeText ? measureWrappedHeight(ctx, char.beforeText, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0) + TEXT_BOX_PAD * 2);
-        const beforeBoxY = tableY + 20 + (rowMaxH - 20 - beforeBoxH) / 2;
-        ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
-        ctx.fillStyle = labelColor;
-        ctx.fillText('Before', beforeX, tableY);
-        painter.drawRoundRect(beforeX, beforeBoxY, textColW, beforeBoxH, SUB_CARD_RADIUS, '#ffffff', customBorder, 1);
-        if (char.beforeText) {
-          wrapText(ctx, char.beforeText, beforeX + TEXT_BOX_PAD, beforeBoxY + TEXT_BOX_PAD,
-            textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize, customTextColor);
-        }
-        // After 列
-        const afterX = beforeX + textColW + IMP_CELL_GAP;
-        const afterBoxH = Math.max(IMP_TEXTAREA_MIN_H, (char.afterText ? measureWrappedHeight(ctx, char.afterText, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0) + TEXT_BOX_PAD * 2);
-        const afterBoxY = tableY + 20 + (rowMaxH - 20 - afterBoxH) / 2;
-        ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
-        ctx.fillStyle = labelColor;
-        ctx.fillText('After', afterX, tableY);
-        painter.drawRoundRect(afterX, afterBoxY, textColW, afterBoxH, SUB_CARD_RADIUS, '#ffffff', customBorder, 1);
-        if (char.afterText) {
-          wrapText(ctx, char.afterText, afterX + TEXT_BOX_PAD, afterBoxY + TEXT_BOX_PAD,
-            textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize, customTextColor);
-        }
-      }
-      tableY += rowMaxH;
-      if (r < rows - 1) tableY += IMP_GROUP_GAP;
-    }
-  }
+
+  // 游戏名
+  const gameName = gameInfo?.name || gameData.gameId || '';
+  drawCenteredText(ctx, gameName, contentX + innerW / 2, painter.y, innerW,
+    GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, config.gamename || '#000000', true);
+  const nameH = measureCenteredTextHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE);
+  painter.shiftY(nameH + GAME_NAME_MB);
+
+  // 封面
+  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
+  const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
+  const coverW = 180;
+  const coverH = calcGameCoverHeight(coverImg, coverW);
+  const coverX = contentX + (innerW - coverW) / 2;
+  drawCoverCard(painter, coverX, painter.y, coverW, coverH, coverImg, coverSrc, 6);
+
   painter.y = cardTop + cardH;
 }
 
@@ -1554,7 +1407,8 @@ async function renderOtherImpressionGameCanvas(designW, gameData, gameInfo, conf
     rawImageResourceCache.clear();
   }
   emitRenderProgress(5);
-  let imageUrls = collectImpressionGameImages(gameData, gameInfo);
+  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
+  let imageUrls = coverSrc ? [coverSrc] : [];
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
   const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
   const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
