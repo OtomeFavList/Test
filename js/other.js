@@ -131,7 +131,28 @@ function getCombinedGameList() {
   const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
   return [...baseList, ...fdList];
 }
-
+// 获取游戏的合并角色列表：普通游戏角色 + 所有关联FD游戏的角色
+// 支持多个FD关联同一个普通游戏（通过FD游戏的 baseGameId 字段）
+function getGameMergedCharList(gameInfo) {
+  if (!gameInfo) return [];
+  const baseChars = Array.isArray(gameInfo.charList) ? gameInfo.charList : [];
+  const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
+  const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === gameInfo.id);
+  if (relatedFdGames.length === 0) return baseChars;
+  const fdChars = [];
+  relatedFdGames.forEach(fd => {
+    if (Array.isArray(fd.charList)) {
+      fd.charList.forEach(char => {
+        fdChars.push({
+          ...char,
+          _fdSourceId: fd.id,
+          _fdSourceName: fd.name
+        });
+      });
+    }
+  });
+  return [...baseChars, ...fdChars];
+}
 // 数据持久化
 function loadOtherData() {
   try {
@@ -691,7 +712,7 @@ function impressionCharHasFdContent(char) {
 
 // Impression：根据全局开关 + 局部开关获取可见角色列表（与 Annual 弹窗过滤逻辑完全一致：全局 OR 局部）
 function getImpressionVisibleChars(gameInfo, localSwitches, globalSwitches) {
-  const rawList = gameInfo?.charList || [];
+  const rawList = getGameMergedCharList(gameInfo);
   const local = localSwitches || { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
   const global = globalSwitches || otherImpGlobalSwitches;
   // 与 Annual renderCharModalCharList 完全一致：全局开关 OR 局部开关
@@ -777,7 +798,7 @@ function renderImpressionCard(gameData) {
   const infoImgUrl = getWebImageUrl(infoImages[infoIdx] || "");
 
   // 4个单独开关：动态显隐（对齐 Annual renderCharModalCharList 的 localSwitchVisibility 逻辑）
-  const rawCharList = gameInfo?.charList || [];
+  const rawCharList = getGameMergedCharList(gameInfo);
   const switchVisibility = {
     subChar:   rawCharList.some(c => c.isSub === true),
     fdSubChar: rawCharList.some(c => c.isFdSub === true),
