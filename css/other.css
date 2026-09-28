@@ -752,7 +752,7 @@
 
 /* 模块二 Impression 卡片 */
 .other-impression-card {
-    background: var(--other-card-bg, #fff7f9);
+    background: transparent;
     border: 1px solid var(--other-image-border-color, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
@@ -772,6 +772,204 @@
     color: var(--other-export-gamename, #000000);
     word-break: break-all;
     margin: 0;
+}
+
+/* ===== 模块二 Impression 完整样式 ===== */
+
+/* 横板图片区域：宽度铺满，高度随原比例 */
+.other-imp-info-img-wrap {
+    position: relative;
+    width: 100%;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+.other-imp-info-img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+/* 底部淡出效果 */
+.other-imp-info-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, rgba(255,247,249,0) 0%, var(--other-export-bg, #fff7f9) 100%);
+    pointer-events: none;
+}
+/* 横板图左右切换按钮（复用角色图切换键样式，dom 名不同） */
+.other-imp-info-img-wrap .other-imp-img-switch {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    z-index: 3;
+    transition: background 0.2s;
+}
+.other-imp-info-img-wrap .other-imp-img-switch:hover {
+    background: rgba(0,0,0,0.6);
+}
+.other-imp-info-prev { left: 12px; }
+.other-imp-info-next { right: 12px; }
+
+/* 4个单独开关（复用 Annual 弹窗页面二开关样式） */
+.other-imp-switches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 0 4px;
+}
+.other-imp-switch-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--other-default-text-color, #b85878);
+    cursor: pointer;
+    user-select: none;
+}
+.other-imp-switch-input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--other-active-fill-color, #e895a8);
+}
+
+/* 三列内容容器：PC 端一行 2 个角色 block */
+.other-imp-chars-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.other-imp-char-block {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 12px;
+    background: #fff;
+}
+/* 每个 block 内三列：Character / Before / After */
+.other-imp-char-table {
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+}
+/* Character 列 */
+.other-imp-col-char {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.other-imp-char-img-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f5f5f5;
+    border: 1px solid #eee;
+}
+.other-imp-char-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+.other-imp-char-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #fafafa;
+}
+.other-imp-char-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--other-export-gamename, #000000);
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.3;
+}
+/* 角色立绘左右切换按钮 */
+.other-imp-char-img-box .other-imp-img-switch {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    z-index: 3;
+    transition: background 0.2s;
+}
+.other-imp-char-img-box .other-imp-img-switch:hover {
+    background: rgba(0,0,0,0.6);
+}
+.other-imp-img-prev { left: 4px; }
+.other-imp-img-next { right: 4px; }
+
+/* Before / After 列 */
+.other-imp-col-before,
+.other-imp-col-after {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.other-imp-col-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--other-default-text-color, #b85878);
+    text-align: center;
+}
+/* 自定义文本框：受自定义颜色 + 自定义文本字号控制 */
+.other-imp-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid var(--other-export-customborder, #eee);
+    border-radius: 6px;
+    background: #fcfcfc;
+    font-size: var(--other-custom-text-font-size, 16px);
+    color: var(--other-export-customtext, #c98fac);
+    resize: vertical;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+.other-imp-textarea:focus {
+    outline: none;
+    border-color: #f6a5b8;
+}
+.other-imp-empty-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+    padding: 20px 0;
 }
 
 /* 导出模块 */
@@ -1000,6 +1198,50 @@
     .other-repo-text-card-grid {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
+    }
+    /* ===== 模块二 Impression 移动端适配 ===== */
+    .other-impression-card {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    /* 角色 block 改为纵向一列 */
+    .other-imp-chars-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    /* 每个 block 内三列改为纵向：角色图(小)单独一行，Before/After 在下方 */
+    .other-imp-char-table {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .other-imp-col-char {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+    .other-imp-char-img-box {
+        width: 72px;
+        aspect-ratio: 3 / 4;
+        flex-shrink: 0;
+    }
+    .other-imp-char-name {
+        flex: 1;
+        text-align: left;
+        font-size: 14px;
+    }
+    .other-imp-textarea {
+        min-height: 60px;
+        font-size: 14px;
+    }
+    .other-imp-info-fade {
+        height: 40px;
+    }
+    .other-imp-switches {
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .other-imp-switch-label {
+        font-size: 13px;
     }
 }
 
