@@ -1114,118 +1114,144 @@ function bindFoldButtons() {
   });
 }
 
-// 悬浮滚动按钮
+// 悬浮滚动按钮：以游戏卡片为单位滚动（跨模块连续列表）
 function bindOtherScrollButtons() {
   const topBtn = document.getElementById('other-back-to-top-btn');
   const bottomBtn = document.getElementById('other-scroll-to-bottom-btn');
   if (!topBtn || !bottomBtn) return;
   const TOLERANCE = 30;
-  const EMPTY_HEIGHT = 140;
+
   function getModules() {
     const wrap = document.querySelector('.mode-wrap[data-mode="other"]');
     return wrap ? Array.from(wrap.querySelectorAll('.big-card')) : [];
   }
-  function isEmpty(el) { return el.getBoundingClientRect().height < EMPTY_HEIGHT; }
-  function findPrev(modules, from) {
-    for (let i = from; i >= 0; i--) if (!isEmpty(modules[i])) return i;
-    return -1;
-  }
-  function findNext(modules, from) {
-    for (let i = from; i < modules.length; i++) if (!isEmpty(modules[i])) return i;
-    return -1;
-  }
-  // 对齐 Annual：根据视口垂直中心判断当前模块信息，含 inside/isAbove 边界判断
-  function getCurrentModuleInfo() {
+
+  // 获取所有游戏卡片（跨模块，按 DOM 顺序），每项含元素、所属模块下标、顶部、底部
+  function getAllGameCards() {
     const modules = getModules();
-    if (modules.length === 0) return { idx: -1, inside: false, isAbove: false };
+    const cards = [];
+    modules.forEach((mod, mIdx) => {
+      const gameCards = mod.querySelectorAll('.other-rero-card, .other-impression-card');
+      gameCards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        cards.push({
+          el: card,
+          moduleIdx: mIdx,
+          top: rect.top + window.scrollY,
+          bottom: rect.bottom + window.scrollY
+        });
+      });
+    });
+    return cards;
+  }
+
+  // 根据视口垂直中心定位当前游戏卡片
+  function getCurrentCardInfo(cards) {
+    if (cards.length === 0) return { idx: -1, inside: false, isAbove: false };
     const viewCenter = window.scrollY + window.innerHeight / 2;
-    // 优先：视口中心落在某个非空模块范围内
-    for (let i = 0; i < modules.length; i++) {
-      if (isEmpty(modules[i])) continue;
-      const rect = modules[i].getBoundingClientRect();
-      const top = rect.top + window.scrollY;
-      const bottom = rect.bottom + window.scrollY;
-      if (viewCenter >= top && viewCenter <= bottom) {
+    // 优先：视口中心落在某个游戏卡片范围内
+    for (let i = 0; i < cards.length; i++) {
+      if (viewCenter >= cards[i].top && viewCenter <= cards[i].bottom) {
         return { idx: i, inside: true, isAbove: false };
       }
     }
-    // 兜底：视口中心不在任何非空模块范围内，找距离最近的非空模块并记录在其上方还是下方
+    // 兜底：视口中心不在任何卡片范围内，找距离最近的卡片并记录在其上方还是下方
     let closest = -1;
     let minDist = Infinity;
     let closestIsAbove = false;
-    for (let i = 0; i < modules.length; i++) {
-      if (isEmpty(modules[i])) continue;
-      const rect = modules[i].getBoundingClientRect();
-      const top = rect.top + window.scrollY;
-      const bottom = rect.bottom + window.scrollY;
-      if (viewCenter < top) {
-        const dist = top - viewCenter;
+    for (let i = 0; i < cards.length; i++) {
+      if (viewCenter < cards[i].top) {
+        const dist = cards[i].top - viewCenter;
         if (dist < minDist) { minDist = dist; closest = i; closestIsAbove = true; }
-      } else if (viewCenter > bottom) {
-        const dist = viewCenter - bottom;
+      } else if (viewCenter > cards[i].bottom) {
+        const dist = viewCenter - cards[i].bottom;
         if (dist < minDist) { minDist = dist; closest = i; closestIsAbove = false; }
       }
     }
-    if (closest >= 0) {
-      return { idx: closest, inside: false, isAbove: closestIsAbove };
-    }
-    return { idx: 0, inside: false, isAbove: false };
+    if (closest >= 0) return { idx: closest, inside: false, isAbove: closestIsAbove };
+    return { idx: -1, inside: false, isAbove: false };
   }
+
   // ▲按钮
   topBtn.addEventListener('click', function () {
     const modules = getModules();
     if (modules.length === 0) return;
-    const info = getCurrentModuleInfo();
-    const idx = info.idx;
-    if (idx < 0) return;
+    const cards = getAllGameCards();
+    // 无任何游戏卡片时回退到页面顶部
+    if (cards.length === 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const info = getCurrentCardInfo(cards);
+    if (info.idx < 0) return;
+    const cur = cards[info.idx];
+
     if (info.inside) {
-      const currentTop = modules[idx].getBoundingClientRect().top + window.scrollY;
-      if (window.scrollY > currentTop + TOLERANCE) {
-        modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (window.scrollY > cur.top + TOLERANCE) {
+        // 在卡片中间：滚动到该游戏卡片上边框
+        cur.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
-        const prev = findPrev(modules, idx - 1);
-        if (prev >= 0) {
-          modules[prev].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 已在卡片上边框：滚动到上一个游戏卡片的上边框
+        if (info.idx > 0) {
+          cards[info.idx - 1].el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          // 无上一个游戏卡片：滚动到上一个模块上边框；无则页面顶部
+          if (cur.moduleIdx > 0) {
+            modules[cur.moduleIdx - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         }
       }
     } else if (info.isAbove) {
-      // 视口中心在最近非空模块上方：往上滚跳到上一个非空模块顶部
-      const prev = findPrev(modules, idx - 1);
-      if (prev >= 0) {
-        modules[prev].scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      // 视口中心在最近卡片上方：滚动到该卡片上边框
+      cur.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      // 视口中心在最近非空模块下方：往上滚直接回到该非空模块顶部
-      modules[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // 视口中心在最近卡片下方：滚动到该卡片上边框
+      cur.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
+
   // ▼按钮
   bottomBtn.addEventListener('click', function () {
     const modules = getModules();
     if (modules.length === 0) return;
-    const info = getCurrentModuleInfo();
-    const idx = info.idx;
-    if (idx < 0) return;
+    const cards = getAllGameCards();
+    // 无任何游戏卡片时回退到页面底部
+    if (cards.length === 0) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      return;
+    }
+    const info = getCurrentCardInfo(cards);
+    if (info.idx < 0) return;
+    const cur = cards[info.idx];
+    const viewBottom = window.scrollY + window.innerHeight;
+
     if (info.inside) {
-      const currentBottom = modules[idx].getBoundingClientRect().bottom + window.scrollY;
-      const viewBottom = window.scrollY + window.innerHeight;
-      if (viewBottom < currentBottom - TOLERANCE) {
-        modules[idx].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      if (viewBottom < cur.bottom - TOLERANCE) {
+        // 在卡片中间：滚动到该游戏卡片下边框
+        cur.el.scrollIntoView({ behavior: 'smooth', block: 'end' });
       } else {
-        const next = findNext(modules, idx + 1);
-        if (next >= 0) modules[next].scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // 已在卡片下边框：滚动到下一个游戏卡片的下边框
+        if (info.idx < cards.length - 1) {
+          cards[info.idx + 1].el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+          // 无下一个游戏卡片：滚动到下一个模块下边框；无则不动作
+          if (cur.moduleIdx < modules.length - 1) {
+            modules[cur.moduleIdx + 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        }
       }
     } else if (info.isAbove) {
-      // 视口中心在最近非空模块上方：往下滚直接滚到该非空模块底部
-      modules[idx].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      // 视口中心在最近卡片上方：滚动到该卡片下边框
+      cur.el.scrollIntoView({ behavior: 'smooth', block: 'end' });
     } else {
-      // 视口中心在最近非空模块下方：往下滚跳到下一个非空模块底部
-      const next = findNext(modules, idx + 1);
-      if (next >= 0) modules[next].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      // 视口中心在最近卡片下方：滚动到下一个游戏卡片下边框，或下一个模块下边框
+      if (info.idx < cards.length - 1) {
+        cards[info.idx + 1].el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else if (cur.moduleIdx < modules.length - 1) {
+        modules[cur.moduleIdx + 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
     }
   });
 }
