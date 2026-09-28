@@ -242,9 +242,18 @@ function getGameTemplateState_WithFD() {
 // 支持多个FD关联同一个普通游戏（通过FD游戏的 baseGameId 字段）
 function getGameMergedCharList(gameInfo) {
     if (!gameInfo) return [];
-    const baseChars = Array.isArray(gameInfo.charList) ? gameInfo.charList : [];
     const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
-    const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === gameInfo.id);
+    // 如果当前游戏是FD游戏，通过 baseGameId 找到对应的普通游戏，以普通游戏为基准合并角色
+    let baseGameInfo = gameInfo;
+    if (gameInfo.baseGameId) {
+        const baseState = getGameTemplateState_BaseOnly();
+        if (baseState.ready && Array.isArray(baseState.list)) {
+            const found = baseState.list.find(g => g.id === gameInfo.baseGameId);
+            if (found) baseGameInfo = found;
+        }
+    }
+    const baseChars = Array.isArray(baseGameInfo.charList) ? baseGameInfo.charList : [];
+    const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === baseGameInfo.id);
     if (relatedFdGames.length === 0) return baseChars;
     const fdChars = [];
     relatedFdGames.forEach(fd => {
