@@ -6,6 +6,7 @@ import {
   preloadImageBitmap,
   preloadAndDecodeImage,
   convertR2ToJsDelivr,
+  getAvailableCharImages,
   LAYOUT_SPACE,
   LAYOUT_STYLE
 } from './main.js';
@@ -78,6 +79,19 @@ const CP_GAP = 8;              // 10→8
 
 // 感想
 const IMPRESSION_MIN_H = 72;
+
+// Impression 模块布局常量
+const IMP_INFO_MAX_H = 260;       // 横板图最大高度（宽度铺满后按比例，超此则居中裁剪）
+const IMP_INFO_FADE_H = 50;       // 横板图底部淡出高度
+const IMP_INFO_MB = 12;           // 横板图与下方内容间距
+const IMP_CHAR_IMG_W = 96;        // 导出角色图宽度
+const IMP_CHAR_IMG_H = 128;       // 导出角色图高度（3:4）
+const IMP_CHAR_NAME_H = 20;       // 角色名占用高度
+const IMP_BLOCK_COLS = 2;         // 每行角色 block 数量
+const IMP_BLOCK_GAP = 16;         // 角色 block 之间间距
+const IMP_BLOCK_PAD = 12;         // 角色 block 内边距
+const IMP_COL_GAP = 10;           // 三列之间间距
+const IMP_TEXTAREA_MIN_H = 72;    // Before/After 文本框最小高度
 
 // 区块间距
 const SECTION_GAP = 14;
@@ -548,6 +562,61 @@ function collectBriefPageImages(gameDataList, gameInfoList) {
   return [...new Set(urls)];
 }
 
+// Impression：根据 4 开关过滤可见角色（与 other.js 中逻辑一致）
+function canvasGetImpVisibleChars(gameInfo, switches) {
+  const rawList = gameInfo?.charList || [];
+  const sw = switches || { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
+  return rawList.filter(c => {
+    const isSub = c.isSub ?? false;
+    const isHidden = !!c.isHidden;
+    const isFD = !!c.isFD;
+    const isFdSub = !!c.isFdSub;
+    if (!isSub && !isHidden && !isFD && !isFdSub) return true;
+    return (isSub && sw.subChar) || (isHidden && sw.hideChar) ||
+           (isFD && sw.fdChar) || (isFdSub && sw.fdSubChar);
+  });
+}
+// Impression：获取角色在当前开关下的可用立绘列表
+function canvasGetImpCharImages(char, switches) {
+  if (!char) return [];
+  const sw = switches || { hideChar: false, fdChar: false };
+  const availUnits = getAvailableCharImages(char, false, false, sw.hideChar || false, sw.fdChar || false);
+  const allSrc = [];
+  availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
+  return allSrc;
+}
+// Impression：获取横板图列表（优先 gameInfo.infoImages，其次读取 window 配置数量）
+function canvasGetImpInfoImages(gameInfo, gameId) {
+  if (gameInfo && Array.isArray(gameInfo.infoImages) && gameInfo.infoImages.length > 0) {
+    return gameInfo.infoImages;
+  }
+  const countMap = window.IMPRESSION_INFO_IMAGE_COUNT || {};
+  const count = countMap[gameId] || 1;
+  const list = [`info/${gameId}.jpg`];
+  for (let i = 2; i <= count; i++) list.push(`info/${gameId}-${i}.jpg`);
+  return list;
+}
+// Impression：收集导出所需全部图片（横板图 + 各可见角色当前立绘）
+function collectImpressionGameImages(gameData, gameInfo) {
+  const urls = [];
+  const push = (src) => { const u = toCanvasUrl(src); if (u) urls.push(u); };
+  const switches = gameData.charSwitches || {};
+  // 横板图：用户当前切换的那张
+  const infoImages = canvasGetImpInfoImages(gameInfo, gameData.gameId);
+  const infoIdx = Math.min(gameData.infoImgIndex || 0, Math.max(0, infoImages.length - 1));
+  if (infoImages[infoIdx]) push(infoImages[infoIdx]);
+  // 各可见角色当前立绘
+  const visibleChars = canvasGetImpVisibleChars(gameInfo, switches);
+  visibleChars.forEach(char => {
+    const avail = canvasGetImpCharImages(char, switches);
+    const charIdx = window.getOtherImpressionCharImgIndex ?
+      window.getOtherImpressionCharImgIndex(gameData.gameId, char.id) : 0;
+    const safeIdx = Math.min(charIdx, Math.max(0, avail.length - 1));
+    if (avail[safeIdx]) push(avail[safeIdx]);
+  });
+  return [...new Set(urls)];
+}
+
 // 高度计算
 function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache) {
   const wrapW = getWrapW(targetW);
@@ -736,15 +805,59 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
   const innerW = wrapW - CARD_PAD * 2;
   let h = getBodyPad() + TITLE_SIZE + getTitleMb();
   let contentH = 0;
-  // 游戏名
-  const gameName = gameInfo?.name || gameData.gameId || '';
-  const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
-  contentH += nameH + GAME_NAME_MB;
-  // 封面
-  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
-  const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
-  const coverH = calcGameCoverHeight(coverImg, 180);
-  contentH += coverH;
+  const customTextSize = config.customTextFontSize || 16;
+  const switches = gameData.charSwitches || {};
+
+  // 横板图高度（宽度铺满 innerW，按原比例缩放，超过 IMP_INFO_MAX_H 则居中裁剪）
+  const infoImages = canvasGetImpInfoImages(gameInfo, gameData.gameId);
+  const infoIdx = Math.min(gameData.infoImgIndex || 0, Math.max(0, infoImages.length - 1));
+  const infoSrc = infoImages[infoIdx] ? toCanvasUrl(infoImages[infoIdx]) : '';
+  const infoImg = infoSrc ? imageCache.get(infoSrc) : null;
+  let infoH = 0;
+  if (infoImg) {
+    const { w, h: ih } = getImgSize(infoImg);
+    if (w > 0 && ih > 0) {
+      infoH = Math.min(IMP_INFO_MAX_H, Math.round(innerW * ih / w));
+    }
+  }
+  if (infoH > 0) contentH += infoH + IMP_INFO_MB;
+
+  // 三列内容：可见角色列表（导出时不绘制 4 开关，不绘制游戏名）
+  const visibleChars = canvasGetImpVisibleChars(gameInfo, switches);
+  if (visibleChars.length > 0) {
+    const blockW = (innerW - IMP_BLOCK_GAP) / IMP_BLOCK_COLS;
+    const blockInnerW = blockW - IMP_BLOCK_PAD * 2;
+    const charColW = IMP_CHAR_IMG_W;
+    const textColW = (blockInnerW - charColW - IMP_COL_GAP * 2) / 2;
+    const blockRows = Math.ceil(visibleChars.length / IMP_BLOCK_COLS);
+
+    ctx.font = `${customTextSize}px ${FONT_SIYUAN}`;
+    let blocksTotalH = 0;
+    for (let r = 0; r < blockRows; r++) {
+      let rowMaxH = 0;
+      for (let c = 0; c < IMP_BLOCK_COLS; c++) {
+        const idx = r * IMP_BLOCK_COLS + c;
+        if (idx >= visibleChars.length) break;
+        const char = visibleChars[idx];
+        const ct = gameData.charTexts?.[char.id] || { before: '', after: '' };
+
+        const charColTotal = IMP_CHAR_IMG_H + 4 + IMP_CHAR_NAME_H;
+        const labelH = LABEL_SIZE * 1.4 + 4;
+        const beforeH = ct.before ?
+          measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+        const afterH = ct.after ?
+          measureWrappedHeight(ctx, ct.after, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+        const beforeTotal = labelH + Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
+        const afterTotal = labelH + Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
+        const blockContentH = Math.max(charColTotal, beforeTotal, afterTotal);
+        rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
+      }
+      blocksTotalH += rowMaxH;
+      if (r < blockRows - 1) blocksTotalH += IMP_BLOCK_GAP;
+    }
+    contentH += blocksTotalH;
+  }
+
   h += CARD_PAD * 2 + contentH;
   return h;
 }
@@ -1158,29 +1271,144 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
   const innerW = wrapW - CARD_PAD * 2;
   const contentX = wrapX + CARD_PAD;
   const ctx = painter.ctx;
-
   const cardTop = painter.y;
   const totalH = calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache);
   const cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_PAD * 2;
   const cardH = CARD_PAD * 2 + cardContentH;
+  const customTextSize = config.customTextFontSize || 16;
+  const labelColor = config.defaultTextColor || '#b85878';
+  const textColor = config.customtext || '#c98fac';
+  const switches = gameData.charSwitches || {};
 
-  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
+  // 卡片外框：无色背景（fill 传 null）
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, null,
+    config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
   painter.y = cardTop + CARD_PAD;
 
-  // 游戏名
-  const gameName = gameInfo?.name || gameData.gameId || '';
-  drawCenteredText(ctx, gameName, contentX + innerW / 2, painter.y, innerW,
-    GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, config.gamename || '#000000', true);
-  const nameH = measureCenteredTextHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE);
-  painter.shiftY(nameH + GAME_NAME_MB);
+  // ===== 横板图：宽度铺满，高度按比例，底部淡出 =====
+  const infoImages = canvasGetImpInfoImages(gameInfo, gameData.gameId);
+  const infoIdx = Math.min(gameData.infoImgIndex || 0, Math.max(0, infoImages.length - 1));
+  const infoSrc = infoImages[infoIdx] ? toCanvasUrl(infoImages[infoIdx]) : '';
+  const infoImg = infoSrc ? imageCache.get(infoSrc) : null;
+  let infoH = 0;
+  if (infoImg) {
+    const { w, h: ih } = getImgSize(infoImg);
+    if (w > 0 && ih > 0) {
+      infoH = Math.min(IMP_INFO_MAX_H, Math.round(innerW * ih / w));
+    }
+  }
+  if (infoH > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(contentX, painter.y, innerW, infoH);
+    ctx.clip();
+    const resInfo = rawImageResourceCache.get(infoSrc);
+    const drawTarget = resInfo?.type === 'image' ? resInfo.data : infoImg;
+    const { w: iw, h: ih } = getImgSize(infoImg);
+    const drawH = iw > 0 ? Math.round(innerW * ih / iw) : infoH;
+    const drawY = painter.y + (infoH - drawH) / 2;
+    ctx.drawImage(drawTarget, contentX, drawY, innerW, drawH);
+    ctx.restore();
+    // 底部淡出渐变
+    const fadeY = painter.y + infoH - IMP_INFO_FADE_H;
+    const gradient = ctx.createLinearGradient(0, fadeY, 0, painter.y + infoH);
+    gradient.addColorStop(0, 'rgba(255,247,249,0)');
+    gradient.addColorStop(1, config.bg || '#fff7f9');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(contentX, fadeY, innerW, IMP_INFO_FADE_H);
+    painter.shiftY(infoH + IMP_INFO_MB);
+  }
 
-  // 封面
-  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
-  const coverImg = coverSrc ? imageCache.get(coverSrc) : null;
-  const coverW = 180;
-  const coverH = calcGameCoverHeight(coverImg, coverW);
-  const coverX = contentX + (innerW - coverW) / 2;
-  drawCoverCard(painter, coverX, painter.y, coverW, coverH, coverImg, coverSrc, 6);
+  // ===== 三列内容：不绘制游戏名，不绘制 4 开关 =====
+  const visibleChars = canvasGetImpVisibleChars(gameInfo, switches);
+  if (visibleChars.length > 0) {
+    const blockW = (innerW - IMP_BLOCK_GAP) / IMP_BLOCK_COLS;
+    const blockInnerW = blockW - IMP_BLOCK_PAD * 2;
+    const charColW = IMP_CHAR_IMG_W;
+    const textColW = (blockInnerW - charColW - IMP_COL_GAP * 2) / 2;
+    const blockRows = Math.ceil(visibleChars.length / IMP_BLOCK_COLS);
+    const labelH = LABEL_SIZE * 1.4 + 4;
+
+    for (let r = 0; r < blockRows; r++) {
+      // 先算该行最大高度
+      let rowMaxH = 0;
+      const rowData = [];
+      for (let c = 0; c < IMP_BLOCK_COLS; c++) {
+        const idx = r * IMP_BLOCK_COLS + c;
+        if (idx >= visibleChars.length) break;
+        const char = visibleChars[idx];
+        const ct = gameData.charTexts?.[char.id] || { before: '', after: '' };
+        ctx.font = `${customTextSize}px ${FONT_SIYUAN}`;
+        const beforeH = ct.before ?
+          measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+        const afterH = ct.after ?
+          measureWrappedHeight(ctx, ct.after, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+        const beforeBoxH = Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
+        const afterBoxH = Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
+        const charColTotal = IMP_CHAR_IMG_H + 4 + IMP_CHAR_NAME_H;
+        const beforeTotal = labelH + beforeBoxH;
+        const afterTotal = labelH + afterBoxH;
+        const blockContentH = Math.max(charColTotal, beforeTotal, afterTotal);
+        rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
+        rowData.push({ char, ct, beforeBoxH, afterBoxH, blockContentH });
+      }
+      // 绘制该行每个 block
+      rowData.forEach((rb, c) => {
+        const blockX = contentX + c * (blockW + IMP_BLOCK_GAP);
+        const blockY = painter.y;
+        painter.drawRoundRect(blockX, blockY, blockW, rowMaxH, 10, '#ffffff', '#eee', 1);
+        const ix = blockX + IMP_BLOCK_PAD;
+        const iy = blockY + IMP_BLOCK_PAD;
+
+        // Character 列：角色图（使用用户当前切换的那张）+ 角色名
+        const avail = canvasGetImpCharImages(rb.char, switches);
+        const charIdx = window.getOtherImpressionCharImgIndex ?
+          window.getOtherImpressionCharImgIndex(gameData.gameId, rb.char.id) : 0;
+        const safeCharIdx = Math.min(charIdx, Math.max(0, avail.length - 1));
+        const charSrc = avail[safeCharIdx] ? toCanvasUrl(avail[safeCharIdx]) : '';
+        const charImg = charSrc ? imageCache.get(charSrc) : null;
+        if (charImg) {
+          drawCoverCard(painter, ix, iy, charColW, IMP_CHAR_IMG_H, charImg, charSrc, 6);
+        } else {
+          painter.drawRoundRect(ix, iy, charColW, IMP_CHAR_IMG_H, 6, '#f5f5f5', '#eee', 1);
+        }
+        // 角色名（居中，超长截断）
+        ctx.font = `bold 13px ${FONT_SIYUAN}`;
+        ctx.fillStyle = config.gamename || '#000000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        let dispName = rb.char.name || '';
+        if (ctx.measureText(dispName).width > charColW) {
+          while (dispName.length > 1 && ctx.measureText(dispName + '…').width > charColW) {
+            dispName = dispName.slice(0, -1);
+          }
+          dispName += '…';
+        }
+        ctx.fillText(dispName, ix + charColW / 2, iy + IMP_CHAR_IMG_H + 6);
+
+        // Before 列
+        const beforeX = ix + charColW + IMP_COL_GAP;
+        ctx.font = `bold ${LABEL_SIZE}px ${FONT_SIYUAN}`;
+        ctx.fillStyle = labelColor;
+        ctx.fillText('Before', beforeX + textColW / 2, iy);
+        const beforeBoxY = iy + labelH;
+        drawTextBox(painter, beforeX, beforeBoxY, textColW, rb.beforeBoxH,
+          rb.ct.before || '', config, false, false, textColor, customTextSize, false);
+
+        // After 列
+        const afterX = beforeX + textColW + IMP_COL_GAP;
+        ctx.fillText('After', afterX + textColW / 2, iy);
+        const afterBoxY = iy + labelH;
+        drawTextBox(painter, afterX, afterBoxY, textColW, rb.afterBoxH,
+          rb.ct.after || '', config, false, false, textColor, customTextSize, false);
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+      });
+      painter.shiftY(rowMaxH);
+      if (r < blockRows - 1) painter.shiftY(IMP_BLOCK_GAP);
+    }
+  }
 
   painter.y = cardTop + cardH;
 }
@@ -1407,8 +1635,7 @@ async function renderOtherImpressionGameCanvas(designW, gameData, gameInfo, conf
     rawImageResourceCache.clear();
   }
   emitRenderProgress(5);
-  const coverSrc = toCanvasUrl(gameInfo?.cover || '');
-  let imageUrls = coverSrc ? [coverSrc] : [];
+  let imageUrls = collectImpressionGameImages(gameData, gameInfo);
   const SAFE_URL_PATTERN = /^(http|https):\/\//;
   const BLOCK_RAW_PATTERN = /raw\.githubusercontent\.com/;
   const BLOCK_R2_PUB_PATTERN = /^https:\/\/pub-/;
