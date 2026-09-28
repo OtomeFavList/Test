@@ -127,19 +127,6 @@ function loadOtherData() {
   });
   otherData.impressionGames.forEach(game => {
     if (game.folded === undefined) game.folded = false;
-    if (!Array.isArray(game.charSwitches)) game.charSwitches = [true, true, true, true];
-    if (!Array.isArray(game.chars)) {
-      game.chars = [0, 1, 2, 3].map(() => ({
-        charId: '', charName: '', charGameId: '', coverSrc: '', imgIndex: 0, beforeText: '', afterText: ''
-      }));
-    } else {
-      game.chars.forEach(c => {
-        if (c.charGameId === undefined) c.charGameId = '';
-        if (c.imgIndex === undefined) c.imgIndex = 0;
-        if (c.beforeText === undefined) c.beforeText = '';
-        if (c.afterText === undefined) c.afterText = '';
-      });
-    }
   });
 }
 
@@ -224,24 +211,6 @@ function createReroGameData(gameId) {
       return { label: item.label, type: 'text', text: '' };
     }),
     repoCustomTextCards: [{ label: '', type: 'text', text: '' }]
-  };
-}
-
-// 创建新 Impression 游戏数据（4个角色槽位 + 4个显示开关）
-function createImpressionGameData(gameId) {
-  return {
-    gameId: gameId,
-    folded: false,
-    charSwitches: [true, true, true, true],
-    chars: [0, 1, 2, 3].map(() => ({
-      charId: '',
-      charName: '',
-      charGameId: '',
-      coverSrc: '',
-      imgIndex: 0,
-      beforeText: '',
-      afterText: ''
-    }))
   };
 }
 
@@ -637,58 +606,12 @@ function renderImpressionModule() {
     container.innerHTML = '';
     return;
   }
-  container.innerHTML = otherData.impressionGames.map((g, gameIdx) => {
+  container.innerHTML = otherData.impressionGames.map(g => {
     const gameInfo = getCombinedGameList().find(x => x.id === g.gameId);
     const name = gameInfo ? gameInfo.name : g.gameId;
     const isFolded = !!g.folded;
-    // 4个开关
-    let switchesHtml = '<div class="other-impression-switches">';
-    for (let i = 0; i < 4; i++) {
-      const checked = g.charSwitches[i] ? 'checked' : '';
-      switchesHtml += `
-        <label class="other-impression-switch-item">
-          <input type="checkbox" class="other-impression-switch" data-imp-switch="${i}" ${checked}>
-          <span>角色${i + 1}</span>
-        </label>`;
-    }
-    switchesHtml += '</div>';
-    // 表格：每个开启的角色组
-    let tableHtml = '<div class="other-impression-table">';
-    g.chars.forEach((char, charIdx) => {
-      if (!g.charSwitches[charIdx]) return;
-      const hasChar = !!char.charId;
-      let charCellHtml;
-      if (hasChar) {
-        const imgSrc = char.coverSrc && (char.coverSrc.startsWith('http') || char.coverSrc.startsWith('blob:'))
-          ? char.coverSrc : getWebImageUrl(char.coverSrc);
-        charCellHtml = `
-          <div class="other-impression-char-img-wrap">
-            <img src="${imgSrc}" alt="${char.charName}" decoding="async">
-            <div class="other-impression-char-nav">
-              <button class="other-impression-char-prev" data-imp-char-prev="${charIdx}">◀</button>
-              <button class="other-impression-char-next" data-imp-char-next="${charIdx}">▶</button>
-            </div>
-          </div>`;
-      } else {
-        charCellHtml = `
-          <button class="other-impression-char-add" data-imp-char-add="${charIdx}">+</button>`;
-      }
-      tableHtml += `
-        <div class="other-impression-char-group" data-imp-char-idx="${charIdx}">
-          <div class="other-impression-char-cell">${charCellHtml}</div>
-          <div class="other-impression-text-cell">
-            <label class="other-impression-text-label">Before</label>
-            <textarea class="other-impression-textarea" data-imp-before="${charIdx}" placeholder="Before">${char.beforeText || ''}</textarea>
-          </div>
-          <div class="other-impression-text-cell">
-            <label class="other-impression-text-label">After</label>
-            <textarea class="other-impression-textarea" data-imp-after="${charIdx}" placeholder="After">${char.afterText || ''}</textarea>
-          </div>
-        </div>`;
-    });
-    tableHtml += '</div>';
     return `
-    <div class="other-impression-card ${isFolded ? 'other-folded' : ''}" data-game-id="${g.gameId}" data-game-idx="${gameIdx}">
+    <div class="other-impression-card ${isFolded ? 'other-folded' : ''}" data-game-id="${g.gameId}">
       <div class="other-impression-header">
         <h3 class="other-impression-game-name">${name}</h3>
         <div class="other-rero-header-btns">
@@ -696,10 +619,7 @@ function renderImpressionModule() {
           <button class="other-rero-delete-btn" data-action="delete-impression">×</button>
         </div>
       </div>
-      <div class="other-impression-card-content">
-        ${switchesHtml}
-        ${tableHtml}
-      </div>
+      <div class="other-impression-card-content"></div>
     </div>`;
   }).join("");
 }
@@ -774,7 +694,7 @@ function bindModalInterceptor() {
         alert("该游戏已添加！");
         return;
       }
-      otherData.impressionGames.push(createImpressionGameData(gameId));
+      otherData.impressionGames.push({ gameId: gameId });
       saveOtherData();
       renderImpressionModule();
     }
@@ -904,47 +824,6 @@ function bindRepoCpModalInterceptor() {
     otherRepoCharTarget = null;
   }, true);
   const clearTarget = () => { otherRepoCharTarget = null; };
-  const closeBtn = modal.querySelector('.annual-modal-close-btn');
-  if (closeBtn) closeBtn.addEventListener('click', clearTarget);
-  modal.addEventListener('click', function (e) {
-    if (e.target === modal) clearTarget();
-  });
-}
-
-// Impression 角色弹窗拦截器：捕获角色选择，写入 impressionGames
-function bindImpressionCharModalInterceptor() {
-  const modal = document.getElementById('annual-global-char-modal');
-  if (!modal) return;
-  modal.addEventListener('click', function (e) {
-    if (!otherRepoCharTarget || otherRepoCharTarget.type !== 'impressionChar') return;
-    const charItem = e.target.closest('.char-item');
-    if (!charItem) return;
-    if (e.target.closest('.char-switch-btn, .char-name-switch-btn')) return;
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    const charGameId = charItem.dataset.gameId;
-    const charId = charItem.dataset.charId;
-    const charName = charItem.querySelector('.char-name-text')?.textContent || '';
-    const coverSrc = charItem.querySelector('img')?.getAttribute('src') || '';
-    const { gameIdx, cardIdx } = otherRepoCharTarget;
-    const gameData = otherData.impressionGames[gameIdx];
-    if (!gameData || !gameData.chars[cardIdx]) return;
-    const target = gameData.chars[cardIdx];
-    target.charId = charId;
-    target.charName = charName;
-    target.charGameId = charGameId;
-    target.coverSrc = coverSrc;
-    target.imgIndex = 0;
-    saveOtherData();
-    renderImpressionModule();
-    modal.classList.remove('active');
-    otherRepoCharTarget = null;
-  }, true);
-  const clearTarget = () => {
-    if (otherRepoCharTarget && otherRepoCharTarget.type === 'impressionChar') {
-      otherRepoCharTarget = null;
-    }
-  };
   const closeBtn = modal.querySelector('.annual-modal-close-btn');
   if (closeBtn) closeBtn.addEventListener('click', clearTarget);
   modal.addEventListener('click', function (e) {
@@ -1196,107 +1075,31 @@ function bindReroCardEvents() {
 function bindImpressionEvents() {
   const container = document.getElementById('other-impression-game-container');
   if (!container) return;
-  // input 事件：Before/After 文本框
-  container.addEventListener('input', function (e) {
-    const card = e.target.closest('.other-impression-card');
-    if (!card) return;
-    const gameData = otherData.impressionGames.find(g => g.gameId === card.dataset.gameId);
-    if (!gameData) return;
-    const beforeIdx = e.target.dataset.impBefore;
-    if (beforeIdx !== undefined) {
-      const idx = Number(beforeIdx);
-      if (gameData.chars[idx]) { gameData.chars[idx].beforeText = e.target.value; saveOtherData(); }
-      return;
-    }
-    const afterIdx = e.target.dataset.impAfter;
-    if (afterIdx !== undefined) {
-      const idx = Number(afterIdx);
-      if (gameData.chars[idx]) { gameData.chars[idx].afterText = e.target.value; saveOtherData(); }
-      return;
-    }
-  });
-  // click 事件
   container.addEventListener('click', function (e) {
-    const card = e.target.closest('.other-impression-card');
     // 游戏卡片折叠/展开
     if (e.target.closest('[data-action="fold-impression"]')) {
+      const card = e.target.closest('.other-impression-card');
       if (!card) return;
       card.classList.toggle('other-folded');
       const btn = e.target.closest('[data-action="fold-impression"]');
       const folded = card.classList.contains('other-folded');
       btn.textContent = folded ? '▼' : '▲';
       const gameData = otherData.impressionGames.find(g => g.gameId === card.dataset.gameId);
-      if (gameData) { gameData.folded = folded; saveOtherData(); }
+      if (gameData) {
+        gameData.folded = folded;
+        saveOtherData();
+      }
       return;
     }
-    // 删除游戏
     if (e.target.closest('[data-action="delete-impression"]')) {
+      const card = e.target.closest('.other-impression-card');
       if (!card) return;
       const gameId = card.dataset.gameId;
       otherData.impressionGames = otherData.impressionGames.filter(g => g.gameId !== gameId);
       saveOtherData();
       renderImpressionModule();
-      return;
-    }
-    if (!card) return;
-    const gameData = otherData.impressionGames.find(g => g.gameId === card.dataset.gameId);
-    if (!gameData) return;
-    const gameIdx = otherData.impressionGames.findIndex(g => g.gameId === card.dataset.gameId);
-    // 4个开关
-    const switchEl = e.target.closest('.other-impression-switch');
-    if (switchEl) {
-      const idx = Number(switchEl.dataset.impSwitch);
-      gameData.charSwitches[idx] = switchEl.checked;
-      saveOtherData();
-      renderImpressionModule();
-      return;
-    }
-    // 角色 + 按钮
-    const addBtn = e.target.closest('[data-imp-char-add]');
-    if (addBtn) {
-      e.stopPropagation();
-      const charIdx = Number(addBtn.dataset.impCharAdd);
-      otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: charIdx, type: 'impressionChar' };
-      const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
-      window.openAnnualGlobalCharModal(null, 'otherImpressionChar', gameInfo || null);
-      return;
-    }
-    // 立绘切换 ◀
-    const prevBtn = e.target.closest('[data-imp-char-prev]');
-    if (prevBtn) {
-      e.stopPropagation();
-      switchImpressionCharImg(gameIdx, Number(prevBtn.dataset.impCharPrev), -1);
-      return;
-    }
-    // 立绘切换 ▶
-    const nextBtn = e.target.closest('[data-imp-char-next]');
-    if (nextBtn) {
-      e.stopPropagation();
-      switchImpressionCharImg(gameIdx, Number(nextBtn.dataset.impCharNext), 1);
-      return;
     }
   });
-}
-
-// Impression 角色立绘切换
-function switchImpressionCharImg(gameIdx, charIdx, direction) {
-  const gameData = otherData.impressionGames[gameIdx];
-  if (!gameData) return;
-  const char = gameData.chars[charIdx];
-  if (!char || !char.charId || !char.charGameId) return;
-  const charGameInfo = getCombinedGameList().find(g => g.id === char.charGameId);
-  if (!charGameInfo?.charList) return;
-  const targetChar = charGameInfo.charList.find(c => c.id === char.charId);
-  if (!targetChar?.images) return;
-  let allSrc = [];
-  targetChar.images.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
-  if (allSrc.length === 0) return;
-  let idx = char.imgIndex || 0;
-  idx = (idx + direction + allSrc.length) % allSrc.length;
-  char.imgIndex = idx;
-  char.coverSrc = allSrc[idx];
-  saveOtherData();
-  renderImpressionModule();
 }
 
 // 模块折叠按钮
@@ -1497,10 +1300,7 @@ function calcOtherEstimateSec() {
   });
   const impGames = otherData?.impressionGames || [];
   gameCount += impGames.length;
-  impGames.forEach(g => {
-    imgCount += 1; // 横板产品图
-    (g.chars || []).forEach(c => { if (c.charId && c.coverSrc) imgCount++; }); // 角色立绘
-  });
+  impGames.forEach(() => { imgCount += 1; }); // 封面
   let gameCost, imgCost, networkBufferSec, roundCanvasOverheadSec;
   if (IS_IOS_WEBKIT) {
     gameCost = 1.2; imgCost = 0.85;
@@ -1919,7 +1719,6 @@ export function initOtherModule() {
   bindModalInterceptor();
   bindRepoCharModalInterceptor();
   bindRepoCpModalInterceptor();
-  bindImpressionCharModalInterceptor();
   bindReroCardEvents();
   bindImpressionEvents();
   bindExportConfig();
