@@ -33,10 +33,10 @@ const REPO_FIXED_TEXT_LABELS = [
 
 // Impression 模块：4个单独开关配置（与 Annual 弹窗页面二完全对应）
 const IMPRESSION_SWITCH_CONFIG = [
-  { key: 'subChar',   label: '显示次要角色' },
-  { key: 'fdSubChar', label: '显示FD次要角色' },
-  { key: 'hideChar',  label: '显示隐藏角色' },
-  { key: 'fdChar',    label: '显示FD角色' }
+  { key: 'subChar',   label: '单独显示本游戏次要角色' },
+  { key: 'fdSubChar', label: '单独显示本游戏续作/FD次要角色' },
+  { key: 'hideChar',  label: '单独显示本游戏隐藏图片、角色' },
+  { key: 'fdChar',    label: '单独显示本游戏续作/FD图片、角色' }
 ];
 // Impression 模块：横板图数量配置（无需修改任何 game.js）
 // 第一张固定为 info/{gameId}.jpg，第二张起为 info/{gameId}-2.jpg、info/{gameId}-3.jpg…
@@ -752,7 +752,13 @@ function renderImpressionModule() {
     container.innerHTML = '';
     return;
   }
+  // 保存当前滚动位置，避免开关切换重建 DOM 时页面跳动
+  const scrollY = window.scrollY;
   container.innerHTML = otherData.impressionGames.map(g => renderImpressionCard(g)).join("");
+  // 下一帧恢复滚动位置
+  requestAnimationFrame(() => {
+    window.scrollTo(0, scrollY);
+  });
 }
 
 // 渲染单个 Impression 游戏卡片（横板图 + 4开关 + 角色三列表格）
@@ -836,23 +842,31 @@ function renderImpressionCard(gameData) {
     <div class="other-imp-char-block" data-char-id="${charId}">
       <div class="other-imp-char-table">
         <div class="other-imp-col other-imp-col-char">
-          <div class="other-imp-char-img-box ${hasMultiCharImg ? 'has-multi' : ''}">
-            ${hasMultiCharImg ? `<button class="other-imp-img-switch other-imp-img-prev" data-imp-char-img-prev="${charId}">&lt;</button>` : ''}
-            ${charImgUrl ? `<img src="${charImgUrl}" alt="${displayName}" decoding="async">` : '<div class="other-imp-char-placeholder"></div>'}
-            ${hasMultiCharImg ? `<button class="other-imp-img-switch other-imp-img-next" data-imp-char-img-next="${charId}">&gt;</button>` : ''}
-          </div>
-          <div class="other-imp-char-name ${charNameMultiCls}">
-            ${charNameSwitchBtns}
-            <span class="char-name-text">${displayName}</span>
+          <div class="char-item">
+            <div class="char-card-img-box ${hasMultiCharImg ? 'has-multi' : ''}">
+              ${hasMultiCharImg ? `<button class="char-switch-btn char-switch-prev" data-imp-char-img-prev="${charId}">&lt;</button>` : ''}
+              ${charImgUrl ? `<img src="${charImgUrl}" alt="${displayName}" decoding="async">` : '<div class="other-imp-char-placeholder"></div>'}
+              ${hasMultiCharImg ? `<button class="char-switch-btn char-switch-next" data-imp-char-img-next="${charId}">&gt;</button>` : ''}
+            </div>
+            <div class="char-card-name ${charNameMultiCls}">
+              ${charNameSwitchBtns}
+              <span class="char-name-text">${displayName}</span>
+            </div>
           </div>
         </div>
         <div class="other-imp-col other-imp-col-before">
           <div class="other-imp-col-label">Before</div>
-          <textarea class="other-imp-textarea" data-imp-text-before="${charId}" placeholder="Before">${charTexts.before || ''}</textarea>
+          <div class="other-imp-textarea-wrap">
+            <textarea class="other-imp-textarea" data-imp-text-before="${charId}" placeholder="Before">${charTexts.before || ''}</textarea>
+            <div class="resize-handle"></div>
+          </div>
         </div>
         <div class="other-imp-col other-imp-col-after">
           <div class="other-imp-col-label">After</div>
-          <textarea class="other-imp-textarea" data-imp-text-after="${charId}" placeholder="After">${charTexts.after || ''}</textarea>
+          <div class="other-imp-textarea-wrap">
+            <textarea class="other-imp-textarea" data-imp-text-after="${charId}" placeholder="After">${charTexts.after || ''}</textarea>
+            <div class="resize-handle"></div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1446,7 +1460,7 @@ function bindImpressionEvents() {
       otherImpressionCharImgIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const imgBox = block.querySelector('.other-imp-char-img-box');
+        const imgBox = block.querySelector('.char-card-img-box');
         if (imgBox) {
           switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx]));
         }
@@ -1469,7 +1483,7 @@ function bindImpressionEvents() {
       otherImpressionCharImgIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const imgBox = block.querySelector('.other-imp-char-img-box');
+        const imgBox = block.querySelector('.char-card-img-box');
         if (imgBox) {
           switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx]));
         }
@@ -1500,7 +1514,7 @@ function bindImpressionEvents() {
       otherImpressionCharNameIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const nameTextEl = block.querySelector('.other-imp-char-name .char-name-text');
+        const nameTextEl = block.querySelector('.char-card-name .char-name-text');
         if (nameTextEl) nameTextEl.textContent = charNameList[idx] || char.name || '';
       }
       return;
@@ -1529,7 +1543,7 @@ function bindImpressionEvents() {
       otherImpressionCharNameIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const nameTextEl = block.querySelector('.other-imp-char-name .char-name-text');
+        const nameTextEl = block.querySelector('.char-card-name .char-name-text');
         if (nameTextEl) nameTextEl.textContent = charNameList[idx] || char.name || '';
       }
       return;
@@ -2141,10 +2155,10 @@ function bindExportConfig() {
 
 // 文本框拖拽手柄（自定义文本框）
 function bindTextareaResize() {
-  document.querySelectorAll('.mode-wrap[data-mode="other"] .other-rero-impression-wrap .resize-handle, .mode-wrap[data-mode="other"] .other-rero-textarea-wrap .resize-handle, .mode-wrap[data-mode="other"] .other-repo-text-card-body .resize-handle').forEach(handle => {
+  document.querySelectorAll('.mode-wrap[data-mode="other"] .other-rero-impression-wrap .resize-handle, .mode-wrap[data-mode="other"] .other-rero-textarea-wrap .resize-handle, .mode-wrap[data-mode="other"] .other-repo-text-card-body .resize-handle, .mode-wrap[data-mode="other"] .other-imp-textarea-wrap .resize-handle').forEach(handle => {
     if (handle.dataset.resizeBinded === "1") return;
     handle.dataset.resizeBinded = "1";
-    const wrap = handle.closest('.other-rero-impression-wrap, .other-rero-textarea-wrap, .other-repo-text-card-body');
+    const wrap = handle.closest('.other-rero-impression-wrap, .other-rero-textarea-wrap, .other-repo-text-card-body, .other-imp-textarea-wrap');
     if (!wrap) return;
     const textarea = wrap.querySelector('textarea');
     if (!textarea) return;
