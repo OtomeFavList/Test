@@ -105,6 +105,7 @@ function loadOtherData() {
 
   // 数据迁移：将旧版 repoCharCards 中的"最喜欢的CP"卡片移至 repoTextCards 开头，并补全 type 字段
   otherData.repoGames.forEach(game => {
+    if (game.folded === undefined) game.folded = false;
     if (Array.isArray(game.repoCharCards)) {
       const cpIdx = game.repoCharCards.findIndex(c => c.label === '最喜欢的CP' || c.type === 'cp');
       if (cpIdx >= 0) {
@@ -123,6 +124,9 @@ function loadOtherData() {
     if (Array.isArray(game.repoCustomTextCards)) {
       game.repoCustomTextCards = game.repoCustomTextCards.map(c => ({ type: 'text', ...c }));
     }
+  });
+  otherData.impressionGames.forEach(game => {
+    if (game.folded === undefined) game.folded = false;
   });
 }
 
@@ -172,6 +176,7 @@ function saveOtherConfig() {
 function createReroGameData(gameId) {
   return {
     gameId: gameId,
+    folded: false,
     duration: "",
     completed: null,
     startDate: "",
@@ -387,12 +392,13 @@ function renderReroCard(gameData) {
   const coverUrl = coverSrc ? getWebImageUrl(coverSrc) : "";
   const safeName = gameInfo.name || gameData.gameId;
   const gid = gameData.gameId;
+  const isFolded = !!gameData.folded;
   return `
-  <div class="other-rero-card" data-game-id="${gid}">
+  <div class="other-rero-card ${isFolded ? 'other-folded' : ''}" data-game-id="${gid}">
     <div class="other-rero-header">
       <h3 class="other-rero-game-name">${safeName}</h3>
       <div class="other-rero-header-btns">
-        <button class="other-rero-fold-btn" data-action="fold-rero">▲</button>
+        <button class="other-rero-fold-btn" data-action="fold-rero">${isFolded ? '▼' : '▲'}</button>
         <button class="other-rero-delete-btn" data-action="delete">×</button>
       </div>
     </div>
@@ -603,12 +609,13 @@ function renderImpressionModule() {
   container.innerHTML = otherData.impressionGames.map(g => {
     const gameInfo = getCombinedGameList().find(x => x.id === g.gameId);
     const name = gameInfo ? gameInfo.name : g.gameId;
+    const isFolded = !!g.folded;
     return `
-    <div class="other-impression-card" data-game-id="${g.gameId}">
+    <div class="other-impression-card ${isFolded ? 'other-folded' : ''}" data-game-id="${g.gameId}">
       <div class="other-impression-header">
         <h3 class="other-impression-game-name">${name}</h3>
         <div class="other-rero-header-btns">
-          <button class="other-rero-fold-btn" data-action="fold-impression">▲</button>
+          <button class="other-rero-fold-btn" data-action="fold-impression">${isFolded ? '▼' : '▲'}</button>
           <button class="other-rero-delete-btn" data-action="delete-impression">×</button>
         </div>
       </div>
@@ -915,7 +922,10 @@ function bindReroCardEvents() {
     if (e.target.closest('[data-action="fold-rero"]')) {
       card.classList.toggle('other-folded');
       const btn = e.target.closest('[data-action="fold-rero"]');
-      btn.textContent = card.classList.contains('other-folded') ? '▼' : '▲';
+      const folded = card.classList.contains('other-folded');
+      btn.textContent = folded ? '▼' : '▲';
+      gameData.folded = folded;
+      saveOtherData();
       return;
     }
     // 删除游戏
@@ -1072,7 +1082,13 @@ function bindImpressionEvents() {
       if (!card) return;
       card.classList.toggle('other-folded');
       const btn = e.target.closest('[data-action="fold-impression"]');
-      btn.textContent = card.classList.contains('other-folded') ? '▼' : '▲';
+      const folded = card.classList.contains('other-folded');
+      btn.textContent = folded ? '▼' : '▲';
+      const gameData = otherData.impressionGames.find(g => g.gameId === card.dataset.gameId);
+      if (gameData) {
+        gameData.folded = folded;
+        saveOtherData();
+      }
       return;
     }
     if (e.target.closest('[data-action="delete-impression"]')) {
