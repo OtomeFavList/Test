@@ -588,7 +588,7 @@ function renderGameList(wrap, keyword) {
 // 角色弹窗：渲染游戏列表
 function renderCharModalGameList(wrap, keyword) {
     wrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
+    const state = getGameTemplateState_WithFD();
     const gameTemplateList = state.list;
     if (!gameTemplateList || !isGameTemplateReady()) {
         wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
@@ -854,7 +854,7 @@ function renderCharModalCharList() {
     const modal = document.getElementById("annual-global-char-modal");
     const charWrap = modal.querySelector(".annual-global-char-char-list");
     charWrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
+    const state = getGameTemplateState_WithFD();
     const gameInfo = state.list.find(g=>g.id === charModalCurrentGameId);
     if(!gameInfo){
         charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
@@ -1168,7 +1168,7 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
         const globalFdSubEl = modal.querySelector("#annual-modal-global-fd-sub-char");
         if (globalFdSubEl) globalFdSubEl.checked = false;
         // 预填筛选下拉框（用户点返回按钮回到页面一时可用）
-        fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
+        fillFilterOptions(getGameTemplateState_WithFD().list, modal);
         resetAnnualFilterSelects("annual-global-char-modal");
         renderCharModalCharList();
         return;
@@ -1181,7 +1181,7 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
 
     const searchInput = modal.querySelector(".annual-global-char-search-input");
     searchInput.value = "";
-    fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
+    fillFilterOptions(getGameTemplateState_WithFD().list, modal);
     resetAnnualFilterSelects("annual-global-char-modal");
     modal.querySelector("#annual-modal-global-sub-char").checked = false;
     modal.querySelector("#annual-modal-global-hide-char").checked = false;
@@ -2778,7 +2778,7 @@ function bindAnnualFloatScrollButtons() {
 // 新增：CP 弹窗游戏列表
 function renderCpModalGameList(wrap, keyword) {
     wrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
+    const state = getGameTemplateState_WithFD();
     const gameTemplateList = state.list;
     if (!gameTemplateList || !isGameTemplateReady()) {
         wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">游戏模板尚未加载完成，请稍后再试</div>`;
@@ -2824,7 +2824,7 @@ function renderCpModalFemaleList() {
     const modal = document.getElementById("annual-global-cp-modal");
     const charWrap = modal.querySelector(".annual-global-cp-female-list");
     charWrap.innerHTML = "";
-    const state = getGameTemplateState_BaseOnly();
+    const state = getGameTemplateState_WithFD();
     const gameInfo = state.list.find(g=>g.id === cpModalCurrentGameId);
     if(!gameInfo){
         charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
@@ -3134,7 +3134,7 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
             const el = modal.querySelector(sel); if(el) el.checked = false;
         });
         // 预填筛选下拉框（用户点返回按钮回到页面一时可用）
-        fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
+        fillFilterOptions(getGameTemplateState_WithFD().list, modal);
         resetAnnualFilterSelects("annual-global-cp-modal");
         renderCpModalFemaleList();
         return;
@@ -3147,7 +3147,7 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
     switchCpModalView("gameList");
     const searchInput = modal.querySelector(".annual-global-cp-search-input");
     searchInput.value = "";
-    fillFilterOptions(getGameTemplateState_BaseOnly().list, modal);
+    fillFilterOptions(getGameTemplateState_WithFD().list, modal);
     resetAnnualFilterSelects("annual-global-cp-modal");
     ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
      "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
