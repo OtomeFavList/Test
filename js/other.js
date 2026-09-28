@@ -7,7 +7,8 @@ import {
   fillFilterOptions,
   getAvailableCharImages,
   getCharNameList,
-  getCharShowHide
+  getCharShowHide,
+  switchCharImageWithLoading
 } from './main.js';
 
 // 常量
@@ -79,11 +80,17 @@ let otherAddTarget = null; // "repo" | "impression" | null
 let otherRepoCharTarget = null;
 // Impression 模块：角色立绘切换索引（key="${gameId}-${charId}"）
 const otherImpressionCharImgIndex = new Map();
+// Impression 模块：角色名切换索引（key="${gameId}-${charId}"）
+const otherImpressionCharNameIndex = new Map();
 // Impression 模块：全局角色显示开关（作用于所有游戏，与 Annual 弹窗全局开关逻辑一致）
 let otherImpGlobalSwitches = { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
 // 供 canvas 导出读取：用户当前切换到的角色立绘索引
 window.getOtherImpressionCharImgIndex = function (gameId, charId) {
   return otherImpressionCharImgIndex.get(`${gameId}-${charId}`) ?? 0;
+};
+// 供 canvas 导出读取：用户当前切换到的角色名索引
+window.getOtherImpressionCharNameIndex = function (gameId, charId) {
+  return otherImpressionCharNameIndex.get(`${gameId}-${charId}`) ?? 0;
 };
 // 供 canvas 导出读取：用户当前切换到的横板图索引
 window.getOtherImpressionInfoImgIndex = function (gameId) {
@@ -805,7 +812,7 @@ function renderImpressionCard(gameData) {
     if (charImgIdx >= availImages.length) charImgIdx = 0;
     const hasMultiCharImg = availImages.length > 1;
     const charImgUrl = availImages[charImgIdx] ? getWebImageUrl(availImages[charImgIdx]) : '';
-    // 对齐 Annual：角色名使用 getCharNameList，根据隐藏/FD开关显示对应名称
+    // 对齐 Annual：角色名使用 getCharNameList，根据隐藏/FD开关显示对应名称，支持左右箭头切换
     const charShowHide = getCharShowHide(
       char,
       otherImpGlobalSwitches.hideChar || switches.hideChar,
@@ -814,7 +821,17 @@ function renderImpressionCard(gameData) {
       false
     );
     const charNameList = getCharNameList(char, charShowHide);
-    const displayName = charNameList[0] || char.name || '';
+    const charTotalNames = charNameList.length;
+    const charCanSwitchName = charTotalNames > 1;
+    if (!otherImpressionCharNameIndex.has(imgKey)) otherImpressionCharNameIndex.set(imgKey, 0);
+    let charNameIdx = otherImpressionCharNameIndex.get(imgKey);
+    if (charNameIdx >= charTotalNames) charNameIdx = 0;
+    const displayName = charNameList[charNameIdx] || char.name || '';
+    const charNameMultiCls = charCanSwitchName ? 'char-name-multi' : '';
+    const charNameSwitchBtns = charCanSwitchName ? `
+      <button class="char-name-switch-btn char-name-switch-prev other-imp-name-prev" data-imp-name-prev="${charId}">&lt;</button>
+      <button class="char-name-switch-btn char-name-switch-next other-imp-name-next" data-imp-name-next="${charId}">&gt;</button>
+    ` : '';
     return `
     <div class="other-imp-char-block" data-char-id="${charId}">
       <div class="other-imp-char-table">
@@ -824,7 +841,10 @@ function renderImpressionCard(gameData) {
             ${charImgUrl ? `<img src="${charImgUrl}" alt="${displayName}" decoding="async">` : '<div class="other-imp-char-placeholder"></div>'}
             ${hasMultiCharImg ? `<button class="other-imp-img-switch other-imp-img-next" data-imp-char-img-next="${charId}">&gt;</button>` : ''}
           </div>
-          <div class="other-imp-char-name">${displayName}</div>
+          <div class="other-imp-char-name ${charNameMultiCls}">
+            ${charNameSwitchBtns}
+            <span class="char-name-text">${displayName}</span>
+          </div>
         </div>
         <div class="other-imp-col other-imp-col-before">
           <div class="other-imp-col-label">Before</div>
@@ -1410,7 +1430,7 @@ function bindImpressionEvents() {
       renderImpressionModule();
       return;
     }
-    // 角色立绘：上一张（只更新图片 src，不重建，避免文本框失焦）
+    // 角色立绘：上一张（对齐 Annual，使用 switchCharImageWithLoading 带 loading 效果）
     const charPrevBtn = e.target.closest('[data-imp-char-img-prev]');
     if (charPrevBtn) {
       e.stopPropagation();
@@ -1426,12 +1446,14 @@ function bindImpressionEvents() {
       otherImpressionCharImgIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const img = block.querySelector('.other-imp-char-img-box img');
-        if (img) img.src = getWebImageUrl(availImages[idx]);
+        const imgBox = block.querySelector('.other-imp-char-img-box');
+        if (imgBox) {
+          switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx]));
+        }
       }
       return;
     }
-    // 角色立绘：下一张（只更新图片 src，不重建）
+    // 角色立绘：下一张（对齐 Annual，使用 switchCharImageWithLoading 带 loading 效果）
     const charNextBtn = e.target.closest('[data-imp-char-img-next]');
     if (charNextBtn) {
       e.stopPropagation();
@@ -1447,8 +1469,68 @@ function bindImpressionEvents() {
       otherImpressionCharImgIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const img = block.querySelector('.other-imp-char-img-box img');
-        if (img) img.src = getWebImageUrl(availImages[idx]);
+        const imgBox = block.querySelector('.other-imp-char-img-box');
+        if (imgBox) {
+          switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx]));
+        }
+      }
+      return;
+    }
+    // 角色名：上一个（只更新文字，不重建，避免文本框失焦）
+    const namePrevBtn = e.target.closest('[data-imp-name-prev]');
+    if (namePrevBtn) {
+      e.stopPropagation();
+      const charId = namePrevBtn.dataset.impNamePrev;
+      const gameInfo = getCombinedGameList().find(x => x.id === gameId);
+      const char = gameInfo?.charList?.find(c => c.id === charId);
+      if (!char) return;
+      const charShowHide = getCharShowHide(
+        char,
+        otherImpGlobalSwitches.hideChar || gameData.charSwitches.hideChar,
+        false,
+        otherImpGlobalSwitches.fdChar || gameData.charSwitches.fdChar,
+        false
+      );
+      const charNameList = getCharNameList(char, charShowHide);
+      const totalNames = charNameList.length;
+      if (totalNames <= 1) return;
+      const imgKey = `${gameId}-${charId}`;
+      let idx = otherImpressionCharNameIndex.get(imgKey) ?? 0;
+      idx = (idx - 1 + totalNames) % totalNames;
+      otherImpressionCharNameIndex.set(imgKey, idx);
+      const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
+      if (block) {
+        const nameTextEl = block.querySelector('.other-imp-char-name .char-name-text');
+        if (nameTextEl) nameTextEl.textContent = charNameList[idx] || char.name || '';
+      }
+      return;
+    }
+    // 角色名：下一个（只更新文字，不重建）
+    const nameNextBtn = e.target.closest('[data-imp-name-next]');
+    if (nameNextBtn) {
+      e.stopPropagation();
+      const charId = nameNextBtn.dataset.impNameNext;
+      const gameInfo = getCombinedGameList().find(x => x.id === gameId);
+      const char = gameInfo?.charList?.find(c => c.id === charId);
+      if (!char) return;
+      const charShowHide = getCharShowHide(
+        char,
+        otherImpGlobalSwitches.hideChar || gameData.charSwitches.hideChar,
+        false,
+        otherImpGlobalSwitches.fdChar || gameData.charSwitches.fdChar,
+        false
+      );
+      const charNameList = getCharNameList(char, charShowHide);
+      const totalNames = charNameList.length;
+      if (totalNames <= 1) return;
+      const imgKey = `${gameId}-${charId}`;
+      let idx = otherImpressionCharNameIndex.get(imgKey) ?? 0;
+      idx = (idx + 1) % totalNames;
+      otherImpressionCharNameIndex.set(imgKey, idx);
+      const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
+      if (block) {
+        const nameTextEl = block.querySelector('.other-imp-char-name .char-name-text');
+        if (nameTextEl) nameTextEl.textContent = charNameList[idx] || char.name || '';
       }
       return;
     }
