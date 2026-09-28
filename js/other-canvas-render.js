@@ -598,14 +598,22 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
 
   // 雷达图
   const rowsBeforeSweetness = ((hasDuration || hasCompleted) ? 1 : 0) + ((hasStartDate || hasEndDate) ? 1 : 0);
-  const radarTopOffset = rowsBeforeSweetness > 0
-    ? rowsBeforeSweetness * fieldRowH + (rowsBeforeSweetness - 1) * FIELD_ROW_GAP
-    : 0;
+  // 修正：每行实际占用 fieldRowH + FIELD_ROW_GAP（含行尾间距），雷达从最后一行的行尾间距之后开始
+  const radarTopOffset = rowsBeforeSweetness * (fieldRowH + FIELD_ROW_GAP);
   const radarBottomOffset = hasRadar ? (radarTopOffset + RADAR_BOX_W) : 0;
 
   const bodyContentH = Math.max(fieldAreaH, radarBottomOffset);
   const bodyRowH = Math.max(coverH, bodyContentH);
   contentH += bodyRowH + SECTION_GAP + BODY_TO_TEXTFIELD_GAP;
+  // 预计算后续区块是否存在，用于判断当前区块后是否需要 SECTION_GAP
+  const _allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
+  const hasValidCharCards = _allCharCards.some(c => c.charId);
+  const _allTextCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
+  const hasValidTextCards = _allTextCards.some(c => {
+    if (c.type === 'cp') return !!(c.femaleId && c.maleId);
+    return !!(c.text && c.text.trim());
+  });
+  const hasImpression = !!(gameData.impression && String(gameData.impression).trim());
   // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
@@ -636,7 +644,9 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
     contentH += tfLabelH + Math.max(TEXT_BOX_MIN_H, textH + TEXT_BOX_PAD * 2) + TEXT_FIELD_GAP;
   }
   if (hasPros || hasCons || hasStrategy || hasFavor) {
-    contentH += SECTION_GAP;
+    if (hasValidCharCards || hasValidTextCards || hasImpression) {
+      contentH += SECTION_GAP;
+    }
   }
 
   // 角色卡片网格
@@ -659,7 +669,10 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
       gridH += rowMaxCoverH + CHAR_LABEL_GAP + rowMaxLabelH;
       if (r < charRows - 1) gridH += CHAR_CARD_GAP;
     }
-    contentH += gridH + SECTION_GAP;
+    contentH += gridH;
+    if (hasValidTextCards || hasImpression) {
+      contentH += SECTION_GAP;
+    }
   }
 
   // 文字卡片网格
@@ -698,7 +711,10 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
       tcGridH += rowHeights[r];
       if (r < tcRows - 1) tcGridH += TEXT_CARD_GAP;
     }
-    contentH += tcGridH + SECTION_GAP;
+    contentH += tcGridH;
+    if (hasImpression) {
+      contentH += SECTION_GAP;
+    }
   }
 
   // 感想
@@ -772,9 +788,8 @@ function calcBriefGameHeight(ctx, targetW, gameData, gameInfo, config, imageCach
     ? fieldRows.length * fieldRowH + (fieldRows.length - 1) * FIELD_ROW_GAP
     : 0;
   const rowsBeforeSweetness = ((hasDuration || hasCompleted) ? 1 : 0) + ((hasStartDate || hasEndDate) ? 1 : 0);
-  const radarTopOffset = rowsBeforeSweetness > 0
-    ? rowsBeforeSweetness * fieldRowH + (rowsBeforeSweetness - 1) * FIELD_ROW_GAP
-    : 0;
+  // 修正：每行实际占用 fieldRowH + FIELD_ROW_GAP（含行尾间距），雷达从最后一行的行尾间距之后开始
+  const radarTopOffset = rowsBeforeSweetness * (fieldRowH + FIELD_ROW_GAP);
   const radarBottomOffset = hasRadar ? (radarTopOffset + RADAR_BOX_W) : 0;
   const bodyContentH = Math.max(fieldAreaH, radarBottomOffset);
   const bodyRowH = Math.max(coverH, bodyContentH);
@@ -942,10 +957,21 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
       gameData.love, HEART_SIZE, HEART_GAP, config.heartColor || '#e895a8', '#cccccc');
     fy += fieldRowH + FIELD_ROW_GAP;
   }
-  const fieldAreaH = fy - bodyTop;
-  const radarBottomOffset = hasRadar ? (RADAR_BOX_W + ((hasDuration || hasCompleted || hasStartDate || hasEndDate) ? (fieldRowH + FIELD_ROW_GAP) : 0)) : 0;
+  // fieldAreaH 修正：fy 包含最后一行后多余的 FIELD_ROW_GAP，需减去以与 calc 保持一致
+  const fieldAreaH = fy > bodyTop ? (fy - bodyTop - FIELD_ROW_GAP) : 0;
+  const rowsBeforeRadar = ((hasDuration || hasCompleted) ? 1 : 0) + ((hasStartDate || hasEndDate) ? 1 : 0);
+  const radarBottomOffset = hasRadar ? (rowsBeforeRadar * (fieldRowH + FIELD_ROW_GAP) + RADAR_BOX_W) : 0;
   const bodyRowH = Math.max(coverH, fieldAreaH, radarBottomOffset);
   painter.shiftY(bodyRowH + SECTION_GAP + BODY_TO_TEXTFIELD_GAP);
+  // 预计算后续区块是否存在，用于判断当前区块后是否需要 SECTION_GAP
+  const _allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
+  const hasValidCharCards = _allCharCards.some(c => c.charId);
+  const _allTextCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
+  const hasValidTextCards = _allTextCards.some(c => {
+    if (c.type === 'cp') return !!(c.femaleId && c.maleId);
+    return !!(c.text && c.text.trim());
+  });
+  const hasImpression = !!(gameData.impression && String(gameData.impression).trim());
   // 文本字段区
   const tfLabelH = LABEL_SIZE * 1.4 + 4;
   const hasPros = !!(gameData.pros && String(gameData.pros).trim());
@@ -981,7 +1007,9 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
     painter.shiftY(h + TEXT_FIELD_GAP);
   }
   if (hasPros || hasCons || hasStrategy || hasFavor) {
-    painter.shiftY(SECTION_GAP);
+    if (hasValidCharCards || hasValidTextCards || hasImpression) {
+      painter.shiftY(SECTION_GAP);
+    }
   }
   // 角色卡片网格
   const allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
@@ -1022,7 +1050,9 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
       painter.shiftY(rowMaxH);
       if (r < charRows - 1) painter.shiftY(CHAR_CARD_GAP);
     }
-    painter.shiftY(SECTION_GAP);
+    if (hasValidTextCards || hasImpression) {
+      painter.shiftY(SECTION_GAP);
+    }
   }
   // 文字卡片网格
   const allTextCards = [...(gameData.repoTextCards || []), ...(gameData.repoCustomTextCards || [])];
@@ -1098,7 +1128,9 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
       painter.shiftY(rowH);
       if (r < tcRows - 1) painter.shiftY(TEXT_CARD_GAP);
     }
-    painter.shiftY(SECTION_GAP);
+    if (hasImpression) {
+      painter.shiftY(SECTION_GAP);
+    }
   }
   // 感想
   if (gameData.impression && String(gameData.impression).trim()) {
