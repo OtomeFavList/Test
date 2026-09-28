@@ -641,6 +641,49 @@
             <button class="other-card-fold-btn">▲</button>
         </div>
         <div class="annual-card-body">
+            <!-- 全局角色显示开关（作用于模块二所有游戏，与 Annual 弹窗全局开关顺序、文字完全一致，DOM id 使用 other-imp-global 前缀避免冲突） -->
+            <div class="other-imp-global-switches">
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="other-imp-global-sub-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="other-imp-global-fd-sub-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD次要角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增次要角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="other-imp-global-hide-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示隐藏图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏隐藏图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <label class="switch">
+                        <input type="checkbox" id="other-imp-global-fd-char">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <span class="text-light-pink">全局显示续作/FD图片、角色</span>
+                        <p class="switch-desc">开启后显示所有游戏续作、FD新增图片、角色，关闭则所有游戏默认隐藏，单个游戏可单独开启。切换此全局开关会触发剧透警告弹窗。</p>
+                    </div>
+                </div>
+            </div>
             <div class="other-add-game-btn-wrap center-btn-block">
                 <button id="other-impression-add-game-btn" class="other-add-game-btn">+ 添加游戏</button>
             </div>
