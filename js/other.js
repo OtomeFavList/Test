@@ -5,7 +5,9 @@ import {
   getWebImageUrl,
   renderGameSelectItem,
   fillFilterOptions,
-  getAvailableCharImages
+  getAvailableCharImages,
+  getCharNameList,
+  getCharShowHide
 } from './main.js';
 
 // 常量
@@ -31,9 +33,9 @@ const REPO_FIXED_TEXT_LABELS = [
 // Impression 模块：4个单独开关配置（与 Annual 弹窗页面二完全对应）
 const IMPRESSION_SWITCH_CONFIG = [
   { key: 'subChar',   label: '显示次要角色' },
+  { key: 'fdSubChar', label: '显示FD次要角色' },
   { key: 'hideChar',  label: '显示隐藏角色' },
-  { key: 'fdChar',    label: '显示FD角色' },
-  { key: 'fdSubChar', label: '显示FD次要角色' }
+  { key: 'fdChar',    label: '显示FD角色' }
 ];
 // Impression 模块：横板图数量配置（无需修改任何 game.js）
 // 第一张固定为 info/{gameId}.jpg，第二张起为 info/{gameId}-2.jpg、info/{gameId}-3.jpg…
@@ -651,6 +653,35 @@ function bindRepoCustomCardBlur() {
   });
 }
 
+// Impression：判断角色是否有隐藏内容（隐藏角色标记/隐藏姓名/隐藏图片）
+// 对齐 Annual charHasHiddenContent，用于局部开关的动态显隐
+function impressionCharHasHiddenContent(char) {
+  if (!char) return false;
+  if (char.isHidden === true) return true;
+  if (char.hiddenName) return true;
+  // 开启隐藏开关后图片数量增加 → 角色有隐藏图片
+  const withHide = getAvailableCharImages(char, true, false, false, false);
+  const withoutHide = getAvailableCharImages(char, false, false, false, false);
+  let countWith = 0, countWithout = 0;
+  withHide.forEach(u => { if (Array.isArray(u.srcList)) countWith += u.srcList.length; });
+  withoutHide.forEach(u => { if (Array.isArray(u.srcList)) countWithout += u.srcList.length; });
+  return countWith > countWithout;
+}
+
+// Impression：判断角色是否有FD内容（FD角色标记/FD图片）
+// 对齐 Annual charHasFdContent
+function impressionCharHasFdContent(char) {
+  if (!char) return false;
+  if (char.isFD === true) return true;
+  // 开启 FD 开关后图片数量增加 → 角色有 FD 图片
+  const withFd = getAvailableCharImages(char, false, true, false, false);
+  const withoutFd = getAvailableCharImages(char, false, false, false, false);
+  let countWith = 0, countWithout = 0;
+  withFd.forEach(u => { if (Array.isArray(u.srcList)) countWith += u.srcList.length; });
+  withoutFd.forEach(u => { if (Array.isArray(u.srcList)) countWithout += u.srcList.length; });
+  return countWith > countWithout;
+}
+
 // Impression：根据全局开关 + 局部开关获取可见角色列表（与 Annual 弹窗过滤逻辑完全一致：全局 OR 局部）
 function getImpressionVisibleChars(gameInfo, localSwitches, globalSwitches) {
   const rawList = gameInfo?.charList || [];
@@ -732,9 +763,16 @@ function renderImpressionCard(gameData) {
   const hasMultiInfo = infoImages.length > 1;
   const infoImgUrl = getWebImageUrl(infoImages[infoIdx] || "");
 
-  // 4个单独开关（与 Annual 搜索弹窗页面二完全相同的 toggle 开关结构）
+  // 4个单独开关：动态显隐（对齐 Annual renderCharModalCharList 的 localSwitchVisibility 逻辑）
+  const rawCharList = gameInfo?.charList || [];
+  const switchVisibility = {
+    subChar:   rawCharList.some(c => c.isSub === true),
+    fdSubChar: rawCharList.some(c => c.isFdSub === true),
+    hideChar:  rawCharList.some(c => impressionCharHasHiddenContent(c)),
+    fdChar:    rawCharList.some(c => impressionCharHasFdContent(c))
+  };
   const switchHtml = IMPRESSION_SWITCH_CONFIG.map(sw => `
-    <div class="switch-row">
+    <div class="switch-row" style="${switchVisibility[sw.key] ? '' : 'display:none;'}">
       <label class="switch">
         <input type="checkbox" class="other-imp-switch-input"
                data-imp-switch="${sw.key}" ${switches[sw.key] ? 'checked' : ''}>
@@ -745,9 +783,16 @@ function renderImpressionCard(gameData) {
       </div>
     </div>
   `).join("");
-
   // 可见角色列表（全局开关 OR 局部开关）
-  const visibleChars = getImpressionVisibleChars(gameInfo, switches, otherImpGlobalSwitches);
+  let visibleChars = getImpressionVisibleChars(gameInfo, switches, otherImpGlobalSwitches);
+  // 对齐 Annual：使用 sortFilterOptionList 排序，回退到 localeCompare
+  const { sortFilterOptionList } = window.Core || {};
+  if (typeof sortFilterOptionList === 'function') {
+    const sortedNames = sortFilterOptionList(visibleChars.map(c => c.name));
+    visibleChars = sortedNames.map(name => visibleChars.find(c => c.name === name)).filter(Boolean);
+  } else {
+    visibleChars = [...visibleChars].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+  }
 
   // 每个角色的三列表格（Character / Before / After）
   const charBlocksHtml = visibleChars.map(char => {
@@ -760,17 +805,26 @@ function renderImpressionCard(gameData) {
     if (charImgIdx >= availImages.length) charImgIdx = 0;
     const hasMultiCharImg = availImages.length > 1;
     const charImgUrl = availImages[charImgIdx] ? getWebImageUrl(availImages[charImgIdx]) : '';
-
+    // 对齐 Annual：角色名使用 getCharNameList，根据隐藏/FD开关显示对应名称
+    const charShowHide = getCharShowHide(
+      char,
+      otherImpGlobalSwitches.hideChar || switches.hideChar,
+      false,
+      otherImpGlobalSwitches.fdChar || switches.fdChar,
+      false
+    );
+    const charNameList = getCharNameList(char, charShowHide);
+    const displayName = charNameList[0] || char.name || '';
     return `
     <div class="other-imp-char-block" data-char-id="${charId}">
       <div class="other-imp-char-table">
         <div class="other-imp-col other-imp-col-char">
           <div class="other-imp-char-img-box ${hasMultiCharImg ? 'has-multi' : ''}">
             ${hasMultiCharImg ? `<button class="other-imp-img-switch other-imp-img-prev" data-imp-char-img-prev="${charId}">&lt;</button>` : ''}
-            ${charImgUrl ? `<img src="${charImgUrl}" alt="${char.name || ''}" decoding="async">` : '<div class="other-imp-char-placeholder"></div>'}
+            ${charImgUrl ? `<img src="${charImgUrl}" alt="${displayName}" decoding="async">` : '<div class="other-imp-char-placeholder"></div>'}
             ${hasMultiCharImg ? `<button class="other-imp-img-switch other-imp-img-next" data-imp-char-img-next="${charId}">&gt;</button>` : ''}
           </div>
-          <div class="other-imp-char-name">${char.name || ''}</div>
+          <div class="other-imp-char-name">${displayName}</div>
         </div>
         <div class="other-imp-col other-imp-col-before">
           <div class="other-imp-col-label">Before</div>
@@ -1630,7 +1684,7 @@ function calcOtherEstimateSec() {
     const gameInfo = getCombinedGameList().find(x => x.id === g.gameId);
     const visibleChars = getImpressionVisibleChars(gameInfo, g.charSwitches, otherImpGlobalSwitches);
     visibleChars.forEach(c => {
-      const availImages = getImpressionCharAvailImages(c, g.charSwitches);
+      const availImages = getImpressionCharAvailImages(c, g.charSwitches, otherImpGlobalSwitches);
       imgCount += Math.max(1, availImages.length);
     });
   });
