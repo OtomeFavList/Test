@@ -38,14 +38,6 @@ const IMPRESSION_SWITCH_CONFIG = [
   { key: 'hideChar',  label: '单独显示本游戏隐藏图片、角色' },
   { key: 'fdChar',    label: '单独显示本游戏续作/FD图片、角色' }
 ];
-// Impression 模块：横板图数量配置（无需修改任何 game.js）
-// 第一张固定为 info/{gameId}.jpg，第二张起为 info/{gameId}-2.jpg、info/{gameId}-3.jpg…
-// 未配置的游戏默认为 1 张；有多张横板图的游戏在此加一行即可
-const IMPRESSION_INFO_IMAGE_MAP = {
-  // 示例："game003": 2,  // game003 有 info/game003.jpg 和 info/game003-2.jpg 两张
-  // "game008": 3,
-};
-
 const otherExportDefault = {
   bg: "#fff7f9",
   title: "#b33a3a",
@@ -92,13 +84,6 @@ window.getOtherImpressionCharImgIndex = function (gameId, charId) {
 window.getOtherImpressionCharNameIndex = function (gameId, charId) {
   return otherImpressionCharNameIndex.get(`${gameId}-${charId}`) ?? 0;
 };
-// 供 canvas 导出读取：用户当前切换到的横板图索引
-window.getOtherImpressionInfoImgIndex = function (gameId) {
-  const g = otherData?.impressionGames?.find(x => x.gameId === gameId);
-  return g?.infoImgIndex ?? 0;
-};
-// 供 canvas 读取横板图数量配置
-window.IMPRESSION_INFO_IMAGE_COUNT = IMPRESSION_INFO_IMAGE_MAP;
 // 导出渲染锁，防止重复点击
 let _otherIsRendering = false;
 // 导出预览弹窗状态
@@ -188,7 +173,6 @@ function loadOtherData() {
   });
   otherData.impressionGames.forEach(game => {
     if (game.folded === undefined) game.folded = false;
-    if (game.infoImgIndex === undefined) game.infoImgIndex = 0;
     if (!game.charSwitches) {
       game.charSwitches = { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
     }
@@ -291,7 +275,6 @@ function createImpressionGameData(gameId) {
   return {
     gameId: gameId,
     folded: false,
-    infoImgIndex: 0,
     charSwitches: { subChar: false, hideChar: false, fdChar: false, fdSubChar: false },
     charTexts: {}  // { "charId": { before: "", after: "" } }
   };
@@ -750,21 +733,6 @@ function getImpressionCharAvailImages(char, localSwitches, globalSwitches) {
   return allSrc;
 }
 
-// Impression：获取游戏横板图片列表（优先游戏模板 infoImages，否则默认单张）
-function getImpressionInfoImages(gameInfo, gameId) {
-  // 优先：游戏模板中显式定义的 infoImages（如未来在 game.js 中添加则自动生效）
-  if (gameInfo && Array.isArray(gameInfo.infoImages) && gameInfo.infoImages.length > 0) {
-    return gameInfo.infoImages;
-  }
-  // 其次：按 IMPRESSION_INFO_IMAGE_MAP 配置的数量生成
-  const count = IMPRESSION_INFO_IMAGE_MAP[gameId] || 1;
-  const list = [`info/${gameId}.jpg`];
-  for (let i = 2; i <= count; i++) {
-    list.push(`info/${gameId}-${i}.jpg`);
-  }
-  return list;
-}
-
 // Impression 模块
 function renderImpressionModule() {
   const container = document.getElementById('other-impression-game-container');
@@ -773,16 +741,37 @@ function renderImpressionModule() {
     container.innerHTML = '';
     return;
   }
-  // 保存当前滚动位置，避免开关切换重建 DOM 时页面跳动
+  // 保存当前滚动位置
   const scrollY = window.scrollY;
+  // 锁定容器当前高度，防止 innerHTML 重建瞬间页面塌陷跳动
+  const oldHeight = container.offsetHeight;
+  if (oldHeight > 0) {
+    container.style.minHeight = oldHeight + 'px';
+  }
   container.innerHTML = otherData.impressionGames.map(g => renderImpressionCard(g)).join("");
   // 下一帧恢复滚动位置
   requestAnimationFrame(() => {
     window.scrollTo(0, scrollY);
+    // 再下一帧移除高度锁定，让容器高度自适应内容
+    requestAnimationFrame(() => {
+      container.style.minHeight = '';
+    });
   });
 }
-
-// 渲染单个 Impression 游戏卡片（横板图 + 4开关 + 角色三列表格）
+// 仅重渲染单个 Impression 游戏卡片（用于单独开关切换，避免重建整个模块导致其他卡片闪烁/跳动）
+function rerenderImpressionCard(gameId) {
+  const gameData = otherData.impressionGames.find(g => g.gameId === gameId);
+  if (!gameData) return;
+  const oldCard = document.querySelector(`.other-impression-card[data-game-id="${gameId}"]`);
+  if (!oldCard) return;
+  const temp = document.createElement('div');
+  temp.innerHTML = renderImpressionCard(gameData);
+  const newCard = temp.firstElementChild;
+  if (newCard) {
+    oldCard.replaceWith(newCard);
+  }
+}
+// 渲染单个 Impression 游戏卡片（4开关 + 角色三列表格）
 function renderImpressionCard(gameData) {
   const gameInfo = getCombinedGameList().find(x => x.id === gameData.gameId);
   if (!gameInfo) return "";
@@ -790,13 +779,6 @@ function renderImpressionCard(gameData) {
   const gid = gameData.gameId;
   const isFolded = !!gameData.folded;
   const switches = gameData.charSwitches || { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
-
-  // 横板图片
-  const infoImages = getImpressionInfoImages(gameInfo, gid);
-  const infoIdx = Math.min(gameData.infoImgIndex || 0, Math.max(0, infoImages.length - 1));
-  const hasMultiInfo = infoImages.length > 1;
-  const infoImgUrl = getWebImageUrl(infoImages[infoIdx] || "");
-
   // 4个单独开关：动态显隐（对齐 Annual renderCharModalCharList 的 localSwitchVisibility 逻辑）
   const rawCharList = getGameMergedCharList(gameInfo);
   const switchVisibility = {
@@ -813,7 +795,7 @@ function renderImpressionCard(gameData) {
         <span class="slider"></span>
       </label>
       <div>
-        <span class="text-light-pink">${sw.label}</span>
+        <div class="switch-desc">${sw.label}</div>
       </div>
     </div>
   `).join("");
@@ -907,15 +889,7 @@ function renderImpressionCard(gameData) {
       </div>
     </div>
     <div class="other-impression-card-content">
-      <!-- 横板图片区域：宽度铺满，高度自适应，底部淡出 -->
-      <div class="other-imp-info-img-wrap ${hasMultiInfo ? 'has-multi' : ''}">
-        ${hasMultiInfo ? `<button class="other-imp-img-switch other-imp-info-prev" data-imp-info-prev="${gid}">&lt;</button>` : ''}
-        <img class="other-imp-info-img" src="${infoImgUrl}" alt="${name}" decoding="async"
-             onerror="this.closest('.other-imp-info-img-wrap').style.display='none'">
-        ${hasMultiInfo ? `<button class="other-imp-img-switch other-imp-info-next" data-imp-info-next="${gid}">&gt;</button>` : ''}
-        <div class="other-imp-info-fade"></div>
-      </div>
-      <!-- 4个单独开关（淡出效果下方） -->
+      <!-- 4个单独开关 -->
       <div class="other-imp-switches">
         ${switchHtml}
       </div>
@@ -1430,39 +1404,15 @@ function bindImpressionEvents() {
       renderImpressionModule();
       return;
     }
-    // 4个单独开关切换（需重建，因可见角色列表变化）
+    // 4个单独开关切换（仅重渲染当前卡片，避免整个模块重建导致跳动）
     const switchInput = e.target.closest('.other-imp-switch-input');
     if (switchInput) {
       const key = switchInput.dataset.impSwitch;
       if (key && gameData.charSwitches) {
         gameData.charSwitches[key] = switchInput.checked;
         saveOtherData();
-        renderImpressionModule();
+        rerenderImpressionCard(gameId);
       }
-      return;
-    }
-    // 横板图片：上一张
-    if (e.target.closest('[data-imp-info-prev]')) {
-      e.stopPropagation();
-      const gameInfo = getCombinedGameList().find(x => x.id === gameId);
-      const infoImages = getImpressionInfoImages(gameInfo, gameId);
-      let idx = gameData.infoImgIndex || 0;
-      idx = (idx - 1 + infoImages.length) % infoImages.length;
-      gameData.infoImgIndex = idx;
-      saveOtherData();
-      renderImpressionModule();
-      return;
-    }
-    // 横板图片：下一张
-    if (e.target.closest('[data-imp-info-next]')) {
-      e.stopPropagation();
-      const gameInfo = getCombinedGameList().find(x => x.id === gameId);
-      const infoImages = getImpressionInfoImages(gameInfo, gameId);
-      let idx = gameData.infoImgIndex || 0;
-      idx = (idx + 1) % infoImages.length;
-      gameData.infoImgIndex = idx;
-      saveOtherData();
-      renderImpressionModule();
       return;
     }
     // 角色立绘：上一张（对齐 Annual，使用 switchCharImageWithLoading 带 loading 效果）
@@ -1803,7 +1753,6 @@ function calcOtherEstimateSec() {
   const impGames = otherData?.impressionGames || [];
   gameCount += impGames.length;
   impGames.forEach(g => {
-    imgCount += 1; // 横板图片
     const gameInfo = getCombinedGameList().find(x => x.id === g.gameId);
     const visibleChars = getImpressionVisibleChars(gameInfo, g.charSwitches, otherImpGlobalSwitches);
     visibleChars.forEach(c => {
