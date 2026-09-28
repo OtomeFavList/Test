@@ -77,6 +77,8 @@ let otherAddTarget = null; // "repo" | "impression" | null
 let otherRepoCharTarget = null;
 // Impression 模块：角色立绘切换索引（key="${gameId}-${charId}"）
 const otherImpressionCharImgIndex = new Map();
+// Impression 模块：全局角色显示开关（作用于所有游戏，与 Annual 弹窗全局开关逻辑一致）
+let otherImpGlobalSwitches = { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
 // 供 canvas 导出读取：用户当前切换到的角色立绘索引
 window.getOtherImpressionCharImgIndex = function (gameId, charId) {
   return otherImpressionCharImgIndex.get(`${gameId}-${charId}`) ?? 0;
@@ -162,6 +164,12 @@ function loadOtherData() {
     }
     if (!game.charTexts) game.charTexts = {};
   });
+  // 数据迁移：补全 Impression 全局开关
+  if (!otherData.impressionGlobalSwitches) {
+    otherData.impressionGlobalSwitches = { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
+  }
+  // 加载全局开关到运行时变量
+  otherImpGlobalSwitches = { ...otherData.impressionGlobalSwitches };
 }
 
 function saveOtherData() {
@@ -643,32 +651,40 @@ function bindRepoCustomCardBlur() {
   });
 }
 
-// Impression：根据4个开关获取可见角色列表（与 Annual 弹窗过滤逻辑完全一致）
-function getImpressionVisibleChars(gameInfo, switches) {
+// Impression：根据全局开关 + 局部开关获取可见角色列表（与 Annual 弹窗过滤逻辑完全一致：全局 OR 局部）
+function getImpressionVisibleChars(gameInfo, localSwitches, globalSwitches) {
   const rawList = gameInfo?.charList || [];
-  const sw = switches || { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
+  const local = localSwitches || { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
+  const global = globalSwitches || otherImpGlobalSwitches;
+  // 与 Annual renderCharModalCharList 完全一致：全局开关 OR 局部开关
+  const showSub = global.subChar || local.subChar;
+  const showHide = global.hideChar || local.hideChar;
+  const showFD = global.fdChar || local.fdChar;
+  const showFdSub = global.fdSubChar || local.fdSubChar;
   return rawList.filter(c => {
     const isSub = c.isSub ?? false;
     const isHidden = !!c.isHidden;
     const isFD = !!c.isFD;
     const isFdSub = !!c.isFdSub;
     if (!isSub && !isHidden && !isFD && !isFdSub) return true;
-    return (isSub && sw.subChar) ||
-           (isHidden && sw.hideChar) ||
-           (isFD && sw.fdChar) ||
-           (isFdSub && sw.fdSubChar);
+    return (isSub && showSub) ||
+           (isHidden && showHide) ||
+           (isFD && showFD) ||
+           (isFdSub && showFdSub);
   });
 }
 
-// Impression：获取角色在当前开关下的可用立绘列表（复用 main.js getAvailableCharImages）
-function getImpressionCharAvailImages(char, switches) {
+// Impression：获取角色在当前开关下的可用立绘列表（复用 main.js getAvailableCharImages，与 Annual getAnnualCharAvailImages 完全一致）
+function getImpressionCharAvailImages(char, localSwitches, globalSwitches) {
   if (!char) return [];
-  const sw = switches || { hideChar: false, fdChar: false };
+  const local = localSwitches || { hideChar: false, fdChar: false };
+  const global = globalSwitches || otherImpGlobalSwitches;
   const availUnits = getAvailableCharImages(
     char,
-    false, false,              // 全局开关均为 false
-    sw.hideChar || false,      // 局部隐藏开关
-    sw.fdChar || false         // 局部FD开关
+    global.hideChar || false,   // 全局隐藏开关
+    global.fdChar || false,     // 全局FD开关
+    local.hideChar || false,    // 局部隐藏开关
+    local.fdChar || false       // 局部FD开关
   );
   const allSrc = [];
   availUnits.forEach(u => { if (Array.isArray(u.srcList)) allSrc.push(...u.srcList); });
@@ -730,14 +746,14 @@ function renderImpressionCard(gameData) {
     </div>
   `).join("");
 
-  // 可见角色列表
-  const visibleChars = getImpressionVisibleChars(gameInfo, switches);
+  // 可见角色列表（全局开关 OR 局部开关）
+  const visibleChars = getImpressionVisibleChars(gameInfo, switches, otherImpGlobalSwitches);
 
   // 每个角色的三列表格（Character / Before / After）
   const charBlocksHtml = visibleChars.map(char => {
     const charId = char.id;
     const charTexts = gameData.charTexts?.[charId] || { before: '', after: '' };
-    const availImages = getImpressionCharAvailImages(char, switches);
+    const availImages = getImpressionCharAvailImages(char, switches, otherImpGlobalSwitches);
     const imgKey = `${gid}-${charId}`;
     if (!otherImpressionCharImgIndex.has(imgKey)) otherImpressionCharImgIndex.set(imgKey, 0);
     let charImgIdx = otherImpressionCharImgIndex.get(imgKey);
@@ -1348,7 +1364,7 @@ function bindImpressionEvents() {
       const gameInfo = getCombinedGameList().find(x => x.id === gameId);
       const char = gameInfo?.charList?.find(c => c.id === charId);
       if (!char) return;
-      const availImages = getImpressionCharAvailImages(char, gameData.charSwitches);
+      const availImages = getImpressionCharAvailImages(char, gameData.charSwitches, otherImpGlobalSwitches);
       if (availImages.length === 0) return;
       const imgKey = `${gameId}-${charId}`;
       let idx = otherImpressionCharImgIndex.get(imgKey) ?? 0;
@@ -1369,7 +1385,7 @@ function bindImpressionEvents() {
       const gameInfo = getCombinedGameList().find(x => x.id === gameId);
       const char = gameInfo?.charList?.find(c => c.id === charId);
       if (!char) return;
-      const availImages = getImpressionCharAvailImages(char, gameData.charSwitches);
+      const availImages = getImpressionCharAvailImages(char, gameData.charSwitches, otherImpGlobalSwitches);
       if (availImages.length === 0) return;
       const imgKey = `${gameId}-${charId}`;
       let idx = otherImpressionCharImgIndex.get(imgKey) ?? 0;
@@ -1382,6 +1398,32 @@ function bindImpressionEvents() {
       }
       return;
     }
+  });
+}
+
+// Impression 模块：全局角色显示开关绑定（与 Annual 弹窗全局开关逻辑一致，切换后重新渲染所有游戏卡片）
+function bindImpressionGlobalSwitches() {
+  const switchConfig = [
+    { id: 'other-imp-global-sub-char',   key: 'subChar' },
+    { id: 'other-imp-global-hide-char',  key: 'hideChar' },
+    { id: 'other-imp-global-fd-char',    key: 'fdChar' },
+    { id: 'other-imp-global-fd-sub-char', key: 'fdSubChar' }
+  ];
+  switchConfig.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (!el) return;
+    // 初始化 DOM 勾选状态（从持久化数据恢复）
+    el.checked = !!otherImpGlobalSwitches[item.key];
+    el.addEventListener('change', () => {
+      otherImpGlobalSwitches[item.key] = el.checked;
+      // 持久化到 otherData
+      if (otherData) {
+        otherData.impressionGlobalSwitches = { ...otherImpGlobalSwitches };
+        saveOtherData();
+      }
+      // 重新渲染所有 Impression 游戏卡片（可见角色列表变化）
+      renderImpressionModule();
+    });
   });
 }
 
@@ -1586,7 +1628,7 @@ function calcOtherEstimateSec() {
   impGames.forEach(g => {
     imgCount += 1; // 横板图片
     const gameInfo = getCombinedGameList().find(x => x.id === g.gameId);
-    const visibleChars = getImpressionVisibleChars(gameInfo, g.charSwitches);
+    const visibleChars = getImpressionVisibleChars(gameInfo, g.charSwitches, otherImpGlobalSwitches);
     visibleChars.forEach(c => {
       const availImages = getImpressionCharAvailImages(c, g.charSwitches);
       imgCount += Math.max(1, availImages.length);
@@ -2012,6 +2054,7 @@ export function initOtherModule() {
   bindRepoCpModalInterceptor();
   bindReroCardEvents();
   bindImpressionEvents();
+  bindImpressionGlobalSwitches();
   bindExportConfig();
   bindTextareaResize();
   // +添加游戏按钮：使用 document 事件委托，避免时序或 ID 匹配问题导致无反应
