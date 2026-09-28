@@ -716,13 +716,18 @@ function renderImpressionCard(gameData) {
   const hasMultiInfo = infoImages.length > 1;
   const infoImgUrl = getWebImageUrl(infoImages[infoIdx] || "");
 
-  // 4个单独开关
+  // 4个单独开关（与 Annual 搜索弹窗页面二完全相同的 toggle 开关结构）
   const switchHtml = IMPRESSION_SWITCH_CONFIG.map(sw => `
-    <label class="other-imp-switch-label">
-      <input type="checkbox" class="other-imp-switch-input"
-             data-imp-switch="${sw.key}" ${switches[sw.key] ? 'checked' : ''}>
-      <span>${sw.label}</span>
-    </label>
+    <div class="switch-row">
+      <label class="switch">
+        <input type="checkbox" class="other-imp-switch-input"
+               data-imp-switch="${sw.key}" ${switches[sw.key] ? 'checked' : ''}>
+        <span class="slider"></span>
+      </label>
+      <div>
+        <span class="text-light-pink">${sw.label}</span>
+      </div>
+    </div>
   `).join("");
 
   // 可见角色列表
