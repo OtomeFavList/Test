@@ -238,6 +238,28 @@ function getGameTemplateState_WithFD() {
         ready: true
     };
 }
+// 获取游戏的合并角色列表：普通游戏角色 + 所有关联FD游戏的角色
+// 支持多个FD关联同一个普通游戏（通过FD游戏的 baseGameId 字段）
+function getGameMergedCharList(gameInfo) {
+    if (!gameInfo) return [];
+    const baseChars = Array.isArray(gameInfo.charList) ? gameInfo.charList : [];
+    const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
+    const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === gameInfo.id);
+    if (relatedFdGames.length === 0) return baseChars;
+    const fdChars = [];
+    relatedFdGames.forEach(fd => {
+        if (Array.isArray(fd.charList)) {
+            fd.charList.forEach(char => {
+                fdChars.push({
+                    ...char,
+                    _fdSourceId: fd.id,
+                    _fdSourceName: fd.name
+                });
+            });
+        }
+    });
+    return [...baseChars, ...fdChars];
+}
 
 /* 补丁：获取角色在当前弹窗开关状态下的全部可用立绘 src 列表
  * 复用 main.js getAvailableCharImages，传入弹窗全局/局部开关 */
@@ -636,8 +658,9 @@ function renderCharModalGameList(wrap, keyword) {
         const matchGame = gameNameLow.includes(kw);
         if(matchGame) matchedGames.add(game.id);
 
-        if(!Array.isArray(game.charList)) continue;
-        for(const char of game.charList) {
+        const gameMergedChars = getGameMergedCharList(game);
+        if(gameMergedChars.length === 0) continue;
+        for(const char of gameMergedChars) {
             const charNameLow = String(char.name).toLowerCase();
             // 补丁：隐藏开关或 FD 开关（角色 isFD 时）任一开启
             const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
@@ -861,7 +884,7 @@ function renderCharModalCharList() {
         return;
     }
     // 补丁：有相关角色才显示对应单独开关
-    const rawCharList = gameInfo.charList || [];
+    const rawCharList = getGameMergedCharList(gameInfo);
     const localSwitchVisibility = {
         "#annual-modal-game-sub-char":   rawCharList.some(c => c.isSub === true),
         // 修复：隐藏开关不仅看 isHidden 标记，还要看是否有隐藏姓名或隐藏图片
@@ -2830,7 +2853,7 @@ function renderCpModalFemaleList() {
         charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
         return;
     }
-    const rawCharList = gameInfo.charList || [];
+    const rawCharList = getGameMergedCharList(gameInfo);
 
     // 局部开关显隐控制
     const visMap = {
