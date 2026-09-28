@@ -752,7 +752,7 @@
 
 /* 模块二 Impression 卡片 */
 .other-impression-card {
-    background: var(--other-card-bg, #fff7f9);
+    background: transparent;
     border: 1px solid var(--other-image-border-color, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
@@ -772,6 +772,138 @@
     color: var(--other-export-gamename, #000000);
     word-break: break-all;
     margin: 0;
+}
+
+/* Impression 4个开关行 */
+.other-impression-switches {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    align-items: center;
+}
+.other-impression-switch-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--other-default-text-color, #b85878);
+    font-weight: bold;
+}
+.other-impression-switch-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #e895a8;
+}
+
+/* Impression 表格容器：PC端一行两个角色组 */
+.other-impression-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+/* 单个角色组：Character | Before | After */
+.other-impression-char-group {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+/* Character 列 */
+.other-impression-char-cell {
+    flex-shrink: 0;
+    width: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.other-impression-char-img-wrap {
+    position: relative;
+    width: 110px;
+}
+.other-impression-char-img-wrap img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    display: block;
+}
+.other-impression-char-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+.other-impression-char-prev,
+.other-impression-char-next {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #b33a3a;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 14px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.other-impression-char-prev:hover,
+.other-impression-char-next:hover {
+    background: #992e2e;
+    color: #fff;
+}
+.other-impression-char-add {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.other-impression-char-add:hover {
+    background: #992e2e;
+    color: #fff;
+}
+/* Before/After 文本列 */
+.other-impression-text-cell {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.other-impression-text-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--other-default-text-color, #b85878);
+}
+.other-impression-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 8px 10px;
+    border: 1px solid var(--other-export-customborder, #eee);
+    border-radius: 6px;
+    background: #fcfcfc;
+    font-size: var(--other-custom-text-font-size, 16px);
+    color: var(--other-export-customtext, #c98fac);
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.other-impression-textarea:focus {
+    outline: none;
+    border-color: #f6a5b8;
 }
 
 /* 导出模块 */
@@ -865,6 +997,12 @@
 .snapshot-container.export-snapshot .other-repo-card-add,
 .snapshot-container.export-snapshot .other-repo-card-clear,
 .snapshot-container.export-snapshot .other-repo-card-remove {
+    display: none !important;
+}
+.snapshot-container.export-snapshot .other-impression-char-add,
+.snapshot-container.export-snapshot .other-impression-char-prev,
+.snapshot-container.export-snapshot .other-impression-char-next,
+.snapshot-container.export-snapshot .other-impression-switch {
     display: none !important;
 }
 /* 快照模式下 SABCDE 已选等级保留显示 */
@@ -1000,6 +1138,28 @@
     .other-repo-text-card-grid {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
+    }
+    /* Impression 移动端：角色组改为单列，角色图小尺寸 */
+    .other-impression-table {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
+    .other-impression-char-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .other-impression-char-cell {
+        width: 100%;
+    }
+    .other-impression-char-img-wrap {
+        width: 80px;
+        margin: 0 auto;
+    }
+    .other-impression-switches {
+        gap: 10px;
+    }
+    .other-impression-switch-item {
+        font-size: 13px;
     }
 }
 
