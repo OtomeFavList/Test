@@ -35,6 +35,13 @@ const IMPRESSION_SWITCH_CONFIG = [
   { key: 'fdChar',    label: '显示FD角色' },
   { key: 'fdSubChar', label: '显示FD次要角色' }
 ];
+// Impression 模块：横板图数量配置（无需修改任何 game.js）
+// 第一张固定为 info/{gameId}.jpg，第二张起为 info/{gameId}-2.jpg、info/{gameId}-3.jpg…
+// 未配置的游戏默认为 1 张；有多张横板图的游戏在此加一行即可
+const IMPRESSION_INFO_IMAGE_MAP = {
+  // 示例："game003": 2,  // game003 有 info/game003.jpg 和 info/game003-2.jpg 两张
+  // "game008": 3,
+};
 
 const otherExportDefault = {
   bg: "#fff7f9",
@@ -70,6 +77,17 @@ let otherAddTarget = null; // "repo" | "impression" | null
 let otherRepoCharTarget = null;
 // Impression 模块：角色立绘切换索引（key="${gameId}-${charId}"）
 const otherImpressionCharImgIndex = new Map();
+// 供 canvas 导出读取：用户当前切换到的角色立绘索引
+window.getOtherImpressionCharImgIndex = function (gameId, charId) {
+  return otherImpressionCharImgIndex.get(`${gameId}-${charId}`) ?? 0;
+};
+// 供 canvas 导出读取：用户当前切换到的横板图索引
+window.getOtherImpressionInfoImgIndex = function (gameId) {
+  const g = otherData?.impressionGames?.find(x => x.gameId === gameId);
+  return g?.infoImgIndex ?? 0;
+};
+// 供 canvas 读取横板图数量配置
+window.IMPRESSION_INFO_IMAGE_COUNT = IMPRESSION_INFO_IMAGE_MAP;
 // 导出渲染锁，防止重复点击
 let _otherIsRendering = false;
 // 导出预览弹窗状态
@@ -659,10 +677,17 @@ function getImpressionCharAvailImages(char, switches) {
 
 // Impression：获取游戏横板图片列表（优先游戏模板 infoImages，否则默认单张）
 function getImpressionInfoImages(gameInfo, gameId) {
+  // 优先：游戏模板中显式定义的 infoImages（如未来在 game.js 中添加则自动生效）
   if (gameInfo && Array.isArray(gameInfo.infoImages) && gameInfo.infoImages.length > 0) {
     return gameInfo.infoImages;
   }
-  return [`info/${gameId}.jpg`];
+  // 其次：按 IMPRESSION_INFO_IMAGE_MAP 配置的数量生成
+  const count = IMPRESSION_INFO_IMAGE_MAP[gameId] || 1;
+  const list = [`info/${gameId}.jpg`];
+  for (let i = 2; i <= count; i++) {
+    list.push(`info/${gameId}-${i}.jpg`);
+  }
+  return list;
 }
 
 // Impression 模块
@@ -756,7 +781,7 @@ function renderImpressionCard(gameData) {
       <div class="other-imp-info-img-wrap ${hasMultiInfo ? 'has-multi' : ''}">
         ${hasMultiInfo ? `<button class="other-imp-img-switch other-imp-info-prev" data-imp-info-prev="${gid}">&lt;</button>` : ''}
         <img class="other-imp-info-img" src="${infoImgUrl}" alt="${name}" decoding="async"
-             onerror="this.style.display='none'">
+             onerror="this.closest('.other-imp-info-img-wrap').style.display='none'">
         ${hasMultiInfo ? `<button class="other-imp-img-switch other-imp-info-next" data-imp-info-next="${gid}">&gt;</button>` : ''}
         <div class="other-imp-info-fade"></div>
       </div>
