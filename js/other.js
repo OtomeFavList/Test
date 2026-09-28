@@ -42,7 +42,7 @@ const otherExportDefault = {
   customborder: "#eeeeee",
   reporterName: "",
   reporterColor: "#b33a3a",
-  imageBorderColor: "#eeeeee",
+  imageBorderColor: "#f6a5b8",
   border: "#f6a5b8",
   normalQuality: false,
   exportBrief: true,
@@ -1600,6 +1600,8 @@ function bindExportConfig() {
         customTextFontValueDisplay.textContent = `${otherExportDefault.customTextFontSize}px`;
         updateSliderProgress(sliderCustomTextFont);
       }
+      // 重置后同步 .wrap 和 body 的背景色/标题色，确保大卡片外区域也恢复默认
+      applyOtherPageColors();
     };
   }
   // 导出按钮（复用 Annual 预览弹窗模式：渲染锁 + loading + 预览 + 下载）
