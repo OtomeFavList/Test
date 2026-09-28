@@ -82,6 +82,7 @@ const IMPRESSION_MIN_H = 72;
 // 区块间距
 const SECTION_GAP = 14;
 const BODY_TO_TEXTFIELD_GAP = 8;  // 主体行（含五维图）与文本字段区（优点/缺点等）之间的额外间距
+const RADAR_TO_CONTENT_GAP = 2;   // 有五维图时主体行底部到下方内容的紧凑间距（五维图到底部内容约20px，减半）
 const GAME_NAME_MB = 12;
 // 简评表
 const BRIEF_GAMES_PER_PAGE = 3;  // 每张简评表至多放置3个游戏
@@ -604,7 +605,10 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
 
   const bodyContentH = Math.max(fieldAreaH, radarBottomOffset);
   const bodyRowH = Math.max(coverH, bodyContentH);
-  contentH += bodyRowH + SECTION_GAP + BODY_TO_TEXTFIELD_GAP;
+  // 有五维图时用紧凑间距：五维图底部(~18px盒子内空白) + 2px = ~20px，为原40px的一半
+  // 无五维图时保持原间距 SECTION_GAP + BODY_TO_TEXTFIELD_GAP = 22px
+  const bodyAfterGap = hasRadar ? RADAR_TO_CONTENT_GAP : (SECTION_GAP + BODY_TO_TEXTFIELD_GAP);
+  contentH += bodyRowH + bodyAfterGap;
   // 预计算后续区块是否存在，用于判断当前区块后是否需要 SECTION_GAP
   const _allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
   const hasValidCharCards = _allCharCards.some(c => c.charId);
@@ -962,7 +966,10 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const rowsBeforeRadar = ((hasDuration || hasCompleted) ? 1 : 0) + ((hasStartDate || hasEndDate) ? 1 : 0);
   const radarBottomOffset = hasRadar ? (rowsBeforeRadar * (fieldRowH + FIELD_ROW_GAP) + RADAR_BOX_W) : 0;
   const bodyRowH = Math.max(coverH, fieldAreaH, radarBottomOffset);
-  painter.shiftY(bodyRowH + SECTION_GAP + BODY_TO_TEXTFIELD_GAP);
+  // 有五维图时用紧凑间距：五维图底部(~18px盒子内空白) + 2px = ~20px，为原40px的一半
+  // 无五维图时保持原间距 SECTION_GAP + BODY_TO_TEXTFIELD_GAP = 22px
+  const bodyAfterGap = hasRadar ? RADAR_TO_CONTENT_GAP : (SECTION_GAP + BODY_TO_TEXTFIELD_GAP);
+  painter.shiftY(bodyRowH + bodyAfterGap);
   // 预计算后续区块是否存在，用于判断当前区块后是否需要 SECTION_GAP
   const _allCharCards = [...(gameData.repoCharCards || []), ...(gameData.repoCustomCharCards || [])];
   const hasValidCharCards = _allCharCards.some(c => c.charId);
