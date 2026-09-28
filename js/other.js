@@ -120,9 +120,16 @@ function getCombinedGameList() {
 // 支持多个FD关联同一个普通游戏（通过FD游戏的 baseGameId 字段）
 function getGameMergedCharList(gameInfo) {
   if (!gameInfo) return [];
-  const baseChars = Array.isArray(gameInfo.charList) ? gameInfo.charList : [];
   const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
-  const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === gameInfo.id);
+  // 如果当前游戏是FD游戏，通过 baseGameId 找到对应的普通游戏，以普通游戏为基准合并角色
+  let baseGameInfo = gameInfo;
+  if (gameInfo.baseGameId) {
+    const combinedList = getCombinedGameList();
+    const found = combinedList.find(g => g.id === gameInfo.baseGameId);
+    if (found) baseGameInfo = found;
+  }
+  const baseChars = Array.isArray(baseGameInfo.charList) ? baseGameInfo.charList : [];
+  const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === baseGameInfo.id);
   if (relatedFdGames.length === 0) return baseChars;
   const fdChars = [];
   relatedFdGames.forEach(fd => {
@@ -1421,7 +1428,7 @@ function bindImpressionEvents() {
       e.stopPropagation();
       const charId = charPrevBtn.dataset.impCharImgPrev;
       const gameInfo = getCombinedGameList().find(x => x.id === gameId);
-      const char = gameInfo?.charList?.find(c => c.id === charId);
+      const char = getGameMergedCharList(gameInfo).find(c => c.id === charId);
       if (!char) return;
       const availImages = getImpressionCharAvailImages(char, gameData.charSwitches, otherImpGlobalSwitches);
       if (availImages.length === 0) return;
@@ -1447,7 +1454,7 @@ function bindImpressionEvents() {
       e.stopPropagation();
       const charId = charNextBtn.dataset.impCharImgNext;
       const gameInfo = getCombinedGameList().find(x => x.id === gameId);
-      const char = gameInfo?.charList?.find(c => c.id === charId);
+      const char = getGameMergedCharList(gameInfo).find(c => c.id === charId);
       if (!char) return;
       const availImages = getImpressionCharAvailImages(char, gameData.charSwitches, otherImpGlobalSwitches);
       if (availImages.length === 0) return;
@@ -1473,7 +1480,7 @@ function bindImpressionEvents() {
       e.stopPropagation();
       const charId = namePrevBtn.dataset.impNamePrev;
       const gameInfo = getCombinedGameList().find(x => x.id === gameId);
-      const char = gameInfo?.charList?.find(c => c.id === charId);
+      const char = getGameMergedCharList(gameInfo).find(c => c.id === charId);
       if (!char) return;
       const charShowHide = getCharShowHide(
         char,
@@ -1502,7 +1509,7 @@ function bindImpressionEvents() {
       e.stopPropagation();
       const charId = nameNextBtn.dataset.impNameNext;
       const gameInfo = getCombinedGameList().find(x => x.id === gameId);
-      const char = gameInfo?.charList?.find(c => c.id === charId);
+      const char = getGameMergedCharList(gameInfo).find(c => c.id === charId);
       if (!char) return;
       const charShowHide = getCharShowHide(
         char,
