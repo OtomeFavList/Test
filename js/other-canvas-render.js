@@ -837,7 +837,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const labelColor = config.defaultTextColor || '#b85878';
   const valueColor = config.inputTextColor || '#000000';
   // 卡片外框
-  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
   painter.y = cardTop + CARD_PAD;
   // 游戏名
   const gameName = gameInfo?.name || gameData.gameId || '';
@@ -1164,7 +1164,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
   const cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_PAD * 2;
   const cardH = CARD_PAD * 2 + cardContentH;
 
-  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
   painter.y = cardTop + CARD_PAD;
 
   // 游戏名
@@ -1199,7 +1199,7 @@ function drawBriefGameCard(painter, targetW, gameData, gameInfo, config, imageCa
   const labelColor = config.defaultTextColor || '#b85878';
   const valueColor = config.inputTextColor || '#000000';
   // 卡片外框
-  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.border || '#f6a5b8', CARD_BORDER_W);
+  painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, '#ffffff', config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
   painter.y = cardTop + CARD_PAD;
   // 游戏名
   const gameName = gameInfo?.name || gameData.gameId || '';
