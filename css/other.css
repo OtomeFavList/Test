@@ -829,11 +829,8 @@
 
 /* 4个单独开关（复用 Annual 弹窗页面二开关样式） */
 .other-imp-switches {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 0 4px;
+    display: block;
+    margin: 4px 0;
 }
 .other-imp-switch-label {
     display: flex;
