@@ -25,7 +25,7 @@
 }
 
 .mode-wrap[data-mode="other"] .big-card {
-    border-color: var(--other-export-border, #f6a5b8);
+    border-color: var(--other-image-border-color, #f6a5b8);
     margin-top: 0;
     flex-shrink: 0;
     width: 100%;
@@ -112,7 +112,7 @@
 /* Rero 游戏卡片 */
 .other-rero-card {
     background: transparent;
-    border: 1px solid var(--other-export-border, #f6a5b8);
+    border: 1px solid var(--other-image-border-color, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
     margin: 16px 0;
@@ -753,7 +753,7 @@
 /* 模块二 Impression 卡片 */
 .other-impression-card {
     background: var(--other-card-bg, #fff7f9);
-    border: 1px solid var(--other-export-border, #f6a5b8);
+    border: 1px solid var(--other-image-border-color, #f6a5b8);
     border-radius: 12px;
     padding: 18px;
     margin: 16px 0;
