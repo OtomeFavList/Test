@@ -843,7 +843,7 @@ function renderImpressionCard(gameData) {
       <div class="other-imp-char-table">
         <div class="other-imp-col other-imp-col-char">
           <div class="char-item">
-            <div class="char-card-img-box ${hasMultiCharImg ? 'has-multi' : ''}">
+            <div class="char-card-img-box ${hasMultiCharImg ? 'char-multi-img' : ''}">
               ${hasMultiCharImg ? `<button class="char-switch-btn char-switch-prev" data-imp-char-img-prev="${charId}">&lt;</button>` : ''}
               ${charImgUrl ? `<img src="${charImgUrl}" alt="${displayName}" decoding="async">` : '<div class="other-imp-char-placeholder"></div>'}
               ${hasMultiCharImg ? `<button class="char-switch-btn char-switch-next" data-imp-char-img-next="${charId}">&gt;</button>` : ''}
@@ -1460,9 +1460,12 @@ function bindImpressionEvents() {
       otherImpressionCharImgIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const imgBox = block.querySelector('.char-card-img-box');
+        const imgEl = block.querySelector('img');
+        const imgBox = imgEl ? imgEl.closest('.char-card-img-box') : null;
         if (imgBox) {
-          switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx]));
+          switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx] || ""));
+        } else if (imgEl) {
+          imgEl.src = getWebImageUrl(availImages[idx] || "");
         }
       }
       return;
@@ -1483,9 +1486,12 @@ function bindImpressionEvents() {
       otherImpressionCharImgIndex.set(imgKey, idx);
       const block = card.querySelector(`.other-imp-char-block[data-char-id="${charId}"]`);
       if (block) {
-        const imgBox = block.querySelector('.char-card-img-box');
+        const imgEl = block.querySelector('img');
+        const imgBox = imgEl ? imgEl.closest('.char-card-img-box') : null;
         if (imgBox) {
-          switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx]));
+          switchCharImageWithLoading(imgBox, getWebImageUrl(availImages[idx] || ""));
+        } else if (imgEl) {
+          imgEl.src = getWebImageUrl(availImages[idx] || "");
         }
       }
       return;
