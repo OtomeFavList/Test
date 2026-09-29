@@ -784,7 +784,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin: 4px 0;
+    margin: 4px 0 16px;
 }
 .other-imp-switches > .switch-row {
     margin: 0;
@@ -1224,10 +1224,14 @@
         gap: 8px;
         align-items: start;
     }
-    .other-imp-col-char .char-item {
-        flex-direction: column;
+    .mode-wrap[data-mode="other"] .other-imp-col-char .char-item {
+        flex-direction: column !important;
         align-items: center;
         gap: 8px;
+    }
+    .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-name {
+        width: 100%;
+        text-align: center;
     }
     .other-imp-col-char .char-card-img-box {
         width: 72px;
