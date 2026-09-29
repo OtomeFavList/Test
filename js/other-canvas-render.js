@@ -86,7 +86,7 @@ const IMPRESSION_MIN_H = 72;
 const IMP_INFO_FADE_H = 50;       // 横板图底部淡出高度
 const IMP_INFO_MB = 12;           // 横板图与下方内容间距
 const IMP_CHAR_IMG_W = 130;       // 导出角色图宽度（对齐网页 Character 列 130px）
-const IMP_CHAR_IMG_H = 174;       // 导出角色图高度（130 × 4/3 ≈ 174，对齐网页 3:4 比例）
+const IMP_CHAR_IMG_H = 130;       // 导出角色图高度（正方形 1:1）
 const IMP_CHAR_NAME_GAP = 8;      // 角色图与角色名间距（对齐网页 gap:8px）
 const IMP_CHAR_NAME_H = 20;       // 角色名占用高度
 const IMP_COL_LABEL_SIZE = 16;    // Before / After 列标签字号（对齐网页 16px）
@@ -1389,13 +1389,14 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
           measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
         const afterH = ct.after ?
           measureWrappedHeight(ctx, ct.after, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const beforeBoxH = Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
-        const afterBoxH = Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
+        const beforeMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
+        const afterMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
         // 角色图 + 间距(8px) + 角色名
         const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + IMP_CHAR_NAME_H;
-        const beforeTotal = labelH + beforeBoxH;
-        const afterTotal = labelH + afterBoxH;
-        const blockContentH = Math.max(charColTotal, beforeTotal, afterTotal);
+        const blockContentH = Math.max(charColTotal, labelH + beforeMinBoxH, labelH + afterMinBoxH);
+        // 文本框拉长：高度撑满 block 内容区（与角色列底部对齐），复用网页端 flex:1 + align-items:stretch 效果
+        const beforeBoxH = blockContentH - labelH;
+        const afterBoxH = blockContentH - labelH;
         rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
         rowData.push({ char, ct, beforeBoxH, afterBoxH, blockContentH });
       }
@@ -1431,7 +1432,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
           window.getOtherImpressionCharNameIndex(gameData.gameId, rb.char.id) : 0;
         const safeNameIdx = Math.min(nameIdx, Math.max(0, charNameList.length - 1));
         let dispName = charNameList[safeNameIdx] || rb.char.name || '';
-        ctx.font = `bold 13px ${FONT_SIYUAN}`;
+        ctx.font = `13px ${FONT_SIYUAN}`;
         ctx.fillStyle = config.gamename || '#000000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
@@ -1450,8 +1451,10 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         const beforeBoxY = iy + labelH;
         drawTextBox(painter, beforeX, beforeBoxY, textColW, rb.beforeBoxH,
           rb.ct.before || '', config, false, false, textColor, customTextSize, false);
-        // After 列（标签字号 16px，对齐网页）
+        // After 列（标签字号 16px，对齐网页；显式重设 font/fillStyle，防止 drawTextBox 内 drawRoundRect 污染上下文）
         const afterX = beforeX + textColW + IMP_COL_GAP;
+        ctx.font = `bold ${IMP_COL_LABEL_SIZE}px ${FONT_SIYUAN}`;
+        ctx.fillStyle = labelColor;
         ctx.fillText('After', afterX + textColW / 2, iy);
         const afterBoxY = iy + labelH;
         drawTextBox(painter, afterX, afterBoxY, textColW, rb.afterBoxH,
@@ -1837,7 +1840,7 @@ async function renderOtherBriefPageCanvas(designW, pageGameDataList, pageGameInf
 export async function renderAllOtherGames(designW, otherData, gameTemplateList, config, dpr) {
   const results = [];
   const effectiveDpr = dpr || (config.normalQuality ? 1 : 2);
-  // Repo 模块
+  // ===== 1. Repo 模块 =====
   const repoGames = otherData?.repoGames || [];
   for (const gameData of repoGames) {
     const gameInfo = gameTemplateList.find(g => g.id === gameData.gameId);
@@ -1847,7 +1850,30 @@ export async function renderAllOtherGames(designW, otherData, gameTemplateList, 
       results.push({ moduleType: 'repo', gameId: gameData.gameId, gameName: gameInfo.name, blob });
     }
   }
-  // Impression 模块
+  // ===== 2. 简评表（Repo 之后、Impression 之前，受 exportBrief 开关控制）=====
+  if (config.exportBrief !== false) {
+    const validBriefGames = [];
+    for (const gameData of repoGames) {
+      const gameInfo = gameTemplateList.find(g => g.id === gameData.gameId);
+      if (gameInfo) validBriefGames.push({ gameData, gameInfo });
+    }
+    const totalBriefPages = Math.ceil(validBriefGames.length / BRIEF_GAMES_PER_PAGE);
+    for (let p = 0; p < totalBriefPages; p++) {
+      const pageGames = validBriefGames.slice(p * BRIEF_GAMES_PER_PAGE, (p + 1) * BRIEF_GAMES_PER_PAGE);
+      const pageGameDataList = pageGames.map(g => g.gameData);
+      const pageGameInfoList = pageGames.map(g => g.gameInfo);
+      const blob = await renderOtherBriefPageCanvas(designW, pageGameDataList, pageGameInfoList, p, config, effectiveDpr);
+      if (blob) {
+        results.push({
+          moduleType: 'brief',
+          gameId: `brief_page_${p + 1}`,
+          gameName: `简评表第${p + 1}页`,
+          blob
+        });
+      }
+    }
+  }
+  // ===== 3. Impression 模块 =====
   const impressionGames = otherData?.impressionGames || [];
   const impressionGlobalSwitches = otherData?.impressionGlobalSwitches ||
     { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
