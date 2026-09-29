@@ -1224,13 +1224,17 @@
     /* 每个 block 内三列改为纵向：角色图(小)单独一行，Before/After 在下方 */
     .other-imp-char-table {
         grid-template-columns: 1fr;
-        gap: 4px;
+        gap: 2px;
         align-items: start;
     }
     .mode-wrap[data-mode="other"] .other-imp-col-char .char-item {
         flex-direction: column !important;
         align-items: center;
-        gap: 4px;
+        gap: 2px;
+    }
+    .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-img-box,
+    .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-name {
+        margin: 0 !important;
     }
     .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-name {
         width: 100%;
@@ -1251,7 +1255,11 @@
     .other-imp-col-char {
         flex-direction: column;
         align-items: center;
-        gap: 8px;
+        gap: 2px;
+    }
+    .other-imp-col-before,
+    .other-imp-col-after {
+        gap: 2px;
     }
     .other-imp-char-img-box {
         width: 72px;
