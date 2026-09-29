@@ -1435,12 +1435,12 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         // 角色图 + 间距 + 角色名（取固定最小高度与实际换行高度的较大者）
         const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
         const blockContentH = Math.max(charColTotal, labelH + beforeMinBoxH, labelH + afterMinBoxH);
-        // 文本框拉长：高度撑满 block 内容区（与角色列底部对齐），复用网页端 flex:1 + align-items:stretch 效果
-        const beforeBoxH = blockContentH - labelH;
-        const afterBoxH = blockContentH - labelH;
         rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
-        rowData.push({ char, ct, dispName, beforeBoxH, afterBoxH, blockContentH });
+        rowData.push({ char, ct, dispName, blockContentH });
       }
+      // 同一行所有 block 的文本框高度统一对齐到行高（rowMaxH 减去上下 padding 和标签高度）
+      const rowContentH = rowMaxH - IMP_BLOCK_PAD * 2;
+      const rowBoxH = rowContentH - labelH;
       // 绘制该行每个 block
       rowData.forEach((rb, c) => {
         const blockX = contentX + c * (blockW + IMP_BLOCK_GAP);
@@ -1473,7 +1473,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         ctx.fillStyle = labelColor;
         ctx.fillText('Before', beforeX + textColW / 2, iy);
         const beforeBoxY = iy + labelH;
-        drawTextBox(painter, beforeX, beforeBoxY, textColW, rb.beforeBoxH,
+        drawTextBox(painter, beforeX, beforeBoxY, textColW, rowBoxH,
           rb.ct.before || '', config, false, false, textColor, customTextSize, false);
         // After 列（标签字号 16px，对齐网页；显式重设 font/fillStyle，防止 drawTextBox 内 drawRoundRect 污染上下文）
         const afterX = beforeX + textColW + IMP_COL_GAP;
@@ -1481,7 +1481,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         ctx.fillStyle = labelColor;
         ctx.fillText('After', afterX + textColW / 2, iy);
         const afterBoxY = iy + labelH;
-        drawTextBox(painter, afterX, afterBoxY, textColW, rb.afterBoxH,
+        drawTextBox(painter, afterX, afterBoxY, textColW, rowBoxH,
           rb.ct.after || '', config, false, false, textColor, customTextSize, false);
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
