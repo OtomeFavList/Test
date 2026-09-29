@@ -106,11 +106,12 @@ function isGameTemplateReady() {
 function getCombinedGameList() {
   let baseList = [];
   const core = window.Core;
-  if (core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true) {
+  // 增加 length > 0 检查：window.Core.gameTemplateList 为空数组时不使用，继续 fallback 到 import 的 gameTemplateList
+  if (core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true && core.gameTemplateList.length > 0) {
     baseList = core.gameTemplateList;
   } else if (Array.isArray(window.__gameTemplateList) && window.__gameTemplateList.length > 0) {
     baseList = window.__gameTemplateList;
-  } else if (Array.isArray(gameTemplateList)) {
+  } else if (Array.isArray(gameTemplateList) && gameTemplateList.length > 0) {
     baseList = gameTemplateList;
   }
   const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
@@ -124,8 +125,14 @@ function getGameMergedCharList(gameInfo) {
   // 如果当前游戏是FD游戏，通过 baseGameId 找到对应的普通游戏，以普通游戏为基准合并角色
   let baseGameInfo = gameInfo;
   if (gameInfo.baseGameId) {
+    let found = null;
+    // 优先从 getCombinedGameList 查找
     const combinedList = getCombinedGameList();
-    const found = combinedList.find(g => g.id === gameInfo.baseGameId);
+    found = combinedList.find(g => g.id === gameInfo.baseGameId);
+    // 双保险：如果没找到，直接从 import 的 gameTemplateList 查找
+    if (!found && Array.isArray(gameTemplateList)) {
+      found = gameTemplateList.find(g => g.id === gameInfo.baseGameId);
+    }
     if (found) baseGameInfo = found;
   }
   const baseChars = Array.isArray(baseGameInfo.charList) ? baseGameInfo.charList : [];
