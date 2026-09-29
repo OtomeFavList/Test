@@ -870,6 +870,7 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
   let contentH = 0;
   const customTextSize = config.customTextFontSize || 16;
   const switches = gameData.charSwitches || {};
+  const gs = globalSwitches || { subChar: false, hideChar: false, fdChar: false, fdSubChar: false };
   // 横板图高度（宽度铺满 innerW，高度按原比例自动变化，无最大高度限制，不裁剪）
   const infoImages = canvasGetImpInfoImages(gameInfo, gameData.gameId);
   const infoIdx = Math.min(gameData.infoImgIndex || 0, Math.max(0, infoImages.length - 1));
@@ -905,8 +906,18 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
         if (idx >= visibleChars.length) break;
         const char = visibleChars[idx];
         const ct = gameData.charTexts?.[char.id] || { before: '', after: '' };
-        // 角色图 + 间距 + 角色名（间距对齐网页 gap:8px）
-        const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + IMP_CHAR_NAME_H;
+        // 动态计算该角色在当前开关下的显示名称及换行后的实际高度
+        const charShowHide = getCharShowHide(char, gs.hideChar || switches.hideChar, false, gs.fdChar || switches.fdChar, false);
+        const charNameList = getCharNameList(char, charShowHide);
+        const nameIdx = window.getOtherImpressionCharNameIndex ?
+          window.getOtherImpressionCharNameIndex(gameData.gameId, char.id) : 0;
+        const safeNameIdx = Math.min(nameIdx, Math.max(0, charNameList.length - 1));
+        const dispName = charNameList[safeNameIdx] || char.name || '';
+        ctx.font = `11px ${FONT_SIYUAN}`;
+        const charNameLineH = 11 * 1.4;
+        const charNameActualH = measureWrappedHeight(ctx, dispName, charColW, charNameLineH, 11);
+        // 角色图 + 间距 + 角色名（取固定最小高度与实际换行高度的较大者）
+        const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
         // Before / After 标签与文本框紧凑间距（标签16px + 4px间隔 = 20px，原26.4px）
         const labelH = IMP_COL_LABEL_SIZE + 4;
         const beforeH = ct.before ?
@@ -1411,14 +1422,24 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
           measureWrappedHeight(ctx, ct.after, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
         const beforeMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
         const afterMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
-        // 角色图 + 间距(8px) + 角色名
-        const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + IMP_CHAR_NAME_H;
+        // 动态计算该角色在当前开关下的显示名称及换行后的实际高度
+        const charShowHide = getCharShowHide(char, gs.hideChar || switches.hideChar, false, gs.fdChar || switches.fdChar, false);
+        const charNameList = getCharNameList(char, charShowHide);
+        const nameIdx = window.getOtherImpressionCharNameIndex ?
+          window.getOtherImpressionCharNameIndex(gameData.gameId, char.id) : 0;
+        const safeNameIdx = Math.min(nameIdx, Math.max(0, charNameList.length - 1));
+        const dispName = charNameList[safeNameIdx] || char.name || '';
+        ctx.font = `11px ${FONT_SIYUAN}`;
+        const charNameLineH = 11 * 1.4;
+        const charNameActualH = measureWrappedHeight(ctx, dispName, charColW, charNameLineH, 11);
+        // 角色图 + 间距 + 角色名（取固定最小高度与实际换行高度的较大者）
+        const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
         const blockContentH = Math.max(charColTotal, labelH + beforeMinBoxH, labelH + afterMinBoxH);
         // 文本框拉长：高度撑满 block 内容区（与角色列底部对齐），复用网页端 flex:1 + align-items:stretch 效果
         const beforeBoxH = blockContentH - labelH;
         const afterBoxH = blockContentH - labelH;
         rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
-        rowData.push({ char, ct, beforeBoxH, afterBoxH, blockContentH });
+        rowData.push({ char, ct, dispName, beforeBoxH, afterBoxH, blockContentH });
       }
       // 绘制该行每个 block
       rowData.forEach((rb, c) => {
@@ -1439,30 +1460,15 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         } else {
           painter.drawRoundRect(ix, iy, charColW, IMP_CHAR_IMG_H, 6, '#f5f5f5', '#eee', 1);
         }
-        // 角色名：使用 getCharNameList + 用户切换的名字索引（与网页一致）
-        const charShowHide = getCharShowHide(
-          rb.char,
-          gs.hideChar || switches.hideChar,
-          false,
-          gs.fdChar || switches.fdChar,
-          false
-        );
-        const charNameList = getCharNameList(rb.char, charShowHide);
-        const nameIdx = window.getOtherImpressionCharNameIndex ?
-          window.getOtherImpressionCharNameIndex(gameData.gameId, rb.char.id) : 0;
-        const safeNameIdx = Math.min(nameIdx, Math.max(0, charNameList.length - 1));
-        let dispName = charNameList[safeNameIdx] || rb.char.name || '';
+        // 角色名：多行换行绘制（不再截断加省略号），名称已在 rowData 预计算
         ctx.font = `11px ${FONT_SIYUAN}`;
         ctx.fillStyle = config.charNameColor || '#000000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        if (ctx.measureText(dispName).width > charColW) {
-          while (dispName.length > 1 && ctx.measureText(dispName + '…').width > charColW) {
-            dispName = dispName.slice(0, -1);
-          }
-          dispName += '…';
-        }
-        ctx.fillText(dispName, ix + charColW / 2, iy + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP);
+        wrapText(ctx, rb.dispName, ix, iy + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP,
+          charColW, 11 * 1.4, 11, config.charNameColor || '#000000', FONT_SIYUAN, true);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
         // Before 列（标签字号 16px，对齐网页）
         const beforeX = ix + charColW + IMP_COL_GAP;
         ctx.font = `bold ${IMP_COL_LABEL_SIZE}px ${FONT_SIYUAN}`;
