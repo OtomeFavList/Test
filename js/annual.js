@@ -11,23 +11,23 @@ const ANNUAL_STORE_KEY = "annual-report-data";
 const annualExportDefault = {
     bg: "#fff7f9",
     title: "#b33a3a",
-    subtitle: "#b85878",
+    subtitle: "#b85878",          // 新增：小标题文字色（TOP 模块标题 + NO）
     gamename: "#000000",
-    stattext: "#b85878",
-    statdata: "#b33a3a",
+    stattext: "#b85878",          // 新增：数据统计标签文字色
+    statdata: "#b33a3a",          // 新增：数据统计数据色
     customtext: "#c98fac",
-    customborder: "#eeeeee",
+    customborder: "#eeeeee",      // 自定义文本边框色，默认 #eeeeee（input[type=color] 只接受六位 #rrggbb，三位 #eee 会回退黑色）
     border: "#f6a5b8",
     customTextFontSize: 16,
     useSummaryTitle: false,
-    useOshiTitle: false,
+    useOshiTitle: false,          // 新增：宫格小标题使用推しゲーム & 推しキャラ
     normalQuality: false,
-    labelColor: "#b85878",
-    hoursTextColor: "#b33a3a",
-    barColor: "#e895a8",
-    boxBgColor: "#fff7f9",
-    reporterName: "",
-    reporterColor: "#b33a3a"
+    labelColor: "#b85878",        // 修改：标签文字色
+    hoursTextColor: "#b33a3a",    // 新增：月度总结总时长/平均时长文字色
+    barColor: "#e895a8",          // 新增：模块八九月度总结柱状条色
+    boxBgColor: "#fff7f9",        // 修改：内容框背景色
+    reporterName: "",             // 修改：填表人姓名
+    reporterColor: "#b33a3a"      // 修改：填表人文字色
 };
 
 function loadAnnualExportConfig() {
@@ -42,6 +42,9 @@ function loadAnnualExportConfig() {
     } else {
         config = {...annualExportDefault};
     }
+    // input[type=color] 只接受 #rrggbb 六位格式，旧数据中存的 #eee 三位简写会被移动端浏览器回退为黑色 #000000
+    // 修改：扩展到新字段
+    // 新增：barColor 到修复数组
     ['customborder', 'labelColor', 'hoursTextColor', 'barColor', 'boxBgColor', 'reporterColor'].forEach(key => {
         if (config[key] && /^#[0-9a-fA-F]{3}$/.test(config[key])) {
             config[key] = "#" + config[key][1].repeat(2)
