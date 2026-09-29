@@ -403,8 +403,12 @@
 .other-rero-text-fields {
     margin-top: 16px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+}
+/* 攻略顺序、好感顺序独占整行 */
+.other-rero-text-field-full {
+    grid-column: 1 / -1;
 }
 .other-rero-text-field {
     flex: 1;
@@ -1077,6 +1081,10 @@
         padding-left: 12px;
         padding-right: 12px;
     }
+    /* 模块一文本字段：移动端单列 */
+    .other-rero-text-fields {
+        grid-template-columns: 1fr;
+    }
     .other-rero-cover-wrap {
         width: 100px;
     }
@@ -1217,17 +1225,15 @@
         align-items: start;
     }
     .other-imp-col-char .char-item {
-        flex-direction: row;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     .other-imp-col-char .char-card-img-box {
         width: 72px;
-        flex-shrink: 0;
     }
     .other-imp-col-char .char-card-name {
-        flex: 1;
-        text-align: left;
+        text-align: center;
     }
     .other-imp-textarea {
         min-height: 60px;
@@ -1236,18 +1242,16 @@
         gap: 10px;
     }
     .other-imp-col-char {
-        flex-direction: row;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     .other-imp-char-img-box {
         width: 72px;
         aspect-ratio: 3 / 4;
-        flex-shrink: 0;
     }
     .other-imp-char-name {
-        flex: 1;
-        text-align: left;
+        text-align: center;
         font-size: 14px;
     }
     .other-imp-switch-label {
