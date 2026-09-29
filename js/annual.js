@@ -2,7 +2,7 @@
 // 存储 key: annual-report-data，与喜好表数据隔离
 
 // 修复：不再导入普通变量，改为从 window.Core 实时读取最新状态，同时增加 window 全局变量兜底
-import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide, switchCharImageWithLoading, fillFilterOptions } from '/js/main.js';
+import { renderGameSelectItem, getWebImageUrl, getAvailableCharImages, getCharDisplayName, getCharNameList, getCharShowHide, switchCharImageWithLoading, fillFilterOptions, gameTemplateList } from '/js/main.js';
 import { renderAllAnnualModules } from './annual-canvas-render.js';
 
 const ANNUAL_STORE_KEY = "annual-report-data";
@@ -198,7 +198,8 @@ function getGameTemplateState_BaseOnly() {
     const core = window.Core;
     let baseList = null;
     let baseReady = false;
-    if(core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true){
+    // 增加 length > 0 检查：window.Core.gameTemplateList 为空数组时不使用，继续 fallback
+    if(core && Array.isArray(core.gameTemplateList) && core.gameTemplateReady === true && core.gameTemplateList.length > 0){
         baseList = core.gameTemplateList;
         baseReady = true;
     }else{
@@ -206,6 +207,10 @@ function getGameTemplateState_BaseOnly() {
         const winReady = window.__gameTemplateReady;
         if(Array.isArray(winList) && winList.length>0 && winReady === true){
             baseList = winList;
+            baseReady = true;
+        }else if(Array.isArray(gameTemplateList) && gameTemplateList.length > 0){
+            // 最终 fallback：使用从 main.js import 的游戏模板列表（包含完整 game001 等数据）
+            baseList = gameTemplateList;
             baseReady = true;
         }
     }
@@ -246,11 +251,17 @@ function getGameMergedCharList(gameInfo) {
     // 如果当前游戏是FD游戏，通过 baseGameId 找到对应的普通游戏，以普通游戏为基准合并角色
     let baseGameInfo = gameInfo;
     if (gameInfo.baseGameId) {
+        let found = null;
+        // 优先从 getGameTemplateState_BaseOnly 查找
         const baseState = getGameTemplateState_BaseOnly();
         if (baseState.ready && Array.isArray(baseState.list)) {
-            const found = baseState.list.find(g => g.id === gameInfo.baseGameId);
-            if (found) baseGameInfo = found;
+            found = baseState.list.find(g => g.id === gameInfo.baseGameId);
         }
+        // 双保险：如果没找到，直接从 import 的 gameTemplateList 查找
+        if (!found && Array.isArray(gameTemplateList)) {
+            found = gameTemplateList.find(g => g.id === gameInfo.baseGameId);
+        }
+        if (found) baseGameInfo = found;
     }
     const baseChars = Array.isArray(baseGameInfo.charList) ? baseGameInfo.charList : [];
     const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === baseGameInfo.id);
