@@ -560,14 +560,14 @@ function renderReroCard(gameData) {
           <div class="resize-handle"></div>
         </div>
       </div>
-      <div class="other-rero-text-field">
+      <div class="other-rero-text-field other-rero-text-field-full">
         <label>攻略顺序</label>
         <div class="other-rero-textarea-wrap">
           <textarea data-field="strategyOrder" placeholder="攻略顺序">${gameData.strategyOrder || ''}</textarea>
           <div class="resize-handle"></div>
         </div>
       </div>
-      <div class="other-rero-text-field">
+      <div class="other-rero-text-field other-rero-text-field-full">
         <label>好感顺序</label>
         <div class="other-rero-textarea-wrap">
           <textarea data-field="favorOrder" placeholder="好感顺序">${gameData.favorOrder || ''}</textarea>
@@ -2147,19 +2147,29 @@ function bindTextareaResize() {
     if (!wrap) return;
     const textarea = wrap.querySelector('textarea');
     if (!textarea) return;
-
+    // 标记是否为 Impression 模块的 flex 文本框（需要特殊处理）
+    const isImpWrap = wrap.classList.contains('other-imp-textarea-wrap');
     let startY = 0, startHeight = 0, isDragging = false;
-
     function dragStart(y) {
       isDragging = true;
       startY = y;
       startHeight = textarea.clientHeight;
+      // Impression 文本框处于 flex 拉伸布局中，拖拽时临时解除 flex，使 height 生效
+      if (isImpWrap) {
+        textarea.style.flex = 'none';
+        wrap.style.flex = 'none';
+      }
       document.body.style.cursor = "ns-resize";
       document.body.style.touchAction = "none";
     }
     function dragMove(y) {
       if (!isDragging) return;
-      textarea.style.height = Math.max(60, startHeight + (y - startY)) + "px";
+      const newH = Math.max(60, startHeight + (y - startY));
+      textarea.style.height = newH + "px";
+      // Impression 模块：同步设置 wrap 高度，让右下角三角形抓握跟随文本框移动
+      if (isImpWrap) {
+        wrap.style.height = newH + "px";
+      }
     }
     function dragEnd() {
       if (!isDragging) return;
@@ -2167,12 +2177,17 @@ function bindTextareaResize() {
       document.body.style.cursor = "";
       document.body.style.touchAction = "";
     }
-
     handle.addEventListener('mousedown', e => { e.preventDefault(); dragStart(e.clientY); });
     handle.addEventListener('touchstart', e => { e.preventDefault(); dragStart(e.touches[0].clientY); });
     document.addEventListener('mousemove', e => dragMove(e.clientY));
     document.addEventListener('mouseup', dragEnd);
-    document.addEventListener('touchmove', e => { if (isDragging) dragMove(e.touches[0].clientY); });
+    // touchmove 增加 passive:false，拖拽时 preventDefault 防止页面滚动干扰
+    document.addEventListener('touchmove', e => {
+      if (isDragging) {
+        e.preventDefault();
+        dragMove(e.touches[0].clientY);
+      }
+    }, { passive: false });
     document.addEventListener('touchend', dragEnd);
   });
 }
