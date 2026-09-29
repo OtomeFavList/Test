@@ -87,12 +87,13 @@ const IMP_INFO_FADE_H = 50;       // 横板图底部淡出高度
 const IMP_INFO_MB = 12;           // 横板图与下方内容间距
 const IMP_CHAR_IMG_W = 70;        // 导出角色图宽度（参考网页815px下195px，按720px设计宽等比缩放）
 const IMP_CHAR_IMG_H = 70;        // 导出角色图高度（正方形 1:1）
-const IMP_CHAR_NAME_GAP = 8;      // 角色图与角色名间距（对齐网页 gap:8px）
-const IMP_CHAR_NAME_H = 20;       // 角色名占用高度
+const IMP_CHAR_NAME_GAP = 6;      // 角色图与角色名间距（8→6，更紧凑）
+const IMP_CHAR_NAME_H = 16;       // 角色名占用高度（20→16，配合11px字号）
 const IMP_COL_LABEL_SIZE = 16;    // Before / After 列标签字号（对齐网页 16px）
 const IMP_BLOCK_COLS = 2;         // 每行角色 block 数量
 const IMP_BLOCK_GAP = 16;         // 角色 block 之间间距
-const IMP_BLOCK_PAD = 12;         // 角色 block 内边距
+const IMP_BLOCK_PAD = 8;          // 角色 block 内边距（12→8，压缩左右内边距，空间让给文本框）
+const IMP_CARD_PAD = 10;          // Impression 卡片内容与外框的距离（独立于全局 CARD_PAD=16）
 const IMP_COL_GAP = 10;           // 三列之间间距
 const IMP_TEXTAREA_MIN_H = 72;    // Before/After 文本框最小高度
 
@@ -864,7 +865,7 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
 
 function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache, globalSwitches, allGames) {
   const wrapW = getWrapW(targetW);
-  const innerW = wrapW - CARD_PAD * 2;
+  const innerW = wrapW - IMP_CARD_PAD * 2;
   let h = getBodyPad() + TITLE_SIZE + getTitleMb();
   let contentH = 0;
   const customTextSize = config.customTextFontSize || 16;
@@ -906,8 +907,8 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
         const ct = gameData.charTexts?.[char.id] || { before: '', after: '' };
         // 角色图 + 间距 + 角色名（间距对齐网页 gap:8px）
         const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + IMP_CHAR_NAME_H;
-        // Before / After 标签字号对齐网页 16px
-        const labelH = IMP_COL_LABEL_SIZE * 1.4 + 4;
+        // Before / After 标签与文本框紧凑间距（标签16px + 4px间隔 = 20px，原26.4px）
+        const labelH = IMP_COL_LABEL_SIZE + 4;
         const beforeH = ct.before ?
           measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
         const afterH = ct.after ?
@@ -922,7 +923,7 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
     }
     contentH += blocksTotalH;
   }
-  h += CARD_PAD * 2 + contentH;
+  h += IMP_CARD_PAD * 2 + contentH;
   return h;
 }
 
@@ -1019,7 +1020,7 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   // 游戏名
   const gameName = gameInfo?.name || gameData.gameId || '';
   wrapText(ctx, gameName, contentX, painter.y, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE,
-    config.gamename || '#000000', FONT_SIYUAN, true);
+    config.charNameColor || '#000000', FONT_SIYUAN, true);
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   painter.shiftY(nameH + GAME_NAME_MB);
   // 主体行
@@ -1332,13 +1333,13 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
 function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, imageCache, globalSwitches, allGames) {
   const wrapW = getWrapW(targetW);
   const wrapX = getWrapX(targetW, wrapW);
-  const innerW = wrapW - CARD_PAD * 2;
-  const contentX = wrapX + CARD_PAD;
+  const innerW = wrapW - IMP_CARD_PAD * 2;
+  const contentX = wrapX + IMP_CARD_PAD;
   const ctx = painter.ctx;
   const cardTop = painter.y;
   const totalH = calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache, globalSwitches, allGames);
-  const cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - CARD_PAD * 2;
-  const cardH = CARD_PAD * 2 + cardContentH;
+  const cardContentH = totalH - (getBodyPad() + TITLE_SIZE + getTitleMb()) - IMP_CARD_PAD * 2;
+  const cardH = IMP_CARD_PAD * 2 + cardContentH;
   const customTextSize = config.customTextFontSize || 16;
   const labelColor = config.defaultTextColor || '#b85878';
   const textColor = config.customtext || '#c98fac';
@@ -1347,7 +1348,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
   // 卡片外框：无色背景（fill 传 null）
   painter.drawRoundRect(wrapX, cardTop, wrapW, cardH, CARD_RADIUS, null,
     config.imageBorderColor || '#f6a5b8', CARD_BORDER_W);
-  painter.y = cardTop + CARD_PAD;
+  painter.y = cardTop + IMP_CARD_PAD;
   // ===== 横板图：宽度铺满，高度按原比例自动变化（无最大高度限制、不裁剪），底部淡出 =====
   const infoImages = canvasGetImpInfoImages(gameInfo, gameData.gameId);
   const infoIdx = Math.min(gameData.infoImgIndex || 0, Math.max(0, infoImages.length - 1));
@@ -1392,8 +1393,8 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
     const charColW = IMP_CHAR_IMG_W;
     const textColW = (blockInnerW - charColW - IMP_COL_GAP * 2) / 2;
     const blockRows = Math.ceil(visibleChars.length / IMP_BLOCK_COLS);
-    // Before / After 标签字号对齐网页 16px
-    const labelH = IMP_COL_LABEL_SIZE * 1.4 + 4;
+    // Before / After 标签与文本框紧凑间距（标签16px + 4px = 20px，文本框上移）
+    const labelH = IMP_COL_LABEL_SIZE + 4;
     for (let r = 0; r < blockRows; r++) {
       // 先算该行最大高度
       let rowMaxH = 0;
@@ -1451,8 +1452,8 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
           window.getOtherImpressionCharNameIndex(gameData.gameId, rb.char.id) : 0;
         const safeNameIdx = Math.min(nameIdx, Math.max(0, charNameList.length - 1));
         let dispName = charNameList[safeNameIdx] || rb.char.name || '';
-        ctx.font = `13px ${FONT_SIYUAN}`;
-        ctx.fillStyle = config.gamename || '#000000';
+        ctx.font = `11px ${FONT_SIYUAN}`;
+        ctx.fillStyle = config.charNameColor || '#000000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         if (ctx.measureText(dispName).width > charColW) {
@@ -1507,7 +1508,7 @@ function drawBriefGameCard(painter, targetW, gameData, gameInfo, config, imageCa
   // 游戏名
   const gameName = gameInfo?.name || gameData.gameId || '';
   wrapText(ctx, gameName, contentX, painter.y, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE,
-    config.gamename || '#000000', FONT_SIYUAN, true);
+    config.charNameColor || '#000000', FONT_SIYUAN, true);
   const nameH = measureWrappedHeight(ctx, gameName, innerW, GAME_NAME_SIZE * 1.3, GAME_NAME_SIZE, true);
   painter.shiftY(nameH + GAME_NAME_MB);
   // 主体行
