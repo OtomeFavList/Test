@@ -122,21 +122,30 @@ function getCombinedGameList() {
 function getGameMergedCharList(gameInfo) {
   if (!gameInfo) return [];
   const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
-  // 如果当前游戏是FD游戏，通过 baseGameId 找到对应的普通游戏，以普通游戏为基准合并角色
   let baseGameInfo = gameInfo;
-  if (gameInfo.baseGameId) {
+  // 确定 baseGameId：优先用 gameInfo.baseGameId；若字段丢失但 id 以 "fd" 开头，则从 id 推断（fd001 → game001）
+  let targetBaseId = gameInfo.baseGameId || null;
+  if (!targetBaseId && gameInfo.id && gameInfo.id.indexOf('fd') === 0) {
+    targetBaseId = 'game' + gameInfo.id.substring(2);
+  }
+  if (targetBaseId) {
     let found = null;
-    // 优先从 getCombinedGameList 查找
     const combinedList = getCombinedGameList();
-    found = combinedList.find(g => g.id === gameInfo.baseGameId);
-    // 双保险：如果没找到，直接从 import 的 gameTemplateList 查找
+    found = combinedList.find(g => g.id === targetBaseId);
+    if (!found && Array.isArray(window.__gameTemplateList)) {
+      found = window.__gameTemplateList.find(g => g.id === targetBaseId);
+    }
     if (!found && Array.isArray(gameTemplateList)) {
-      found = gameTemplateList.find(g => g.id === gameInfo.baseGameId);
+      found = gameTemplateList.find(g => g.id === targetBaseId);
     }
     if (found) baseGameInfo = found;
   }
   const baseChars = Array.isArray(baseGameInfo.charList) ? baseGameInfo.charList : [];
-  const relatedFdGames = fdList.filter(fd => fd && fd.baseGameId === baseGameInfo.id);
+  // 关联 FD 游戏过滤：兼容 baseGameId 字段存在 和 从 id 推断两种情况
+  const relatedFdGames = fdList.filter(fd => fd && (
+    fd.baseGameId === baseGameInfo.id ||
+    (fd.id && fd.id.indexOf('fd') === 0 && 'game' + fd.id.substring(2) === baseGameInfo.id)
+  ));
   if (relatedFdGames.length === 0) return baseChars;
   const fdChars = [];
   relatedFdGames.forEach(fd => {
