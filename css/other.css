@@ -1231,6 +1231,8 @@
         flex-direction: column !important;
         align-items: center;
         gap: 2px;
+        min-height: 0 !important;
+        height: auto !important;
     }
     .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-img-box,
     .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-name {
@@ -1256,6 +1258,8 @@
         flex-direction: column;
         align-items: center;
         gap: 2px;
+        min-height: 0;
+        height: auto;
     }
     .other-imp-col-before,
     .other-imp-col-after {
