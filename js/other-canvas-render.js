@@ -85,8 +85,8 @@ const IMPRESSION_MIN_H = 72;
 // Impression 模块布局常量
 const IMP_INFO_FADE_H = 50;       // 横板图底部淡出高度
 const IMP_INFO_MB = 12;           // 横板图与下方内容间距
-const IMP_CHAR_IMG_W = 130;       // 导出角色图宽度（对齐网页 Character 列 130px）
-const IMP_CHAR_IMG_H = 130;       // 导出角色图高度（正方形 1:1）
+const IMP_CHAR_IMG_W = 70;        // 导出角色图宽度（参考网页815px下195px，按720px设计宽等比缩放）
+const IMP_CHAR_IMG_H = 70;        // 导出角色图高度（正方形 1:1）
 const IMP_CHAR_NAME_GAP = 8;      // 角色图与角色名间距（对齐网页 gap:8px）
 const IMP_CHAR_NAME_H = 20;       // 角色名占用高度
 const IMP_COL_LABEL_SIZE = 16;    // Before / After 列标签字号（对齐网页 16px）
@@ -619,12 +619,21 @@ function canvasGetGameMergedCharList(gameInfo, allGames) {
   const games = Array.isArray(allGames) ? allGames : [];
   const fdList = games.filter(g => g && g.baseGameId);
   let baseGameInfo = gameInfo;
-  if (gameInfo.baseGameId) {
-    const found = games.find(g => g.id === gameInfo.baseGameId);
+  // 确定 baseGameId：优先用字段；字段缺失时从 id 推断（fd001 → game001）
+  let baseGameId = gameInfo.baseGameId;
+  if (!baseGameId && gameInfo.id && /^fd\d+$/i.test(gameInfo.id)) {
+    baseGameId = 'game' + gameInfo.id.replace(/^fd/i, '');
+  }
+  if (baseGameId) {
+    const found = games.find(g => g.id === baseGameId);
     if (found) baseGameInfo = found;
   }
   const baseChars = Array.isArray(baseGameInfo.charList) ? baseGameInfo.charList : [];
-  const relatedFdGames = fdList.filter(fd => fd.baseGameId === baseGameInfo.id);
+  // relatedFdGames 过滤兼容推断出的 baseGameId（FD 对象 baseGameId 字段也可能丢失）
+  const relatedFdGames = fdList.filter(fd =>
+    fd.baseGameId === baseGameInfo.id ||
+    (fd.id && /^fd\d+$/i.test(fd.id) && 'game' + fd.id.replace(/^fd/i, '') === baseGameInfo.id)
+  );
   if (relatedFdGames.length === 0) return baseChars;
   const fdChars = [];
   relatedFdGames.forEach(fd => {
@@ -874,7 +883,12 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
   }
   if (infoH > 0) contentH += infoH + IMP_INFO_MB;
   // 三列内容：可见角色列表（导出时不绘制 4 开关，不绘制游戏名）
-  const visibleChars = canvasGetImpVisibleChars(gameInfo, switches, globalSwitches, allGames);
+  let visibleChars = canvasGetImpVisibleChars(gameInfo, switches, globalSwitches, allGames);
+  // 过滤掉 Before / After 均未填写任何内容的角色
+  visibleChars = visibleChars.filter(char => {
+    const ct = gameData.charTexts?.[char.id];
+    return !!(ct && ((ct.before && String(ct.before).trim()) || (ct.after && String(ct.after).trim())));
+  });
   if (visibleChars.length > 0) {
     const blockW = (innerW - IMP_BLOCK_GAP) / IMP_BLOCK_COLS;
     const blockInnerW = blockW - IMP_BLOCK_PAD * 2;
@@ -1366,7 +1380,12 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
     painter.shiftY(infoH + IMP_INFO_MB);
   }
   // ===== 三列内容：不绘制游戏名，不绘制 4 开关 =====
-  const visibleChars = canvasGetImpVisibleChars(gameInfo, switches, gs, allGames);
+  let visibleChars = canvasGetImpVisibleChars(gameInfo, switches, gs, allGames);
+  // 过滤掉 Before / After 均未填写任何内容的角色（与 calcImpressionGameHeight 保持一致）
+  visibleChars = visibleChars.filter(char => {
+    const ct = gameData.charTexts?.[char.id];
+    return !!(ct && ((ct.before && String(ct.before).trim()) || (ct.after && String(ct.after).trim())));
+  });
   if (visibleChars.length > 0) {
     const blockW = (innerW - IMP_BLOCK_GAP) / IMP_BLOCK_COLS;
     const blockInnerW = blockW - IMP_BLOCK_PAD * 2;
