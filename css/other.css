@@ -871,6 +871,9 @@
     align-items: center;
     gap: 8px;
 }
+.other-imp-col-char .char-card-name {
+    color: var(--other-char-name-color, #000000);
+}
 /* 角色立绘左右切换按钮 */
 .other-imp-char-img-box .other-imp-img-switch {
     position: absolute;
@@ -1221,13 +1224,13 @@
     /* 每个 block 内三列改为纵向：角色图(小)单独一行，Before/After 在下方 */
     .other-imp-char-table {
         grid-template-columns: 1fr;
-        gap: 8px;
+        gap: 4px;
         align-items: start;
     }
     .mode-wrap[data-mode="other"] .other-imp-col-char .char-item {
         flex-direction: column !important;
         align-items: center;
-        gap: 8px;
+        gap: 4px;
     }
     .mode-wrap[data-mode="other"] .other-imp-col-char .char-card-name {
         width: 100%;
