@@ -4,7 +4,7 @@
     --other-export-bg: #fff7f9;
     --other-export-title: #b33a3a;
     --other-export-subtitle: #b85878;
-    --other-export-gamename: #000000;
+    --other-char-name-color: #000000;
     --other-export-customtext: #c98fac;
     --other-export-customborder: #eee;
     --other-export-border: #f6a5b8;
@@ -130,7 +130,7 @@
 .other-rero-game-name {
     font-size: 22px;
     font-weight: 700;
-    color: var(--other-export-gamename, #000000);
+    color: var(--other-char-name-color, #000000);
     word-break: break-all;
     margin: 0;
 }
@@ -773,7 +773,7 @@
 .other-impression-game-name {
     font-size: 20px;
     font-weight: 700;
-    color: var(--other-export-gamename, #000000);
+    color: var(--other-char-name-color, #000000);
     word-break: break-all;
     margin: 0;
 }
@@ -854,7 +854,7 @@
 .other-imp-char-name {
     font-size: 13px;
     font-weight: bold;
-    color: var(--other-export-gamename, #000000);
+    color: var(--other-char-name-color, #000000);
     text-align: center;
     word-break: break-word;
     line-height: 1.3;
