@@ -1931,13 +1931,6 @@ function bindOtherPreviewButtons() {
       const gameList = getCombinedGameList();
       const dpr = otherConfig.normalQuality ? 1 : 2;
       const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
-      // 导出简评表：开关开启时额外生成简评表图片并追加到结果
-      if (otherConfig.exportBrief && typeof window.renderAllOtherBriefGames === 'function') {
-        const briefResults = await window.renderAllOtherBriefGames(720, otherData, gameList, otherConfig, dpr);
-        if (briefResults && briefResults.length > 0) {
-          results.push(...briefResults);
-        }
-      }
       if (!results || results.length === 0) {
         alert("没有可导出的内容。");
         return;
@@ -2120,13 +2113,6 @@ function bindExportConfig() {
         const gameList = getCombinedGameList();
         const dpr = otherConfig.normalQuality ? 1 : 2;
         const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
-        // 导出简评表：开关开启时额外生成简评表图片并追加到结果
-        if (otherConfig.exportBrief && typeof window.renderAllOtherBriefGames === 'function') {
-          const briefResults = await window.renderAllOtherBriefGames(720, otherData, gameList, otherConfig, dpr);
-          if (briefResults && briefResults.length > 0) {
-            results.push(...briefResults);
-          }
-        }
         if (!results || results.length === 0) {
           alert("没有可导出的内容，请先在各模块中添加数据。");
           modal.classList.remove("active");
