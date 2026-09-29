@@ -41,7 +41,7 @@ const IMPRESSION_SWITCH_CONFIG = [
 const otherExportDefault = {
   bg: "#fff7f9",
   title: "#b33a3a",
-  gamename: "#000000",
+  charNameColor: "#000000",
   defaultTextColor: "#b85878",
   inputTextColor: "#000000",
   activeFillColor: "#e895a8",
@@ -237,6 +237,10 @@ function loadOtherConfig() {
     otherConfig.inputTextColor = otherConfig.gamename;
   }
   otherConfig = { ...otherExportDefault, ...otherConfig };
+  // 旧字段 gamename 迁移到 charNameColor（"游戏名文字色"改名为"游戏角色名文字色"）
+  if (otherConfig.gamename !== undefined && otherConfig.charNameColor === undefined) {
+    otherConfig.charNameColor = otherConfig.gamename;
+  }
   // 三位十六进制色修复（input[type=color] 只接受六位）
   ['customborder', 'cardBg', 'imageBorderColor', 'labelColor', 'reporterColor'].forEach(key => {
     if (otherConfig[key] && /^#[0-9a-fA-F]{3}$/.test(otherConfig[key])) {
@@ -1955,7 +1959,7 @@ function bindExportConfig() {
   const colorMap = [
     { id: 'other-color-bg',              key: 'bg',              cssVar: '--other-export-bg' },
     { id: 'other-color-title',           key: 'title',           cssVar: '--other-export-title' },
-    { id: 'other-color-gamename',        key: 'gamename',        cssVar: '--other-export-gamename' },
+    { id: 'other-color-char-name',       key: 'charNameColor',   cssVar: '--other-char-name-color' },
     { id: 'other-color-default-text',    key: 'defaultTextColor',cssVar: '--other-default-text-color' },
     { id: 'other-color-input-text',      key: 'inputTextColor',  cssVar: '--other-input-text-color' },
     { id: 'other-color-active-fill',     key: 'activeFillColor', cssVar: '--other-active-fill-color' },
