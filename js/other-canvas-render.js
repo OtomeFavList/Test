@@ -1460,13 +1460,11 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         } else {
           painter.drawRoundRect(ix, iy, charColW, IMP_CHAR_IMG_H, 6, '#f5f5f5', '#eee', 1);
         }
-        // 角色名：多行换行绘制（不再截断加省略号），名称已在 rowData 预计算
-        ctx.font = `11px ${FONT_SIYUAN}`;
-        ctx.fillStyle = config.charNameColor || '#000000';
-        ctx.textAlign = 'center';
+        // 角色名：多行换行居中绘制，不加粗，名称已在 rowData 预计算
         ctx.textBaseline = 'top';
-        wrapText(ctx, rb.dispName, ix, iy + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP,
-          charColW, 11 * 1.4, 11, config.charNameColor || '#000000', FONT_SIYUAN, true);
+        drawCenteredText(ctx, rb.dispName, ix + charColW / 2,
+          iy + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP,
+          charColW, 11 * 1.4, 11, config.charNameColor || '#000000', false);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         // Before 列（标签字号 16px，对齐网页）
