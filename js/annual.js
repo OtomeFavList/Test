@@ -142,7 +142,7 @@ let _annualIsRendering = false;  // 新增：导出渲染锁，防止重复点�
 
 // 新增：全局弹窗，记录当前操作的 TOP 条目下标 0/1/2；null=弹窗关闭
 let activeTopItemIndex = null;
-// キャラTOP3 弹窗状态
+// キャラTOP 弹窗状态
 let activeCharTopItemIndex = null;
 // 新增：カップルTOP 弹窗状态
 let activeCpTopItemIndex = null;
@@ -162,7 +162,7 @@ const cpModalLocalMap = new Map();
 const annualCpImgIndex = new Map();     // key="${gameId}-${charId}"
 const annualCpNameIndex = new Map();
 
-// 弹窗内部视图状态：gameList / charList
+// 弹窗内部视图状态：gameList/charList
 let charModalViewMode = "gameList";
 // 当前弹窗选中的游戏 ID，进入角色列表时赋值
 let charModalCurrentGameId = null;
@@ -243,13 +243,13 @@ function getGameTemplateState_WithFD() {
         ready: true
     };
 }
-// 获取游戏的合并角色列表：普通游戏角色 + 所有关联FD游戏的角色
-// 支持多个FD关联同一个普通游戏（通过FD游戏的 baseGameId 字段）
+// 获取游戏的合并角色列表：普通游戏角色 + 所有关联 FD 游戏的角色
+// 支持多个 FD 关联同一个普通游戏（通过 FD 游戏的 baseGameId 字段）
 function getGameMergedCharList(gameInfo) {
     if (!gameInfo) return [];
     const fdList = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
     let baseGameInfo = gameInfo;
-    // 确定 baseGameId：优先用 gameInfo.baseGameId；若字段丢失但 id 以 "fd" 开头，则从 id 推断（fd001 → game001）
+    // 确定 baseGameId：优先用 gameInfo.baseGameId；若字段丢失但 id 以 fd 开头，则从 id 推断（fd001 → game001）
     let targetBaseId = gameInfo.baseGameId || null;
     if (!targetBaseId && gameInfo.id && gameInfo.id.indexOf('fd') === 0) {
         targetBaseId = 'game' + gameInfo.id.substring(2);
@@ -290,8 +290,7 @@ function getGameMergedCharList(gameInfo) {
     return [...baseChars, ...fdChars];
 }
 
-/* 补丁：获取角色在当前弹窗开关状态下的全部可用立绘 src 列表
- * 复用 main.js getAvailableCharImages，传入弹窗全局/局部开关 */
+/* 补丁：获取角色在当前弹窗开关状态下的全部可用立绘 src 列表 */
 function getAnnualCharAvailImages(char) {
     if (!char) return [];
     const availUnits = getAvailableCharImages(
@@ -453,7 +452,7 @@ function refreshTopItemUi(itemDom, dataItem) {
     }
 }
 
-// キャラTOP3 单条 UI
+// キャラTOP 单条 UI
 function refreshCharTopItemUi(itemDom, dataItem) {
     const labelRow = itemDom.querySelector(".annual-top-label-row");
     const contentRow = itemDom.querySelector(".annual-char-top-content-row");
@@ -588,7 +587,7 @@ function renderGameList(wrap, keyword) {
                     const card = targetItem;
                     const isLastEmpty = t.index === annualData.gameGrid.custom.length - 1
                         && card && !card.gameId && !(card.label && card.label.trim());
-                    // 上面的 isLastEmpty 判断的是更新后的状态，需要基于更新前判断
+                    // 上面 isLastEmpty 判断的是更新后的状态，需要基于更新前判断
                     // 由于已经赋值 gameId，这里改用更新前是否为空重新判断：
                     // 若目标卡片此前 gameId 为空且 label 为空，且它是最后一个，则追加
                     // 但此处赋值已完成，所以改用另一个判定：若 t.index 是最后一个索引，则追加
@@ -1167,7 +1166,7 @@ function renderCharModalCharList() {
     });
 }
 
-// 角色弹窗视图切换 gameList / charList
+// 角色弹窗视图切换 gameList/charList
 function switchCharModalView(mode){
     charModalViewMode = mode;
     const modal = document.getElementById("annual-global-char-modal");
@@ -1202,11 +1201,11 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     // 初始化弹窗状态（全局/局部开关逻辑 + 索引缓存，无论页面一/二都需要）
     charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    // 不再清空 annualCharImgIndex / annualCharNameIndex：
+    // 不再清空 annualCharImgIndex/annualCharNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
     // 新增：directGame 传入时，跳过页面一（游戏搜索列表），直接进入页面二（角色列表）
-    // 供 Other 模式＋按钮使用；Annual 模式不传此参数，走原有逻辑
+    // 供 Other 模式 + 按钮使用；Annual 模式不传此参数，走原有逻辑
     if (directGame && directGame.id) {
         charModalViewMode = "charList";
         charModalCurrentGameId = directGame.id;
@@ -1366,7 +1365,7 @@ function bindCharTop3Items() {
     });
 }
 
-// 新增：绑定カップル TOP 全部条目
+// 新增：绑定カップルTOP 全部条目
 function bindCpTop3Items() {
     const cpItems = document.querySelectorAll(".annual-cp-top-item");
     cpItems.forEach((item, domIndex)=>{
@@ -1376,7 +1375,7 @@ function bindCpTop3Items() {
         const textarea = item.querySelector(".annual-cp-textarea");
         const femaleImg = item.querySelector(".annual-cp-female-cover");
         const maleImg = item.querySelector(".annual-cp-male-cover");
-        // 修改：名称显示为女角色×男角色
+        // 修改：名称显示为女角色 × 男角色
         nameTextEl.textContent = `${dataItem.femaleName ?? ''}×${dataItem.maleName ?? ''}`;
         textarea.value = dataItem.text ?? "";
         if(dataItem.femaleCoverSrc) femaleImg.src = getWebImageUrl(dataItem.femaleCoverSrc);
@@ -1391,7 +1390,7 @@ function bindCpTop3Items() {
     });
 }
 
-//新增：拖拽后，刷新游戏 TOP 全部 NO.N 标签文本，根据数组真实下标，不依赖 data-rank
+//新增：拖拽后，刷新游戏 TOP 全部 NO. 标签文本，根据数组真实下标，不依赖 data-rank
 function rerenderGameTopNoLabel(){
     const items = Array.from(document.querySelectorAll(".annual-top-item"));
     items.forEach((dom, arrIdx)=>{
@@ -1400,7 +1399,7 @@ function rerenderGameTopNoLabel(){
         dom.dataset.rank = String(arrIdx + 1); // 同步更新属性
     });
 }
-// 新增：拖拽后，刷新角色 TOP 全部 NO.N 标签文本
+// 新增：拖拽后，刷新角色 TOP 全部 NO. 标签文本
 function rerenderCharTopNoLabel(){
     const items = Array.from(document.querySelectorAll(".annual-char-top-item"));
     items.forEach((dom, arrIdx)=>{
@@ -1482,7 +1481,7 @@ function appendNewCharTopDom(){
     bindAnnualTextareaResize();
 }
 
-// 新增：动态追加カップル TOP DOM 条目
+// 新增：动态追加カップルTOP DOM 条目
 function appendNewCpTopDom(){
     const container = document.getElementById("annual-cp-top-drag-container");
     const itemDom = document.createElement("div");
@@ -2082,7 +2081,7 @@ function setupTouchSort(containerSel, dataArr, afterSort){
 
     // 长按 1000ms 进入锁定选中模式
     function enterSelectMode(itemDom, itemIndex){
-        // 如果长按当前已经选中的条目：直接退出选中模式；再次长按 NO退出
+        // 如果长按当前已经选中的条目：直接退出选中模式；再次长按 NO 退出
         if(selectedItem === itemDom){
             clearSelectState();
             console.log("[sort] 退出选中模式");
@@ -2644,7 +2643,7 @@ function bindAnnualExportPanel() {
     btnExportImage.addEventListener("click", btnExportImage._handler);
 }
 
-// 新增：annual 模式悬浮滚动按钮逻辑
+// 新增：Annual 模式悬浮滚动按钮逻辑
 function bindAnnualFloatScrollButtons() {
     const upBtn = document.getElementById("annual-back-to-top-btn");
     const downBtn = document.getElementById("annual-scroll-to-bottom-btn");
@@ -3930,7 +3929,7 @@ export function initAnnualModule(){
 
         // 全局弹窗搜索 input 事件委托
         document.addEventListener("input", (e)=>{
-            // 游戏 TOP3 搜索
+            // 游戏 TOP 搜索
             const input = e.target.closest(".annual-global-search-input");
             if(input){
                 const modal = document.getElementById("annual-global-game-modal");
