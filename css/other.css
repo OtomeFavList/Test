@@ -124,7 +124,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     flex-wrap: wrap;
 }
 .other-rero-game-name {
@@ -770,7 +770,7 @@
     flex-wrap: wrap;
 }
 .other-impression-game-name {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--other-char-name-color, #000000);
     word-break: break-all;
