@@ -155,14 +155,14 @@
     color: #ffffff !important;
 }
 
-/* 游戏卡片头部按钮组（折叠+删除并排） */
+/* 游戏卡片头部按钮组 */
 .other-rero-header-btns {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
 }
-/* 游戏卡片折叠按钮（复用删除按钮尺寸/边框，符号为▲▼） */
+/* 游戏卡片折叠按钮 */
 .other-rero-fold-btn {
     flex-shrink: 0;
     width: 28px;
@@ -191,7 +191,7 @@
     display: none;
 }
 
-/* Rero 主体：左封面 + 右字段 */
+/* Rero 主体 */
 .other-rero-body {
     display: flex;
     gap: 16px;
@@ -406,7 +406,7 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
 }
-/* 攻略顺序、好感顺序独占整行 */
+/* 修改：攻略顺序、好感顺序独占整行 */
 .other-rero-text-field-full {
     grid-column: 1 / -1;
 }
@@ -507,7 +507,7 @@
     outline: none;
     border-color: #f6a5b8;
 }
-/* 改：自定义卡片标签的预填内容font-size/font-weight/opacity 覆盖全局规则，
+/* 改：自定义卡片标签的预填内容 font-size/font-weight/opacity 覆盖全局规则，
    color 不设置，继承浏览器默认灰色，与 Annual 自定义标签 placeholder 完全一致 */
 .mode-wrap[data-mode="other"] .other-repo-card-label-edit::placeholder {
     font-weight: bold;
@@ -526,7 +526,6 @@
     border: 1px solid #f6a5b8;
     background: #fff;
 }
-/* 新增：有角色图片时边框改为 #eeeeee */
 .other-repo-card-body:has(.other-repo-char-preview) {
     border: 1px solid #eeeeee;
     background: #fff;
@@ -778,8 +777,8 @@
     margin: 0;
 }
 
-/* ===== 模块二 Impression 完整样式 ===== */
-/* 4个单独开关（复用 Annual 弹窗页面二开关样式） */
+/* 模块二完整样式 */
+/* 单独开关 */
 .other-imp-switches {
     display: flex;
     flex-wrap: wrap;
@@ -817,7 +816,7 @@
     padding: 12px;
     background: #fff;
 }
-/* 每个 block 内三列：Character / Before / After */
+/* 每个 block 内三列：Character/Before/After */
 .other-imp-char-table {
     display: grid;
     grid-template-columns: 130px 1fr 1fr;
@@ -859,7 +858,6 @@
     word-break: break-word;
     line-height: 1.3;
 }
-/* 复用 Annual 弹窗角色卡片样式：去掉 .char-item 自带的边框和内边距 */
 .other-imp-col-char .char-item {
     border: none;
     padding: 0;
@@ -901,7 +899,7 @@
 .other-imp-img-prev { left: 4px; }
 .other-imp-img-next { right: 4px; }
 
-/* Before / After 列 */
+/* Before/After 列 */
 .other-imp-col-before,
 .other-imp-col-after {
     display: flex;
@@ -919,7 +917,7 @@
     color: var(--other-default-text-color, #b85878);
     text-align: center;
 }
-/* 自定义文本框：受自定义颜色 + 自定义文本字号控制 */
+/* 自定义文本框 */
 .other-imp-textarea {
     width: 100%;
     padding: 8px;
@@ -935,7 +933,7 @@
     outline: none;
     border-color: #f6a5b8;
 }
-/* 模块二自定义文本框：复用模块一同款拖拽手柄 */
+/* 模块二自定义文本框拖拽手柄 */
 .other-imp-textarea-wrap {
     position: relative;
     flex: 1;
@@ -1211,7 +1209,7 @@
         grid-template-columns: 1fr !important;
         gap: 10px !important;
     }
-    /* ===== 模块二 Impression 移动端适配 ===== */
+    /* 模块二移动端适配 */
     .other-impression-card {
         padding-left: 12px;
         padding-right: 12px;
@@ -1221,7 +1219,7 @@
         grid-template-columns: 1fr;
         gap: 12px;
     }
-    /* 每个 block 内三列改为纵向：角色图(小)单独一行，Before/After 在下方 */
+    /* 每个 block 内三列改为纵向：角色图单独一行，Before/After 在下方 */
     .other-imp-char-table {
         grid-template-columns: 1fr;
         gap: 2px;
