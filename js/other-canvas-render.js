@@ -375,11 +375,15 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
       drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
         textAreaW, lineHeight, size, color, false);
     } else {
+      // 重置为左对齐，防止外部 ctx.textAlign='center' 残留导致文本以 padding 点为中心绘制、偏出文本框
+      const prevAlign = painter.ctx.textAlign;
+      painter.ctx.textAlign = 'left';
       wrapText(
         painter.ctx, text,
         x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
         textAreaW, lineHeight, size, color
       );
+      painter.ctx.textAlign = prevAlign;
     }
   }
 }
@@ -913,13 +917,13 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
           window.getOtherImpressionCharNameIndex(gameData.gameId, char.id) : 0;
         const safeNameIdx = Math.min(nameIdx, Math.max(0, charNameList.length - 1));
         const dispName = charNameList[safeNameIdx] || char.name || '';
+        // Before / After 标签与文本框紧凑间距（标签16px + 4px间隔 = 20px，原26.4px）
+        const labelH = IMP_COL_LABEL_SIZE + 4;
         ctx.font = `11px ${FONT_SIYUAN}`;
         const charNameLineH = 11 * 1.4;
         const charNameActualH = measureWrappedHeight(ctx, dispName, charColW, charNameLineH, 11);
-        // 角色图 + 间距 + 角色名（取固定最小高度与实际换行高度的较大者）
-        const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
-        // Before / After 标签与文本框紧凑间距（标签16px + 4px间隔 = 20px，原26.4px）
-        const labelH = IMP_COL_LABEL_SIZE + 4;
+        // 角色图顶部与文本框上边框对齐：上方预留 labelH 放标签，角色图 + 间距 + 角色名
+        const charColTotal = labelH + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
         const beforeH = ct.before ?
           measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
         const afterH = ct.after ?
@@ -1432,8 +1436,8 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         ctx.font = `11px ${FONT_SIYUAN}`;
         const charNameLineH = 11 * 1.4;
         const charNameActualH = measureWrappedHeight(ctx, dispName, charColW, charNameLineH, 11);
-        // 角色图 + 间距 + 角色名（取固定最小高度与实际换行高度的较大者）
-        const charColTotal = IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
+        // 角色图顶部与文本框上边框对齐：上方预留 labelH 放标签，角色图 + 间距 + 角色名
+        const charColTotal = labelH + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
         const blockContentH = Math.max(charColTotal, labelH + beforeMinBoxH, labelH + afterMinBoxH);
         rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
         rowData.push({ char, ct, dispName, blockContentH });
@@ -1455,15 +1459,17 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         const safeCharIdx = Math.min(charIdx, Math.max(0, avail.length - 1));
         const charSrc = avail[safeCharIdx] ? toCanvasUrl(avail[safeCharIdx]) : '';
         const charImg = charSrc ? imageCache.get(charSrc) : null;
+        // 角色图顶部与文本框上边框对齐：下移 labelH（与 Before/After 文本框顶部同高）
+        const charImgY = iy + labelH;
         if (charImg) {
-          drawCoverCard(painter, ix, iy, charColW, IMP_CHAR_IMG_H, charImg, charSrc, 6);
+          drawCoverCard(painter, ix, charImgY, charColW, IMP_CHAR_IMG_H, charImg, charSrc, 6);
         } else {
-          painter.drawRoundRect(ix, iy, charColW, IMP_CHAR_IMG_H, 6, '#f5f5f5', '#eee', 1);
+          painter.drawRoundRect(ix, charImgY, charColW, IMP_CHAR_IMG_H, 6, '#f5f5f5', '#eee', 1);
         }
         // 角色名：多行换行居中绘制，不加粗，名称已在 rowData 预计算
         ctx.textBaseline = 'top';
         drawCenteredText(ctx, rb.dispName, ix + charColW / 2,
-          iy + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP,
+          charImgY + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP,
           charColW, 11 * 1.4, 11, config.charNameColor || '#000000', false);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
