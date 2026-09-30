@@ -95,8 +95,8 @@ const IMP_BLOCK_GAP = 10;         // 角色 block 之间间距（与 IMP_CARD_PA
 const IMP_BLOCK_PAD = 8;          // 角色 block 内边距（12→8，压缩左右内边距，空间让给文本框）
 const IMP_CARD_PAD = 10;          // Impression 卡片内容与外框的距离（独立于全局 CARD_PAD=16）
 const IMP_COL_GAP = 8;            // 三列之间间距（与 IMP_BLOCK_PAD 一致：角色图到卡片框的间距）
-const IMP_TEXT_BOX_PAD = IMP_COL_GAP; // Before/After 文本框内部左右内边距（与文本框间距一致，独立于全局 TEXT_BOX_PAD）
 const IMP_TEXTAREA_MIN_H = 72;    // Before/After 文本框最小高度
+const IMP_TEXT_BOX_PAD = 4;        // Impression 模块文本框内边距（独立于全局 TEXT_BOX_PAD=8，更紧凑）
 
 // 区块间距
 const SECTION_GAP = 14;
@@ -334,6 +334,8 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
 }
 
 function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText, textColor, textSize, verticalCenter, boxPad) {
+  // boxPad 未传时默认使用全局 TEXT_BOX_PAD=8（Repo 模块）；Impression 模块传入 IMP_TEXT_BOX_PAD=4
+  const pad = boxPad || TEXT_BOX_PAD;
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
     noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
@@ -342,7 +344,6 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
     const size = textSize || config.customTextFontSize || 16;
     const color = textColor || config.customtext || '#c98fac';
     const lineHeight = size * 1.55;
-    const pad = boxPad || TEXT_BOX_PAD;
     const textAreaW = boxW - pad * 2;
     if (verticalCenter) {
       // 自行换行并用 top baseline 绘制，按实际视觉高度精确垂直居中
