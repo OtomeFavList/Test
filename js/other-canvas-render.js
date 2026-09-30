@@ -95,6 +95,7 @@ const IMP_BLOCK_GAP = 10;         // 角色 block 之间间距（与 IMP_CARD_PA
 const IMP_BLOCK_PAD = 8;          // 角色 block 内边距（12→8，压缩左右内边距，空间让给文本框）
 const IMP_CARD_PAD = 10;          // Impression 卡片内容与外框的距离（独立于全局 CARD_PAD=16）
 const IMP_COL_GAP = 8;            // 三列之间间距（与 IMP_BLOCK_PAD 一致：角色图到卡片框的间距）
+const IMP_TEXT_BOX_PAD = IMP_COL_GAP; // Before/After 文本框内部左右内边距（与文本框间距一致，独立于全局 TEXT_BOX_PAD）
 const IMP_TEXTAREA_MIN_H = 72;    // Before/After 文本框最小高度
 
 // 区块间距
@@ -332,7 +333,7 @@ function drawCoverCard(painter, x, y, cardW, cardH, img, srcUrl, radius) {
   }
 }
 
-function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText, textColor, textSize, verticalCenter) {
+function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerText, textColor, textSize, verticalCenter, boxPad) {
   painter.drawRoundRect(x, y, boxW, boxH, SUB_CARD_RADIUS, '#ffffff',
     noBorder ? null : (config.customborder || '#eee'), noBorder ? 0 : 1);
   if (text) {
@@ -341,7 +342,8 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
     const size = textSize || config.customTextFontSize || 16;
     const color = textColor || config.customtext || '#c98fac';
     const lineHeight = size * 1.55;
-    const textAreaW = boxW - TEXT_BOX_PAD * 2;
+    const pad = boxPad || TEXT_BOX_PAD;
+    const textAreaW = boxW - pad * 2;
     if (verticalCenter) {
       // 自行换行并用 top baseline 绘制，按实际视觉高度精确垂直居中
       const ctx = painter.ctx;
@@ -366,13 +368,13 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
       if (line) lines.push(line);
       // 实际视觉高度：最后一行用字号高度，行间用行高
       const visualH = lines.length > 1 ? (lines.length - 1) * lineHeight + size : size;
-      const textY = y + Math.max(TEXT_BOX_PAD, (boxH - visualH) / 2);
+      const textY = y + Math.max(pad, (boxH - visualH) / 2);
       lines.forEach((l, i) => {
-        ctx.fillText(l, x + TEXT_BOX_PAD, textY + i * lineHeight);
+        ctx.fillText(l, x + pad, textY + i * lineHeight);
       });
       ctx.restore();
     } else if (centerText) {
-      drawCenteredText(painter.ctx, text, x + boxW / 2, y + TEXT_BOX_PAD,
+      drawCenteredText(painter.ctx, text, x + boxW / 2, y + pad,
         textAreaW, lineHeight, size, color, false);
     } else {
       // 重置为左对齐，防止外部 ctx.textAlign='center' 残留导致文本以 padding 点为中心绘制、偏出文本框
@@ -380,7 +382,7 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
       painter.ctx.textAlign = 'left';
       wrapText(
         painter.ctx, text,
-        x + TEXT_BOX_PAD, y + TEXT_BOX_PAD,
+        x + pad, y + pad,
         textAreaW, lineHeight, size, color
       );
       painter.ctx.textAlign = prevAlign;
@@ -925,11 +927,11 @@ function calcImpressionGameHeight(ctx, targetW, gameData, gameInfo, config, imag
         // 角色图顶部与文本框上边框对齐：上方预留 labelH 放标签，角色图 + 间距 + 角色名
         const charColTotal = labelH + IMP_CHAR_IMG_H + IMP_CHAR_NAME_GAP + Math.max(IMP_CHAR_NAME_H, charNameActualH);
         const beforeH = ct.before ?
-          measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+          measureWrappedHeight(ctx, ct.before, textColW - IMP_TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
         const afterH = ct.after ?
-          measureWrappedHeight(ctx, ct.after, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const beforeTotal = labelH + Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
-        const afterTotal = labelH + Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
+          measureWrappedHeight(ctx, ct.after, textColW - IMP_TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+        const beforeTotal = labelH + Math.max(IMP_TEXTAREA_MIN_H, beforeH + IMP_TEXT_BOX_PAD * 2);
+        const afterTotal = labelH + Math.max(IMP_TEXTAREA_MIN_H, afterH + IMP_TEXT_BOX_PAD * 2);
         const blockContentH = Math.max(charColTotal, beforeTotal, afterTotal);
         rowMaxH = Math.max(rowMaxH, IMP_BLOCK_PAD * 2 + blockContentH);
       }
@@ -1421,11 +1423,11 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         const ct = gameData.charTexts?.[char.id] || { before: '', after: '' };
         ctx.font = `${customTextSize}px ${FONT_SIYUAN}`;
         const beforeH = ct.before ?
-          measureWrappedHeight(ctx, ct.before, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+          measureWrappedHeight(ctx, ct.before, textColW - IMP_TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
         const afterH = ct.after ?
-          measureWrappedHeight(ctx, ct.after, textColW - TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
-        const beforeMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, beforeH + TEXT_BOX_PAD * 2);
-        const afterMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, afterH + TEXT_BOX_PAD * 2);
+          measureWrappedHeight(ctx, ct.after, textColW - IMP_TEXT_BOX_PAD * 2, customTextSize * 1.55, customTextSize) : 0;
+        const beforeMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, beforeH + IMP_TEXT_BOX_PAD * 2);
+        const afterMinBoxH = Math.max(IMP_TEXTAREA_MIN_H, afterH + IMP_TEXT_BOX_PAD * 2);
         // 动态计算该角色在当前开关下的显示名称及换行后的实际高度
         const charShowHide = getCharShowHide(char, gs.hideChar || switches.hideChar, false, gs.fdChar || switches.fdChar, false);
         const charNameList = getCharNameList(char, charShowHide);
@@ -1480,7 +1482,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         ctx.fillText('Before', beforeX + textColW / 2, iy);
         const beforeBoxY = iy + labelH;
         drawTextBox(painter, beforeX, beforeBoxY, textColW, rowBoxH,
-          rb.ct.before || '', config, false, false, textColor, customTextSize, false);
+          rb.ct.before || '', config, false, false, textColor, customTextSize, false, IMP_TEXT_BOX_PAD);
         // After 列（标签字号 16px，对齐网页；显式重设 font/fillStyle，防止 drawTextBox 内 drawRoundRect 污染上下文）
         const afterX = beforeX + textColW + IMP_COL_GAP;
         ctx.font = `bold ${IMP_COL_LABEL_SIZE}px ${FONT_SIYUAN}`;
@@ -1488,7 +1490,7 @@ function drawImpressionGameCard(painter, targetW, gameData, gameInfo, config, im
         ctx.fillText('After', afterX + textColW / 2, iy);
         const afterBoxY = iy + labelH;
         drawTextBox(painter, afterX, afterBoxY, textColW, rowBoxH,
-          rb.ct.after || '', config, false, false, textColor, customTextSize, false);
+          rb.ct.after || '', config, false, false, textColor, customTextSize, false, IMP_TEXT_BOX_PAD);
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
       });
