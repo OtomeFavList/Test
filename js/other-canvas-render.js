@@ -91,10 +91,10 @@ const IMP_CHAR_NAME_GAP = 6;      // 角色图与角色名间距（8→6，更�
 const IMP_CHAR_NAME_H = 16;       // 角色名占用高度（20→16，配合11px字号）
 const IMP_COL_LABEL_SIZE = 16;    // Before / After 列标签字号（对齐网页 16px）
 const IMP_BLOCK_COLS = 2;         // 每行角色 block 数量
-const IMP_BLOCK_GAP = 16;         // 角色 block 之间间距
+const IMP_BLOCK_GAP = 10;         // 角色 block 之间间距（与 IMP_CARD_PAD 一致：卡片框到大边框的间距）
 const IMP_BLOCK_PAD = 8;          // 角色 block 内边距（12→8，压缩左右内边距，空间让给文本框）
 const IMP_CARD_PAD = 10;          // Impression 卡片内容与外框的距离（独立于全局 CARD_PAD=16）
-const IMP_COL_GAP = 10;           // 三列之间间距
+const IMP_COL_GAP = 8;            // 三列之间间距（与 IMP_BLOCK_PAD 一致：角色图到卡片框的间距）
 const IMP_TEXTAREA_MIN_H = 72;    // Before/After 文本框最小高度
 
 // 区块间距
