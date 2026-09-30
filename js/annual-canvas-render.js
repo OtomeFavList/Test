@@ -1,5 +1,4 @@
 // annual-canvas-render.js
-// 年度报告模式纯 Canvas 绘制导出，对齐 export-canvas-render.js
 // 每个模块单独生成一张图，DPR×2 高清输出
 import {
   getWebImageUrl,
@@ -9,7 +8,6 @@ import {
   LAYOUT_SPACE,
   LAYOUT_STYLE
 } from './main.js';
-// 复用 FavList 导出的文字换行工具和绘制器
 import { wrapText, measureWrappedHeight, CanvasLayoutPainter, setCurrentDPR } from './export-canvas-render.js';
 
 // 常量
@@ -25,7 +23,7 @@ const MODULE_TITLE_SIZE = 24;          // 模块小标题
 const NO_SIZE = 22;                    // NO. 标签
 const NAME_SIZE = 22;                  // 游戏/角色/CP 名称
 const STAT_SIZE = 16;                  // 统计文字（保留，旧函数兼容）
-const STAT_VALUE_SIZE = 42;            // 用户输入值固定 42px（整体调大，更适应文本框）
+const STAT_VALUE_SIZE = 42;            // 用户输入值固定 42px（改：整体调大）
 const STAT_LABEL_SIZE = 36;            // 标签文字固定 36px
 const STAT_LINE_HEIGHT = 52;           // 混排行高
 const SUBTITLE_COLOR = '#b85878';      // 模块小标题颜色
@@ -34,7 +32,7 @@ const NO_COLOR = '#b85878';            // NO 标签颜色
 const LABEL_ROW_MB = 8;                // NO + 名称行底部间距（改：12 改为 8，缩减与下方图片距离）
 const ITEM_GAP = 24;                   // TOP 条目间间距
 const MODULE_GAP = 30;                 // 模块卡片间间距（单模块图中不涉及，预留）
-const CARD_INNER_PAD = 20;             // 模块卡片内边距（对齐 BIG_CARD_PADDING）
+const CARD_INNER_PAD = 20;             // 模块卡片内边距（改：对齐 BIG_CARD_PADDING）
 const COVER_CARD_PAD = 0;              // 封面卡片内边距（改：8 改为 0，图片贴外框，删除图片与外框间内边距）
 const TEXT_BOX_PAD = 10;               // 自定义文本框内边距
 const GAME_COVER_W = 140;              // 游戏封面固定宽度
@@ -47,7 +45,7 @@ const OTHER_CARD_W = 225;              // 其他模块卡片宽度（改：容�
 const OTHER_CARD_GAP = 16;             // 其他模块卡片间距
 const OTHER_CARD_PAD = 14;             // 其他模块卡片内边距
 const OTHER_CARD_TITLE_MB = 10;        // 卡片标题底部间距
-const OTHER_ALSO_COVER_W = 100;               // 还玩了封面宽度（独立于TOP模块的 140）
+const OTHER_ALSO_COVER_W = 100;               // 还玩了封面宽度（独立于 TOP 模块的 140）
 const OTHER_ALSO_COVER_GAP = 16;       // 还玩了封面间距
 const OTHER_CP_COVER_SIZE = 100;    // 最喜欢的 CP 角色图
 const OTHER_SUPPORT_COVER_SIZE = 100;   // 最喜欢的配角角色图
@@ -60,7 +58,7 @@ const GRID_LABEL_GAP = 8;              // 封面与标签间距
 const GRID_FOOTER_GAP = 20;            // 宫格与底部文本框间距
 const FOOTER_PAD = 14;                 // 底部文本框内边距
 const FOOTER_TITLE_GAP = 10;           // 底部标题与文本框间距
-const CARD_RADIUS = 16;                // 模块卡片圆角（对齐 BIG_CARD_RADIUS）
+const CARD_RADIUS = 16;                // 模块卡片圆角（改：对齐 BIG_CARD_RADIUS）
 const CARD_BORDER_W = 2;               // 模块卡片边框宽度
 const SUB_CARD_RADIUS = 8;             // 封面/自定义文本框圆角
 const SUB_CARD_BORDER = '#eee';        // 封面卡片边框色
@@ -119,7 +117,7 @@ function getImgSize(img) {
   };
 }
 
-// 游戏封面高度：按指定宽度（默认GAME_COVER_W）和原图比例自适应
+// 游戏封面高度：按指定宽度（默认 GAME_COVER_W）和原图比例自适应
 function calcGameCoverHeight(img, width) {
   const coverW = width || GAME_COVER_W;
   const { w, h } = getImgSize(img);
@@ -564,12 +562,12 @@ function collectModuleImages(moduleType, annualData) {
     safeEach(g?.fixed, item => { if (item.charId) pushUrl(item.coverSrc); });
     safeEach(g?.custom, item => { if (item.charId) pushUrl(item.coverSrc); });
   } else if (moduleType === 'gameMonthly') {
-    // 新增：游戏月度总结，遍历12个月，收集所有游戏封面
+    // 新增：游戏月度总结，遍历 12 个月，收集所有游戏封面
     (annualData.gameMonthly?.months || []).forEach(month => {
       safeEach(month.items, item => pushUrl(item.coverSrc));
     });
   } else if (moduleType === 'charMonthly') {
-    // 新增：角色月度总结，遍历12个月，收集所有角色图
+    // 新增：角色月度总结，遍历 12 个月，收集所有角色图
     (annualData.charMonthly?.months || []).forEach(month => {
       safeEach(month.items, item => pushUrl(item.coverSrc));
     });
@@ -1387,7 +1385,7 @@ function drawOtherContent(painter, targetW, annualData, config, imageCache) {
         const y = painter.y;
         painter.drawRoundRect(x, y, OTHER_CARD_W, rowH, 12, config.boxBgColor || '#fff7f9', '#eee', 1);
         const titleY = y + OTHER_CARD_PAD;
-        // 修复：drawCenteredText 返回实际绘制高度（含自动换行），下方内容从标题底部开始
+        // 修复：drawCenteredText 返回实际绘制高度，下方内容从标题底部开始
         const titleActualH = drawCenteredText(ctx, card.title, x + OTHER_CARD_W / 2, titleY,
           OTHER_CARD_W - OTHER_CARD_PAD * 2, OTHER_SECTION_TITLE_SIZE * 1.4,
           OTHER_SECTION_TITLE_SIZE, labelColor, true);
