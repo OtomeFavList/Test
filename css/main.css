@@ -41,7 +41,7 @@ html {
 }
 */
 
-/* 卡片内部动态生成滑出面板 char / cp 两套，JS 动态插入 DOM */
+/* 卡片内部动态生成滑出面板 char/cp 两套，JS 动态插入 DOM */
 .char-slide-panel-char{
     display:none;
     margin:8px 0;
@@ -418,7 +418,7 @@ button:hover{
     margin: 10px 0 16px;
     flex-wrap: wrap;
 }
-/* 每一组开关+文字独立单元 */
+/* 每一组开关 + 文字独立单元 */
 .game-switch-row > div {
     display: flex;
     align-items: flex-start;
@@ -437,7 +437,7 @@ button:hover{
     margin:12px 0;
 }
 
-/* Character / CP 模块容器 */
+/* Character/CP 模块容器 */
 .game-card-section {
     margin-bottom: 20px;
 }
@@ -498,7 +498,7 @@ button:hover{
     flex-wrap:wrap;
 }
 
-/* 角色区域 char-section char-pool char-item */
+/* 角色区域 */
 .char-section{
     margin:16px 0;
     padding:12px 0;
@@ -590,7 +590,7 @@ button:hover{
     align-items:stretch;
 }
 
-/* 渲染输出选中角色卡片 char-card-item */
+/* 渲染输出选中角色卡片 */
 .char-card-item{
     width:120px;
     min-height:168px;
@@ -639,7 +639,7 @@ button:hover{
     width: 100%;  /* 补丁：撑满卡片宽度，切换按钮定位到名字框左右 */
 }
 
-/* 角色图片切换按钮，左右翻图 */
+/* 角色图片切换按钮 */
 .char-switch-btn{
     position:absolute;
     top:50%;
@@ -705,7 +705,7 @@ button:hover{
     background:rgba(255,255,255,0.9);
 }
 
-/* 补丁：角色名切换按钮，复用 char-switch-btn */
+/* 补丁：角色名切换按钮 */
 .char-card-name,
 .cp-female-name {
     position: relative;
@@ -748,7 +748,7 @@ button:hover{
 }
 /* 补丁结束 */
 
-/* CP 布局 cp-layout-row，移除 25%｜75% 固定占比，左右分栏，间距对齐 character */
+/* CP 布局，移除 25%｜75% 固定占比，左右分栏，间距对齐 character */
 .cp-group{
     margin:16px 0;
     padding-top:12px;
@@ -1137,7 +1137,7 @@ h2{
     flex-direction:column;
     gap:8px;
 }
-/* 待选女主：复用 char-item 样式，增加 flex 修复纵向布局高度 */
+/* 待选女主：修复纵向布局高度 */
 .cp-female-card-btn{
     width: 120px;
     min-height:168px;
@@ -1210,7 +1210,7 @@ h2{
     gap:12px;
     align-items:stretch;
 }
-/* 待选男主 cp-male-item：复用 char-item，flex 修复纵向布局高度 */
+/* 待选男主：修复纵向布局高度 */
 .cp-male-item{
     width: 120px;
     min-height:168px;
@@ -1309,7 +1309,7 @@ h2{
     justify-content:center;
     word-break:break-word;
 }
-/* CP 待选卡片图片切换按钮，复用 char-switch-btn */
+/* CP 待选卡片图片切换按钮 */
 .cp-female-card-btn .char-card-img-box,
 .cp-male-item .char-card-img-box {
     position: relative !important;
@@ -1439,30 +1439,30 @@ h2{
     --export-border: #f6a5b8;
     background-color: var(--export-bg) !important;
 }
-/* 大标题 Otome FavList */
+/* 大标题 */
 .snapshot-container.export-snapshot .site-title h1 {
     color: var(--export-title) !important;
 }
-/* 小标题：基础信息、游戏列表等 h2 */
+/* 小标题 */
 .snapshot-container.export-snapshot .big-card h2 {
     color: var(--export-subtitle) !important;
     border-left-color: var(--export-subtitle) !important;
 }
-/* 基础信息文字：昵称、游玩总数、入坑时间、入坑作品 */
+/* 基础信息文字 */
 .snapshot-container.export-snapshot .base-info-item {
     color: var(--export-baseinfotext) !important;
 }
-/* 游戏卡片内游戏名称 */
+/* 游戏名称 */
 .snapshot-container.export-snapshot .added-game-card > .game-card-head .game-card-head-title-wrap h3 {
     color: var(--export-gamename) !important;
 }
-/* 游戏卡片用户自定义文本 */
+/* 自定义文本 */
 .snapshot-container.export-snapshot .game-head-text-output,
 .snapshot-container.export-snapshot .game-char-text-output,
 .snapshot-container.export-snapshot .game-cp-text-output {
     color: var(--export-customtext) !important;
 }
-/* 卡片边框 big-card、added-game-card */
+/* 卡片边框 */
 .snapshot-container.export-snapshot .big-card,
 .snapshot-container.export-snapshot .added-game-card {
     border-color: var(--export-border) !important;
@@ -1477,7 +1477,7 @@ h2{
     --export-customtext: #c98fac;
     --export-gamename: #000000;
     --export-border: #f6a5b8;
-    /* 新增：统一标题色变量，Character / Couple 三级标题 */
+    /* 新增：统一标题色变量，Character/Couple 三级标题 */
     --export-section-title-color: var(--export-gamename);
     background-color: var(--export-bg) !important;
 }
@@ -1508,7 +1508,7 @@ h2{
 .snapshot-container.export-snapshot .char-slide-panel-cp {
     display: none !important;
 }
-/* 4. 新增：Character / Couple 三级标题样式，仅 JS 动态插入快照时使用 */
+/* 4. 新增：Character/Couple 三级标题样式，仅 JS 动态插入快照时使用 */
 .snapshot-container.export-snapshot .snapshot-section-title {
     font-size: 18px;
     margin: 12px 0 8px;
@@ -1527,8 +1527,7 @@ h2{
     display: none !important;
 }
 
-/* 导出预览弹窗样式，复用 modal-mask */
-/* 预览弹窗层级高于剧透弹窗 9999，所以 z-index:10000 */
+/* 导出预览弹窗样式 */
 #export-preview-modal.modal-mask {
     z-index: 10000;
 }
@@ -1878,7 +1877,7 @@ h2{
         padding: 16px;
     }
 }
-/* 折叠屏 + 平板 769px ~ 1200px：弹性多列 */
+/* 折叠屏 + 平板 769px~1200px：弹性多列 */
 @media (min-width:769px) and (max-width:1200px) {
     .game-list-select {
         display: grid !important;
