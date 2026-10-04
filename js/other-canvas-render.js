@@ -1844,7 +1844,7 @@ async function renderOtherBriefPageCanvas(designW, pageGameDataList, pageGameInf
   const canvasHeight = totalH;
   const canvas = document.createElement('canvas');
   const painter = new CanvasLayoutPainter(canvas, designW, canvasHeight, config.bg || '#fff7f9');
-  drawBigTitle(painter, designW, 'Otome Repo', config);
+  drawBigTitle(painter, designW, 'Otome Report', config);
   for (let i = 0; i < validCards.length; i++) {
     drawBriefGameCard(painter, designW, validCards[i].gameData, validCards[i].gameInfo, config, imageCache);
     if (i < validCards.length - 1) painter.shiftY(BRIEF_CARD_GAP);
