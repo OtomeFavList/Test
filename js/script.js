@@ -76,12 +76,14 @@ export function initPage(Core = {}) {
     return countCharImages(char, true, false) > countCharImages(char, false, false);
   }
   /**
-   * 补丁：判断角色是否有FD 内容（FD 角色标记 / FD 图片）
+   * 补丁：判断角色是否有FD 内容（FD 角色标记 / FD 名 / FD 图片）
    * 用于局部 FD 开关的显隐判断
    */
   function charHasFdContent(char) {
     if (!char) return false;
     if (char.isFD === true) return true;
+    // 新增：角色有 fdName 即视为有 FD 内容，局部 FD 开关需要显示
+    if (char.fdName) return true;
     // 开启 FD 开关后图片数量增加，角色有 FD 图片
     return countCharImages(char, false, true) > countCharImages(char, false, false);
   }
