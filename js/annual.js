@@ -1210,7 +1210,15 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     if(!modal) return;
     modal.classList.add("active");
     // 初始化弹窗状态（全局/局部开关逻辑 + 索引缓存，无论页面一/二都需要）
-    charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 新增：全局开关从 FavList 模式的 appData 同步，使用户在 FavList 开启的全局 FD/隐藏开关在 Annual 弹窗中继承生效，
+    // 使有 fdName 的角色在弹窗中显示名字切换按钮；局部开关保持 false，由各游戏独立持久化
+    const favAppData = window.Core?.appData || {};
+    charModalGlobal = {
+        subChar: !!favAppData.globalSubChar,
+        hideChar: !!favAppData.globalHideChar,
+        fdChar: !!favAppData.globalFD,
+        fdSubChar: !!favAppData.globalFdSubChar
+    };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     // 不再清空 annualCharImgIndex/annualCharNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
@@ -1223,12 +1231,13 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
         // 从持久化 Map 恢复该游戏的单独开关
         restoreCharModalLocalSwitches(directGame.id);
         switchCharModalView("charList");
-        // 重置全局开关 DOM 勾选
-        modal.querySelector("#annual-modal-global-sub-char").checked = false;
-        modal.querySelector("#annual-modal-global-hide-char").checked = false;
-        modal.querySelector("#annual-modal-global-fd-game").checked = false;
+        // 新增：全局开关 DOM 勾选与 charModalGlobal 同步（从 FavList appData 继承），
+        // 使弹窗打开时勾选状态与逻辑状态一致，用户可直观看到当前全局开关状态
+        modal.querySelector("#annual-modal-global-sub-char").checked = charModalGlobal.subChar;
+        modal.querySelector("#annual-modal-global-hide-char").checked = charModalGlobal.hideChar;
+        modal.querySelector("#annual-modal-global-fd-game").checked = charModalGlobal.fdChar;
         const globalFdSubEl = modal.querySelector("#annual-modal-global-fd-sub-char");
-        if (globalFdSubEl) globalFdSubEl.checked = false;
+        if (globalFdSubEl) globalFdSubEl.checked = charModalGlobal.fdSubChar;
         // 预填筛选下拉框（用户点返回按钮回到页面一时可用）
         fillFilterOptions(getGameTemplateState_WithFD().list, modal);
         resetAnnualFilterSelects("annual-global-char-modal");
@@ -1245,11 +1254,13 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     searchInput.value = "";
     fillFilterOptions(getGameTemplateState_WithFD().list, modal);
     resetAnnualFilterSelects("annual-global-char-modal");
-    modal.querySelector("#annual-modal-global-sub-char").checked = false;
-    modal.querySelector("#annual-modal-global-hide-char").checked = false;
-    modal.querySelector("#annual-modal-global-fd-game").checked = false;
+    // 新增：全局开关 DOM 勾选与 charModalGlobal 同步（从 FavList appData 继承）；
+    // 局部开关（本游戏单独开关）保持 false，进入具体游戏后由 restoreCharModalLocalSwitches 恢复
+    modal.querySelector("#annual-modal-global-sub-char").checked = charModalGlobal.subChar;
+    modal.querySelector("#annual-modal-global-hide-char").checked = charModalGlobal.hideChar;
+    modal.querySelector("#annual-modal-global-fd-game").checked = charModalGlobal.fdChar;
     const globalFdSubEl = modal.querySelector("#annual-modal-global-fd-sub-char");
-    if (globalFdSubEl) globalFdSubEl.checked = false;
+    if (globalFdSubEl) globalFdSubEl.checked = charModalGlobal.fdSubChar;
     modal.querySelector("#annual-modal-game-sub-char").checked = false;
     modal.querySelector("#annual-modal-game-hide-char").checked = false;
     modal.querySelector("#annual-modal-game-fd-game").checked = false;
@@ -3176,7 +3187,15 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
     const modal = document.getElementById("annual-global-cp-modal");
     if(!modal) return;
     modal.classList.add("active");
-    cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 新增：全局开关从 FavList 模式的 appData 同步，使用户在 FavList 开启的全局 FD/隐藏开关在 CP 弹窗中继承生效，
+    // 使有 fdName 的女主/男主在 CP 弹窗中显示名字切换按钮；局部开关保持 false
+    const favAppDataCp = window.Core?.appData || {};
+    cpModalGlobal = {
+        subChar: !!favAppDataCp.globalSubChar,
+        hideChar: !!favAppDataCp.globalHideChar,
+        fdChar: !!favAppDataCp.globalFD,
+        fdSubChar: !!favAppDataCp.globalFdSubChar
+    };
     cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     // 不再清空 annualCpImgIndex / annualCpNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
@@ -3190,10 +3209,13 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
         // 从持久化 Map 恢复该游戏的单独开关
         restoreCpModalLocalSwitches(directGame.id);
         switchCpModalView("femaleList");
-        // 重置全局开关 DOM 勾选
-        ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
-         "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char"].forEach(sel=>{
-            const el = modal.querySelector(sel); if(el) el.checked = false;
+        // 新增：全局开关 DOM 勾选与 cpModalGlobal 同步（从 FavList appData 继承）
+        const cpGlobalIds = ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
+                              "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char"];
+        const cpGlobalKeys = ["subChar","hideChar","fdChar","fdSubChar"];
+        cpGlobalIds.forEach((sel, i)=>{
+            const el = modal.querySelector(sel);
+            if(el) el.checked = cpModalGlobal[cpGlobalKeys[i]];
         });
         // 预填筛选下拉框（用户点返回按钮回到页面一时可用）
         fillFilterOptions(getGameTemplateState_WithFD().list, modal);
@@ -3211,9 +3233,16 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
     searchInput.value = "";
     fillFilterOptions(getGameTemplateState_WithFD().list, modal);
     resetAnnualFilterSelects("annual-global-cp-modal");
-    ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
-     "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char",
-     "#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
+    // 新增：全局开关 DOM 勾选与 cpModalGlobal 同步（从 FavList appData 继承）；
+    // 局部开关（本游戏单独开关）保持 false，进入具体游戏后由 restoreCpModalLocalSwitches 恢复
+    const allCpGlobalIds = ["#annual-modal-cp-global-sub-char","#annual-modal-cp-global-hide-char",
+                             "#annual-modal-cp-global-fd-game","#annual-modal-cp-global-fd-sub-char"];
+    const allCpGlobalKeys = ["subChar","hideChar","fdChar","fdSubChar"];
+    allCpGlobalIds.forEach((sel, i)=>{
+        const el = modal.querySelector(sel);
+        if(el) el.checked = cpModalGlobal[allCpGlobalKeys[i]];
+    });
+    ["#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
      "#annual-modal-cp-game-fd-game","#annual-modal-cp-game-fd-sub-char"].forEach(sel=>{
         const el = modal.querySelector(sel); if(el) el.checked = false;
     });
