@@ -524,17 +524,19 @@ export function getAvailableCharImages(char, globalHideSwitch, globalFDSwitch, l
     });
 }
 
-/* 新增：判断角色是否应显示隐藏名
- * 隐藏开关开启 OR（角色 isFD=true 且 FD 开关开启），满足任一显示 */
+/* 判断角色是否应显示额外名字（隐藏名 + FD名）
+ * 隐藏开关开启 OR（角色 isFD=true 且 FD 开关开启）OR（角色有 fdName 且 FD 开关开启），满足任一显示 */
 export function getCharShowHide(char, globalHide, localHide, globalFD, localFD) {
     if (!char) return false;
     if (globalHide || localHide) return true;
     if (char.isFD && (globalFD || localFD)) return true;
+    // 新增：角色有 fdName 且 FD 开关开启时，进入额外名字显示模式
+    if (char.fdName && (globalFD || localFD)) return true;
     return false;
 }
 
-/* 新增：获取角色可用名字列表，正常名 + 隐藏名数组
- * 兼容 hiddenName 为字符串或数组；showHide=false 时只返回正常名 */
+/* 获取角色可用名字列表，正常名 + 隐藏名数组 + FD名数组
+ * 兼容 hiddenName / fdName 为字符串或数组；showHide=false 时只返回正常名 */
 export function getCharNameList(char, showHide) {
     if (!char) return [];
     const list = [char.name || ""];
@@ -543,6 +545,12 @@ export function getCharNameList(char, showHide) {
         char.hiddenName.forEach(n => { if (n) list.push(String(n)); });
     } else if (typeof char.hiddenName === "string" && char.hiddenName) {
         list.push(char.hiddenName);
+    }
+    // 新增：FD名（与 hiddenName 完全同构的合并逻辑）
+    if (Array.isArray(char.fdName)) {
+        char.fdName.forEach(n => { if (n) list.push(String(n)); });
+    } else if (typeof char.fdName === "string" && char.fdName) {
+        list.push(char.fdName);
     }
     return list;
 }
