@@ -758,8 +758,8 @@ function renderCharModalGameList(wrap, keyword) {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // 补丁：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启）
-        const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
+        // 补丁：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启，全局 OR 局部，与角色列表页面二 renderCharModalCharList 保持一致）
+        const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
         const searchNameList = getCharNameList(char, searchShowHide);
         const searchTotalNames = searchNameList.length;
         const searchCanSwitchName = searchTotalNames > 1;
