@@ -307,6 +307,25 @@ function getAnnualCharAvailImages(char) {
     return allSrc;
 }
 
+// 新增：从 FavList 模式的 appData.gameList 预填充弹窗局部开关 Map
+// 只填充尚未在 Annual 弹窗中设置过的游戏，避免覆盖用户已设置的值
+// 使 Annual 弹窗继承 FavList 中各游戏的局部 FD/隐藏/次要角色开关状态
+function prefillModalLocalMapFromFavList(modalLocalMap) {
+    const favGameList = window.Core?.appData?.gameList;
+    if (!Array.isArray(favGameList)) return;
+    favGameList.forEach(gameItem => {
+        if (!gameItem || !gameItem.gameId) return;
+        // 只填充尚未设置过的游戏，避免覆盖 Annual 弹窗中用户已独立设置的值
+        if (modalLocalMap.has(gameItem.gameId)) return;
+        modalLocalMap.set(gameItem.gameId, {
+            subChar: !!gameItem.localSubChar,
+            hideChar: !!gameItem.localHideChar,
+            fdChar: !!gameItem.localFD,
+            fdSubChar: !!gameItem.localFdSubChar
+        });
+    });
+}
+
 /* 补丁：重置角色弹窗局部开关，逻辑状态 + DOM 勾选状态同步
  * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
  * 防止上一个游戏的开关 DOM 勾选残留到下一个游戏造成显示与逻辑相反 */
@@ -687,13 +706,16 @@ function renderCharModalGameList(wrap, keyword) {
         const gameNameLow = String(game.name).toLowerCase();
         const matchGame = gameNameLow.includes(kw);
         if(matchGame) matchedGames.add(game.id);
-
         const gameMergedChars = getGameMergedCharList(game);
         if(gameMergedChars.length === 0) continue;
+        // 新增：按角色所属游戏从 charModalLocalMap 读取局部开关，而非使用统一的 charModalLocal
+        // 使搜索结果中每个游戏的角色都能继承该游戏在 FavList 或 Annual 弹窗中设置的局部 FD 开关
+        const searchGameLocal = charModalLocalMap.get(game.id) || { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
         for(const char of gameMergedChars) {
             const charNameLow = String(char.name).toLowerCase();
             // 补丁：隐藏开关或 FD 开关（角色 isFD 时）任一开启
-            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
+            // 新增：按游戏读取局部开关，使局部 FD 开关开启时也能搜索 fdName
+            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, searchGameLocal.hideChar, charModalGlobal.fdChar, searchGameLocal.fdChar);
             let hiddenNameMatch = false;
             if (showHideForSearch && char.hiddenName) {
                 if (Array.isArray(char.hiddenName)) {
@@ -758,7 +780,8 @@ function renderCharModalGameList(wrap, keyword) {
         if (imgIdx >= allSrc.length) imgIdx = 0;
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
-        // 补丁：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启，全局 OR 局部，与角色列表页面二 renderCharModalCharList 保持一致）
+        // 补丁：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启，全局 OR 局部）
+        // 新增：按所属游戏读取局部开关，使 FavList 中开启局部 FD 的游戏角色在搜索结果中也显示 fdName 切换
         const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
         const searchNameList = getCharNameList(char, searchShowHide);
         const searchTotalNames = searchNameList.length;
@@ -1220,6 +1243,9 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
         fdSubChar: !!favAppData.globalFdSubChar
     };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 新增：从 FavList 模式的 appData.gameList 预填充各游戏局部开关
+    // 使 Annual 弹窗继承 FavList 中各游戏的局部 FD/隐藏开关，搜索结果中角色能显示 fdName 切换
+    prefillModalLocalMapFromFavList(charModalLocalMap);
     // 不再清空 annualCharImgIndex/annualCharNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
@@ -3197,6 +3223,8 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
         fdSubChar: !!favAppDataCp.globalFdSubChar
     };
     cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 新增：从 FavList 模式的 appData.gameList 预填充各游戏局部开关
+    prefillModalLocalMapFromFavList(cpModalLocalMap);
     // 不再清空 annualCpImgIndex / annualCpNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
