@@ -387,10 +387,12 @@ function charHasHiddenContent(char) {
     return countCharImages(char, true, false) > countCharImages(char, false, false);
 }
 
-// 新增：判断角色是否有FD 内容（FD 角色标记 / FD 图片）
+// 新增：判断角色是否有FD 内容（FD 角色标记 / FD 名 / FD 图片）
  function charHasFdContent(char) {
     if (!char) return false;
     if (char.isFD === true) return true;
+    // 新增：角色有 fdName 即视为有 FD 内容，局部 FD 开关需要显示
+    if (char.fdName) return true;
     // 开启 FD 开关后图片数量增加 → 角色有 FD 图片
     return countCharImages(char, false, true) > countCharImages(char, false, false);
 }
@@ -700,7 +702,16 @@ function renderCharModalGameList(wrap, keyword) {
                     hiddenNameMatch = String(char.hiddenName).toLowerCase().includes(kw);
                 }
             }
-            if(!charNameLow.includes(kw) && !hiddenNameMatch) continue;
+            // 新增：FD名搜索匹配（与 hiddenName 完全同构）
+            let fdNameMatch = false;
+            if (showHideForSearch && char.fdName) {
+                if (Array.isArray(char.fdName)) {
+                    fdNameMatch = char.fdName.some(n => String(n).toLowerCase().includes(kw));
+                } else {
+                    fdNameMatch = String(char.fdName).toLowerCase().includes(kw);
+                }
+            }
+            if(!charNameLow.includes(kw) && !hiddenNameMatch && !fdNameMatch) continue;
             // 修改为 OR 逻辑：角色有多个状态 true 时任一对应开关开启即显示
             const isSub = char.isSub ?? false;
             const isHidden = !!char.isHidden;
