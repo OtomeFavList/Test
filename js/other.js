@@ -706,11 +706,13 @@ function impressionCharHasHiddenContent(char) {
   return countWith > countWithout;
 }
 
-// Impression：判断角色是否有FD内容（FD角色标记/FD图片）
+// Impression：判断角色是否有FD内容（FD角色标记/FD名/FD图片）
 // 对齐 Annual charHasFdContent
 function impressionCharHasFdContent(char) {
   if (!char) return false;
   if (char.isFD === true) return true;
+  // 新增：角色有 fdName 即视为有 FD 内容，局部 FD 开关需要显示
+  if (char.fdName) return true;
   // 开启 FD 开关后图片数量增加 → 角色有 FD 图片
   const withFd = getAvailableCharImages(char, false, true, false, false);
   const withoutFd = getAvailableCharImages(char, false, false, false, false);
