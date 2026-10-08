@@ -1024,6 +1024,44 @@ function bindModalInterceptor() {
   });
 }
 
+// 新增：同步 Other 全局开关到角色弹窗全局开关
+// 通过模拟 click 触发 annual.js 的 document click 事件委托，
+// 使 charModalGlobal 与 DOM 勾选状态同步更新，并重新渲染角色列表
+function syncOtherGlobalSwitchesToCharModal() {
+  const modal = document.getElementById('annual-global-char-modal');
+  if (!modal) return;
+  const switchMap = {
+    '#annual-modal-global-sub-char':   otherImpGlobalSwitches.subChar,
+    '#annual-modal-global-hide-char':  otherImpGlobalSwitches.hideChar,
+    '#annual-modal-global-fd-game':    otherImpGlobalSwitches.fdChar,
+    '#annual-modal-global-fd-sub-char': otherImpGlobalSwitches.fdSubChar
+  };
+  Object.entries(switchMap).forEach(([sel, checked]) => {
+    const el = modal.querySelector(sel);
+    if (el && el.checked !== checked) {
+      el.click(); // 模拟点击，annual.js 事件委托会切换 charModalGlobal 并重渲染
+    }
+  });
+}
+
+// 新增：同步 Other 全局开关到 CP 弹窗全局开关
+function syncOtherGlobalSwitchesToCpModal() {
+  const modal = document.getElementById('annual-global-cp-modal');
+  if (!modal) return;
+  const switchMap = {
+    '#annual-modal-cp-global-sub-char':   otherImpGlobalSwitches.subChar,
+    '#annual-modal-cp-global-hide-char':  otherImpGlobalSwitches.hideChar,
+    '#annual-modal-cp-global-fd-game':    otherImpGlobalSwitches.fdChar,
+    '#annual-modal-cp-global-fd-sub-char': otherImpGlobalSwitches.fdSubChar
+  };
+  Object.entries(switchMap).forEach(([sel, checked]) => {
+    const el = modal.querySelector(sel);
+    if (el && el.checked !== checked) {
+      el.click();
+    }
+  });
+}
+
 // Repo 角色弹窗拦截器：捕获角色选择，写入 otherData
 function bindRepoCharModalInterceptor() {
   const modal = document.getElementById('annual-global-char-modal');
@@ -1307,6 +1345,8 @@ function bindReroCardEvents() {
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'char' };
       const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
       window.openAnnualGlobalCharModal(null, 'otherRepoChar', gameInfo || null);
+      // 新增：同步 Other 全局开关到弹窗，使有 fdName 的角色显示名字切换按钮
+      syncOtherGlobalSwitchesToCharModal();
       return;
     }
     // 文本卡片 CP + 按钮（directGame 作为第三参数传入，直接显示女主列表页面二，跳过游戏搜索页）
@@ -1317,6 +1357,8 @@ function bindReroCardEvents() {
       otherRepoCharTarget = { gameIdx: gameIdx, cardIdx: idx, type: 'cp' };
       const gameInfo = getCombinedGameList().find(g => g.id === gameData.gameId);
       window.openAnnualGlobalCpModal(null, 'otherRepoCp', gameInfo || null);
+      // 新增：同步 Other 全局开关到弹窗，使有 fdName 的角色显示名字切换按钮
+      syncOtherGlobalSwitchesToCpModal();
       return;
     }
     // 文本卡片 CP 图片清除 ×
