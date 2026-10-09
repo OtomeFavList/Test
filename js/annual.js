@@ -741,14 +741,16 @@ function renderCharModalGameList(wrap, keyword) {
             }
             if(!charNameLow.includes(kw) && !hiddenNameMatch && !fdNameMatch) continue;
             // 修改为 OR 逻辑：角色有多个状态 true 时任一对应开关开启即显示
+            // 补丁：搜索结果中过滤条件同时检查全局开关和按游戏局部开关（searchGameLocal），
+            // 与 renderCharModalCharList 中 charModalGlobal || charModalLocal 的计算方式保持一致
             const isSub = char.isSub ?? false;
             const isHidden = !!char.isHidden;
             const isFD = !!char.isFD;
             const isFdSub = !!char.isFdSub;
-            const showHide = charModalGlobal.hideChar;
-            const showFD = charModalGlobal.fdChar;
-            const showSub = charModalGlobal.subChar;
-            const showFdSub = charModalGlobal.fdSubChar;
+            const showHide = charModalGlobal.hideChar || searchGameLocal.hideChar;
+            const showFD = charModalGlobal.fdChar || searchGameLocal.fdChar;
+            const showSub = charModalGlobal.subChar || searchGameLocal.subChar;
+            const showFdSub = charModalGlobal.fdSubChar || searchGameLocal.fdSubChar;
             let pass = false;
             if (!isSub && !isHidden && !isFD && !isFdSub) {
                 pass = true;
