@@ -307,6 +307,25 @@ function getAnnualCharAvailImages(char) {
     return allSrc;
 }
 
+// 新增：从 FavList 模式的 appData.gameList 预填充弹窗局部开关 Map
+// 只填充尚未在 Annual 弹窗中设置过的游戏，避免覆盖用户已设置的值
+// 使 Annual 弹窗继承 FavList 中各游戏的局部 FD/隐藏/次要角色开关状态
+function prefillModalLocalMapFromFavList(modalLocalMap) {
+    const favGameList = window.Core?.appData?.gameList;
+    if (!Array.isArray(favGameList)) return;
+    favGameList.forEach(gameItem => {
+        if (!gameItem || !gameItem.gameId) return;
+        // 只填充尚未设置过的游戏，避免覆盖 Annual 弹窗中用户已独立设置的值
+        if (modalLocalMap.has(gameItem.gameId)) return;
+        modalLocalMap.set(gameItem.gameId, {
+            subChar: !!gameItem.localSubChar,
+            hideChar: !!gameItem.localHideChar,
+            fdChar: !!gameItem.localFD,
+            fdSubChar: !!gameItem.localFdSubChar
+        });
+    });
+}
+
 /* 补丁：重置角色弹窗局部开关，逻辑状态 + DOM 勾选状态同步
  * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
  * 防止上一个游戏的开关 DOM 勾选残留到下一个游戏造成显示与逻辑相反 */
@@ -330,6 +349,21 @@ function saveCharModalLocalSwitches(gameId) {
     if (!gameId) return;
     charModalLocalMap.set(gameId, { ...charModalLocal });
 }
+// 新增：刷新角色弹窗当前视图（游戏列表/搜索结果/角色列表）
+// 纯 name 相关补丁：解决搜索结果视图中切换全局/局部开关后，名字切换按钮不刷新的问题
+function refreshCharModalCurrentView() {
+    const modal = document.getElementById("annual-global-char-modal");
+    if (!modal) return;
+    if (charModalViewMode === "charList") {
+        renderCharModalCharList();
+    } else {
+        const searchInput = modal.querySelector(".annual-global-char-search-input");
+        const wrap = modal.querySelector(".annual-global-char-game-list");
+        if (wrap) {
+            renderCharModalGameList(wrap, searchInput?.value ?? "");
+        }
+    }
+}
 
 // 新增：重置 CP 弹窗局部开关，逻辑 + DOM 同步
 // 新增：进入指定游戏的页面二时，从持久化 Map 恢复 CP 弹窗单独开关；首次进入则全部为 false
@@ -350,6 +384,21 @@ function restoreCpModalLocalSwitches(gameId) {
 function saveCpModalLocalSwitches(gameId) {
     if (!gameId) return;
     cpModalLocalMap.set(gameId, { ...cpModalLocal });
+}
+// 新增：刷新 CP 弹窗当前视图（游戏列表/女主列表）
+// 纯 name 相关补丁：解决女主列表中切换全局开关后，名字切换按钮不刷新的问题
+function refreshCpModalCurrentView() {
+    const modal = document.getElementById("annual-global-cp-modal");
+    if (!modal) return;
+    if (cpModalViewMode === "femaleList") {
+        renderCpModalFemaleList();
+    } else {
+        const searchInput = modal.querySelector(".annual-global-cp-search-input");
+        const wrap = modal.querySelector(".annual-global-cp-game-list");
+        if (wrap) {
+            renderCpModalGameList(wrap, searchInput?.value ?? "");
+        }
+    }
 }
 
 // 新增：CP 弹窗角色可用立绘列表
@@ -1212,6 +1261,8 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     // 初始化弹窗状态（全局/局部开关逻辑 + 索引缓存，无论页面一/二都需要）
     charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 新增：从 FavList 模式预填充各游戏的局部开关，使用户在 FavList 开启的局部 FD/隐藏开关在 Annual 弹窗中继承生效
+    prefillModalLocalMapFromFavList(charModalLocalMap);
     // 不再清空 annualCharImgIndex/annualCharNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
@@ -3178,6 +3229,8 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
     modal.classList.add("active");
     cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 新增：从 FavList 模式预填充各游戏的局部开关
+    prefillModalLocalMapFromFavList(cpModalLocalMap);
     // 不再清空 annualCpImgIndex / annualCpNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
@@ -3844,71 +3897,71 @@ export function initAnnualModule(){
             // 全局开关
             if(e.target.closest("#annual-modal-global-sub-char")){
                 charModalGlobal.subChar = !charModalGlobal.subChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-global-hide-char")){
                 charModalGlobal.hideChar = !charModalGlobal.hideChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-global-fd-game")){
                 charModalGlobal.fdChar = !charModalGlobal.fdChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             // 新增：全局续作/FD 次要角色开关
             if(e.target.closest("#annual-modal-global-fd-sub-char")){
                 charModalGlobal.fdSubChar = !charModalGlobal.fdSubChar;
-                if(charModalViewMode === "charList") renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             // 本游戏局部开关
             if(e.target.closest("#annual-modal-game-sub-char")){
                 charModalLocal.subChar = !charModalLocal.subChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-game-hide-char")){
                 charModalLocal.hideChar = !charModalLocal.hideChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-game-fd-game")){
                 charModalLocal.fdChar = !charModalLocal.fdChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
             // 新增：单游戏续作/FD 次要角色开关
             if(e.target.closest("#annual-modal-game-fd-sub-char")){
                 charModalLocal.fdSubChar = !charModalLocal.fdSubChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                renderCharModalCharList();
+                refreshCharModalCurrentView();
                 return;
             }
 
             // 新增：CP 弹窗全局开关
             if(e.target.closest("#annual-modal-cp-global-sub-char")){
                 cpModalGlobal.subChar = !cpModalGlobal.subChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                refreshCpModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-global-hide-char")){
                 cpModalGlobal.hideChar = !cpModalGlobal.hideChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                refreshCpModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-global-fd-game")){
                 cpModalGlobal.fdChar = !cpModalGlobal.fdChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                refreshCpModalCurrentView();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-global-fd-sub-char")){
                 cpModalGlobal.fdSubChar = !cpModalGlobal.fdSubChar;
-                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
+                refreshCpModalCurrentView();
                 return;
             }
             // 新增：CP 弹窗局部开关
