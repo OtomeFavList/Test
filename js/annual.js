@@ -1199,22 +1199,6 @@ function switchCharModalView(mode){
     }
 }
 
-// 新增：根据当前视图模式刷新角色弹窗内容
-// 解决搜索结果视图（gameList + 搜索词）中点击开关后列表不刷新的问题
-function refreshCharModalCurrentView() {
-    const modal = document.getElementById("annual-global-char-modal");
-    if (!modal) return;
-    if (charModalViewMode === "charList") {
-        renderCharModalCharList();
-    } else {
-        const searchInput = modal.querySelector(".annual-global-char-search-input");
-        const wrap = modal.querySelector(".annual-global-char-game-list");
-        if (wrap) {
-            renderCharModalGameList(wrap, searchInput?.value ?? "");
-        }
-    }
-}
-
 // 打开角色选择弹窗
 function openAnnualGlobalCharModal(targetIndex, context, directGame){
     if(!_annualRealInitialized && isGameTemplateReady()){
@@ -3185,21 +3169,6 @@ function switchCpModalView(mode){
     }
 }
 
-// 新增：根据当前视图模式刷新 CP 弹窗内容
-function refreshCpModalCurrentView() {
-    const modal = document.getElementById("annual-global-cp-modal");
-    if (!modal) return;
-    if (cpModalViewMode === "femaleList") {
-        renderCpModalFemaleList();
-    } else {
-        const searchInput = modal.querySelector(".annual-global-cp-search-input");
-        const wrap = modal.querySelector(".annual-global-cp-game-list");
-        if (wrap) {
-            renderCpModalGameList(wrap, searchInput?.value ?? "");
-        }
-    }
-}
-
 function openAnnualGlobalCpModal(targetIndex, context, directGame){
     if(!_annualRealInitialized && isGameTemplateReady()) realInitAnnualModule();
     _activeModalContext = context || "cpTop";
@@ -3875,96 +3844,96 @@ export function initAnnualModule(){
             // 全局开关
             if(e.target.closest("#annual-modal-global-sub-char")){
                 charModalGlobal.subChar = !charModalGlobal.subChar;
-                refreshCharModalCurrentView();
+                if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
             if(e.target.closest("#annual-modal-global-hide-char")){
                 charModalGlobal.hideChar = !charModalGlobal.hideChar;
-                refreshCharModalCurrentView();
+                if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
             if(e.target.closest("#annual-modal-global-fd-game")){
                 charModalGlobal.fdChar = !charModalGlobal.fdChar;
-                refreshCharModalCurrentView();
+                if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
             // 新增：全局续作/FD 次要角色开关
             if(e.target.closest("#annual-modal-global-fd-sub-char")){
                 charModalGlobal.fdSubChar = !charModalGlobal.fdSubChar;
-                refreshCharModalCurrentView();
+                if(charModalViewMode === "charList") renderCharModalCharList();
                 return;
             }
             // 本游戏局部开关
             if(e.target.closest("#annual-modal-game-sub-char")){
                 charModalLocal.subChar = !charModalLocal.subChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                refreshCharModalCurrentView();
+                renderCharModalCharList();
                 return;
             }
             if(e.target.closest("#annual-modal-game-hide-char")){
                 charModalLocal.hideChar = !charModalLocal.hideChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                refreshCharModalCurrentView();
+                renderCharModalCharList();
                 return;
             }
             if(e.target.closest("#annual-modal-game-fd-game")){
                 charModalLocal.fdChar = !charModalLocal.fdChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                refreshCharModalCurrentView();
+                renderCharModalCharList();
                 return;
             }
             // 新增：单游戏续作/FD 次要角色开关
             if(e.target.closest("#annual-modal-game-fd-sub-char")){
                 charModalLocal.fdSubChar = !charModalLocal.fdSubChar;
                 saveCharModalLocalSwitches(charModalCurrentGameId);
-                refreshCharModalCurrentView();
+                renderCharModalCharList();
                 return;
             }
 
             // 新增：CP 弹窗全局开关
             if(e.target.closest("#annual-modal-cp-global-sub-char")){
                 cpModalGlobal.subChar = !cpModalGlobal.subChar;
-                refreshCpModalCurrentView();
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-global-hide-char")){
                 cpModalGlobal.hideChar = !cpModalGlobal.hideChar;
-                refreshCpModalCurrentView();
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-global-fd-game")){
                 cpModalGlobal.fdChar = !cpModalGlobal.fdChar;
-                refreshCpModalCurrentView();
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-global-fd-sub-char")){
                 cpModalGlobal.fdSubChar = !cpModalGlobal.fdSubChar;
-                refreshCpModalCurrentView();
+                if(cpModalViewMode === "femaleList") renderCpModalFemaleList();
                 return;
             }
             // 新增：CP 弹窗局部开关
             if(e.target.closest("#annual-modal-cp-game-sub-char")){
                 cpModalLocal.subChar = !cpModalLocal.subChar;
                 saveCpModalLocalSwitches(cpModalCurrentGameId);
-                refreshCpModalCurrentView();
+                renderCpModalFemaleList();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-game-hide-char")){
                 cpModalLocal.hideChar = !cpModalLocal.hideChar;
                 saveCpModalLocalSwitches(cpModalCurrentGameId);
-                refreshCpModalCurrentView();
+                renderCpModalFemaleList();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-game-fd-game")){
                 cpModalLocal.fdChar = !cpModalLocal.fdChar;
                 saveCpModalLocalSwitches(cpModalCurrentGameId);
-                refreshCpModalCurrentView();
+                renderCpModalFemaleList();
                 return;
             }
             if(e.target.closest("#annual-modal-cp-game-fd-sub-char")){
                 cpModalLocal.fdSubChar = !cpModalLocal.fdSubChar;
                 saveCpModalLocalSwitches(cpModalCurrentGameId);
-                refreshCpModalCurrentView();
+                renderCpModalFemaleList();
                 return;
             }
         });
