@@ -3518,6 +3518,49 @@ function bindAnnualExport() {
     btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
 
+// 新增：把单个弹窗开关直接绑到它的 label.switch 上（完全复用 FavList main.js 的可靠写法）
+// 不依赖 document 委托 + closest()，点滑块/文字都稳定触发；
+// stopPropagation 同时屏蔽 main.js(.wrap) 与 script.js(document) 的拦截，杜绝“滑块变粉但状态没翻”
+function bindAnnualModalSwitch(inputId, getState, key, afterToggle) {
+    const input = document.getElementById(inputId);
+    if (!input) { console.warn("[annual] 未找到开关元素：" + inputId); return; }
+    const label = input.closest("label.switch") || input.closest("label");
+    if (!label || label.__annualSwitchBound) return;
+    label.__annualSwitchBound = true;
+    label.addEventListener("click", function (e) {
+        e.preventDefault();   // 阻止浏览器原生勾选，全部交给 JS 接管（与 FavList 一致）
+        e.stopPropagation();  // 阻止冒泡到 .wrap / document，避免被其它全局委托拦截或重复处理
+        const stateObj = getState();          // 每次点击实时取最新对象，避免 reopen 后引用旧对象
+        stateObj[key] = !stateObj[key];
+        input.checked = !!stateObj[key];      // 手动同步滑块视觉
+        if (typeof afterToggle === "function") afterToggle();
+    });
+}
+
+// 新增：一次性绑定角色弹窗 + CP 弹窗共 16 个开关
+function bindAllAnnualModalSwitches() {
+    // —— 角色弹窗·全局 ——
+    bindAnnualModalSwitch("annual-modal-global-sub-char",   () => charModalGlobal, "subChar",  refreshCharModalCurrentView);
+    bindAnnualModalSwitch("annual-modal-global-hide-char",  () => charModalGlobal, "hideChar", refreshCharModalCurrentView);
+    bindAnnualModalSwitch("annual-modal-global-fd-game",    () => charModalGlobal, "fdChar",   refreshCharModalCurrentView);
+    bindAnnualModalSwitch("annual-modal-global-fd-sub-char",() => charModalGlobal, "fdSubChar",refreshCharModalCurrentView);
+    // —— 角色弹窗·本游戏局部 ——
+    bindAnnualModalSwitch("annual-modal-game-sub-char",   () => charModalLocal, "subChar",  function(){ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    bindAnnualModalSwitch("annual-modal-game-hide-char",  () => charModalLocal, "hideChar", function(){ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    bindAnnualModalSwitch("annual-modal-game-fd-game",    () => charModalLocal, "fdChar",   function(){ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    bindAnnualModalSwitch("annual-modal-game-fd-sub-char",() => charModalLocal, "fdSubChar",function(){ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    // —— CP 弹窗·全局 ——
+    bindAnnualModalSwitch("annual-modal-cp-global-sub-char",   () => cpModalGlobal, "subChar",  refreshCpModalCurrentView);
+    bindAnnualModalSwitch("annual-modal-cp-global-hide-char",  () => cpModalGlobal, "hideChar", refreshCpModalCurrentView);
+    bindAnnualModalSwitch("annual-modal-cp-global-fd-game",    () => cpModalGlobal, "fdChar",   refreshCpModalCurrentView);
+    bindAnnualModalSwitch("annual-modal-cp-global-fd-sub-char",() => cpModalGlobal, "fdSubChar",refreshCpModalCurrentView);
+    // —— CP 弹窗·本游戏局部 ——
+    bindAnnualModalSwitch("annual-modal-cp-game-sub-char",   () => cpModalLocal, "subChar",  function(){ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+    bindAnnualModalSwitch("annual-modal-cp-game-hide-char",  () => cpModalLocal, "hideChar", function(){ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+    bindAnnualModalSwitch("annual-modal-cp-game-fd-game",    () => cpModalLocal, "fdChar",   function(){ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+    bindAnnualModalSwitch("annual-modal-cp-game-fd-sub-char",() => cpModalLocal, "fdSubChar",function(){ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+}
+
 // 执行年度模块业务初始化，必须等 gameTemplateReady=true
 function realInitAnnualModule(){
     if(_annualRealInitialized) return;
@@ -3542,6 +3585,7 @@ function realInitAnnualModule(){
     bindAnnualExportPanel();
     bindAnnualFloatScrollButtons();  // 新增：悬浮滚动按钮
     bindAnnualTextareaResize();  // 感想框拖拽手柄
+    bindAllAnnualModalSwitches();  // 新增：16个弹窗开关改为 label 直接绑定（修复 FD/隐藏名不刷新）
     // 新增：五、其他/六、ゲーム宫格/七、キャラ宫格
     rebuildOtherModule();
     renderGameGrid();
