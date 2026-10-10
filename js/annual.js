@@ -307,18 +307,24 @@ function getAnnualCharAvailImages(char) {
     return allSrc;
 }
 
+/* 补丁：getCharShowHide 的 fdName 兼容包装
+ * 根因：main.js getCharShowHide 对仅有 fdName（无 isFD 标记）的角色返回 false，
+ *       导致名字切换按钮不渲染。此处额外检查 fdName，确保 FD 开关开启时按钮正常显示。
+ * 只影响名字切换，不影响图片逻辑。 */
+function getAnnualCharEffectiveShowHide(char, globalHide, localHide, globalFD, localFD) {
+    const base = getCharShowHide(char, globalHide, localHide, globalFD, localFD);
+    if (base) return true;
+    if (char && char.fdName && (globalFD || localFD)) return true;
+    return false;
+}
+
 /* 补丁：重置角色弹窗局部开关，逻辑状态 + DOM 勾选状态同步
  * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
  * 防止上一个游戏的开关 DOM 勾选残留到下一个游戏造成显示与逻辑相反 */
 // 新增：进入指定游戏的页面二时，从持久化 Map 恢复单独开关；首次进入则全部为 false
 function restoreCharModalLocalSwitches(gameId) {
     const saved = charModalLocalMap.get(gameId);
-    // 修复：改为属性修改而非重新赋值，保持对象引用不变
-    const restored = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    charModalLocal.subChar = restored.subChar;
-    charModalLocal.hideChar = restored.hideChar;
-    charModalLocal.fdChar = restored.fdChar;
-    charModalLocal.fdSubChar = restored.fdSubChar;
+    charModalLocal = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     const modal = document.getElementById("annual-global-char-modal");
     if (!modal) return;
     const subEl = modal.querySelector("#annual-modal-game-sub-char");
@@ -340,12 +346,7 @@ function saveCharModalLocalSwitches(gameId) {
 // 新增：进入指定游戏的页面二时，从持久化 Map 恢复 CP 弹窗单独开关；首次进入则全部为 false
 function restoreCpModalLocalSwitches(gameId) {
     const saved = cpModalLocalMap.get(gameId);
-    // 修复：改为属性修改而非重新赋值，保持对象引用不变
-    const restored = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    cpModalLocal.subChar = restored.subChar;
-    cpModalLocal.hideChar = restored.hideChar;
-    cpModalLocal.fdChar = restored.fdChar;
-    cpModalLocal.fdSubChar = restored.fdSubChar;
+    cpModalLocal = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     const modal = document.getElementById("annual-global-cp-modal");
     if (!modal) return;
     const ids = ["#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
@@ -703,7 +704,7 @@ function renderCharModalGameList(wrap, keyword) {
         for(const char of gameMergedChars) {
             const charNameLow = String(char.name).toLowerCase();
             // 补丁：隐藏开关或 FD 开关（角色 isFD 时）任一开启
-            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
+            const showHideForSearch = getAnnualCharEffectiveShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
             let hiddenNameMatch = false;
             if (showHideForSearch && char.hiddenName) {
                 if (Array.isArray(char.hiddenName)) {
@@ -769,7 +770,7 @@ function renderCharModalGameList(wrap, keyword) {
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
         // 补丁：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启，全局 OR 局部，与角色列表页面二 renderCharModalCharList 保持一致）
-        const searchShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
+        const searchShowHide = getAnnualCharEffectiveShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
         const searchNameList = getCharNameList(char, searchShowHide);
         const searchTotalNames = searchNameList.length;
         const searchCanSwitchName = searchTotalNames > 1;
@@ -985,7 +986,7 @@ function renderCharModalCharList() {
         const hasMultiImg = allSrc.length > 1;
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
         // 补丁：角色列表卡片名字切换
-        const charListShowHide = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
+        const charListShowHide = getAnnualCharEffectiveShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
         const charNameList = getCharNameList(char, charListShowHide);
         const charTotalNames = charNameList.length;
         const charCanSwitchName = charTotalNames > 1;
@@ -1220,15 +1221,8 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     if(!modal) return;
     modal.classList.add("active");
     // 初始化弹窗状态（全局/局部开关逻辑 + 索引缓存，无论页面一/二都需要）
-    // 修复：改为属性修改而非重新赋值，保持对象引用不变，避免 bindAnnualModalSwitches 闭包捕获失效
-    charModalGlobal.subChar = false;
-    charModalGlobal.hideChar = false;
-    charModalGlobal.fdChar = false;
-    charModalGlobal.fdSubChar = false;
-    charModalLocal.subChar = false;
-    charModalLocal.hideChar = false;
-    charModalLocal.fdChar = false;
-    charModalLocal.fdSubChar = false;
+    charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     // 不再清空 annualCharImgIndex/annualCharNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
@@ -3028,7 +3022,7 @@ function renderCpModalFemaleList() {
         const fAllSrc = getAnnualCpAvailImages(fChar);
         let fImgIdx = annualCpImgIndex.get(fImgKey);
         if (fImgIdx >= fAllSrc.length) fImgIdx = 0;
-        const fShowHide = getCharShowHide(fChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
+        const fShowHide = getAnnualCharEffectiveShowHide(fChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
         const fNameList = getCharNameList(fChar, fShowHide);
         const fTotalNames = fNameList.length;
         let fNameIdx = annualCpNameIndex.get(fImgKey);
@@ -3077,7 +3071,7 @@ function renderCpModalFemaleList() {
                 const mAllSrc = getAnnualCpAvailImages(mChar);
                 let mImgIdx = annualCpImgIndex.get(mImgKey);
                 if (mImgIdx >= mAllSrc.length) mImgIdx = 0;
-                const mShowHide = getCharShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
+                const mShowHide = getAnnualCharEffectiveShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
                 const mNameList = getCharNameList(mChar, mShowHide);
                 const mTotalNames = mNameList.length;
                 let mNameIdx = annualCpNameIndex.get(mImgKey);
@@ -3102,7 +3096,7 @@ function renderCpModalFemaleList() {
                 if(!mChar) return;
                 const mImgKey = `${cpModalCurrentGameId}-${mCharId}`;
                 const mAllSrc = getAnnualCpAvailImages(mChar);
-                const mShowHide = getCharShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
+                const mShowHide = getAnnualCharEffectiveShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
                 const mNameList = getCharNameList(mChar, mShowHide);
                 const mTotalNames = mNameList.length;
                 if(mAllSrc.length > 1) bindImgSwitch(maleItem, mImgKey, mAllSrc, ".annual-cp-male-img-prev", ".annual-cp-male-img-next");
@@ -3193,15 +3187,8 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
     const modal = document.getElementById("annual-global-cp-modal");
     if(!modal) return;
     modal.classList.add("active");
-    // 修复：改为属性修改而非重新赋值，保持对象引用不变
-    cpModalGlobal.subChar = false;
-    cpModalGlobal.hideChar = false;
-    cpModalGlobal.fdChar = false;
-    cpModalGlobal.fdSubChar = false;
-    cpModalLocal.subChar = false;
-    cpModalLocal.hideChar = false;
-    cpModalLocal.fdChar = false;
-    cpModalLocal.fdSubChar = false;
+    cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
     // 不再清空 annualCpImgIndex / annualCpNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
@@ -3504,114 +3491,6 @@ function bindAnnualExport() {
     btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
 
-// 新增：直接绑定 Annual 弹窗所有开关的 label click 事件
-// 完全复用 main.js bindGlobalSwitchSpoilerEvents 中 FavList 全局开关的绑定方式
-// 解决 document 事件委托 e.target.closest("#id") 在点击 slider 时不触发的根因
-function bindAnnualModalSwitches() {
-    const charModal = document.getElementById("annual-global-char-modal");
-    const cpModal = document.getElementById("annual-global-cp-modal");
-    if (!charModal && !cpModal) return;
-
-    // 工具函数：绑定单个开关，直接绑 label，preventDefault 阻止浏览器原生切换
-    function bindOneSwitch(modal, inputId, stateObj, stateKey, refreshFn) {
-        const input = modal ? modal.querySelector(inputId) : null;
-        if (!input) return;
-        const label = input.closest("label") || input.parentElement;
-        if (!label) return;
-        // 移除旧监听，防止重复绑定
-        label.removeEventListener("click", label._annualSwitchHandler);
-        label._annualSwitchHandler = function (e) {
-            e.preventDefault();  // 阻止浏览器原生切换 checkbox，全部 JS 接管
-            stateObj[stateKey] = !stateObj[stateKey];
-            input.checked = stateObj[stateKey];  // 手动同步 DOM 勾选状态
-            if (typeof refreshFn === "function") refreshFn();
-        };
-        label.addEventListener("click", label._annualSwitchHandler);
-    }
-
-    // ========== 角色弹窗 ==========
-    if (charModal) {
-        // 全局开关
-        bindOneSwitch(charModal, "#annual-modal-global-sub-char", charModalGlobal, "subChar", () => {
-            if (charModalViewMode === "charList") { renderCharModalCharList(); }
-            else { refreshCharModalSearchResults(); }
-        });
-        bindOneSwitch(charModal, "#annual-modal-global-hide-char", charModalGlobal, "hideChar", () => {
-            if (charModalViewMode === "charList") { renderCharModalCharList(); }
-            else { refreshCharModalSearchResults(); }
-        });
-        bindOneSwitch(charModal, "#annual-modal-global-fd-game", charModalGlobal, "fdChar", () => {
-            if (charModalViewMode === "charList") { renderCharModalCharList(); }
-            else { refreshCharModalSearchResults(); }
-        });
-        bindOneSwitch(charModal, "#annual-modal-global-fd-sub-char", charModalGlobal, "fdSubChar", () => {
-            if (charModalViewMode === "charList") { renderCharModalCharList(); }
-            else { refreshCharModalSearchResults(); }
-        });
-        // 局部开关（始终刷新页面二）
-        bindOneSwitch(charModal, "#annual-modal-game-sub-char", charModalLocal, "subChar", () => {
-            saveCharModalLocalSwitches(charModalCurrentGameId);
-            renderCharModalCharList();
-        });
-        bindOneSwitch(charModal, "#annual-modal-game-hide-char", charModalLocal, "hideChar", () => {
-            saveCharModalLocalSwitches(charModalCurrentGameId);
-            renderCharModalCharList();
-        });
-        bindOneSwitch(charModal, "#annual-modal-game-fd-game", charModalLocal, "fdChar", () => {
-            saveCharModalLocalSwitches(charModalCurrentGameId);
-            renderCharModalCharList();
-        });
-        bindOneSwitch(charModal, "#annual-modal-game-fd-sub-char", charModalLocal, "fdSubChar", () => {
-            saveCharModalLocalSwitches(charModalCurrentGameId);
-            renderCharModalCharList();
-        });
-    }
-
-    // ========== CP 弹窗 ==========
-    if (cpModal) {
-        // 全局开关
-        bindOneSwitch(cpModal, "#annual-modal-cp-global-sub-char", cpModalGlobal, "subChar", () => {
-            if (cpModalViewMode === "femaleList") renderCpModalFemaleList();
-        });
-        bindOneSwitch(cpModal, "#annual-modal-cp-global-hide-char", cpModalGlobal, "hideChar", () => {
-            if (cpModalViewMode === "femaleList") renderCpModalFemaleList();
-        });
-        bindOneSwitch(cpModal, "#annual-modal-cp-global-fd-game", cpModalGlobal, "fdChar", () => {
-            if (cpModalViewMode === "femaleList") renderCpModalFemaleList();
-        });
-        bindOneSwitch(cpModal, "#annual-modal-cp-global-fd-sub-char", cpModalGlobal, "fdSubChar", () => {
-            if (cpModalViewMode === "femaleList") renderCpModalFemaleList();
-        });
-        // 局部开关
-        bindOneSwitch(cpModal, "#annual-modal-cp-game-sub-char", cpModalLocal, "subChar", () => {
-            saveCpModalLocalSwitches(cpModalCurrentGameId);
-            renderCpModalFemaleList();
-        });
-        bindOneSwitch(cpModal, "#annual-modal-cp-game-hide-char", cpModalLocal, "hideChar", () => {
-            saveCpModalLocalSwitches(cpModalCurrentGameId);
-            renderCpModalFemaleList();
-        });
-        bindOneSwitch(cpModal, "#annual-modal-cp-game-fd-game", cpModalLocal, "fdChar", () => {
-            saveCpModalLocalSwitches(cpModalCurrentGameId);
-            renderCpModalFemaleList();
-        });
-        bindOneSwitch(cpModal, "#annual-modal-cp-game-fd-sub-char", cpModalLocal, "fdSubChar", () => {
-            saveCpModalLocalSwitches(cpModalCurrentGameId);
-            renderCpModalFemaleList();
-        });
-    }
-}
-
-// 新增：页面一搜索结果刷新工具（全局开关切换时，如果有搜索词则重新渲染搜索结果）
-function refreshCharModalSearchResults() {
-    const modal = document.getElementById("annual-global-char-modal");
-    if (!modal) return;
-    const searchInput = modal.querySelector(".annual-global-char-search-input");
-    if (searchInput && searchInput.value.trim()) {
-        renderCharModalGameList(modal.querySelector(".annual-global-char-game-list"), searchInput.value);
-    }
-}
-
 // 执行年度模块业务初始化，必须等 gameTemplateReady=true
 function realInitAnnualModule(){
     if(_annualRealInitialized) return;
@@ -3636,7 +3515,6 @@ function realInitAnnualModule(){
     bindAnnualExportPanel();
     bindAnnualFloatScrollButtons();  // 新增：悬浮滚动按钮
     bindAnnualTextareaResize();  // 感想框拖拽手柄
-    bindAnnualModalSwitches();  // 新增：直接绑定弹窗所有开关，修复 fdName 不显示
     // 新增：五、其他/六、ゲーム宫格/七、キャラ宫格
     rebuildOtherModule();
     renderGameGrid();
