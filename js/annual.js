@@ -693,7 +693,7 @@ function renderCharModalGameList(wrap, keyword) {
         for(const char of gameMergedChars) {
             const charNameLow = String(char.name).toLowerCase();
             // 补丁：隐藏开关或 FD 开关（角色 isFD 时）任一开启
-            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
+            const showHideForSearch = getCharShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
             let hiddenNameMatch = false;
             if (showHideForSearch && char.hiddenName) {
                 if (Array.isArray(char.hiddenName)) {
@@ -717,10 +717,10 @@ function renderCharModalGameList(wrap, keyword) {
             const isHidden = !!char.isHidden;
             const isFD = !!char.isFD;
             const isFdSub = !!char.isFdSub;
-            const showHide = charModalGlobal.hideChar;
-            const showFD = charModalGlobal.fdChar;
-            const showSub = charModalGlobal.subChar;
-            const showFdSub = charModalGlobal.fdSubChar;
+            const showHide = charModalGlobal.hideChar || charModalLocal.hideChar;
+            const showFD = charModalGlobal.fdChar || charModalLocal.fdChar;
+            const showSub = charModalGlobal.subChar || charModalLocal.subChar;
+            const showFdSub = charModalGlobal.fdSubChar || charModalLocal.fdSubChar;
             let pass = false;
             if (!isSub && !isHidden && !isFD && !isFdSub) {
                 pass = true;
@@ -1204,6 +1204,7 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     if(!_annualRealInitialized && isGameTemplateReady()){
         realInitAnnualModule();
     }
+    bindAllAnnualModalSwitches();
     _activeModalContext = context || "charTop";
     activeCharTopItemIndex = (_activeModalContext === "charTop") ? targetIndex : null;
     const modal = document.getElementById("annual-global-char-modal");
@@ -3171,6 +3172,7 @@ function switchCpModalView(mode){
 
 function openAnnualGlobalCpModal(targetIndex, context, directGame){
     if(!_annualRealInitialized && isGameTemplateReady()) realInitAnnualModule();
+    bindAllAnnualModalSwitches();
     _activeModalContext = context || "cpTop";
     activeCpTopItemIndex = (_activeModalContext === "cpTop") ? targetIndex : null;
     const modal = document.getElementById("annual-global-cp-modal");
@@ -3479,6 +3481,81 @@ function bindAnnualExport() {
     };
     btnAnnualExport.addEventListener("click", btnAnnualExport._clickHandler);
 }
+
+// ===== 补丁：弹窗开关原生 change 直绑（修复点滑块时 document 委托不翻转 JS 状态）=====
+// 按当前视图刷新角色弹窗：页面二刷角色列表，页面一重跑搜索/游戏列表
+function refreshCharModalCurrentView(){
+    if(charModalViewMode === "charList"){
+        renderCharModalCharList();
+        return;
+    }
+    const modal = document.getElementById("annual-global-char-modal");
+    if(!modal) return;
+    const wrap = modal.querySelector(".annual-global-char-game-list");
+    const input = modal.querySelector(".annual-global-char-search-input");
+    if(wrap) renderCharModalGameList(wrap, input ? input.value : "");
+}
+// 按当前视图刷新 CP 弹窗：页面二刷女主/男主列表，页面一重跑游戏列表
+function refreshCpModalCurrentView(){
+    if(cpModalViewMode === "femaleList"){
+        renderCpModalFemaleList();
+        return;
+    }
+    const modal = document.getElementById("annual-global-cp-modal");
+    if(!modal) return;
+    const wrap = modal.querySelector(".annual-global-cp-game-list");
+    const input = modal.querySelector(".annual-global-cp-search-input");
+    if(wrap) renderCpModalGameList(wrap, input ? input.value : "");
+}
+// 给单个开关直绑原生 change：以 input.checked 为唯一准绳同步 JS 状态
+// 并在其 label 上 stopPropagation（不 preventDefault），屏蔽 main.js .wrap 委托拦截原生勾选
+function bindAnnualModalSwitchChange(inputId, stateGetter, key, afterToggle){
+    const input = document.getElementById(inputId);
+    if(!input){
+        console.warn("[annual] 未找到开关：" + inputId);
+        return;
+    }
+    if(!input.__annualChangeBound){
+        input.addEventListener("change", ()=>{
+            stateGetter()[key] = !!input.checked;
+            if(typeof afterToggle === "function") afterToggle();
+        });
+        input.__annualChangeBound = true;
+    }
+    // 兼容 <label>包裹<input> 与 <label for="id"> 两种结构
+    let label = input.closest("label");
+    if(!label && input.id){
+        label = document.querySelector('label[for="' + input.id + '"]');
+    }
+    if(label && !label.__annualStopBound){
+        label.addEventListener("click", (e)=>{ e.stopPropagation(); });
+        label.__annualStopBound = true;
+    }
+}
+// 一次性绑定角色弹窗 + CP 弹窗共 16 个开关（幂等，可重复调用）
+function bindAllAnnualModalSwitches(){
+    // 角色弹窗·全局 4 个
+    bindAnnualModalSwitchChange("annual-modal-global-sub-char",    ()=>charModalGlobal, "subChar",   refreshCharModalCurrentView);
+    bindAnnualModalSwitchChange("annual-modal-global-hide-char",   ()=>charModalGlobal, "hideChar",  refreshCharModalCurrentView);
+    bindAnnualModalSwitchChange("annual-modal-global-fd-game",     ()=>charModalGlobal, "fdChar",    refreshCharModalCurrentView);
+    bindAnnualModalSwitchChange("annual-modal-global-fd-sub-char", ()=>charModalGlobal, "fdSubChar", refreshCharModalCurrentView);
+    // 角色弹窗·本游戏局部 4 个
+    bindAnnualModalSwitchChange("annual-modal-game-sub-char",    ()=>charModalLocal, "subChar",   ()=>{ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    bindAnnualModalSwitchChange("annual-modal-game-hide-char",   ()=>charModalLocal, "hideChar",  ()=>{ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    bindAnnualModalSwitchChange("annual-modal-game-fd-game",     ()=>charModalLocal, "fdChar",    ()=>{ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    bindAnnualModalSwitchChange("annual-modal-game-fd-sub-char", ()=>charModalLocal, "fdSubChar", ()=>{ saveCharModalLocalSwitches(charModalCurrentGameId); refreshCharModalCurrentView(); });
+    // CP 弹窗·全局 4 个
+    bindAnnualModalSwitchChange("annual-modal-cp-global-sub-char",    ()=>cpModalGlobal, "subChar",   refreshCpModalCurrentView);
+    bindAnnualModalSwitchChange("annual-modal-cp-global-hide-char",   ()=>cpModalGlobal, "hideChar",  refreshCpModalCurrentView);
+    bindAnnualModalSwitchChange("annual-modal-cp-global-fd-game",     ()=>cpModalGlobal, "fdChar",    refreshCpModalCurrentView);
+    bindAnnualModalSwitchChange("annual-modal-cp-global-fd-sub-char", ()=>cpModalGlobal, "fdSubChar", refreshCpModalCurrentView);
+    // CP 弹窗·本游戏局部 4 个
+    bindAnnualModalSwitchChange("annual-modal-cp-game-sub-char",    ()=>cpModalLocal, "subChar",   ()=>{ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+    bindAnnualModalSwitchChange("annual-modal-cp-game-hide-char",   ()=>cpModalLocal, "hideChar",  ()=>{ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+    bindAnnualModalSwitchChange("annual-modal-cp-game-fd-game",     ()=>cpModalLocal, "fdChar",    ()=>{ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+    bindAnnualModalSwitchChange("annual-modal-cp-game-fd-sub-char", ()=>cpModalLocal, "fdSubChar", ()=>{ saveCpModalLocalSwitches(cpModalCurrentGameId); refreshCpModalCurrentView(); });
+}
+// ===== 补丁结束 =====
 
 // 执行年度模块业务初始化，必须等 gameTemplateReady=true
 function realInitAnnualModule(){
