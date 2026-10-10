@@ -313,7 +313,12 @@ function getAnnualCharAvailImages(char) {
 // 新增：进入指定游戏的页面二时，从持久化 Map 恢复单独开关；首次进入则全部为 false
 function restoreCharModalLocalSwitches(gameId) {
     const saved = charModalLocalMap.get(gameId);
-    charModalLocal = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 修复：改为属性修改而非重新赋值，保持对象引用不变
+    const restored = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    charModalLocal.subChar = restored.subChar;
+    charModalLocal.hideChar = restored.hideChar;
+    charModalLocal.fdChar = restored.fdChar;
+    charModalLocal.fdSubChar = restored.fdSubChar;
     const modal = document.getElementById("annual-global-char-modal");
     if (!modal) return;
     const subEl = modal.querySelector("#annual-modal-game-sub-char");
@@ -335,7 +340,12 @@ function saveCharModalLocalSwitches(gameId) {
 // 新增：进入指定游戏的页面二时，从持久化 Map 恢复 CP 弹窗单独开关；首次进入则全部为 false
 function restoreCpModalLocalSwitches(gameId) {
     const saved = cpModalLocalMap.get(gameId);
-    cpModalLocal = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 修复：改为属性修改而非重新赋值，保持对象引用不变
+    const restored = saved ? { ...saved } : { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    cpModalLocal.subChar = restored.subChar;
+    cpModalLocal.hideChar = restored.hideChar;
+    cpModalLocal.fdChar = restored.fdChar;
+    cpModalLocal.fdSubChar = restored.fdSubChar;
     const modal = document.getElementById("annual-global-cp-modal");
     if (!modal) return;
     const ids = ["#annual-modal-cp-game-sub-char","#annual-modal-cp-game-hide-char",
@@ -1210,8 +1220,15 @@ function openAnnualGlobalCharModal(targetIndex, context, directGame){
     if(!modal) return;
     modal.classList.add("active");
     // 初始化弹窗状态（全局/局部开关逻辑 + 索引缓存，无论页面一/二都需要）
-    charModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    charModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 修复：改为属性修改而非重新赋值，保持对象引用不变，避免 bindAnnualModalSwitches 闭包捕获失效
+    charModalGlobal.subChar = false;
+    charModalGlobal.hideChar = false;
+    charModalGlobal.fdChar = false;
+    charModalGlobal.fdSubChar = false;
+    charModalLocal.subChar = false;
+    charModalLocal.hideChar = false;
+    charModalLocal.fdChar = false;
+    charModalLocal.fdSubChar = false;
     // 不再清空 annualCharImgIndex/annualCharNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
@@ -3176,8 +3193,15 @@ function openAnnualGlobalCpModal(targetIndex, context, directGame){
     const modal = document.getElementById("annual-global-cp-modal");
     if(!modal) return;
     modal.classList.add("active");
-    cpModalGlobal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
-    cpModalLocal = { subChar:false, hideChar:false, fdChar:false, fdSubChar:false };
+    // 修复：改为属性修改而非重新赋值，保持对象引用不变
+    cpModalGlobal.subChar = false;
+    cpModalGlobal.hideChar = false;
+    cpModalGlobal.fdChar = false;
+    cpModalGlobal.fdSubChar = false;
+    cpModalLocal.subChar = false;
+    cpModalLocal.hideChar = false;
+    cpModalLocal.fdChar = false;
+    cpModalLocal.fdSubChar = false;
     // 不再清空 annualCpImgIndex / annualCpNameIndex：
     // 它们已按 "${gameId}-${charId}" 键控，保留后下次打开同一角色仍显示上次选中的立绘和名字
 
