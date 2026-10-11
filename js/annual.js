@@ -318,6 +318,21 @@ function getAnnualCharEffectiveShowHide(char, globalHide, localHide, globalFD, l
     return false;
 }
 
+/* 补丁：getCharNameList 的 fdName 兼容包装
+ * 根因：main.js getCharNameList 未合并 fdName（或合并不完整），
+ *       导致即使 showHide=true，只有 fdName 无 hiddenName 的角色
+ *       名字列表仍为 [char.name]，长度为 1，切换按钮不渲染。
+ * 此处调用原函数后检查 fdName 是否在返回列表中，缺失则追加。
+ * 只影响名字列表，不影响图片逻辑。 */
+function getAnnualCharNameList(char, showHide) {
+    const baseList = getCharNameList(char, showHide);
+    if (!showHide || !char || !char.fdName) return baseList;
+    const fdNames = Array.isArray(char.fdName) ? char.fdName : [char.fdName];
+    const missing = fdNames.filter(n => !baseList.includes(n));
+    if (missing.length === 0) return baseList;
+    return [...baseList, ...missing];
+}
+
 /* 补丁：重置角色弹窗局部开关，逻辑状态 + DOM 勾选状态同步
  * 每次进入新游戏的角色列表时调用，确保各游戏单独开关完全独立，
  * 防止上一个游戏的开关 DOM 勾选残留到下一个游戏造成显示与逻辑相反 */
@@ -771,7 +786,7 @@ function renderCharModalGameList(wrap, keyword) {
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
         // 补丁：搜索结果角色卡片名字切换（隐藏或 FD 开关任一开启，全局 OR 局部，与角色列表页面二 renderCharModalCharList 保持一致）
         const searchShowHide = getAnnualCharEffectiveShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
-        const searchNameList = getCharNameList(char, searchShowHide);
+        const searchNameList = getAnnualCharNameList(char, searchShowHide);
         const searchTotalNames = searchNameList.length;
         const searchCanSwitchName = searchTotalNames > 1;
         if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
@@ -987,7 +1002,7 @@ function renderCharModalCharList() {
         const currentImgSrc = getWebImageUrl(allSrc[imgIdx] || "");
         // 补丁：角色列表卡片名字切换
         const charListShowHide = getAnnualCharEffectiveShowHide(char, charModalGlobal.hideChar, charModalLocal.hideChar, charModalGlobal.fdChar, charModalLocal.fdChar);
-        const charNameList = getCharNameList(char, charListShowHide);
+        const charNameList = getAnnualCharNameList(char, charListShowHide);
         const charTotalNames = charNameList.length;
         const charCanSwitchName = charTotalNames > 1;
         if (!annualCharNameIndex.has(imgKey)) annualCharNameIndex.set(imgKey, 0);
@@ -3023,7 +3038,7 @@ function renderCpModalFemaleList() {
         let fImgIdx = annualCpImgIndex.get(fImgKey);
         if (fImgIdx >= fAllSrc.length) fImgIdx = 0;
         const fShowHide = getAnnualCharEffectiveShowHide(fChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
-        const fNameList = getCharNameList(fChar, fShowHide);
+        const fNameList = getAnnualCharNameList(fChar, fShowHide);
         const fTotalNames = fNameList.length;
         let fNameIdx = annualCpNameIndex.get(fImgKey);
         if (fNameIdx >= fTotalNames) fNameIdx = 0;
@@ -3072,7 +3087,7 @@ function renderCpModalFemaleList() {
                 let mImgIdx = annualCpImgIndex.get(mImgKey);
                 if (mImgIdx >= mAllSrc.length) mImgIdx = 0;
                 const mShowHide = getAnnualCharEffectiveShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
-                const mNameList = getCharNameList(mChar, mShowHide);
+                const mNameList = getAnnualCharNameList(mChar, mShowHide);
                 const mTotalNames = mNameList.length;
                 let mNameIdx = annualCpNameIndex.get(mImgKey);
                 if (mNameIdx >= mTotalNames) mNameIdx = 0;
@@ -3097,7 +3112,7 @@ function renderCpModalFemaleList() {
                 const mImgKey = `${cpModalCurrentGameId}-${mCharId}`;
                 const mAllSrc = getAnnualCpAvailImages(mChar);
                 const mShowHide = getAnnualCharEffectiveShowHide(mChar, cpModalGlobal.hideChar, cpModalLocal.hideChar, cpModalGlobal.fdChar, cpModalLocal.fdChar);
-                const mNameList = getCharNameList(mChar, mShowHide);
+                const mNameList = getAnnualCharNameList(mChar, mShowHide);
                 const mTotalNames = mNameList.length;
                 if(mAllSrc.length > 1) bindImgSwitch(maleItem, mImgKey, mAllSrc, ".annual-cp-male-img-prev", ".annual-cp-male-img-next");
                 if(mTotalNames > 1) bindNameSwitch(maleItem, mImgKey, mNameList, mTotalNames, ".annual-cp-name-prev", ".annual-cp-name-next");
