@@ -346,7 +346,13 @@ function drawTextBox(painter, x, y, boxW, boxH, text, config, noBorder, centerTe
     // 优点/缺点/攻略顺序/好感顺序传入 inputSize（填写内容字号）
     const size = textSize || config.customTextFontSize || 16;
     const color = textColor || config.customtext || '#c98fac';
-    const lineHeight = size * 1.55;
+    // 行空隙上限 12px，与 Annual 模式 wrapText/drawCenteredText 保持一致。
+    // 字号较小时 size*0.55 < 12，行为不变；字号调大后行间距不再随字号膨胀，
+    // 同时保证绘制行高与 measureWrappedHeight（内部已做同样钳制）一致，
+    // 修复优点/缺点/攻略顺序/好感顺序文本框字号调大后文字溢出框外的问题。
+    const rawLineHeight = size * 1.55;
+    const gap = Math.min(rawLineHeight - size, 12);
+    const lineHeight = size + gap;
     const textAreaW = boxW - padX * 2;
     if (verticalCenter) {
       // 自行换行并用 top baseline 绘制，按实际视觉高度精确垂直居中
