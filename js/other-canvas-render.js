@@ -732,7 +732,8 @@ function calcRepoGameHeight(ctx, targetW, gameData, gameInfo, config, imageCache
   const hasOverall = !!gameData.overall;
   const hasLove = gameData.love && gameData.love > 0;
 
-  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4, inputSize * 1.4);
+  // 行高只由固定字号内容（标签/评分按钮/爱心/固定值）决定，不受填写内容字号滑块影响
+  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4);
   const fieldRows = [];
   if (hasDuration || hasCompleted) fieldRows.push(1);
   if (hasStartDate || hasEndDate) fieldRows.push(2);
@@ -985,7 +986,8 @@ function calcBriefGameHeight(ctx, targetW, gameData, gameInfo, config, imageCach
   const coverH = calcGameCoverHeight(coverImg, COVER_W);
   const fieldW = innerW - COVER_W - 12;
   const radarGap = 16;
-  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4, inputSize * 1.4);
+  // 行高只由固定字号内容（标签/评分按钮/爱心/固定值）决定，不受填写内容字号滑块影响
+  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4);
   const fieldRows = [];
   if (hasDuration || hasCompleted) fieldRows.push(1);
   if (hasStartDate || hasEndDate) fieldRows.push(2);
@@ -1062,7 +1064,8 @@ function drawRepoGameCard(painter, targetW, gameData, gameInfo, config, imageCac
   const hasRadar = (gameData.fiveDim || []).some(d => (d.level || 0) > 0);
   const radarGap = 16;
   const leftColW = hasRadar ? (fieldW - RADAR_BOX_W - radarGap) : fieldW;
-  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4, inputSize * 1.4);
+  // 行高只由固定字号内容（标签/评分按钮/爱心/固定值）决定，不受填写内容字号滑块影响
+  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4);
   const labelCenterOffset = (fieldRowH - LABEL_SIZE) / 2;
   const gradeCenterOffset = (fieldRowH - GRADE_SIZE) / 2;
   const heartCenterOffset = (fieldRowH - HEART_SIZE) / 2;
@@ -1543,7 +1546,8 @@ function drawBriefGameCard(painter, targetW, gameData, gameInfo, config, imageCa
   const fieldX = contentX + COVER_W + 12;
   const fieldW = innerW - COVER_W - 12;
   const hasRadar = (gameData.fiveDim || []).some(d => (d.level || 0) > 0);
-  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4, inputSize * 1.4);
+  // 行高只由固定字号内容（标签/评分按钮/爱心/固定值）决定，不受填写内容字号滑块影响
+  const fieldRowH = Math.max(LABEL_SIZE * 1.4, GRADE_SIZE, HEART_SIZE, FIELD_VALUE_SIZE * 1.4);
   const labelCenterOffset = (fieldRowH - LABEL_SIZE) / 2;
   const gradeCenterOffset = (fieldRowH - GRADE_SIZE) / 2;
   const heartCenterOffset = (fieldRowH - HEART_SIZE) / 2;
