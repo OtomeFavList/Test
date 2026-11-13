@@ -123,6 +123,7 @@ export let appData = {
     globalFdSubChar: false, // 新增：全局显示续作/FD次要角色开关，默认关闭
     // 新增
     exportFoldContent: true,
+    exportShowHiddenFDName: true, // 改：导出时默认显示隐藏/续作/FD角色名
     gameSpoilerRecord: {},
     baseInfo: { nick: "", count: "", story: "", firstgame: "" },
     gameList: [],
