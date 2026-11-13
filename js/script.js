@@ -1344,7 +1344,7 @@ export function initPage(Core = {}) {
     if (el.exportFoldContentSwitch) {
         el.exportFoldContentSwitch.checked = !!appData.exportFoldContent;
     }
-    // 新增：渲染显示隐藏/续作/FD 角色名开关初始状态（默认关闭）
+    // 新增：渲染显示隐藏/续作/FD 角色名开关初始状态（默认开启）
     if (el.exportShowHiddenFDNameSwitch) {
         el.exportShowHiddenFDNameSwitch.checked = !!appData.exportShowHiddenFDName;
     }
