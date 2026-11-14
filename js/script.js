@@ -118,6 +118,7 @@ export function initPage(Core = {}) {
     const allChars = getAllGameChar(gameInfo);
     const femaleChars = allChars.filter(c => c.gender === "female");
     const maleChars = allChars.filter(c => c.gender === "male");
+    const femaleCharsForCharMode = femaleChars.filter(c => !c.cpOnlyFemale);
 
     if(mode === "char"){
         // 修改：Character 模式，草稿临时勾选，确认才写入真实数据
@@ -125,7 +126,7 @@ export function initPage(Core = {}) {
         const tempCharDraftSet = new Set(gameItem.selectChars);
 
         let femHtml = "";
-        femaleChars.forEach(char => {
+        femaleCharsForCharMode.forEach(char => {
             const imgsUnitList = getAvailableCharImages(char, appData.globalHideChar, appData.globalFD, gameItem.localHideChar, gameItem.localFD);
             if (imgsUnitList.length === 0) return;
 
