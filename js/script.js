@@ -278,16 +278,22 @@ export function initPage(Core = {}) {
     }else{
         // mode === "cp" 全新草稿模式逻辑
         // 兜底：旧存档没有 cpEditState 则自动生成（修改：增加 femaleImgIndex:0）
-        if(!Array.isArray(gameItem.cpEditState) || gameItem.cpEditState.length ===0){
-            gameItem.cpEditState = femaleChars.map(f=>({
-                femaleId: f.id,
-                openMalePanel: false,
-                maleIds: [],
-                maleItems: [],
-                femaleImgIndex: 0,
-                femaleNameIndex: 0  // 补丁新增
-            }));
+        if(!Array.isArray(gameItem.cpEditState)){
+            gameItem.cpEditState = [];
         }
+        // 增量补全：cpOnlyFemale角色自动追加到cpEditState，不覆盖已有条目
+        femaleChars.forEach(f=>{
+            if(!gameItem.cpEditState.some(s=>s.femaleId === f.id)){
+                gameItem.cpEditState.push({
+                    femaleId: f.id,
+                    openMalePanel: false,
+                    maleIds: [],
+                    maleItems: [],
+                    femaleImgIndex: 0,
+                    femaleNameIndex: 0// 补丁新增
+                });
+            }
+        });
 
         // 重构草稿结构：对齐 Character，草稿只保存选中 ID Set，不缓存 imgIndex
         const tempCpDraftMap = {};
