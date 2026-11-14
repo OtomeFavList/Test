@@ -1024,6 +1024,7 @@ function renderCharModalCharList() {
     // 补丁结束
     let chars = [...rawCharList];
     chars = chars.filter(c=>{
+        if (c.cpOnlyFemale) return false;
         const isSub = c.isSub ?? false;
         const isHidden = !!c.isHidden;
         const isFD = !!c.isFD;
