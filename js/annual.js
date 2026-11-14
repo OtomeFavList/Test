@@ -774,7 +774,9 @@ function renderCharModalGameList(wrap, keyword) {
         const gameMergedChars = getGameMergedCharList(game);
         if(gameMergedChars.length === 0) continue;
         for(const char of gameMergedChars) {
+            if (char.cpOnlyFemale) continue;
             const charNameLow = String(char.name).toLowerCase();
+
             // 补丁：隐藏开关或 FD 开关（角色 isFD 时）任一开启
             const showHideForSearch = getAnnualCharEffectiveShowHide(char, charModalGlobal.hideChar, false, charModalGlobal.fdChar, false);
             let hiddenNameMatch = false;
