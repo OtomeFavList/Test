@@ -628,17 +628,23 @@ export function initPage(Core = {}) {
         const allChars = getAllGameChar(gameInfo);
         const femaleChars = allChars.filter(c => c.gender === "female");
 
-        // 修改：初始化增加 femaleImgIndex:0
-        if(!Array.isArray(gameItem.cpEditState) || gameItem.cpEditState.length ===0){
-            gameItem.cpEditState = femaleChars.map(f=>({
-                femaleId: f.id,
-                openMalePanel: false,
-                maleIds: [],
-                maleItems: [],
-                femaleImgIndex: 0,
-                femaleNameIndex: 0  // 补丁新增
-            }));
+        // 修改：初始化增加 femaleImgIndex:0，并增量补全配角开关打开后新出现的女主
+        if(!Array.isArray(gameItem.cpEditState)){
+            gameItem.cpEditState = [];
         }
+        femaleChars.forEach(f=>{
+            if(!gameItem.cpEditState.some(s=>s.femaleId === f.id)){
+                gameItem.cpEditState.push({
+                    femaleId: f.id,
+                    openMalePanel: false,
+                    maleIds: [],
+                    maleItems: [],
+                    femaleImgIndex: 0,
+                    femaleNameIndex: 0
+                });
+            }
+        });
+        
         // 预生成 cpList，保证 renderCP 拿到最新数据（修改：带上 femaleImgIndex）
         gameItem.cpList = gameItem.cpEditState
             .filter(st=> Array.isArray(st.maleItems) && st.maleItems.length>0)
