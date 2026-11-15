@@ -1,4 +1,4 @@
-/* 模式切换按钮组，放在 site-title 下方 */
+/* 模式切换按钮组，在 site-title 下方 */
 .mode-switch-wrap {
     display: flex;
     justify-content: center;
@@ -29,7 +29,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    /* 修复：移除 gap。移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
+    /* 修复：移除gap，gap会在mode‑hidden和普通模式下产生不一致的剩余空间，造成切换模式间距跳动。
        卡片间距统一交给 .big-card margin-top，不再使用容器 gap */
     gap: 0;
 }
