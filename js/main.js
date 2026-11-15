@@ -850,10 +850,13 @@ export function preloadAdjacentImages(srcList, index) {
 export async function loadAllGameTemplates() {
     // 补丁：独立加载 FD/续作游戏，不混入主 gameDataList
     try {
-        // 动态导入 fd-games 模块，执行 FD 游戏加载
-        const fdModule = await import("../data/fd-games.js");
-        if(typeof fdModule.loadAllFDGames === "function"){
-            await fdModule.loadAllFDGames();
+        // 守卫：若加载弹窗阶段已预加载完成，跳过重复加载
+        if (!(Array.isArray(window.fdGameList) && window.fdGameList.length > 0)) {
+            // 动态导入 fd-games 模块，执行 FD 游戏加载
+            const fdModule = await import("../data/fd-games.js");
+            if(typeof fdModule.loadAllFDGames === "function"){
+                await fdModule.loadAllFDGames();
+            }
         }
     } catch(e){
         console.warn("⚠️FD游戏模块加载失败，FD续作游戏将不可用", e);
