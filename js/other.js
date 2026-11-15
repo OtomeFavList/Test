@@ -1938,7 +1938,7 @@ function bindOtherPreviewButtons() {
       const dpr = otherConfig.normalQuality ? 1 : 2;
       const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
       if (!results || results.length === 0) {
-        alert("没有可导出的内容。");
+        alert("暂无内容可导出，请先在各模块中添加数据。");
         return;
       }
       showOtherPreviewModal(results);
@@ -2091,7 +2091,7 @@ function bindExportConfig() {
     exportBtn.onclick = async () => {
       if (exportBtn.disabled || _otherIsRendering) return;
       if (!otherData || (!otherData.repoGames?.length && !otherData.impressionGames?.length)) {
-        alert("暂无数据可导出");
+        alert("暂无内容可导出，请先在各模块中添加数据。");
         return;
       }
       if (typeof window.renderAllOtherGames !== 'function') {
@@ -2120,7 +2120,7 @@ function bindExportConfig() {
         const dpr = otherConfig.normalQuality ? 1 : 2;
         const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
         if (!results || results.length === 0) {
-          alert("没有可导出的内容，请先在各模块中添加数据。");
+          alert("暂无内容可导出，请先在各模块中添加数据。");
           modal.classList.remove("active");
           document.body.classList.remove("modal-lock");
           return;
