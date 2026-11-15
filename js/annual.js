@@ -3231,7 +3231,7 @@ function renderCpModalFemaleList() {
     });
 
     if(sortedFemales.length === 0){
-        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">该游戏暂无可选角色</div>`;
+        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">该游戏无可选角色</div>`;
     }
 }
 
