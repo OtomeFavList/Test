@@ -2724,7 +2724,7 @@ function bindAnnualExportPanel() {
             showAnnualPreviewModal(results, selectedExportWidth);
         } catch (err) {
             console.error("年度报告导出失败", err);
-            alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情。");
+            alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情");
             modal.classList.remove("active");
             document.body.classList.remove("modal-lock");
         } finally {
