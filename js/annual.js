@@ -694,7 +694,7 @@ function renderGameList(wrap, keyword) {
             // 修复：重复游戏校验，排除当前正在编辑这一条，其余不能重复
             const isDuplicate = annualData.topList.some((item,i)=> i !== activeTopItemIndex && item.gameId === game.id);
             if(isDuplicate){
-                alert("该游戏已经添加，不可重复添加");
+                alert("该游戏已添加");
                 return;
             }
             // 回填到当前激活的 topList 条目
@@ -928,7 +928,7 @@ function renderCharModalGameList(wrap, keyword) {
             if(activeCharTopItemIndex === null) return;
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
             if(isDuplicate){
-                alert("该角色已经添加，不可重复添加");
+                alert("该角色已添加");
                 return;
             }
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
@@ -1234,7 +1234,7 @@ function renderCharModalCharList() {
             if(activeCharTopItemIndex === null) return;
             const isDuplicate = annualData.charTopList.some((item,i)=> i !== activeCharTopItemIndex && item.charId === char.id);
             if(isDuplicate){
-                alert("该角色已经添加，不可重复添加");
+                alert("该角色已添加");
                 return;
             }
             const targetItem = annualData.charTopList[activeCharTopItemIndex];
@@ -2715,7 +2715,7 @@ function bindAnnualExportPanel() {
             const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
             const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
             if (!results || results.length === 0) {
-                alert("暂无内容可导出，请先在各模块中添加数据。");
+                alert("暂无内容可导出，请先在各模块中添加数据");
                 modal.classList.remove("active");
                 document.body.classList.remove("modal-lock");
                 return;
@@ -3204,7 +3204,7 @@ function renderCpModalFemaleList() {
                         item.gameId === cpModalCurrentGameId &&
                         item.femaleId === fChar.id &&
                         item.maleId === mCharId);
-                    if(isDup){ alert("该CP已经添加，不可重复添加"); return; }
+                    if(isDup){ alert("该 CP 已添加"); return; }
                     const targetItem = annualData.cpTopList[activeCpTopItemIndex];
                     targetItem.gameId = cpModalCurrentGameId;
                     targetItem.gameName = gameInfo.name;
@@ -3516,7 +3516,7 @@ function bindAnnualPreviewButtons() {
             const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
             const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
             if (!results || results.length === 0) {
-                alert("暂无内容可导出。");
+                alert("暂无内容可导出");
                 return;
             }
             showAnnualPreviewModal(results, selectedExportWidth);
