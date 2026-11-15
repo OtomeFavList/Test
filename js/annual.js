@@ -2715,7 +2715,7 @@ function bindAnnualExportPanel() {
             const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
             const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
             if (!results || results.length === 0) {
-                alert("没有可导出的内容，请先在各模块中添加数据。");
+                alert("暂无内容可导出，请先在各模块中添加数据。");
                 modal.classList.remove("active");
                 document.body.classList.remove("modal-lock");
                 return;
@@ -3516,7 +3516,7 @@ function bindAnnualPreviewButtons() {
             const exportDpr = annualExportConfig.normalQuality ? 1 : 2;
             const results = await renderAllAnnualModules(designW, annualData, annualExportConfig, titleMap, exportDpr);
             if (!results || results.length === 0) {
-                alert("没有可导出的内容。");
+                alert("暂无内容可导出。");
                 return;
             }
             showAnnualPreviewModal(results, selectedExportWidth);
