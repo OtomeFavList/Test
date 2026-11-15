@@ -1231,13 +1231,36 @@ z-index: -999;
         loadModal.classList.add("active");
         document.body.classList.add("modal-lock");
         // 监听游戏加载进度，进度由 data/games.js 回调
+        let baseTotal = 0;
+        let fdLoaded = 0;
+        let fdTotal = 0;
+        function renderCombinedProgress() {
+            const combinedLoaded = baseTotal + fdLoaded;
+            const combinedTotal = baseTotal + fdTotal;
+            progressText.innerHTML = `游戏数据正在加载 ${combinedLoaded}/${combinedTotal}，请稍候…`;
+        }
         window.onGameLoadProgress = (current, total) => {
-            progressText.innerHTML = `游戏数据正在加载 ${current}/${total}，请稍候…`;
+            baseTotal = current;
+            renderCombinedProgress();
+        };
+        window.onFDGameLoadProgress = (current, total) => {
+            fdLoaded = current;
+            fdTotal = total;
+            renderCombinedProgress();
         };
 
         // 1. 加载所有游戏文件，内部并发并回调进度
         if (typeof window.loadAllGames === "function") {
             await window.loadAllGames();
+        }
+        // 1b. 同时加载 FD/续作游戏文件，进度合并到同一提示
+        try {
+            const fdModule = await import("./data/fd-games.js");
+            if (typeof fdModule.loadAllFDGames === "function") {
+                await fdModule.loadAllFDGames();
+            }
+        } catch (e) {
+            console.warn("FD游戏预加载失败，将在后续流程重试", e);
         }
         // 加载完成，启用确认按钮
         loadConfirmBtn.disabled = false;
