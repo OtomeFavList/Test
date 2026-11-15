@@ -598,7 +598,7 @@ function renderRepoModule() {
   const container = document.getElementById('other-repo-game-container');
   if (!container) return;
   if (!isGameTemplateReady()) {
-    container.innerHTML = '<p class="empty-hint">游戏数据加载中，请稍候…</p>';
+    container.innerHTML = '<p class="empty-hint">游戏模板尚未加载完成，请稍后再试</p>';
     return;
   }
   if (otherData.repoGames.length === 0) {
@@ -905,7 +905,7 @@ function renderImpressionCard(gameData) {
   }).join("");
 
   const emptyHint = visibleChars.length === 0
-    ? '<p class="other-imp-empty-hint">当前开关下无可见角色</p>'
+    ? '<p class="other-imp-empty-hint">当前状态下无可见角色</p>'
     : '';
 
   return `
