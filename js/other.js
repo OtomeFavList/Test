@@ -989,7 +989,7 @@ function bindModalInterceptor() {
 
     if (otherAddTarget === "repo") {
       if (otherData.repoGames.find(g => g.gameId === gameId)) {
-        alert("该游戏已添加！");
+        alert("该游戏已添加");
         return;
       }
       otherData.repoGames.push(createReroGameData(gameId));
@@ -997,7 +997,7 @@ function bindModalInterceptor() {
       renderRepoModule();
     } else if (otherAddTarget === "impression") {
       if (otherData.impressionGames.find(g => g.gameId === gameId)) {
-        alert("该游戏已添加！");
+        alert("该游戏已添加");
         return;
       }
       otherData.impressionGames.push(createImpressionGameData(gameId));
@@ -1937,7 +1937,7 @@ function bindOtherPreviewButtons() {
       const dpr = otherConfig.normalQuality ? 1 : 2;
       const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
       if (!results || results.length === 0) {
-        alert("暂无内容可导出，请先在各模块中添加数据。");
+        alert("暂无内容可导出，请先在各模块中添加数据");
         return;
       }
       showOtherPreviewModal(results);
@@ -2090,11 +2090,11 @@ function bindExportConfig() {
     exportBtn.onclick = async () => {
       if (exportBtn.disabled || _otherIsRendering) return;
       if (!otherData || (!otherData.repoGames?.length && !otherData.impressionGames?.length)) {
-        alert("暂无内容可导出，请先在各模块中添加数据。");
+        alert("暂无内容可导出，请先在各模块中添加数据");
         return;
       }
       if (typeof window.renderAllOtherGames !== 'function') {
-        alert("导出模块未加载，请检查 other-canvas-render.js 是否引入");
+        alert("导出模块未加载，请查看控制台错误");
         return;
       }
       let unlockTimer = null;
@@ -2119,7 +2119,7 @@ function bindExportConfig() {
         const dpr = otherConfig.normalQuality ? 1 : 2;
         const results = await window.renderAllOtherGames(720, otherData, gameList, otherConfig, dpr);
         if (!results || results.length === 0) {
-          alert("暂无内容可导出，请先在各模块中添加数据。");
+          alert("暂无内容可导出，请先在各模块中添加数据");
           modal.classList.remove("active");
           document.body.classList.remove("modal-lock");
           return;
@@ -2127,7 +2127,7 @@ function bindExportConfig() {
         showOtherPreviewModal(results);
       } catch (err) {
         console.error("Other 导出失败", err);
-        alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情。");
+        alert("导出失败：" + (err?.message || "未知错误") + "\n请打开控制台查看详情");
         modal.classList.remove("active");
         document.body.classList.remove("modal-lock");
       } finally {
