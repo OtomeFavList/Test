@@ -992,7 +992,7 @@ function renderCharModalGameList(wrap, keyword) {
 
     // 无结果提示
     if(matchedCharacters.length === 0 && matchedGames.size === 0){
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏或角色</div>`;
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏数据</div>`;
     }
 }
 
@@ -1004,7 +1004,7 @@ function renderCharModalCharList() {
     const state = getGameTemplateState_WithFD();
     const gameInfo = state.list.find(g=>g.id === charModalCurrentGameId);
     if(!gameInfo){
-        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未找到该游戏数据</div>`;
+        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏数据</div>`;
         return;
     }
     // 补丁：有相关角色才显示对应单独开关
@@ -2963,7 +2963,7 @@ function renderCpModalGameList(wrap, keyword) {
         wrap.appendChild(div);
     });
     if(sorted.length === 0){
-        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏</div>`;
+        wrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">未匹配到游戏数据</div>`;
     }
 }
 
@@ -3231,7 +3231,7 @@ function renderCpModalFemaleList() {
     });
 
     if(sortedFemales.length === 0){
-        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">该游戏暂无可用女主角</div>`;
+        charWrap.innerHTML = `<div style="padding:12px;color:#888;text-align:center;">该游戏暂无可选角色</div>`;
     }
 }
 
