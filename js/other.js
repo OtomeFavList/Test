@@ -1,5 +1,4 @@
 // Other 模式 other.js
-
 import {
   gameTemplateList,
   getWebImageUrl,
