@@ -294,7 +294,7 @@ export function loadData() {
                 tempData.gameList.forEach(gameItem => {
                     if (!Array.isArray(gameItem.selectCharItems)) return;
                     gameItem.selectCharItems.forEach(charItem => {
-                        const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
+                        const gameInfo = findGameById(gameItem.gameId);
                         if (!gameInfo?.charList || !charItem?.charId) return;
                         const targetChar = gameInfo.charList.find(c => c.id === charItem.charId);
                         if (!targetChar?.images || !Array.isArray(targetChar.images)) return;
@@ -326,7 +326,7 @@ export function loadData() {
                     if (!Array.isArray(gameItem.cpList)) return;
                     gameItem.cpList.forEach(cp => {
                         if (!cp.femaleId) return;
-                        const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
+                        const gameInfo = findGameById(gameItem.gameId);
                         if (!gameInfo?.charList) return;
                         const fChar = gameInfo.charList.find(c => c.id === cp.femaleId);
                         if (fChar?.images) {
@@ -1033,6 +1033,15 @@ export function fillFilterOptions(gameList, scope) {
 // HTML 模板渲染函数
 /* 修复：硬编码输出顺序，不再依赖对象 key 顺序 */
 
+export function getCombinedGameList() {
+    const base = Array.isArray(gameTemplateList) ? gameTemplateList : [];
+    const fd = Array.isArray(window.__fdGameTemplateList) ? window.__fdGameTemplateList : [];
+    return [...base, ...fd];
+}
+export function findGameById(gid) {
+    return getCombinedGameList().find(g => g.id === gid) || null;
+}
+
 // 修改：renderGameSelectItem，增加 index 参数，前 6 张 eager
 export function renderGameSelectItem(game, index) {
     if (!game) return "";
@@ -1353,6 +1362,8 @@ function buildCoreContext() {
         saveConfirmDate,
         localSwitchIsConfirmedToday,
         saveLocalSwitchConfirmDate,
+        getCombinedGameList,
+        findGameById,
         renderGameSelectItem,
         bindDynamicGameCardSwitchEvents,
         toggleCharItemSelect,
@@ -1488,7 +1499,7 @@ function wrapClickHandler(e) {
         if (!gameItem) return;
 
         // 修改：多名字循环切换，统一计算 totalNames
-        const charGameInfo = gameTemplateList.find(g => g.id === gameId);
+        const charGameInfo = findGameById(gameId);
         const charObj = charGameInfo?.charList?.find(c => c.id === charId);
         // 修改：隐藏开关或 FD 开关（角色 isFD 时）任一开启
         const nmShowHide = getCharShowHide(
@@ -1796,7 +1807,7 @@ export async function bootstrapCore() {
                 }
                 // 原有索引校验逻辑，保留
                 if (!Array.isArray(gameItem.selectCharItems)) return;
-                const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
+                const gameInfo = findGameById(gameItem.gameId);
                 if (!gameInfo?.charList || !gameItem?.charId) return;
                 gameItem.selectCharItems.forEach(charItem => {
                     const targetChar = gameInfo.charList.find(c => c.id === charItem.charId);
@@ -1819,7 +1830,7 @@ export async function bootstrapCore() {
                 // cp 女主男主索引校验
                 if(Array.isArray(gameItem.cpList)){
                     gameItem.cpList.forEach(cp=>{
-                        const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
+                        const gameInfo = findGameById(gameItem.gameId);
                         if(!gameInfo?.charList) return;
                         const fChar = gameInfo.charList.find(c=>c.id === cp.femaleId);
                         if(fChar?.images){
