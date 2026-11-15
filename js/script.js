@@ -1527,7 +1527,7 @@ export function initPage(Core = {}) {
           if (!targetGame) return alert("游戏数据加载异常");
 
           const exist = appData.gameList?.find(g => g.gameId === gid);
-          if (exist) return alert("该游戏已添加！");
+          if (exist) return alert("该游戏已添加");
 
           const newGameData = {
             gameId: gid,
@@ -1621,7 +1621,7 @@ export function initPage(Core = {}) {
         el.exportBtn.addEventListener('click', async () => {
             let unlockTimer = null;
             if (isRendering) {
-                alert("正在渲染中，请稍候！");
+                alert("正在渲染中，请稍候");
                 return;
             }
             clearPreviewCacheResource();
@@ -1847,7 +1847,7 @@ export function initPage(Core = {}) {
                         <p style="font-size:14px;margin-top:8px;">${err.message || '请检查控制台错误信息'}</p>
                     </div>
                 `;
-                alert("导出失败，请查看控制台错误。");
+                alert("导出失败，请查看控制台错误");
             } finally {
                 // 新增：清理进度事件监听
                 if(typeof progressHandler !== 'undefined'){
