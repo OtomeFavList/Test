@@ -23,6 +23,8 @@ import {
   isTodayConfirmed,
   saveConfirmDate,
   renderGameSelectItem,
+  getCombinedGameList,
+  findGameById,
   bindDynamicGameCardSwitchEvents,
   toggleCharItemSelect,
   toggleCpItemSelect,
@@ -95,8 +97,8 @@ export function initPage(Core = {}) {
    * @param {HTMLElement} panelDom 本卡片内的滑出面板容器
    */
   function renderCharSelectPanel(cardDom, gameId, mode, panelDom) {
-    if (!Array.isArray(gameTemplateList)) return;
-    const gameInfo = gameTemplateList.find(g => g.id === gameId);
+    if (!Array.isArray(getCombinedGameList())) return;
+    const gameInfo = findGameById(gameId);
     const gameItem = appData.gameList?.find(g => g?.gameId === gameId);
     if (!gameInfo || !gameItem || !panelDom) return;
 
@@ -622,7 +624,7 @@ export function initPage(Core = {}) {
       // 修复：预处理所有游戏数据，先补全 cpEditState / cpList，不操作 DOM
       appData.gameList?.forEach((gameItem) => {
         if (!gameItem) return;
-        const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
+        const gameInfo = findGameById(gameItem.gameId);
         if (!gameInfo) return;
 
         const allChars = getAllGameChar(gameInfo);
@@ -660,7 +662,7 @@ export function initPage(Core = {}) {
       let html = "";
       appData.gameList?.forEach((gameItem, index) => {
         if (!gameItem) return;
-        const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
+        const gameInfo = findGameById(gameItem.gameId);
         if (!gameInfo) return;
 
         // 使用 SVG 矢量爱心，防止移动端强制渲染为 emoji
@@ -772,7 +774,7 @@ export function initPage(Core = {}) {
       document.querySelectorAll(".added-game-card").forEach(cardDom => {
         const gid = cardDom.dataset.gameid;
         const gameItem = appData.gameList.find(g => g.gameId === gid);
-        const gameInfo = gameTemplateList.find(g => g.id === gid);
+        const gameInfo = findGameById(gid);
         if(!gameItem || !gameInfo) return;
 
         const charPanel = cardDom.querySelector(".char-slide-panel-char");
@@ -830,7 +832,7 @@ export function initPage(Core = {}) {
         const charId = charCard.dataset.charId;
         const gameId = charCard.dataset.gameId;
         const panelMode = switchBtn.dataset.panelMode || charCard.dataset.panelMode;
-        const gameInfo = gameTemplateList.find(g => g.id === gameId);
+        const gameInfo = findGameById(gameId);
         if (!gameInfo) return;
 
         const char = gameInfo.charList.find(c => c.id === charId);
@@ -934,7 +936,7 @@ export function initPage(Core = {}) {
         const gameItem = appData.gameList?.find(g => g.gameId === gameId);
         if (!gameItem) return;
         // 修改：多名字循环切换
-        const nmGameInfo = gameTemplateList.find(g => g.id === gameId);
+        const nmGameInfo = findGameById(gameId);
         const nmChar = nmGameInfo?.charList?.find(c => c.id === charId);
         // 修改：隐藏开关或 FD 开关（角色 isFD 时）任一开启即显示隐藏名
         const nmShowHide = getCharShowHide(
@@ -969,7 +971,7 @@ export function initPage(Core = {}) {
         const nameBox = charCard.querySelector(".char-card-name, .cp-female-name");
         const nameTextEl = nameBox?.querySelector(".char-name-text");
         if (nameTextEl && gameId) {
-          const gameInfo = gameTemplateList.find(g => g.id === gameId);
+          const gameInfo = findGameById(gameId);
           const char = gameInfo?.charList?.find(c => c.id === charId);
           if (char) {
             const showHide = getCharShowHide(char, appData.globalHideChar, gameItem.localHideChar, appData.globalFD, gameItem.localFD);
@@ -1369,7 +1371,7 @@ export function initPage(Core = {}) {
 
     refreshHideCharSwitch();
     refreshFDSwitch();
-    fillFilterOptions(gameTemplateList);
+    fillFilterOptions(getCombinedGameList());
 
     const baseInputMap = [
       {dom: el.inputNick, key: "nick"},
@@ -1442,9 +1444,10 @@ export function initPage(Core = {}) {
             clearPreviewCacheResource();
         });
     });
-
+    
     function renderGameSelectList() {
-      if (!el.gameSearchInput || !el.gameSelectList || !Array.isArray(gameTemplateList)) return;
+      const combinedList = getCombinedGameList();
+      if (!el.gameSearchInput || !el.gameSelectList || !Array.isArray(combinedList)) return;
 
       const keyword = el.gameSearchInput.value.toLowerCase();
       const filterYear = document.getElementById("filter-year")?.value || "";
@@ -1453,7 +1456,7 @@ export function initPage(Core = {}) {
       const filterWriter = document.getElementById("filter-writer")?.value || "";
       const filterArt = document.getElementById("filter-art")?.value || "";
 
-      const sortedGames = [...gameTemplateList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+      const sortedGames = [...combinedList].sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
       let html = "";
 
       sortedGames.forEach((game, index) => {   // 增加 index
@@ -1523,7 +1526,7 @@ export function initPage(Core = {}) {
       document.querySelectorAll(".game-option-item").forEach(item => {
         item.onclick = () => {
           const gid = item.dataset.gameId;
-          const targetGame = gameTemplateList.find(g => g.id === gid);
+          const targetGame = findGameById(gid);
           if (!targetGame) return alert("游戏数据加载异常");
 
           const exist = appData.gameList?.find(g => g.gameId === gid);
