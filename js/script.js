@@ -25,6 +25,7 @@ import {
   renderGameSelectItem,
   getCombinedGameList,
   findGameById,
+  getEffectiveCharList,
   bindDynamicGameCardSwitchEvents,
   toggleCharItemSelect,
   toggleCpItemSelect,
@@ -822,7 +823,7 @@ export function initPage(Core = {}) {
         const char = gameInfo.charList.find(c => c.id === charId);
         if (!char) return;
 
-        const gameItem = appData.gameList?.find(g => g.gameId === gameId);
+        const char = getEffectiveCharList(gameInfo).find(c => c.id === charId);
         if (!gameItem) return;
 
         const availImgUnits = getAvailableCharImages(
