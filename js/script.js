@@ -820,10 +820,10 @@ export function initPage(Core = {}) {
         const gameInfo = findGameById(gameId);
         if (!gameInfo) return;
 
-        const char = gameInfo.charList.find(c => c.id === charId);
+        const char = getEffectiveCharList(gameInfo).find(c => c.id === charId);
         if (!char) return;
 
-        const char = getEffectiveCharList(gameInfo).find(c => c.id === charId);
+        const gameItem = appData.gameList?.find(g => g.gameId === gameId);
         if (!gameItem) return;
 
         const availImgUnits = getAvailableCharImages(
