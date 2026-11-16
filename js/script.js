@@ -674,11 +674,12 @@ export function initPage(Core = {}) {
 
         // 新增：条件渲染本游戏局部开关
         // 修复：隐藏开关不仅看 isHidden 标记，还要看是否有隐藏姓名或隐藏图片
-        const hasLocalHideChar = gameInfo.charList.some(c => charHasHiddenContent(c));
+        const charList = Array.isArray(gameInfo.charList) ? gameInfo.charList : [];
+        const hasLocalHideChar = charList.some(c => charHasHiddenContent(c));
         // 修复：FD 开关不仅看 isFD 标记，还要看是否有 FD 图片
-        const hasLocalFDChar = gameInfo.charList.some(c => charHasFdContent(c));
-        const hasLocalSubChar = gameInfo.charList.some(c => c.isSub === true);
-        const hasLocalFdSubChar = gameInfo.charList.some(c => c.isFdSub === true); // 新增：检测是否存在续作/FD 次要角色
+        const hasLocalFDChar = charList.some(c => charHasFdContent(c));
+        const hasLocalSubChar = charList.some(c => c.isSub === true);
+        const hasLocalFdSubChar = charList.some(c => c.isFdSub === true);
         let switchRowInnerHtml = "";
 
         // 新增：单独显示本游戏次要角色
@@ -734,7 +735,7 @@ export function initPage(Core = {}) {
         const charTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-char-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.charSectionText || ''}</textarea><span class="resize-handle"></span></div>`;
         const cpTextHtml = `<div class="game-custom-text-wrap"><textarea class="game-cp-text-input" data-gid="${gameItem.gameId}" placeholder="自定义文本">${gameItem.cpSectionText || ''}</textarea><span class="resize-handle"></span></div>`;
 
-        html += `
+                html += `
         <div class="added-game-card" data-gameid="${gameItem.gameId}" data-fold="${!!gameItem.fold}">
           <div class="game-card-head">
             <div class="game-card-head-title-wrap">
@@ -743,7 +744,10 @@ export function initPage(Core = {}) {
             <div class="heart-rate" data-gid="${gameItem.gameId}">
               ${heartHtml}
             </div>
-            ${gameItem.fold ? `<button class="game-fold-icon-expand" data-gid="${gameItem.gameId}">▼</button>` : ''}
+            <div class="game-card-head-btns">
+              <button class="game-fold-icon fold-game" data-gid="${gameItem.gameId}">${gameItem.fold ? '▲' : '▼'}</button>
+              <button class="game-delete-btn del-game" data-gid="${gameItem.gameId}">×</button>
+            </div>
             ${switchRowHtml}
             ${headTextHtml}
           </div>
@@ -759,10 +763,6 @@ export function initPage(Core = {}) {
             ${getInnerSlidePanelHtml("cp")}
             <div class="game-card-empty-tip cp-render-box" data-gid="${gameItem.gameId}">${renderCP(gameItem, gameInfo) || `<div class="empty-hint">暂未选择角色</div>`}</div>
             ${cpTextHtml}
-          </div>
-          <div class="card-bottom-buttons block-margin-gap">
-            <button class="btn-fold fold-game btn-gray-bg" data-gid="${gameItem.gameId}">折叠</button>
-            <button class="btn-del del-game btn-gray-bg" data-gid="${gameItem.gameId}">删除</button>
           </div>
         </div>
         `;
@@ -806,22 +806,6 @@ export function initPage(Core = {}) {
       // 新增：图片点击冒泡兼容，解决 cp 面板点击图片需要两次
       if(e.target.tagName === "IMG"){
           // 允许事件向上冒泡至父级 char-item / cp-male-item，不拦截
-      }
-
-      // 新增：折叠时游戏标题旁的展开按钮
-      const iconExpandBtn = e.target.closest(".game-fold-icon-expand");
-      if (iconExpandBtn) {
-          e.stopPropagation();
-          const gid = iconExpandBtn.dataset.gid;
-          const gameItem = appData.gameList?.find(g => g.gameId === gid);
-          if (!gameItem) return;
-          gameItem.fold = false;
-          saveData();
-          clearPreviewCacheResource(); // 缓存失效
-          requestAnimationFrame(()=>{
-              window.refreshGameCardUi();
-          });
-          return;
       }
 
       const switchBtn = e.target.closest(".char-switch-btn");
