@@ -1268,6 +1268,13 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
 export function getAllGameChar(gameInfo) {
     if (!gameInfo) return [];
     let chars = [...(gameInfo?.charList || [])];
+    // 补丁：FD 游戏无自身 charList 时，回退到 baseGameId 指向的普通游戏角色列表
+    if (chars.length === 0 && gameInfo.baseGameId) {
+        const baseGame = findGameById(gameInfo.baseGameId);
+        if (baseGame && Array.isArray(baseGame.charList)) {
+            chars = [...baseGame.charList];
+        }
+    }
     const gameItem = appData.gameList.find(g => g?.gameId === gameInfo.id);
     const showHide = appData.globalHideChar || gameItem?.localHideChar;
     const showFD = appData.globalFD || gameItem?.localFD;
