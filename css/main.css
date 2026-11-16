@@ -1383,44 +1383,65 @@ h2{
 }
 
 /* 修改：折叠展开按钮移到爱心右边，改成普通 flex 子元素 */
-.game-fold-icon-expand {
+/* 游戏卡片头部按钮组（折叠+删除），对齐 Other/Annual */
+.game-card-head-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+/* 折叠按钮：始终显示，▼=展开中可折叠，▲=已折叠可展开 */
+.game-fold-icon.fold-game {
     flex-shrink: 0;
     align-self: center;
-    display: none;
     border: 1px solid #b33a3a;
     border-radius: 8px;
     background: transparent;
     font-size: 20px;
     color: #b33a3a;
     cursor: pointer;
-    padding: 0 !important;  /* 清除全局 button 默认 padding */
+    padding: 0 !important;
     line-height: 1;
     width: 28px;
     height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-/* 提高权重，覆盖全局 button:hover */
-.game-fold-icon-expand:hover{
+.game-fold-icon.fold-game:hover {
     background: #992e2e !important;
-    color: #b33a3a !important;
+    color: #ffffff !important;
 }
-/* 标题容器：展开按钮已移到爱心右边，不再需要相对定位做参照 */
+/* 删除按钮 */
+.game-delete-btn.del-game {
+    flex-shrink: 0;
+    align-self: center;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.game-delete-btn.del-game:hover {
+    background: #992e2e !important;
+    color: #ffffff !important;
+}
 .game-card-head-title-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
 }
-
-.added-game-card[data-fold="true"] .game-fold-icon-expand {
-    display: inline-flex;
-    align-items:center;
-    justify-content:center;
-}
-.added-game-card[data-fold="false"] .game-fold-icon-expand {
-    display: none;
-}
 /* 卡片折叠整体隐藏内容 */
 .added-game-card[data-fold="true"] .game-card-block-item,
-.added-game-card[data-fold="true"] .card-bottom-buttons,
 /* 新增：折叠时隐藏单独开关 */
 .added-game-card[data-fold="true"] .game-switch-row,
 /* 折叠时隐藏自定义文本框 */
@@ -1489,11 +1510,9 @@ h2{
 .snapshot-container.export-snapshot .char-name-switch-btn,  /* 补丁新增 */
 .snapshot-container.export-snapshot .panel-close-btn,
 .snapshot-container.export-snapshot .heart-rate,
-.snapshot-container.export-snapshot .card-bottom-buttons,
-.snapshot-container.export-snapshot .game-switch-row,
-.snapshot-container.export-snapshot .btn-character,
-.snapshot-container.export-snapshot .btn-couple,
-.snapshot-container.export-snapshot .game-fold-icon-expand {
+.snapshot-container.export-snapshot .game-card-head-btns,
+.snapshot-container.export-snapshot .game-fold-icon,
+.snapshot-container.export-snapshot .game-delete-btn {
     display: none !important;
 }
 /* 2. 强制所有游戏卡片展开，无视 data-fold 折叠属性 */
