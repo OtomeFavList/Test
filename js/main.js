@@ -1095,7 +1095,8 @@ export function renderGameSelectItem(game, index) {
 
 // 修改：renderSelectedChar，移除 preloadAdjacentImages 调用，img loading 改为 eager
 export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
-    if (!gameInfo?.charList || !gameItem) return `<div class="empty-hint">暂未添加角色</div>`;
+    const effCharList = getEffectiveCharList(gameInfo);
+    if (!effCharList || !gameItem) return `<div class="empty-hint">暂未添加角色</div>`;
 
     let html = "";
     const globalHide = appData.globalHideChar;
@@ -1107,7 +1108,7 @@ export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
     if (!Array.isArray(gameItem.selectCharItems)) gameItem.selectCharItems = [];
 
     gameItem.selectChars?.forEach(cid => {
-        const char = gameInfo.charList?.find(c => c.id === cid);
+        const char = effCharList.find(c => c.id === cid);
         if (!char) return;
 
         const availableImgUnits = getAvailableCharImages(char, globalHide, globalFD, localHide, localFD);
@@ -1157,7 +1158,8 @@ export function renderSelectedChar(gameItem, gameInfo, isSnapshot = false) {
 
 // 修改：renderCP，img loading 改为 eager
 export function renderCP(gameItem, gameInfo, isSnapshot = false) {
-    if (!gameInfo?.charList || !gameItem) return `<div class="empty-hint">暂未添加角色</div>`;
+    const effCharList = getEffectiveCharList(gameInfo);
+    if (!effCharList || !gameItem) return `<div class="empty-hint">暂未添加角色</div>`;
 
     let html = "";
     const globalHide = appData.globalHideChar;
@@ -1170,7 +1172,7 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
     gameItem.cpList?.forEach(cp => {
         if (!cp) return;
 
-        const fChar = gameInfo.charList?.find(c => c.id === cp.femaleId);
+        const fChar = effCharList.find(c => c.id === cp.femaleId);
         if (!fChar) return;
 
         const fAvailUnits = getAvailableCharImages(fChar, globalHide, globalFD, localHide, localFD);
@@ -1200,7 +1202,7 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
         let maleHtml = "";
         if (!Array.isArray(cp.maleItems)) cp.maleItems = [];
         cp.maleItems?.forEach(mi => {
-            const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
+            const mChar = effCharList.find(c => c.id === mi.charId);
             if (!mChar) return;
 
             const mAvailUnits = getAvailableCharImages(mChar, globalHide, globalFD, localHide, localFD);
@@ -1265,6 +1267,21 @@ export function renderCP(gameItem, gameInfo, isSnapshot = false) {
 }
 
 // 过滤角色规则：全局开关 || 单游戏开关，任一开启
+// 新增：获取游戏有效角色列表（FD 游戏回退到 baseGameId 指向的普通游戏）
+export function getEffectiveCharList(gameInfo) {
+    if (!gameInfo) return [];
+    if (Array.isArray(gameInfo.charList) && gameInfo.charList.length > 0) {
+        return gameInfo.charList;
+    }
+    if (gameInfo.baseGameId) {
+        const baseGame = findGameById(gameInfo.baseGameId);
+        if (baseGame && Array.isArray(baseGame.charList)) {
+            return baseGame.charList;
+        }
+    }
+    return [];
+}
+
 export function getAllGameChar(gameInfo) {
     if (!gameInfo) return [];
     let chars = [...(gameInfo?.charList || [])];
