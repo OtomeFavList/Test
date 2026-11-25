@@ -1751,7 +1751,7 @@ export function initPage(Core = {}) {
                 // 核心：调用原生 Canvas 绘制模块，返回 Blob 数组
                 // 导出普通画质开关开启时 DPR=1（640/810/1080 实际像素），关闭时 DPR=2（1280/1620/2160 实际像素）
                 const exportDpr = appData.exportNormalQuality ? 1 : 2;
-                const blobList = await renderExportCanvas(targetWidth, isLongMode, maxPageHeight, appData, gameTemplateList, exportDpr);
+                const blobList = await renderExportCanvas(targetWidth, isLongMode, maxPageHeight, appData, getCombinedGameList(), exportDpr);
                 if (!Array.isArray(blobList) || blobList.length === 0) throw new Error("Canvas绘制失败，未能生成图片");
 
                 // 多页预览状态
