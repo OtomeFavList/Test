@@ -1231,16 +1231,18 @@ z-index: -999;
         loadModal.classList.add("active");
         document.body.classList.add("modal-lock");
         // 监听游戏加载进度，进度由 data/games.js 回调
+        let baseLoaded = 0;
         let baseTotal = 0;
         let fdLoaded = 0;
         let fdTotal = 0;
         function renderCombinedProgress() {
-            const combinedLoaded = baseTotal + fdLoaded;
+            const combinedLoaded = baseLoaded + fdLoaded;
             const combinedTotal = baseTotal + fdTotal;
             progressText.innerHTML = `游戏数据正在加载 ${combinedLoaded}/${combinedTotal}，请稍候…`;
         }
         window.onGameLoadProgress = (current, total) => {
-            baseTotal = current;
+            baseLoaded = current;
+            baseTotal = total;
             renderCombinedProgress();
         };
         window.onFDGameLoadProgress = (current, total) => {
