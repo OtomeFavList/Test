@@ -1478,7 +1478,10 @@ function wrapClickHandler(e) {
                 gameItem.localFD = false;
             }
             saveData();
-            if (window.refreshGameCardUi) window.refreshGameCardUi();
+            // 补丁：延后到下一帧再重建，与另外两个局部开关一致，保留滑块过渡
+            requestAnimationFrame(() => {
+                if (window.refreshGameCardUi) window.refreshGameCardUi();
+            });
             return;
         }
 
