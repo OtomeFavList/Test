@@ -75,11 +75,24 @@ html {
     margin:0;
 }
 .panel-close-btn {
-    border:none;
-    background:transparent;
-    font-size:20px;
-    cursor:pointer;
-    color:#b33a3a;
+    flex-shrink: 0;
+    border: 1px solid #b33a3a;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    color: #b33a3a;
+    cursor: pointer;
+    padding: 0 !important;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.panel-close-btn:hover {
+    background: #992e2e !important;
+    color: #ffffff !important;
 }
 .heroine-box, .hero-list-box {
     display:flex;
@@ -417,6 +430,8 @@ button:hover{
     gap: 12px;  /* 修改：16 改为 12 */
     margin: 10px 0 16px;
     flex-wrap: wrap;
+    flex-basis: 100%;
+    width: 100%;
 }
 /* 每一组开关 + 文字独立单元 */
 .game-switch-row > div {
