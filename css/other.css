@@ -797,11 +797,49 @@
     cursor: pointer;
     user-select: none;
 }
-.other-imp-switch-input {
+/* 补丁：Other Impression 局部开关平滑滑块，标准与全局开关一致（轨道 50×26 / 圆钮 20×20 / .3s） */
+.other-imp-switches .switch {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.other-imp-switches .other-imp-switch-input {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
     opacity: 0;
     width: 0;
     height: 0;
     cursor: pointer;
+}
+.other-imp-switches .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ccc;
+    border-radius: 34px;
+    transition: .3s;
+}
+.other-imp-switches .slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: .3s;
+}
+.other-imp-switches .other-imp-switch-input:checked + .slider {
+    background: #e895a8;
+}
+.other-imp-switches .other-imp-switch-input:checked + .slider::before {
+    transform: translateX(24px);
 }
 
 /* 三列内容容器：PC 端一行 2 个角色 block */
