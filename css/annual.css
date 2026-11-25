@@ -226,7 +226,7 @@
 }
 .annual-modal-close-btn:hover{
     background: #992e2e !important;
-    color: #b33a3a !important;
+    color: #ffffff !important;
 }
 
 /* input 和列表容器，补回原来的 padding */
@@ -1097,7 +1097,7 @@
 }
 .annual-modal-back-btn:hover{
     background: #992e2e !important;
-    color: #b33a3a !important;
+    color: #ffffff !important;
 }
 /* 全局开关 */
 .annual-modal-global-switch-group {
@@ -1790,7 +1790,7 @@
 }
 .annual-cp-modal-back-btn:hover {
     background: #992e2e !important;
-    color: #b33a3a !important;
+    color: #ffffff !important;
 }
 /* 游戏列表卡片 */
 .annual-global-cp-game-list .annual-cp-game-option-item {
