@@ -9,7 +9,8 @@ import {
   convertR2ToJsDelivr,
   getCharDisplayName,
   getCharNameList,
-  getCharShowHide  // 新增
+  getCharShowHide,  //新增
+  getEffectiveCharList  //新增
 } from './main.js';
 
 // 最大并发图片加载数量，降低并发减少移动端解码资源竞争
