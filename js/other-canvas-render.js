@@ -603,6 +603,7 @@ function canvasGetImpVisibleChars(gameInfo, switches, globalSwitches, allGames) 
   const showFD = gs.fdChar || sw.fdChar;
   const showFdSub = gs.fdSubChar || sw.fdSubChar;
   return rawList.filter(c => {
+    if (c.cpOnlyFemale) return false;
     const isSub = c.isSub ?? false;
     const isHidden = !!c.isHidden;
     const isFD = !!c.isFD;
