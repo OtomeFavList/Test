@@ -227,7 +227,21 @@ input:checked + .slider{
 input:checked + .slider:before{
     transform:translateX(24px);
 }
-
+/* 补丁：卡片局部开关原生复选框彻底隐藏，轨道/圆钮过渡与全局平滑开关统一 */
+.game-switch-row .switch input[type="checkbox"] {
+         -webkit-appearance: none;
+         appearance: none;
+         margin: 0;
+         opacity: 0;
+         width: 0;
+         height: 0;
+}
+.game-switch-row .slider {
+         transition: background-color .3s;
+}
+.game-switch-row .slider::before {
+         transition: transform .3s;
+}
 /* 表单输入 */
 .form-row{
     margin:16px 0;
@@ -1151,7 +1165,12 @@ h2{
     display:flex;
     flex-direction:column;
     gap:8px;
+    width:100%; /* 补丁：占满面板整行，块内按钮栏右对齐到面板右缘，不再随首行角色图宽度收缩 */
 }
+.char-slide-panel-cp .cp-female-block:first-child{
+    margin-top:0;
+}
+
 /* 待选女主：修复纵向布局高度 */
 .cp-female-card-btn{
     width: 120px;
