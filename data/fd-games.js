@@ -27,7 +27,7 @@ async function loadAllFDGames() {
         }
     });
     await Promise.all(importPromises);
-    console.log("✅FD游戏加载完毕，数量：", window.fdGameList.length);
+    console.log("✅FD游戏加载流程执行完毕，总数量：", window.fdGameList.length);
 }
 window.loadAllFDGames = loadAllFDGames;
 export { loadAllFDGames };
