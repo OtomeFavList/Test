@@ -675,7 +675,7 @@ export function initPage(Core = {}) {
 
         // 新增：条件渲染本游戏局部开关
         // 修复：隐藏开关不仅看 isHidden 标记，还要看是否有隐藏姓名或隐藏图片
-        const charList = Array.isArray(gameInfo.charList) ? gameInfo.charList : [];
+        const charList = getEffectiveCharList(gameInfo);
         const hasLocalHideChar = charList.some(c => charHasHiddenContent(c));
         // 修复：FD 开关不仅看 isFD 标记，还要看是否有 FD 图片
         const hasLocalFDChar = charList.some(c => charHasFdContent(c));
