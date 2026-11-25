@@ -1461,6 +1461,7 @@ export async function renderExportCanvas(
 
     const gameInfo = gameTemplateList.find(g => g.id === gameItem.gameId);
     if (!gameInfo) continue;
+    const effCharList = getEffectiveCharList(gameInfo);
 
     const globalHide = appData.globalHideChar;
     const globalFD = appData.globalFD;
@@ -1473,7 +1474,7 @@ export async function renderExportCanvas(
     const charItems = [];
     if (Array.isArray(gameItem.selectChars)) {
       for (const cid of gameItem.selectChars) {
-        const char = gameInfo.charList?.find(c => c.id === cid);
+        const char = effCharList.find(c => c.id === cid);
         if (!char) continue;
         // 修改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
         const isSub = char.isSub ?? false;
@@ -1523,7 +1524,7 @@ export async function renderExportCanvas(
     const cpItems = [];
     if (Array.isArray(gameItem.cpList)) {
       for (const cp of gameItem.cpList) {
-        const fChar = gameInfo.charList?.find(c => c.id === cp.femaleId);
+        const fChar = effCharList.find(c => c.id === cp.femaleId);
         if (!fChar) continue;
         const fAvail = getAvailableCharImages(fChar, globalHide, globalFD, localHide, localFD);
         let fAllSrc = [];
@@ -1546,7 +1547,7 @@ export async function renderExportCanvas(
         const maleItems = [];
         if (Array.isArray(cp.maleItems)) {
           for (const mi of cp.maleItems) {
-            const mChar = gameInfo.charList?.find(c => c.id === mi.charId);
+            const mChar = effCharList.find(c => c.id === mi.charId);
             if (!mChar) continue;
             // 修改为 OR 逻辑：统一过滤，角色有多个状态 true 时任一对应开关开启即显示
             const isSub = mChar.isSub ?? false;
