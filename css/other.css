@@ -798,10 +798,10 @@
     user-select: none;
 }
 .other-imp-switch-input {
-    width: 16px;
-    height: 16px;
+    opacity: 0;
+    width: 0;
+    height: 0;
     cursor: pointer;
-    accent-color: var(--other-active-fill-color, #e895a8);
 }
 
 /* 三列内容容器：PC 端一行 2 个角色 block */
