@@ -100,7 +100,10 @@ html {
     gap:10px;
     margin-bottom:12px;
 }
-
+/* 补丁：Couple 面板女主已移入 hero-list-box，清空的 heroine-box 不再保留 12px 下边距 */
+.char-slide-panel-cp .heroine-box:empty {
+         display: none;
+}
 /* body 基础 */
 body{
     background: var(--export-bg, #fff7f9);
