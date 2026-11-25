@@ -52,7 +52,7 @@ async function loadAllGames() {
             }
             console.log("✅已加载：", src);
         } catch (err) {
-            console.warn("⚠️该游戏文件加载跳过：", src, err);
+            console.warn("⚠️游戏文件加载跳过：", src, err);
         } finally {
             loadedCount++;
             // 调用全局进度回调更新弹窗文字
