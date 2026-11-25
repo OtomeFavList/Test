@@ -732,6 +732,7 @@ function getImpressionVisibleChars(gameInfo, localSwitches, globalSwitches) {
   const showFD = global.fdChar || local.fdChar;
   const showFdSub = global.fdSubChar || local.fdSubChar;
   return rawList.filter(c => {
+    if (c.cpOnlyFemale) return false;
     const isSub = c.isSub ?? false;
     const isHidden = !!c.isHidden;
     const isFD = !!c.isFD;
