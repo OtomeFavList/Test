@@ -1420,28 +1420,32 @@ function wrapClickHandler(e) {
     // 游戏局部开关处理
     const targetInput = e.target.closest(".game-hide-char,.game-fd-switch,.game-sub-switch,.game-fd-sub-switch,.modal-local-hide-char,.modal-local-fd");
     if (targetInput) {
-        // 新增：局部次要角色开关，无剧透弹窗直接切换
-        if (targetInput.classList.contains("game-sub-switch")) {
-            e.preventDefault();
-            const idx = Number(targetInput.dataset.gameidx);
-            const gameItem = appData.gameList[idx];
-            if (!gameItem) return;
-            gameItem.localSubChar = !gameItem.localSubChar;
-            saveData();
-            if (window.refreshGameCardUi) window.refreshGameCardUi();
-            return;
-        }
-        // 新增：局部续作/FD次要角色开关，无剧透弹窗直接切换，复用 game-sub-switch 逻辑
-        if (targetInput.classList.contains("game-fd-sub-switch")) {
-            e.preventDefault();
-            const idx = Number(targetInput.dataset.gameidx);
-            const gameItem = appData.gameList[idx];
-            if (!gameItem) return;
-            gameItem.localFdSubChar = !gameItem.localFdSubChar;
-            saveData();
-            if (window.refreshGameCardUi) window.refreshGameCardUi();
-            return;
-        }
+       // 新增：局部次要角色开关，无剧透弹窗直接切换
+       if (targetInput.classList.contains("game-sub-switch")) {
+           // 补丁：读取原生 checked，不打断原生勾选；下一帧再重建卡片，保留滑块过渡
+           const idx = Number(targetInput.dataset.gameidx);
+           const gameItem = appData.gameList[idx];
+           if (!gameItem) return;
+           gameItem.localSubChar = targetInput.checked;
+           saveData();
+           requestAnimationFrame(() => {
+               if (window.refreshGameCardUi) window.refreshGameCardUi();
+           });
+           return;
+       }
+       // 新增：局部续作/FD次要角色开关，无剧透弹窗直接切换，复用 game-sub-switch 逻辑
+       if (targetInput.classList.contains("game-fd-sub-switch")) {
+           // 补丁：读取原生 checked，不打断原生勾选；下一帧再重建，保留滑块过渡
+           const idx = Number(targetInput.dataset.gameidx);
+           const gameItem = appData.gameList[idx];
+           if (!gameItem) return;
+           gameItem.localFdSubChar = targetInput.checked;
+           saveData();
+           requestAnimationFrame(() => {
+               if (window.refreshGameCardUi) window.refreshGameCardUi();
+           });
+           return;
+       }
 
         // 修复：只要命中局部开关，直接阻止浏览器原生 checkbox 切换，全部 JS 接管
         e.preventDefault();
