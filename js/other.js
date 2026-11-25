@@ -1434,16 +1434,20 @@ function bindImpressionEvents() {
       return;
     }
     // 4个单独开关切换（仅重渲染当前卡片，避免整个模块重建导致跳动）
-    const switchInput = e.target.closest('.other-imp-switch-input');
+    // 补丁：委托命中整个开关 label，再取内部 input 读取勾选态
+    const switchLabel = e.target.closest('.other-imp-switches .switch');
+    const switchInput = switchLabel ? switchLabel.querySelector('.other-imp-switch-input') : null;
     if (switchInput) {
       const key = switchInput.dataset.impSwitch;
       if (key && gameData.charSwitches) {
         gameData.charSwitches[key] = switchInput.checked;
         saveOtherData();
-        rerenderImpressionCard(gameId);
+        // 补丁：延后到下一帧再替换当前卡片，保留滑块过渡，避免整卡替换导致跳变
+        requestAnimationFrame(() => rerenderImpressionCard(gameId));
       }
       return;
     }
+
     // 角色立绘：上一张（对齐 Annual，使用 switchCharImageWithLoading 带 loading 效果）
     const charPrevBtn = e.target.closest('[data-imp-char-img-prev]');
     if (charPrevBtn) {
